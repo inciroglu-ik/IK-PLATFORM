@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="version" content="202606241402">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>İNCİROĞLU OTOMOTİV · İK Platform 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+:root{
+  --bg:#060c16;--s1:#0e1a2e;--s2:#132238;--b1:#1d3354;--b2:#254268;
+  --a1:#3b82f6;--a2:#6366f1;--a3:#10b981;--a4:#f59e0b;--a5:#ef4444;--a6:#8b5cf6;
+  --t1:#eef4ff;--t2:#94a3b8;--t3:#64748b;--t4:#3d5a80;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 10% 10%,rgba(59,130,246,.07) 0%,transparent 50%),radial-gradient(ellipse at 90% 90%,rgba(99,102,241,.07) 0%,transparent 50%);pointer-events:none;z-index:0}
+.nav{position:sticky;top:0;z-index:200;background:rgba(6,12,22,.95);backdrop-filter:blur(18px);border-bottom:1px solid var(--b1);display:flex;align-items:center;height:56px;padding:0 20px;gap:0}
+.nlogo{display:flex;align-items:center;gap:10px;margin-right:22px;flex-shrink:0}
+.nlogo-ico{width:32px;height:32px;background:linear-gradient(135deg,#3b82f6,#6366f1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.nlogo h2{font-size:12.5px;font-weight:800;background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.nlogo p{font-size:10px;color:var(--t3);margin-top:1px}
+.ntabs{display:flex;gap:2px;flex:1}
+.tab{background:none;border:none;color:var(--t3);padding:6px 13px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;display:flex;align-items:center;gap:5px}
+.tab:hover{color:var(--t2);background:rgba(255,255,255,.05)}
+.tab.on{color:#93c5fd;background:rgba(59,130,246,.16);border:1px solid rgba(59,130,246,.22)}
+.nr{display:flex;align-items:center;gap:9px;flex-shrink:0}
+.upbtn{display:flex;align-items:center;gap:7px;background:rgba(99,102,241,.18);border:1px solid rgba(99,102,241,.35);color:#c4b5fd;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all .18s}
+.upbtn:hover{background:rgba(99,102,241,.3);transform:translateY(-1px)}
+.lbl{font-size:11px;color:var(--t4);display:flex;align-items:center;gap:5px}
+.dot{width:7px;height:7px;border-radius:50%;background:#10b981;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.5)}}
+.pg{display:none;position:relative;z-index:1;padding:20px 22px;animation:fi .22s ease}
+.pg.on{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.kpis{display:grid;gap:12px;margin-bottom:18px}
+.k3{grid-template-columns:repeat(3,1fr)}.k4{grid-template-columns:repeat(4,1fr)}.k5{grid-template-columns:repeat(5,1fr)}.k6{grid-template-columns:repeat(6,1fr)}.k7{grid-template-columns:repeat(7,1fr)}
+.k{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:15px 17px;position:relative;overflow:hidden;transition:transform .18s,border-color .18s}
+.k:hover{transform:translateY(-2px);border-color:var(--b2)}
+.k::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:12px 12px 0 0}
+.kbl::before{background:linear-gradient(90deg,#3b82f6,#6366f1)}.krd::before{background:linear-gradient(90deg,#ef4444,#f97316)}.kgn::before{background:linear-gradient(90deg,#10b981,#06b6d4)}.kyw::before{background:linear-gradient(90deg,#f59e0b,#fbbf24)}.kpu::before{background:linear-gradient(90deg,#8b5cf6,#a78bfa)}.kcy::before{background:linear-gradient(90deg,#06b6d4,#3b82f6)}.kor::before{background:linear-gradient(90deg,#f97316,#fbbf24)}.kpk::before{background:linear-gradient(90deg,#ec4899,#a78bfa)}
+.kv{font-size:28px;font-weight:900;letter-spacing:-1.5px;line-height:1;margin:8px 0 4px}
+.kl{font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.ks{font-size:10.5px;color:var(--t4);margin-top:4px}
+.ks em{color:#34d399;font-style:normal;font-weight:700}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:13px;margin-bottom:14px}
+.g3e{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;margin-bottom:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:14px}
+.c{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:18px;transition:border-color .18s;overflow:hidden}
+.c:hover{border-color:var(--b2)}
+.ch{display:flex;align-items:center;gap:7px;margin-bottom:2px}
+.ci{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.ct{font-size:13px;font-weight:700;color:var(--t1)}
+.cs{font-size:10.5px;color:var(--t4);margin-bottom:14px}
+.cw{position:relative}
+.h180{height:180px}.h200{height:200px}.h220{height:220px}.h240{height:240px}.h260{height:260px}.h280{height:280px}.h300{height:300px}
+.ng{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}
+.nc{background:var(--s2);border:1px solid var(--b1);border-radius:10px;padding:13px 15px;display:flex;align-items:center;gap:11px;transition:border-color .18s}
+.nc:hover{border-color:var(--b2)}
+.nc-ico{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.nc h4{font-size:12.5px;font-weight:700;color:var(--t1)}
+.nc p{font-size:10.5px;color:var(--t3);margin-top:1px}
+.nc .pct{font-size:20px;font-weight:900;letter-spacing:-1px;margin-top:3px}
+.dbars{display:flex;flex-direction:column;gap:7px;margin-top:3px}
+.drow{display:flex;align-items:center;gap:8px;padding:3px 4px;border-radius:5px;transition:background .15s}
+.drow:hover{background:rgba(255,255,255,.03)}
+.dn{font-size:11px;color:var(--t2);width:90px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.dt{flex:1;height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden}
+.df{height:100%;border-radius:3px;transition:width .8s cubic-bezier(.34,1.56,.64,1)}
+.dc{font-size:12px;font-weight:700;width:24px;text-align:right}
+.fbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px 14px;background:var(--s1);border:1px solid var(--b1);border-radius:10px;margin-bottom:14px}
+.fl{font-size:10px;color:var(--t4);font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin-right:2px}
+.pill{background:var(--s2);border:1px solid var(--b1);color:var(--t3);padding:4px 12px;border-radius:16px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif}
+.pill:hover{border-color:var(--a1);color:var(--t2)}
+.pill.on{background:rgba(59,130,246,.18);border-color:var(--a1);color:#93c5fd}
+.fsel{background:var(--s2);border:1px solid var(--b1);color:var(--t2);padding:4px 10px;border-radius:7px;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:500;outline:none;transition:border-color .15s}
+.fsel:focus{border-color:var(--a1)}
+.thd{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+.sinp{background:var(--s2);border:1px solid var(--b1);color:var(--t1);padding:7px 12px;border-radius:8px;font-size:12px;width:230px;outline:none;font-family:'Inter',sans-serif;transition:all .15s}
+.sinp:focus{border-color:var(--a1);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.sinp::placeholder{color:var(--t4)}
+.tbw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:8px 12px;font-size:10px;font-weight:700;color:var(--t4);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--b1);white-space:nowrap}
+td{padding:9px 12px;font-size:12px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.bdg{display:inline-flex;padding:2px 8px;border-radius:16px;font-size:10px;font-weight:700;white-space:nowrap}
+.bi{background:rgba(239,68,68,.12);color:#fca5a5;border:1px solid rgba(239,68,68,.2)}
+.biv{background:rgba(245,158,11,.12);color:#fcd34d;border:1px solid rgba(245,158,11,.2)}
+.bd{background:rgba(99,102,241,.12);color:#a5b4fc;border:1px solid rgba(99,102,241,.2)}
+.ba{background:rgba(16,185,129,.12);color:#6ee7b7;border:1px solid rgba(16,185,129,.2)}
+.be{background:rgba(6,182,212,.12);color:#67e8f9;border:1px solid rgba(6,182,212,.2)}
+.bm{background:rgba(236,72,153,.12);color:#f9a8d4;border:1px solid rgba(236,72,153,.2)}
+.pag{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--b1)}
+.pagi{font-size:11px;color:var(--t3)}
+.pgb{display:flex;gap:5px}
+.pb{background:var(--s2);border:1px solid var(--b1);color:var(--t2);padding:5px 11px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
+.pb:hover:not(:disabled){background:rgba(59,130,246,.1);border-color:var(--a1);color:var(--t1)}
+.pb:disabled{opacity:.32;cursor:not-allowed}
+.nod{text-align:center;color:var(--t4);padding:36px;font-size:13px}
+.tvbig{font-size:34px;font-weight:900;letter-spacing:-2px}
+.rr{color:#f87171}.ry{color:#fbbf24}.rg{color:#34d399}
+#toast{position:fixed;bottom:20px;right:20px;background:var(--s2);border:1px solid var(--a3);color:var(--t1);padding:11px 17px;border-radius:10px;font-size:13px;font-weight:600;z-index:999;display:none;box-shadow:0 8px 24px rgba(0,0,0,.5);animation:su .22s ease}
+@keyframes su{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.pghd{margin-bottom:18px}
+.pghd h2{font-size:19px;font-weight:800;letter-spacing:-.4px;background:linear-gradient(135deg,#eef4ff,#94a3b8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.pghd p{font-size:11.5px;color:var(--t3);margin-top:2px}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
+</style>
+</head>
+<body>
+
+<div id="loading-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(6,12,22,0.92);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;backdrop-filter:blur(8px);">
+  <div style="width:56px;height:56px;border:3px solid rgba(59,130,246,0.2);border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+  <div style="color:#eef4ff;font-family:Inter,sans-serif;font-size:15px;font-weight:600;">Veriler yükleniyor...</div>
+  <div style="color:#60a5fa;font-family:Inter,sans-serif;font-size:12px;">Google Sheets'ten güncel veri çekiliyor</div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyaWw3xx9DSV60SXSPdZej95s0IaWZiW-7tG8x6DPfLz_b2elKf99vDMNIHNNa7i5x8bA/exec";
+
+// Yükleme ekranı göster
+function showLoading() {
+  var el = document.getElementById('loading-overlay');
+  if (el) el.style.display = 'flex';
+}
+function hideLoading() {
+  var el = document.getElementById('loading-overlay');
+  if (el) el.style.display = 'none';
+}
+
+// Google Sheets'ten veri çek
+var D = null;
+
+async function loadData() {
+  showLoading();
+  try {
+    var response = await fetch(SCRIPT_URL + '?t=' + Date.now());
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    D = await response.json();
+    if (D.error) throw new Error(D.error);
+    hideLoading();
+    // Sayfa render fonksiyonlarını çağır
+    // Tüm render fonksiyonlarını çağır
+    if (typeof renderOV === 'function') renderOV();
+    if (typeof renderAY2 === 'function') renderAY2();
+    // Aktif sekmeyi yenile
+    var activeTab = document.querySelector('.tab.active');
+    if (activeTab) activeTab.click();
+    console.log('✅ Veri yüklendi:', Object.keys(D));
+  } catch(err) {
+    console.error('Veri yükleme hatası:', err);
+    hideLoading();
+    // Hata durumunda sayfayı yine de göster (boş D ile)
+    D = { normal:[], stajyer:[], gecici:[], vi:[], ayrilanlar:[], isealim:[], turnover:[], izin:[], ozet:{}, mesai_aylik:[], mesai_dept:[], mesai_kisi:[], mes_bolum:{servis:{},satis:{},idari:{}}, arabuluculuk:[], ayrilanlar_haric:[], isealim_haric:[] };
+    if (typeof renderAll === 'function') renderAll();
+    showToast('⚠️ Veri yüklenemedi, internet bağlantınızı kontrol edin.');
+  }
+}
+
+// Sayfa yüklenince veriyi çek
+window.addEventListener('DOMContentLoaded', function() {
+  loadData();
+});
+</script>
+
+<!-- AUTH -->
+<div id="lock" style="position:fixed;inset:0;z-index:9999;background:#060c16;display:flex;align-items:center;justify-content:center">
+  <div style="background:#0e1a2e;border:1px solid #1d3354;border-radius:20px;padding:44px 50px;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.7);min-width:400px;width:90%">
+    <div style="width:54px;height:54px;background:linear-gradient(135deg,#3b82f6,#6366f1);border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 18px">🚗</div>
+    <h2 style="font-family:Inter,sans-serif;font-size:19px;font-weight:800;background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px">İNCİROĞLU OTOMOTİV</h2>
+    <p style="font-family:Inter,sans-serif;font-size:12px;color:#64748b;margin-bottom:28px">İK Analitik Platform · Yetkili Erişim</p>
+    <div style="margin-bottom:12px;text-align:left">
+      <label style="font-family:Inter,sans-serif;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:6px">Kullanıcı Adı</label>
+      <input id="usr" type="text" placeholder="kullanici.adi" style="width:100%;background:#132238;border:1px solid #254268;color:#eef4ff;padding:11px 14px;border-radius:9px;font-size:13px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;transition:border-color .2s" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#254268'" onkeydown="if(event.key==='Enter')document.getElementById('pw').focus()">
+    </div>
+    <div style="margin-bottom:10px;text-align:left">
+      <label style="font-family:Inter,sans-serif;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:6px">Şifre</label>
+      <div style="position:relative">
+        <input id="pw" type="password" placeholder="••••••••" style="width:100%;background:#132238;border:1px solid #254268;color:#eef4ff;padding:11px 42px 11px 14px;border-radius:9px;font-size:13px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;transition:border-color .2s" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#254268'" onkeydown="if(event.key==='Enter')doLogin()">
+        <span onclick="toggleEye()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:16px;user-select:none" id="eye">👁️</span>
+      </div>
+    </div>
+    <div id="err" style="color:#f87171;font-size:12px;font-family:Inter,sans-serif;margin-bottom:10px;min-height:16px;text-align:left"></div>
+    <button onclick="doLogin()" style="width:100%;background:linear-gradient(135deg,#3b82f6,#6366f1);border:none;color:#fff;padding:12px;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;transition:opacity .2s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Giriş Yap →</button>
+    <p style="font-family:Inter,sans-serif;font-size:11px;color:#3d5a80;margin-top:18px">© 2026 İnciroğlu Otomotiv · İnsan Kaynakları</p>
+  </div>
+</div>
+
+<!-- HOŞGELDIN -->
+<div id="welcome" style="position:fixed;inset:0;z-index:9998;background:#060c16;display:none;align-items:center;justify-content:center;flex-direction:column">
+  <div style="text-align:center;padding:40px;animation:wfi .6s ease">
+    <div style="font-size:64px;margin-bottom:20px">👋</div>
+    <div style="font-family:Inter,sans-serif;font-size:13px;color:#3b82f6;font-weight:700;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px">İNCİROĞLU OTOMOTİV · İNSAN KAYNAKLARI</div>
+    <h1 id="welcome-msg" style="font-family:Inter,sans-serif;font-size:26px;font-weight:900;background:linear-gradient(135deg,#60a5fa,#a78bfa,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-.5px;line-height:1.3;margin-bottom:16px"></h1>
+    <p style="font-family:Inter,sans-serif;font-size:14px;color:#64748b">Detaylı İK Dashboard'una erişiminiz hazır.</p>
+    <div style="margin-top:16px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);border-radius:10px;padding:12px 20px">
+      <p style="font-family:Inter,sans-serif;font-size:13px;color:#93c5fd;font-weight:600">📅 15.06.2026 – 21.06.2026 tarihleri arasındaki</p>
+      <p style="font-family:Inter,sans-serif;font-size:14px;color:#60a5fa;font-weight:700;margin-top:4px">25. Hafta itibariyle olan verilerdir.</p>
+    </div>
+    <div style="margin-top:28px;display:flex;align-items:center;justify-content:center;gap:8px">
+      <div style="width:8px;height:8px;background:#3b82f6;border-radius:50%;animation:wd1 1s infinite .0s"></div>
+      <div style="width:8px;height:8px;background:#6366f1;border-radius:50%;animation:wd1 1s infinite .2s"></div>
+      <div style="width:8px;height:8px;background:#10b981;border-radius:50%;animation:wd1 1s infinite .4s"></div>
+    </div>
+  </div>
+</div>
+<style>
+@keyframes wfi{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+@keyframes wd1{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:1;transform:scale(1.4)}}
+</style>
+
+<nav class="nav">
+  <div class="nlogo"><div class="nlogo-ico">🚗</div><div><h2>İNCİROĞLU OTOMOTİV</h2><p>İK Analitik Platform · 2026</p></div></div>
+  <div class="ntabs">
+    <button class="tab on" onclick="goPage('ov')" id="t-ov">📊 Genel Bakış</button>
+    <button class="tab" onclick="goPage('ay')" id="t-ay">🚪 İşten Ayrılanlar</button>
+    <button class="tab" onclick="goPage('ia')" id="t-ia">✅ İşe Alım</button>
+    <button class="tab" onclick="goPage('tv')" id="t-tv">📉 Turnover</button>
+    <button class="tab" onclick="goPage('iz')" id="t-iz">🌴 İzin & Çalışanlar</button>
+    <button class="tab" onclick="goPage('mes')" id="t-mes">⏱️ Mesai</button>
+    <button class="tab" onclick="goPage('arb')" id="t-arb">⚖️ Arabuluculuk</button>
+    <button class="tab" onclick="goPage('ay2')" id="t-ay2">📋 Ayrılış Anketi</button>
+  </div>
+  <div class="nr">
+    <div class="lbl"><span class="dot"></span><span id="ltxt">Güncel veri yüklü</span></div>
+    <button class="upbtn" onclick="document.getElementById('fi').click()">📂 Excel Yükle</button>
+    <input type="file" id="fi" style="display:none" accept=".xlsx,.xls" onchange="loadXL(this)">
+  </div>
+</nav>
+
+<!-- GENEL BAKIŞ -->
+<div class="pg on" id="p-ov">
+  <div class="pghd"><h2>Genel Bakış</h2><p>Tüm İK metriklerinin özeti · 2026</p></div>
+  <div class="kpis k5" id="ov-kadro-kpis"></div>
+  <div class="kpis k6">
+    <div class="k krd"><div class="kl">Toplam Çıkış</div><div class="kv" id="ov-ay" style="color:#f87171">—</div><div class="ks">2026 yılında</div></div>
+    <div class="k kgn"><div class="kl">İşe Alım</div><div class="kv" id="ov-ia" style="color:#34d399">—</div><div class="ks">2026 yılında</div></div>
+    <div class="k kyw"><div class="kl">Net Değişim</div><div class="kv" id="ov-net" style="color:#fbbf24">—</div><div class="ks">alım − çıkış</div></div>
+    <div class="k kpu"><div class="kl">YTD Turnover</div><div class="kv" id="ov-tv" style="color:#a78bfa">—</div><div class="ks">yılbaşından bugüne</div></div>
+    <div class="k kcy"><div class="kl">İstifa Oranı</div><div class="kv" id="ov-ist" style="color:#67e8f9">—</div><div class="ks">çıkışların %'si</div></div>
+    <div class="k krd"><div class="kl">En Yoğun Ay</div><div class="kv" id="ov-peak" style="color:#f87171">—</div><div class="ks" id="ov-peaks"></div></div>
+  </div>
+  <div class="ng" id="ov-ng"></div>
+  <div class="g3">
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(59,130,246,.15)">📈</div><span class="ct">Çıkış & Giriş Trendi</span></div><div class="cs">Aylık karşılaştırmalı</div><div class="cw h260"><canvas id="ov-trend"></canvas></div></div>
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(99,102,241,.15)">🍩</div><span class="ct">Ayrılma Nedeni</span></div><div class="cs">Dağılım</div><div class="cw h260"><canvas id="ov-neden"></canvas></div></div>
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(16,185,129,.15)">🏢</div><span class="ct">Bölüm Dağılımı (Çıkış)</span></div><div class="cs">Hangi bölümden ayrılıyor</div><div class="cw h260"><canvas id="ov-bolum"></canvas></div></div>
+  </div>
+  <div class="g2">
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(245,158,11,.15)">🚗</div><span class="ct">Departman Dağılımı (Aktif Personel)</span></div><div class="cs">Normal tam zamanlı çalışanlar</div><div id="ov-dbars" class="dbars" style="max-height:250px;overflow-y:auto;margin-top:3px"></div></div>
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(239,68,68,.15)">📉</div><span class="ct">Turnover Oranı Trendi</span></div><div class="cs">Aylık %</div><div class="cw h250"><canvas id="ov-tvt"></canvas></div></div>
+  </div>
+  <div class="g2">
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(99,102,241,.15)">🎯</div><span class="ct">Unvan Bazlı Dağılım (Top 15)</span></div><div class="cs">Aktif personel unvan kırılımı</div><div class="cw h300"><canvas id="ov-unvan"></canvas></div></div>
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(245,158,11,.15)">📋</div><span class="ct">Bölüm × Unvan Detayı</span></div><div class="cs">Servis · Satış · İdari en kalabalık unvanlar</div><div id="ov-unvan-detail" style="margin-top:6px;max-height:290px;overflow-y:auto"></div></div>
+  </div>
+</div>
+
+<!-- İŞTEN AYRILANLAR -->
+<div class="pg" id="p-ay">
+  <div class="pghd"><h2>İşten Ayrılanlar</h2><p>2026 yılı detaylı analizi</p></div>
+  <div class="kpis k6">
+    <div class="k kbl"><div class="kl">Toplam</div><div class="kv" id="ay-tot" style="color:#60a5fa">—</div><div class="ks">kişi ayrıldı</div></div>
+    <div class="k krd"><div class="kl">İstifa</div><div class="kv" id="ay-ist" style="color:#f87171">—</div><div class="ks" id="ay-istp"></div></div>
+    <div class="k kyw"><div class="kl">İşveren Feshi</div><div class="kv" id="ay-iv" style="color:#fbbf24">—</div><div class="ks" id="ay-ivp"></div></div>
+    <div class="k kpu"><div class="kl">Diğer Nedenler</div><div class="kv" id="ay-diger" style="color:#a78bfa">—</div><div class="ks" id="ay-digerp"></div></div>
+    <div class="k kgn"><div class="kl">Aylık Ort.</div><div class="kv" id="ay-avg" style="color:#34d399">—</div><div class="ks">kişi/ay</div></div>
+    <div class="k kbl"><div class="kl">En Yoğun Ay</div><div class="kv" id="ay-pk" style="color:#60a5fa">—</div><div class="ks" id="ay-pks"></div></div>
+  </div>
+  <div class="fbar">
+    <span class="fl">📅 Ay:</span>
+    <div id="ay-pills" style="display:flex;gap:5px;flex-wrap:wrap">
+      <button class="pill on" data-m="0" onclick="aySetM(0,this)">Tümü</button>
+      <button class="pill" data-m="1" onclick="aySetM(1,this)">Ocak</button>
+      <button class="pill" data-m="2" onclick="aySetM(2,this)">Şubat</button>
+      <button class="pill" data-m="3" onclick="aySetM(3,this)">Mart</button>
+      <button class="pill" data-m="4" onclick="aySetM(4,this)">Nisan</button>
+      <button class="pill" data-m="5" onclick="aySetM(5,this)">Mayıs</button>
+      <button class="pill" data-m="6" onclick="aySetM(6,this)">Haziran</button>
+    </div>
+    <select class="fsel" id="ay-bol" onchange="ayFilter()"><option value="">Tüm Bölümler</option><option>Servis</option><option>Satış</option><option>İdari</option></select>
+    <select class="fsel" id="ay-ned" onchange="ayFilter()"><option value="">Tüm Nedenler</option><option>İstifa</option><option>İşveren Feshi</option><option>Deneme (İşveren)</option><option>Askerlik</option><option>Emeklilik</option><option>25. Madde</option></select>
+  </div>
+  <div class="g3e">
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(59,130,246,.15)">📊</div><span class="ct">Aylık Trend</span></div><div class="cs">Çıkış sayısı</div><div class="cw h230"><canvas id="ay-trend"></canvas></div></div>
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(99,102,241,.15)">🍩</div><span class="ct">Ayrılma Nedeni</span></div><div class="cs">Dağılım ve yüzdeler</div><div class="cw h230"><canvas id="ay-neden"></canvas></div></div>
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(16,185,129,.15)">⏱️</div><span class="ct">İşten Ayrılanların Kıdem Dağılımı</span></div><div class="cs">Şirkette geçirilen süre</div><div class="cw h230"><canvas id="ay-kidem"></canvas></div></div>
+  </div>
+  <div class="g2">
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(245,158,11,.15)">🚗</div><span class="ct">Departman Bazında Çıkışlar</span></div><div class="cs">En fazla çıkış yaşanan departmanlar</div><div id="ay-dbars" class="dbars" style="max-height:260px;overflow-y:auto;margin-top:5px"></div></div>
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(239,68,68,.15)">🔥</div><span class="ct">Bölüm × Neden Matrisi</span></div><div class="cs">Stacked analiz</div><div class="cw h260"><canvas id="ay-matrix"></canvas></div></div>
+  </div>
+  <div class="g2">
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(236,72,153,.15)">🎯</div><span class="ct">En Çok Çıkış Yapılan 5 Unvan</span></div><div class="cs">Unvan bazında ayrılma dağılımı</div><div class="cw h220"><canvas id="ay-unvan-top5"></canvas></div></div>
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(99,102,241,.15)">📊</div><span class="ct">Ayrılma Nedeni Detayı</span></div><div class="cs">Tüm nedenler sayı ve yüzdesiyle</div><div id="ay-neden-detail" style="margin-top:8px"></div></div>
+  </div>
+  <div class="c">
+    <div class="thd">
+      <div><div class="ct" style="font-size:14px">👤 Çalışan Detay Listesi</div><div class="cs" style="margin-top:2px" id="ay-ti">— kayıt</div></div>
+      <input class="sinp" id="ay-s" placeholder="🔎 İsim, departman, bölüm..." oninput="ayFilter()">
+    </div>
+    <div class="tbw"><table><thead><tr><th>#</th><th>Ad Soyad</th><th>Departman</th><th>Bölüm</th><th>Unvan</th><th>Ayrılış</th><th>Neden</th><th>Kıdem</th></tr></thead><tbody id="ay-tb"></tbody></table></div>
+    <div class="pag"><span class="pagi" id="ay-pi"></span><div class="pgb"><button class="pb" id="ay-prv" onclick="ayPrv()">← Önceki</button><button class="pb" id="ay-nxt" onclick="ayNxt()">Sonraki →</button></div></div>
+  </div>
+</div>
+
+<!-- İŞE ALIM -->
+<div class="pg" id="p-ia">
+  <div class="pghd"><h2>İşe Alım</h2><p>2026 yılı yeni işe başlayanlar</p></div>
+  <div class="kpis k4">
+    <div class="k kgn"><div class="kl">Toplam Alım</div><div class="kv" id="ia-tot" style="color:#34d399">—</div><div class="ks">2026 yılında</div></div>
+    <div class="k kbl"><div class="kl">Servis Alım</div><div class="kv" id="ia-srv" style="color:#60a5fa">—</div><div class="ks" id="ia-srvp"></div></div>
+    <div class="k kyw"><div class="kl">Satış Alım</div><div class="kv" id="ia-sat" style="color:#fbbf24">—</div><div class="ks" id="ia-satp"></div></div>
+    <div class="k kpu"><div class="kl">En Yoğun Ay</div><div class="kv" id="ia-pk" style="color:#a78bfa">—</div><div class="ks" id="ia-pks"></div></div>
+  </div>
+  <div class="g3e">
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(16,185,129,.15)">📅</div><span class="ct">Aylık İşe Alım</span></div><div class="cs">Giriş trendi</div><div class="cw h230"><canvas id="ia-trend"></canvas></div></div>
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(59,130,246,.15)">🏢</div><span class="ct">Bölüm Dağılımı</span></div><div class="cs">Alım yapılan bölümler</div><div class="cw h230"><canvas id="ia-bol"></canvas></div></div>
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(245,158,11,.15)">🔄</div><span class="ct">Giriş vs Çıkış</span></div><div class="cs">Aylık karşılaştırma</div><div class="cw h230"><canvas id="ia-vs"></canvas></div></div>
+  </div>
+  <div class="g2">
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(16,185,129,.15)">🎯</div><span class="ct">En Çok Alınan 5 Unvan</span></div><div class="cs">Unvan bazında işe alım</div><div class="cw h220"><canvas id="ia-unvan-top5"></canvas></div></div>
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(245,158,11,.15)">🚗</div><span class="ct">Departman Bazında Alım</span></div><div class="cs">En çok alım yapılan departmanlar</div><div id="ia-dept-bars" class="dbars" style="max-height:210px;overflow-y:auto;margin-top:5px"></div></div>
+  </div>
+  <div class="c">
+    <div class="thd">
+      <div><div class="ct" style="font-size:14px">✅ İşe Alım Listesi</div><div class="cs" style="margin-top:2px" id="ia-ti">— kayıt</div></div>
+      <input class="sinp" id="ia-s" placeholder="🔎 İsim, departman..." oninput="iaFilter()">
+    </div>
+    <div class="tbw"><table><thead><tr><th>#</th><th>Ad Soyad</th><th>Departman</th><th>Bölüm</th><th>Unvan</th><th>İşe Başlama</th></tr></thead><tbody id="ia-tb"></tbody></table></div>
+    <div class="pag"><span class="pagi" id="ia-pi"></span><div class="pgb"><button class="pb" id="ia-prv" onclick="iaPrv()">← Önceki</button><button class="pb" id="ia-nxt" onclick="iaNxt()">Sonraki →</button></div></div>
+  </div>
+</div>
+
+<!-- TURNOVER -->
+<div class="pg" id="p-tv">
+  <div class="pghd"><h2>Turnover Analizi</h2><p>Çalışan dönüşüm oranları · 2026 · V.İ. hariç</p></div>
+  <div class="kpis k6" id="tv-ozet-kpis"></div>
+  <div class="g4" id="tv-kpis"></div>
+  <div class="g2">
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(239,68,68,.15)">📉</div><span class="ct">Aylık Turnover Oranı (%)</span></div><div class="cs">Dönüşüm oranı trendi</div><div class="cw h270"><canvas id="tv-rate"></canvas></div></div>
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(59,130,246,.15)">👥</div><span class="ct">Giriş & Çıkış</span></div><div class="cs">Aylık hareketler</div><div class="cw h270"><canvas id="tv-mv"></canvas></div></div>
+  </div>
+  <div class="c">
+    <div class="ct" style="font-size:14px;margin-bottom:13px">📊 Aylık Özet Tablosu</div>
+    <div class="tbw"><table><thead><tr><th>Dönem</th><th>Çalışan (V.İ. Hariç)</th><th>Giriş</th><th>Çıkış (Asıl)</th><th>Turnover %</th><th>İstenen</th><th>İstenmeyen</th><th>Değerlendirme</th></tr></thead><tbody id="tv-tb"></tbody></table></div>
+  </div>
+</div>
+
+<!-- İZİN & ÇALIŞANLAR -->
+<div class="pg" id="p-iz">
+  <div class="pghd"><h2>İzin & Çalışan Listesi</h2><p>İzin bakiyeleri ve aktif kadro</p></div>
+  <div class="kpis k4">
+    <div class="k kbl"><div class="kl">Aktif Personel</div><div class="kv" id="iz-ak" style="color:#60a5fa">—</div><div class="ks">tam zamanlı normal</div></div>
+    <div class="k kgn"><div class="kl">Ort. Bakiye</div><div class="kv" id="iz-avg" style="color:#34d399">—</div><div class="ks">gün / kişi</div></div>
+    <div class="k krd"><div class="kl">Negatif Bakiye</div><div class="kv" id="iz-neg" style="color:#f87171">—</div><div class="ks">kişi borçta</div></div>
+    <div class="k kyw"><div class="kl">30+ Gün Birikmiş</div><div class="kv" id="iz-hi" style="color:#fbbf24">—</div><div class="ks">yüksek bakiye</div></div>
+  </div>
+  <div class="g2">
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(16,185,129,.15)">📊</div><span class="ct">Departman Bazında İzin Bakiyesi</span></div><div class="cs">Toplam birikmiş izin günleri</div><div class="cw h270"><canvas id="iz-dept"></canvas></div></div>
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(59,130,246,.15)">🏢</div><span class="ct">Kadro Bölüm Dağılımı</span></div><div class="cs">Aktif tam zamanlı çalışan dağılımı</div><div class="cw h270"><canvas id="iz-kad"></canvas></div></div>
+  </div>
+  <div class="c">
+    <div class="thd">
+      <div><div class="ct" style="font-size:14px">🌴 İzin Detay Listesi</div><div class="cs" style="margin-top:2px" id="iz-ti">— kayıt</div></div>
+      <div style="display:flex;gap:8px">
+        <select class="fsel" id="iz-bol" onchange="izFilter()"><option value="">Tüm Bölümler</option><option>Servis</option><option>Satış</option><option>İdari</option></select>
+        <input class="sinp" id="iz-s" placeholder="🔎 İsim veya departman..." oninput="izFilter()" style="width:200px">
+      </div>
+    </div>
+    <div class="tbw"><table><thead><tr><th>#</th><th>Ad Soyad</th><th>Departman</th><th>Bölüm</th><th>Güncel Bakiye</th><th>Toplam Kullanılan</th><th>Durum</th></tr></thead><tbody id="iz-tb"></tbody></table></div>
+    <div class="pag"><span class="pagi" id="iz-pi"></span><div class="pgb"><button class="pb" id="iz-prv" onclick="izPrv()">← Önceki</button><button class="pb" id="iz-nxt" onclick="izNxt()">Sonraki →</button></div></div>
+  </div>
+</div>
+
+<!-- MESAİ -->
+<div class="pg" id="p-mes">
+  <div class="pghd"><h2>Mesai Analizi (BRÜT)</h2><p>2026 Ocak–Mayıs · Fazla Mesai Brüt Tutarları</p></div>
+  <div class="kpis k3">
+    <div class="k kyw"><div class="kl">Toplam Mesai Brüt (TL)</div><div class="kv" id="mes-toplam" style="color:#fbbf24;font-size:20px">—</div><div class="ks">Ocak–Mayıs 2026</div></div>
+    <div class="k kbl"><div class="kl">Toplam Kişi</div><div class="kv" id="mes-kisi" style="color:#60a5fa">—</div><div class="ks">mesai alan çalışan</div></div>
+    <div class="k kgn"><div class="kl">En Yüksek Ay</div><div class="kv" id="mes-peak-ay" style="color:#34d399">—</div><div class="ks" id="mes-peak-ks"></div></div>
+  </div>
+  <div class="g2">
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(245,158,11,.15)">📅</div><span class="ct">Aylık Mesai Tutarı (BRÜT)</span></div><div class="cs">Aylara göre toplam brüt mesai</div><div class="cw h240"><canvas id="mes-aylik"></canvas></div></div>
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(59,130,246,.15)">🏢</div><span class="ct">Departman Bazında Mesai (BRÜT)</span></div><div class="cs">Toplam brüt mesai tutarı - YTD</div><div id="mes-dept-bars" class="dbars" style="max-height:230px;overflow-y:auto;margin-top:4px"></div></div>
+  </div>
+  <div class="g3e">
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(99,102,241,.15)">🔧</div><span class="ct">Servis - Aylık Mesai (BRÜT)</span></div><div class="cs">YTD departman kırılımı</div><div class="cw h240"><canvas id="mes-servis-chart"></canvas></div></div>
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(59,130,246,.15)">🚗</div><span class="ct">Satış - Aylık Mesai (BRÜT)</span></div><div class="cs">YTD departman kırılımı</div><div class="cw h240"><canvas id="mes-satis-chart"></canvas></div></div>
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(16,185,129,.15)">🏢</div><span class="ct">İdari - Aylık Mesai (BRÜT)</span></div><div class="cs">YTD departman kırılımı</div><div class="cw h240"><canvas id="mes-idari-chart"></canvas></div></div>
+  </div>
+  <div class="c">
+    <div class="thd">
+      <div><div class="ct" style="font-size:14px">⏱️ Kişi Bazlı Mesai Detayı</div><div class="cs" style="margin-top:2px" id="mes-ti">— kayıt</div></div>
+      <input class="sinp" id="mes-s" placeholder="🔎 İsim ara..." oninput="mesFilter()" style="width:200px">
+    </div>
+    <div class="tbw"><table><thead><tr><th>#</th><th>Ad Soyad</th><th>Departman</th><th>Bölüm</th><th>Unvan</th><th>Ocak</th><th>Şubat</th><th>Mart</th><th>Nisan</th><th>Mayıs</th><th>Toplam (BRÜT)</th><th>Pay%</th></tr></thead><tbody id="mes-tb"></tbody></table></div>
+    <div class="pag"><span class="pagi" id="mes-pi"></span><div class="pgb"><button class="pb" id="mes-prv" onclick="mesPrv()">← Önceki</button><button class="pb" id="mes-nxt" onclick="mesNxt()">Sonraki →</button></div></div>
+  </div>
+</div>
+
+<!-- ARABULUCULUK -->
+<div class="pg" id="p-arb">
+  <div class="pghd"><h2>Arabuluculuk</h2><p>2026 · İşten Ayrılma Arabuluculuk Kayıtları</p></div>
+  <div class="kpis k4">
+    <div class="k kbl"><div class="kl">Toplam Kayıt</div><div class="kv" id="arb-tot" style="color:#60a5fa">—</div><div class="ks">toplam çalışan</div></div>
+    <div class="k kgn"><div class="kl">Arabuluculuk Yapıldı</div><div class="kv" id="arb-yapildi" style="color:#34d399">—</div><div class="ks" id="arb-yapildi-pct"></div></div>
+    <div class="k krd"><div class="kl">Yapılmadı</div><div class="kv" id="arb-yapilmadi" style="color:#f87171">—</div><div class="ks" id="arb-yapilmadi-pct"></div></div>
+    <div class="k kyw"><div class="kl">6 Ay Altı Kıdem</div><div class="kv" id="arb-6ay" style="color:#fbbf24">14</div><div class="ks">yapılmadı nedeni</div></div>
+  </div>
+  <div class="fbar">
+    <span class="fl">⚖️ Durum:</span>
+    <button class="pill on" onclick="arbSetDur('',this)">Tümü</button>
+    <button class="pill" onclick="arbSetDur('YAPILDI',this)">Yapıldı</button>
+    <button class="pill" onclick="arbSetDur('YAPILMADI',this)">Yapılmadı</button>
+    <span class="fl" style="margin-left:10px">🏢 Departman:</span>
+    <select class="fsel" id="arb-dept-sel" onchange="arbFilter()"><option value="">Tümü</option><option>Servis</option><option>Satış</option><option>İdari</option></select>
+    <input class="sinp" id="arb-s" placeholder="🔎 İsim ara..." oninput="arbFilter()" style="width:180px">
+  </div>
+  <div class="g2">
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(16,185,129,.15)">⚖️</div><span class="ct">Arabuluculuk Durumu</span></div><div class="cs">Yapıldı / Yapılmadı dağılımı</div><div class="cw h220"><canvas id="arb-durum"></canvas></div></div>
+    <div class="c">
+      <div class="ch"><div class="ci" style="background:rgba(59,130,246,.15)">📋</div><span class="ct">Departman & Yapılmadı Nedenleri</span></div>
+      <div class="cs">Bölüme göre ve yapılmama nedenleri</div>
+      <div id="arb-detail" style="margin-top:6px"></div>
+    </div>
+  </div>
+  <div class="c">
+    <div class="thd">
+      <div><div class="ct" style="font-size:14px">⚖️ Arabuluculuk Detay Listesi</div><div class="cs" style="margin-top:2px" id="arb-ti">— kayıt</div></div>
+    </div>
+    <div class="tbw"><table><thead><tr><th>#</th><th>Ad Soyad</th><th>Departman</th><th>Bölüm</th><th>Unvan</th><th>İşe Giriş</th><th>İşten Çıkış</th><th>Kıdem</th><th>Çıkış Nedeni</th><th>Durum</th><th>Not</th></tr></thead><tbody id="arb-tb"></tbody></table></div>
+    <div class="pag"><span class="pagi" id="arb-pi"></span><div class="pgb"><button class="pb" id="arb-prv" onclick="arbPrv()">← Önceki</button><button class="pb" id="arb-nxt" onclick="arbNxt()">Sonraki →</button></div></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script>
+// ── CONSTANTS ──────────────────────────────────────────────
+const MN=['','Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+const PAL=['#3b82f6','#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16','#f97316','#14b8a6','#a855f7'];
+const TT={backgroundColor:'#0e1a2e',borderColor:'#1d3354',borderWidth:1,titleColor:'#eef4ff',bodyColor:'#94a3b8'};
+const SX={grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#64748b',font:{family:'Inter',size:11}}};
+const SY={grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#64748b',font:{family:'Inter',size:11}},beginAtZero:true};
+const DL_TOP={display:true,anchor:'end',align:'top',color:'#e2e8f0',font:{family:'Inter',size:11,weight:'700'},formatter:function(v){return v===0?'':v;}};
+const DL_RIGHT={display:true,anchor:'end',align:'right',color:'#e2e8f0',font:{family:'Inter',size:11,weight:'700'},formatter:function(v){return v===0?'':v;}};
+const ISTENEN_NED=['İşveren Feshi','Deneme (İşveren)','Askerlik','25. Madde','Emeklilik','Belirli Süreli'];
+const SILINECEK=['OTO YIKAMA YÖNETİCİSİ','FİAT SERVİS MÜDÜRÜ','KOLAY DESTEK'];
+
+// ── INIT: datalabels global kapalı ─────────────────────────
+Chart.register(ChartDataLabels);
+Chart.defaults.plugins.datalabels={display:false};
+
+// ── UTILS ──────────────────────────────────────────────────
+function ch(id,cfg){
+  var el=document.getElementById(id);
+  if(!el)return null;
+  if(el._c)el._c.destroy();
+  el._c=new Chart(el,cfg);
+  return el._c;
+}
+function toast(m){
+  var t=document.getElementById('toast');
+  t.innerHTML=m;t.style.display='block';
+  clearTimeout(t._to);
+  t._to=setTimeout(function(){t.style.display='none';},3200);
+}
+function bCls(n){
+  return{'İstifa':'bi','İşveren Feshi':'biv','Deneme (İşveren)':'bd','Deneme (İşçi)':'bd','Askerlik':'ba','Emeklilik':'be','25. Madde':'bm'}[n]||'bd';
+}
+function fmt(v){return v?v.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₺':'—';}
+
+function isSil(ad){return SILINECEK.some(function(s){return ad.toUpperCase().indexOf(s)>=0;});}
+
+function catR(r){
+  var s=(r||'').toLowerCase();
+  if(s.indexOf('istifa')>=0)return'İstifa';
+  if(s.indexOf('deneme')>=0&&(s.indexOf('işverence')>=0||s.indexOf('işveren')>=0))return'Deneme (İşveren)';
+  if(s.indexOf('deneme')>=0&&s.indexOf('işçi')>=0)return'Deneme (İşçi)';
+  if((s.indexOf('haklı')>=0||s.indexOf('derhal')>=0||s.indexOf('ihbar')>=0)&&(s.indexOf('işveren')>=0||s.indexOf('fesih')>=0))return'İşveren Feshi';
+  if(s.indexOf('askerlik')>=0)return'Askerlik';
+  if(s.indexOf('emekli')>=0)return'Emeklilik';
+  if(s.indexOf('25')>=0||s.indexOf('güven')>=0||s.indexOf('hırsız')>=0)return'25. Madde';
+  return'Diğer';
+}
+
+// ── AUTH ───────────────────────────────────────────────────
+var USERS={
+  'sena.bostanci':    {ad:'Sena Bostancı',    sifre:'sena2026'},
+  'alaaddin.caglıkose':{ad:'Alaaddin Çağlıköse',sifre:'alaaddin2026'},
+  'sahin.tektas':     {ad:'Şahin Tektaş',     sifre:'sahin2026'},
+  'aysenur.bayrali':  {ad:'Ayşenur Bayralı',  sifre:'aysenur2026'},
+  'birkan.caliskan':  {ad:'Birkan Çalışkan',  sifre:'birkan2026'},
+  'vedat.inciroglu':  {ad:'Vedat İnciroğlu',  sifre:'ik.inciroglu01'},
+  'yonetici.inciroglu':{ad:'Yönetici İnciroğlu',sifre:'yonetici2026'}
+};
+function doLogin(){
+  var usr=(document.getElementById('usr').value||'').trim().toLowerCase();
+  var pw=(document.getElementById('pw').value||'').trim();
+  var err=document.getElementById('err');
+  if(!usr){err.textContent='⚠️ Kullanıcı adı boş bırakılamaz.';return;}
+  if(!pw){err.textContent='⚠️ Şifre boş bırakılamaz.';return;}
+  var user=USERS[usr];
+  if(!user){err.textContent='❌ Kullanıcı bulunamadı.';return;}
+  if(pw!==user.sifre){err.textContent='❌ Hatalı şifre.';return;}
+  document.getElementById('lock').style.display='none';
+  document.getElementById('pw').value='';
+  var w=document.getElementById('welcome');
+  var wt=usr==='yonetici.inciroglu'?'DEĞERLİ YÖNETİCİMİZ, HOŞ GELDİNİZ!':'İNSAN KAYNAKLARI DETAYLI DASHBOARDUMUZA HOŞ GELDİNİZ SAYIN '+user.ad.toUpperCase()+'!';
+  document.getElementById('welcome-msg').textContent=wt;
+  w.style.display='flex';
+  setTimeout(function(){
+    w.style.transition='opacity .6s';w.style.opacity='0';
+    setTimeout(function(){w.style.display='none';w.style.opacity='1';},650);
+  },5000);
+}
+function toggleEye(){
+  var pw=document.getElementById('pw'),eye=document.getElementById('eye');
+  if(pw.type==='password'){pw.type='text';eye.textContent='🙈';}
+  else{pw.type='password';eye.textContent='👁️';}
+}
+
+// ── NAV ────────────────────────────────────────────────────
+function goPage(id){
+  document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('on');});
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on');});
+  document.getElementById('p-'+id).classList.add('on');
+  document.getElementById('t-'+id).classList.add('on');
+  var fns={ov:renderOV,ay:renderAY,ia:renderIA,tv:renderTV,iz:renderIZ,mes:renderMES,arb:renderARB,ay2:renderAY2};
+  if(fns[id])fns[id]();
+}
+
+// ── EXCEL LOADER ───────────────────────────────────────────
+function loadXL(inp){
+  var file=inp.files[0];
+  if(!file)return;
+  var r=new FileReader();
+  r.onload=function(e){
+    try{
+      var wb=XLSX.read(e.target.result,{type:'binary',cellDates:true,raw:false});
+      var names=wb.SheetNames;
+      var mp={};
+      names.forEach(function(n,i){
+        var u=n.toUpperCase().trim();
+        if(n.indexOf('2026')===0&&u.indexOf('AYRIL')>=0)mp.ay=n;
+        else if(u.indexOf('RAPORU')>=0||u.indexOf('ALIM R')>=0)mp.ia=n;
+        else if(u.indexOf('TURNOVER')>=0)mp.tv=n;
+        else if(i===6)mp.cl=n;
+        else if(i===7)mp.iz=n;
+      });
+      if(!mp.ay)mp.ay=names[3];
+      if(!mp.ia)mp.ia=names[4];
+      if(!mp.tv)mp.tv=names[5];
+      if(!mp.cl)mp.cl=names[6];
+      if(!mp.iz)mp.iz=names[7];
+      console.log('Sheet map:',mp,'Names:',names);
+
+      function gS(r,keys){
+        for(var i=0;i<keys.length;i++){
+          var v=r[keys[i]];
+          if(v!==undefined&&v!==null&&String(v).trim()!==''&&String(v).trim()!=='nan')return String(v).trim();
+        }
+        // uppercase fallback
+        for(var i=0;i<keys.length;i++){
+          var ku=keys[i].toUpperCase();
+          var rkeys=Object.keys(r);
+          for(var j=0;j<rkeys.length;j++){
+            if(rkeys[j].toUpperCase()===ku){var v=r[rkeys[j]];if(v!==undefined&&v!==null&&String(v).trim()!==''&&String(v).trim()!=='nan')return String(v).trim();}
+          }
+        }
+        return'';
+      }
+      function gD(r,keys){
+        for(var i=0;i<keys.length;i++){
+          var v=r[keys[i]];
+          if(v){var dt=v instanceof Date?v:new Date(v);if(!isNaN(dt))return dt;}
+        }
+        return null;
+      }
+      function pf(v){var n=parseFloat(v);return isNaN(n)?null:n;}
+
+      var loaded=[];
+
+      // AYRILANLAR
+      if(mp.ay){
+        var rows=XLSX.utils.sheet_to_json(wb.Sheets[mp.ay]);
+        var arr=[];
+        rows.forEach(function(r){
+          var ad=gS(r,['Ad','AD']);if(!ad)return;
+          var full=(ad+' '+gS(r,['Soyad','SOYAD'])).trim();
+          if(isSil(full))return;
+          var dept=gS(r,['Departman','DEPARTMAN']);
+          if(dept.toUpperCase()==='V.İ.'||dept.toUpperCase()==='V.I.')return;
+          var dt=gD(r,['İşten Ayrılma Tarihi','Ayrılma Tarihi']);
+          var ned=gS(r,['Ayrılma Nedeni','Neden']);
+          var nk=catR(ned);
+          arr.push({ad:full,dept:dept,bolum:gS(r,['Bölüm','BÖLÜM','Bolum']),unvan:gS(r,['Unvan','UNVAN']),tarih:dt?dt.toLocaleDateString('tr-TR'):'',neden:nk,neden_raw:ned,sure:gS(r,['Çalışma Süresi','Sure']),istenen:ISTENEN_NED.indexOf(nk)>=0,ay:dt?dt.getMonth()+1:0});
+        });
+        if(arr.length){D.ayrilanlar=arr;loaded.push('Ayrılanlar:'+arr.length);}
+      }
+
+      // İŞE ALIM
+      if(mp.ia){
+        var rows=XLSX.utils.sheet_to_json(wb.Sheets[mp.ia]);
+        var arr=[];
+        rows.forEach(function(r){
+          var ad=gS(r,['Ad','AD']);if(!ad)return;
+          var full=(ad+' '+gS(r,['Soyad','SOYAD'])).trim();
+          if(isSil(full))return;
+          var dept=gS(r,['Departman','DEPARTMAN']);
+          if(dept.toUpperCase()==='V.İ.'||dept.toUpperCase()==='V.I.')return;
+          // stajyer/geçici kontrolü
+          var cs='';
+          Object.keys(r).forEach(function(k){if(k.toLowerCase().replace(/\s/g,'').indexOf('calisma')>=0||k.toLowerCase().indexOf('sekli')>=0)cs=String(r[k]||'').trim();});
+          if(cs==='Stajyer'||cs==='Geçici')return;
+          var dt=gD(r,['İşe Başlama Tarihi','İşe Başlangıç Tarihi']);
+          arr.push({ad:full,dept:dept,bolum:gS(r,['Bölüm','BÖLÜM','Bolum']),unvan:gS(r,['Unvan','UNVAN']),tarih:dt?dt.toLocaleDateString('tr-TR'):'',ay:dt?dt.getMonth()+1:0});
+        });
+        if(arr.length){D.isealim=arr;loaded.push('İşe Alım:'+arr.length);}
+      }
+
+      // TURNOVER
+      if(mp.tv){
+        var rows=XLSX.utils.sheet_to_json(wb.Sheets[mp.tv]);
+        var arr=[];
+        rows.forEach(function(r){
+          var d=gS(r,['Dönem','DÖNEM']);if(!d.match(/\d{4}-\d{2}/))return;
+          var cal_asil=pf(r['Çalışan Sayısı-Vİ HARİÇ'])||0;
+          var cikis=pf(r['İşten Çıkan'])||0;
+          var cikis_vi=pf(r['İşten Çıkan Vİ'])||0;
+          var giris=pf(r['İşe Başlayan'])||0;
+          var cikis_asil=cikis-cikis_vi;
+          var oran=pf(r['Çalışan Dönüşüm Oranı'])||0;
+          arr.push({donem:d,calisan:pf(r['Çalışan Sayısı'])||0,calisan_asil:cal_asil,giris:giris,cikis:cikis,cikis_asil:cikis_asil,oran:oran,oran_asil:cal_asil?Math.round(cikis_asil/cal_asil*10000)/100:0});
+        });
+        var only2026=arr.filter(function(x){return x.donem.indexOf('2026')===0;});
+        if(only2026.length){D.turnover=only2026;loaded.push('Turnover:'+only2026.length);}
+      }
+
+      // ÇALIŞAN LİSTESİ - index bazlı oku (Türkçe karakter sorunu yok)
+      if(mp.cl){
+        // header:1 ile raw array al, index bazlı erişim
+        var rawRows=XLSX.utils.sheet_to_json(wb.Sheets[mp.cl],{header:1});
+        var norm=[],staj=[],gec=[],vi2=[];
+        if(rawRows.length<2){loaded.push('CL:0');}
+        else{
+          // 0. satır header
+          var hdr=rawRows[0];
+          // Sütun indexlerini bul
+          var iAd=-1,iSoyad=-1,iCS=-1,iDept=-1,iBolum=-1,iUnvan=-1;
+          hdr.forEach(function(h,idx){
+            var hu=String(h||'').toUpperCase();
+            if(hu==='AD')iAd=idx;
+            else if(hu==='SOYAD')iSoyad=idx;
+            else if(hu.indexOf('ALI')>=0&&hu.indexOf('EKL')>=0)iCS=idx; // Çalışma Şekli
+            else if(hu==='DEPARTMAN')iDept=idx;
+            else if(hu.indexOf('L')>=0&&hu.indexOf('M')>=0&&hu.length<=6)iBolum=idx; // Bölüm
+            else if(hu==='UNVAN')iUnvan=idx;
+          });
+          // Fallback: bilinen indexler
+          if(iAd<0)iAd=0;if(iSoyad<0)iSoyad=1;if(iCS<0)iCS=6;
+          if(iDept<0)iDept=8;if(iBolum<0)iBolum=9;if(iUnvan<0)iUnvan=10;
+
+          for(var ri=1;ri<rawRows.length;ri++){
+            var r=rawRows[ri];
+            var ad=String(r[iAd]||'').trim();if(!ad||ad==='undefined')continue;
+            var soyad=String(r[iSoyad]||'').trim();
+            var full=(ad+' '+soyad).trim();
+            if(isSil(full))continue;
+            var cs=String(r[iCS]||'').trim();
+            var dept=String(r[iDept]||'').trim();
+            var bolum=String(r[iBolum]||'').trim();
+            var unvan=String(r[iUnvan]||'').trim();
+            var obj={ad:full,dept:dept,bolum:bolum,unvan:unvan,cs:cs};
+            if(cs==='Stajyer')staj.push(obj);
+            else if(cs==='Geçici'||cs==='Gecici')gec.push(obj);
+            else if(dept.toUpperCase()==='V.İ.'||dept.toUpperCase()==='V.I.'||dept==='Vİ')vi2.push(obj);
+            else norm.push(obj);
+          }
+          if(norm.length||staj.length){
+            D.normal=norm;D.stajyer=staj;D.gecici=gec;D.vi=vi2;
+            loaded.push('Personel:'+norm.length+' St:'+staj.length+' Gec:'+gec.length+' Vİ:'+vi2.length);
+          }
+        }
+      }
+
+      // YILLIK İZİN
+      if(mp.iz){
+        var rows=XLSX.utils.sheet_to_json(wb.Sheets[mp.iz]);
+        var arr=[];
+        rows.forEach(function(r){
+          var ad=gS(r,['Ad','AD']);if(!ad)return;
+          var full=(ad+' '+gS(r,['Soyad','SOYAD'])).trim();
+          if(isSil(full))return;
+          var dept=gS(r,['Departman','DEPARTMAN']);
+          if(dept.toUpperCase()==='V.İ.')return;
+          var bak=pf(r['Güncel Bakiye']),kul=pf(r['Toplam Kullanılan']);
+          arr.push({ad:full,dept:dept,bolum:gS(r,['Bölüm','BÖLÜM','Bolum']),bakiye:bak,kullanilan:kul});
+        });
+        if(arr.length){D.izin=arr;loaded.push('İzin:'+arr.length);}
+      }
+
+      // DASHBOARD'DAN TURNOVER OZETİ OKU
+      readOzetFromExcel(wb);
+
+      // Ayrılanlar istenen flag güncelle
+      D.ayrilanlar.forEach(function(a){a.istenen=ISTENEN_NED.indexOf(a.neden)>=0;});
+      D.ozet.istenen_count=D.ayrilanlar.filter(function(a){return a.istenen;}).length;
+      D.ozet.istenmeyen_count=D.ayrilanlar.length-D.ozet.istenen_count;
+
+      if(!loaded.length){toast('⚠️ Sheet tanınamadı: '+names.join(', '));return;}
+      document.getElementById('ltxt').textContent=file.name.replace(/\.xlsx?$/i,'');
+      var act=document.querySelector('.pg.on');
+      if(act){goPage(act.id.replace('p-',''));}
+      toast('✅ Yüklendi! '+loaded.join(' · '));
+    }catch(err){toast('❌ Hata: '+err.message);console.error(err);}
+  };
+  r.readAsBinaryString(file);
+  inp.value='';
+}
+
+// Sürükle bırak
+document.addEventListener('dragover',function(e){e.preventDefault();});
+document.addEventListener('drop',function(e){
+  e.preventDefault();
+  var f=e.dataTransfer.files[0];
+  if(f&&f.name.match(/\.xlsx?$/i)){
+    var inp=document.getElementById('fi');
+    try{var dt=new DataTransfer();dt.items.add(f);inp.files=dt.files;loadXL(inp);}
+    catch(ex){toast('Sürükle-bırak için butonu kullanın.');}
+  }
+});
+
+// ── OZET EXCEL'DEN OKU ─────────────────────────────────────
+function readOzetFromExcel(wb){
+  try{
+    var wsName=null;
+    wb.SheetNames.forEach(function(n){
+      if(n.toUpperCase().indexOf('DASHBOARD')>=0&&n.indexOf('49')<0)wsName=n;
+    });
+    if(!wsName){console.warn('Dashboard sheet bulunamadı');return;}
+    var ws=wb.Sheets[wsName];
+    function cv(addr){
+      var c=ws[addr];
+      if(!c||c.v===undefined||c.v===null)return null;
+      var n=parseFloat(c.v);return isNaN(n)?null:n;
+    }
+    function pct(v){return v!==null?Math.round(v*10000)/100:null;}
+    var ytd=cv('H6'),sim=cv('F10'),istY=cv('C12'),simI=cv('F12'),istmY=cv('C14'),simIM=cv('F14');
+    console.log('Dashboard ozet raw:',{ytd,sim,istY,simI,istmY,simIM});
+    if(pct(ytd)!==null)D.ozet.ytd_turnover=pct(ytd);
+    if(pct(sim)!==null)D.ozet.simule_yilsonu=pct(sim);
+    if(pct(istY)!==null)D.ozet.ytd_istenen=pct(istY);
+    if(pct(simI)!==null)D.ozet.simule_istenen=pct(simI);
+    if(pct(istmY)!==null)D.ozet.ytd_istenmeyen=pct(istmY);
+    if(pct(simIM)!==null)D.ozet.simule_istenmeyen=pct(simIM);
+    // Ort çıkış/ay
+    var gec=D.turnover.filter(function(t){return t.calisan_asil>0;});
+    if(gec.length){
+      var top=gec.reduce(function(s,t){return s+t.cikis_asil;},0);
+      D.ozet.ort_cikis_ay=Math.round(top/gec.length*10)/10;
+      D.ozet.ay_sayisi=gec.length;
+    }
+    console.log('Ozet güncellendi:',D.ozet);
+  }catch(err){console.error('Ozet okuma hatası:',err);}
+}
+
+
+// ── GENEL BAKIŞ ────────────────────────────────────────────
+function renderOV(){
+  var ay=D.ayrilanlar,ia=D.isealim,tv=D.turnover,cl=D.normal,st=D.stajyer,gc=D.gecici,vi=D.vi;
+  var oz=D.ozet||{};
+
+  // Kadro KPIs
+  document.getElementById('ov-kadro-kpis').innerHTML=
+    '<div class="k kbl"><div class="kl">Aktif Personel</div><div class="kv" style="color:#60a5fa">'+cl.length+'</div><div class="ks">tam zamanlı</div></div>'+
+    '<div class="k krd"><div class="kl">Stajyer</div><div class="kv" style="color:#f87171">'+st.length+'</div><div class="ks">aktif stajyer</div></div>'+
+    '<div class="k kor"><div class="kl">Analist Öğrenci</div><div class="kv" style="color:#fb923c">'+gc.length+'</div><div class="ks">geçici çalışan</div></div>'+
+    '<div class="k kpu"><div class="kl">V.İ. Personeli</div><div class="kv" style="color:#a78bfa">'+vi.length+'</div><div class="ks">yat, bahçe, engelli</div></div>'+
+    '<div class="k kyw"><div class="kl">Toplam Kayıt</div><div class="kv" style="color:#fbbf24">'+(cl.length+st.length+gc.length+vi.length)+'</div><div class="ks">tüm kategoriler</div></div>';
+
+  // Hareket KPIs
+  document.getElementById('ov-ay').textContent=ay.length;
+  document.getElementById('ov-ia').textContent=ia.length;
+  var net=ia.length-ay.length;
+  var nel=document.getElementById('ov-net');
+  nel.textContent=(net>0?'+':'')+net;nel.style.color=net>=0?'#34d399':'#f87171';
+  document.getElementById('ov-tv').textContent=oz.ytd_turnover?'%'+oz.ytd_turnover:'—';
+  var ist=ay.filter(function(d){return d.neden==='İstifa';}).length;
+  document.getElementById('ov-ist').textContent=ay.length?Math.round(ist/ay.length*100)+'%':'—';
+  var mc={};ay.forEach(function(d){if(d.ay>0)mc[d.ay]=(mc[d.ay]||0)+1;});
+  var pm=Object.entries(mc).sort(function(a,b){return b[1]-a[1];})[0];
+  document.getElementById('ov-peak').textContent=pm?MN[pm[0]].substring(0,3):'—';
+  document.getElementById('ov-peaks').innerHTML=pm?'<em>'+pm[1]+' kişi</em>':'';
+
+  // Neden kartları
+  var total=ay.length||1,nc={};
+  ay.forEach(function(d){nc[d.neden]=(nc[d.neden]||0)+1;});
+  var nedConf=[
+    {k:'İstifa',c:'#ef4444',ico:'🚪',bg:'rgba(239,68,68,.12)'},
+    {k:'İşveren Feshi',c:'#f59e0b',ico:'⚡',bg:'rgba(245,158,11,.12)'},
+    {k:'Deneme (İşveren)',c:'#6366f1',ico:'📋',bg:'rgba(99,102,241,.12)'},
+    {k:'Askerlik',c:'#10b981',ico:'🎖️',bg:'rgba(16,185,129,.12)'},
+    {k:'Emeklilik',c:'#06b6d4',ico:'🌅',bg:'rgba(6,182,212,.12)'},
+    {k:'25. Madde',c:'#ec4899',ico:'⚠️',bg:'rgba(236,72,153,.12)'}
+  ].filter(function(x){return (nc[x.k]||0)>0;});
+  document.getElementById('ov-ng').innerHTML=nedConf.map(function(n){
+    return '<div class="nc"><div class="nc-ico" style="background:'+n.bg+'">'+n.ico+'</div><div><h4>'+n.k+'</h4><div class="pct" style="color:'+n.c+'">'+Math.round((nc[n.k]||0)/total*100)+'%</div><p>'+(nc[n.k]||0)+' kişi</p></div></div>';
+  }).join('');
+
+  var ms=[1,2,3,4,5,6];
+  // Trend
+  ch('ov-trend',{type:'bar',data:{labels:ms.map(function(m){return MN[m];}),datasets:[
+    {label:'Çıkış',data:ms.map(function(m){return ay.filter(function(d){return d.ay===m;}).length;}),backgroundColor:'rgba(239,68,68,.7)',borderColor:'#ef4444',borderWidth:2,borderRadius:6,datalabels:DL_TOP},
+    {label:'Giriş',data:ms.map(function(m){return ia.filter(function(d){return d.ay===m;}).length;}),backgroundColor:'rgba(16,185,129,.7)',borderColor:'#10b981',borderWidth:2,borderRadius:6,datalabels:DL_TOP}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{family:'Inter',size:11},boxWidth:9}},tooltip:TT},scales:{x:SX,y:SY}}});
+
+  // Neden donut
+  var nk=Object.keys(nc);
+  ch('ov-neden',{type:'doughnut',data:{labels:nk,datasets:[{data:nk.map(function(k){return nc[k];}),backgroundColor:PAL.map(function(c){return c+'88';}),borderColor:PAL,borderWidth:2,hoverOffset:8}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{family:'Inter',size:10},padding:8,boxWidth:8}},tooltip:TT}}});
+
+  // Bölüm
+  var bc={Servis:0,'Satış':0,'İdari':0};
+  ay.forEach(function(d){if(bc[d.bolum]!==undefined)bc[d.bolum]++;});
+  ch('ov-bolum',{type:'bar',data:{labels:Object.keys(bc),datasets:[{data:Object.values(bc),backgroundColor:['rgba(99,102,241,.7)','rgba(59,130,246,.7)','rgba(16,185,129,.7)'],borderColor:['#6366f1','#3b82f6','#10b981'],borderWidth:2,borderRadius:7,datalabels:DL_TOP}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:TT},scales:{x:SX,y:{grid:{display:false},ticks:{color:'#94a3b8',font:{family:'Inter',size:12,weight:'600'}}}}}});
+
+  // Dept bars
+  var dc={};cl.forEach(function(d){dc[d.dept]=(dc[d.dept]||0)+1;});
+  var sd=Object.entries(dc).sort(function(a,b){return b[1]-a[1];}).slice(0,14);
+  var mx=sd[0]?sd[0][1]:1;
+  document.getElementById('ov-dbars').innerHTML=sd.map(function(item,i){
+    return '<div class="drow"><div class="dn" title="'+item[0]+'">'+item[0]+'</div><div class="dt"><div class="df" style="width:'+(item[1]/mx*100)+'%;background:linear-gradient(90deg,'+PAL[i%PAL.length]+'66,'+PAL[i%PAL.length]+')"></div></div><div class="dc">'+item[1]+'</div></div>';
+  }).join('');
+
+  // TV trend
+  var tl=tv.map(function(d){var p=d.donem.split('-');return MN[+p[1]]||d.donem;});
+  ch('ov-tvt',{type:'line',data:{labels:tl,datasets:[{label:'Turnover %',data:tv.map(function(d){return d.oran_asil||d.oran;}),borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.08)',fill:true,tension:.4,pointBackgroundColor:'#ef4444',pointRadius:6,pointBorderColor:'#fff',pointBorderWidth:2,datalabels:{display:true,anchor:'end',align:'top',color:'#fca5a5',font:{family:'Inter',size:11,weight:'700'},formatter:function(v){return '%'+v;}}}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:function(c){return ' %'+c.raw;}}}},scales:{x:SX,y:{...SY,ticks:{...SY.ticks,callback:function(v){return v+'%';}}}}}});
+
+  // Unvan dağılımı
+  var uc={};cl.forEach(function(x){var u=x.unvan||'—';uc[u]=(uc[u]||0)+1;});
+  var uvS=Object.entries(uc).sort(function(a,b){return b[1]-a[1];}).slice(0,15);
+  ch('ov-unvan',{type:'bar',data:{labels:uvS.map(function(x){return x[0].length>22?x[0].substring(0,22)+'…':x[0];}),datasets:[{data:uvS.map(function(x){return x[1];}),backgroundColor:PAL.map(function(c){return c+'88';}),borderColor:PAL,borderWidth:2,borderRadius:6,datalabels:DL_RIGHT}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:TT},scales:{x:SX,y:{grid:{display:false},ticks:{color:'#94a3b8',font:{family:'Inter',size:10}}}}}});
+
+  // Bölüm × Unvan detayı
+  var bols=['Servis','Satış','İdari'];
+  var colors={'Servis':'#6366f1','Satış':'#3b82f6','İdari':'#10b981'};
+  var det='';
+  bols.forEach(function(bol){
+    var bp=cl.filter(function(x){return x.bolum===bol;});
+    if(!bp.length)return;
+    var uc2={};bp.forEach(function(x){var u=x.unvan||'—';uc2[u]=(uc2[u]||0)+1;});
+    var top=Object.entries(uc2).sort(function(a,b){return b[1]-a[1];}).slice(0,6);
+    var mx2=top[0]?top[0][1]:1;
+    det+='<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;color:'+colors[bol]+';margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">'+bol+' — '+bp.length+' kişi</div>';
+    det+=top.map(function(item){return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><div style="font-size:11px;color:#94a3b8;width:160px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+item[0]+'">'+item[0]+'</div><div style="flex:1;height:5px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden"><div style="width:'+(item[1]/mx2*100)+'%;height:100%;background:'+colors[bol]+';border-radius:3px"></div></div><div style="font-size:12px;font-weight:700;color:#eef4ff;width:20px;text-align:right">'+item[1]+'</div></div>';}).join('');
+    det+='</div>';
+  });
+  document.getElementById('ov-unvan-detail').innerHTML=det;
+}
+
+// ── AYRILANLAR ─────────────────────────────────────────────
+var _ayM=0,_ayP=1,_ayD=[];
+function aySetM(m,btn){_ayM=m;document.querySelectorAll('#ay-pills .pill').forEach(function(p){p.classList.remove('on');});btn.classList.add('on');ayFilter();}
+function ayFilter(){
+  var bol=document.getElementById('ay-bol').value;
+  var ned=document.getElementById('ay-ned').value;
+  var q=(document.getElementById('ay-s').value||'').toLowerCase();
+  _ayD=D.ayrilanlar.filter(function(d){
+    if(_ayM>0&&d.ay!==_ayM)return false;
+    if(bol&&d.bolum!==bol)return false;
+    if(ned&&d.neden!==ned)return false;
+    if(q&&!(d.ad+d.dept+d.bolum+d.unvan).toLowerCase().includes(q))return false;
+    return true;
+  });
+  _ayP=1;ayKPI();ayChrt();ayTbl();
+}
+function ayKPI(){
+  var d=_ayD,t=d.length||1;
+  document.getElementById('ay-tot').textContent=d.length;
+  var ist=d.filter(function(x){return x.neden==='İstifa';}).length;
+  var iv=d.filter(function(x){return x.neden==='İşveren Feshi';}).length;
+  var dig=d.filter(function(x){return x.neden!=='İstifa'&&x.neden!=='İşveren Feshi';}).length;
+  document.getElementById('ay-ist').textContent=ist;
+  document.getElementById('ay-istp').innerHTML='<em>'+Math.round(ist/t*100)+'%</em> toplam çıkışın';
+  document.getElementById('ay-iv').textContent=iv;
+  document.getElementById('ay-ivp').innerHTML='<em>'+Math.round(iv/t*100)+'%</em> toplam çıkışın';
+  document.getElementById('ay-diger').textContent=dig;
+  document.getElementById('ay-digerp').innerHTML='<em>'+Math.round(dig/t*100)+'%</em> toplam çıkışın';
+  var mset=[...new Set(d.filter(function(x){return x.ay>0;}).map(function(x){return x.ay;}))];
+  document.getElementById('ay-avg').textContent=mset.length?(d.length/mset.length).toFixed(1):'—';
+  var mc={};d.forEach(function(x){if(x.ay>0)mc[x.ay]=(mc[x.ay]||0)+1;});
+  var pm=Object.entries(mc).sort(function(a,b){return b[1]-a[1];})[0];
+  document.getElementById('ay-pk').textContent=pm?MN[pm[0]].substring(0,3):'—';
+  document.getElementById('ay-pks').innerHTML=pm?'<em>'+pm[1]+' kişi</em>':'';
+}
+function ayChrt(){
+  var d=_ayD;
+  var ms=[1,2,3,4,5,6];
+  var ct=ms.map(function(m){return d.filter(function(x){return x.ay===m;}).length;});
+  var mx=Math.max.apply(null,ct)||1;
+  ch('ay-trend',{type:'bar',data:{labels:ms.map(function(m){return MN[m];}),datasets:[{data:ct,backgroundColor:ct.map(function(v){return v===mx?'rgba(239,68,68,.8)':'rgba(59,130,246,.5)';}),borderColor:ct.map(function(v){return v===mx?'#ef4444':'#3b82f6';}),borderWidth:2,borderRadius:7,datalabels:DL_TOP}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT},scales:{x:SX,y:SY}}});
+
+  var nc={};d.forEach(function(x){nc[x.neden]=(nc[x.neden]||0)+1;});
+  var nk=Object.keys(nc);
+  ch('ay-neden',{type:'doughnut',data:{labels:nk,datasets:[{data:nk.map(function(k){return nc[k];}),backgroundColor:PAL.map(function(c){return c+'88';}),borderColor:PAL,borderWidth:2,hoverOffset:7,datalabels:{display:true,color:'#fff',font:{family:'Inter',size:11,weight:'700'},formatter:function(v,ctx){var tot=ctx.chart.data.datasets[0].data.reduce(function(a,b){return a+b;},0);return tot?Math.round(v/tot*100)+'%':''}}}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'52%',plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{family:'Inter',size:10},padding:7,boxWidth:8}},tooltip:TT}}});
+
+  function gd(s){var m=String(s||'').match(/(\d+) gün$/);return m?+m[1]:0;}
+  var bk=[0,0,0,0,0,0];
+  d.forEach(function(x){var v=gd(x.sure);if(v<=60)bk[0]++;else if(v<=180)bk[1]++;else if(v<=365)bk[2]++;else if(v<=730)bk[3]++;else if(v<=1095)bk[4]++;else bk[5]++;});
+  ch('ay-kidem',{type:'bar',data:{labels:['0-2A','2-6A','6-12A','1-2Y','2-3Y','3+Y'],datasets:[{data:bk,backgroundColor:['rgba(239,68,68,.8)','rgba(245,158,11,.8)','rgba(251,191,36,.8)','rgba(59,130,246,.8)','rgba(99,102,241,.8)','rgba(16,185,129,.8)'],borderWidth:0,borderRadius:7,datalabels:DL_TOP}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT},scales:{x:SX,y:SY}}});
+
+  var dc={};d.forEach(function(x){dc[x.dept]=(dc[x.dept]||0)+1;});
+  var sd=Object.entries(dc).sort(function(a,b){return b[1]-a[1];});var mx2=sd[0]?sd[0][1]:1;
+  document.getElementById('ay-dbars').innerHTML=sd.map(function(item,i){return '<div class="drow"><div class="dn" title="'+item[0]+'">'+item[0]+'</div><div class="dt"><div class="df" style="width:'+(item[1]/mx2*100)+'%;background:linear-gradient(90deg,'+PAL[i%PAL.length]+'66,'+PAL[i%PAL.length]+')"></div></div><div class="dc">'+item[1]+'</div></div>';}).join('');
+
+  var bols=['Servis','Satış','İdari'];
+  var neds=['İstifa','İşveren Feshi','Deneme (İşveren)','Askerlik'];
+  ch('ay-matrix',{type:'bar',data:{labels:bols,datasets:neds.map(function(n,i){return{label:n,data:bols.map(function(b){return d.filter(function(x){return x.bolum===b&&x.neden===n;}).length;}),backgroundColor:['rgba(239,68,68,.7)','rgba(245,158,11,.7)','rgba(99,102,241,.7)','rgba(16,185,129,.7)'][i],borderColor:['#ef4444','#f59e0b','#6366f1','#10b981'][i],borderWidth:2,borderRadius:5,datalabels:{display:true,anchor:'end',align:'top',color:'#e2e8f0',font:{family:'Inter',size:10,weight:'700'},formatter:function(v){return v===0?'':v;}}};})},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{family:'Inter',size:10},padding:8,boxWidth:8}},tooltip:TT},scales:{x:{stacked:true,...SX},y:{stacked:true,...SY}}}});
+
+  var uvc={};d.forEach(function(x){if(x.unvan)uvc[x.unvan]=(uvc[x.unvan]||0)+1;});
+  var uvTop=Object.entries(uvc).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
+  if(document.getElementById('ay-unvan-top5')){
+    ch('ay-unvan-top5',{type:'bar',data:{labels:uvTop.map(function(x){return x[0].length>22?x[0].substring(0,22)+'…':x[0];}),datasets:[{data:uvTop.map(function(x){return x[1];}),backgroundColor:PAL.map(function(c){return c+'99';}),borderColor:PAL,borderWidth:2,borderRadius:7,datalabels:DL_RIGHT}]},
+      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:TT},scales:{x:SX,y:{grid:{display:false},ticks:{color:'#94a3b8',font:{family:'Inter',size:10}}}}}});
+  }
+
+  var tot2=d.length||1;
+  var nedConf2=[{k:'İstifa',c:'#ef4444',ico:'🚪'},{k:'İşveren Feshi',c:'#f59e0b',ico:'⚡'},{k:'Deneme (İşveren)',c:'#6366f1',ico:'📋'},{k:'Askerlik',c:'#10b981',ico:'🎖️'},{k:'Emeklilik',c:'#06b6d4',ico:'🌅'},{k:'25. Madde',c:'#ec4899',ico:'⚠️'},{k:'Diğer',c:'#64748b',ico:'📌'}].filter(function(x){return (nc[x.k]||0)>0;});
+  if(document.getElementById('ay-neden-detail')){
+    document.getElementById('ay-neden-detail').innerHTML=nedConf2.map(function(n){
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 6px;border-bottom:1px solid rgba(255,255,255,.04)"><div style="font-size:16px">'+n.ico+'</div><div style="flex:1;font-size:12px;font-weight:600;color:#94a3b8">'+n.k+'</div><div style="font-size:11px;color:var(--t4)">'+(nc[n.k]||0)+' kişi</div><div style="width:50px;height:5px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden"><div style="width:'+Math.round((nc[n.k]||0)/tot2*100)+'%;height:100%;background:'+n.c+';border-radius:3px"></div></div><div style="font-size:12px;font-weight:700;color:'+n.c+';width:36px;text-align:right">'+Math.round((nc[n.k]||0)/tot2*100)+'%</div></div>';
+    }).join('');
+  }
+}
+function ayTbl(){
+  var PS=12,d=_ayD,tp=Math.ceil(d.length/PS)||1;
+  document.getElementById('ay-ti').textContent=d.length+' kayıt';
+  var sl=d.slice((_ayP-1)*PS,_ayP*PS);
+  document.getElementById('ay-tb').innerHTML=sl.length?sl.map(function(r,i){return '<tr><td style="color:var(--t4);font-size:10.5px">'+(_ayP-1)*PS+(i+1)+'</td><td><strong>'+r.ad+'</strong></td><td style="color:var(--t2)">'+r.dept+'</td><td style="color:var(--t3)">'+r.bolum+'</td><td style="color:var(--t4);font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.unvan+'</td><td style="color:var(--t2);white-space:nowrap;font-size:11.5px">'+r.tarih+'</td><td><span class="bdg '+bCls(r.neden)+'">'+r.neden+'</span></td><td style="color:var(--t4);font-size:11px">'+String(r.sure).split('/')[0].trim()+'</td></tr>';}).join(''):'<tr><td colspan="8" class="nod">Kayıt bulunamadı</td></tr>';
+  document.getElementById('ay-pi').textContent='Sayfa '+_ayP+'/'+tp;
+  document.getElementById('ay-prv').disabled=_ayP===1;
+  document.getElementById('ay-nxt').disabled=_ayP===tp||tp===0;
+}
+function ayPrv(){if(_ayP>1){_ayP--;ayTbl();}}
+function ayNxt(){if(_ayP<Math.ceil(_ayD.length/12)){_ayP++;ayTbl();}}
+function renderAY(){_ayD=[...D.ayrilanlar];_ayP=1;ayKPI();ayChrt();ayTbl();}
+
+// ── İŞE ALIM ───────────────────────────────────────────────
+var _iaP=1,_iaD=[];
+function iaFilter(){var q=(document.getElementById('ia-s').value||'').toLowerCase();_iaD=D.isealim.filter(function(d){return !q||(d.ad+d.dept+d.bolum).toLowerCase().includes(q);});_iaP=1;iaTbl();}
+function renderIA(){
+  _iaD=[...D.isealim];_iaP=1;
+  var d=D.isealim,t=d.length||1;
+  document.getElementById('ia-tot').textContent=d.length;
+  var srv=d.filter(function(x){return x.bolum==='Servis';}).length;
+  var sat=d.filter(function(x){return x.bolum==='Satış';}).length;
+  document.getElementById('ia-srv').textContent=srv;document.getElementById('ia-srvp').innerHTML='<em>'+Math.round(srv/t*100)+'%</em> servis bölümü';
+  document.getElementById('ia-sat').textContent=sat;document.getElementById('ia-satp').innerHTML='<em>'+Math.round(sat/t*100)+'%</em> satış bölümü';
+  var mc={};d.forEach(function(x){if(x.ay>0)mc[x.ay]=(mc[x.ay]||0)+1;});
+  var pm=Object.entries(mc).sort(function(a,b){return b[1]-a[1];})[0];
+  document.getElementById('ia-pk').textContent=pm?MN[pm[0]].substring(0,3):'—';
+  document.getElementById('ia-pks').innerHTML=pm?'<em>'+pm[1]+' kişi</em>':'';
+  var ms=[1,2,3,4,5,6];
+  ch('ia-trend',{type:'bar',data:{labels:ms.map(function(m){return MN[m];}),datasets:[{data:ms.map(function(m){return d.filter(function(x){return x.ay===m;}).length;}),backgroundColor:'rgba(16,185,129,.65)',borderColor:'#10b981',borderWidth:2,borderRadius:7,datalabels:DL_TOP}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT},scales:{x:SX,y:SY}}});
+  var bc={Servis:0,'Satış':0,'İdari':0};d.forEach(function(x){if(bc[x.bolum]!==undefined)bc[x.bolum]++;});
+  ch('ia-bol',{type:'doughnut',data:{labels:Object.keys(bc),datasets:[{data:Object.values(bc),backgroundColor:['rgba(99,102,241,.7)','rgba(59,130,246,.7)','rgba(16,185,129,.7)'],borderColor:['#6366f1','#3b82f6','#10b981'],borderWidth:2,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{family:'Inter',size:11},padding:9,boxWidth:8}},tooltip:TT}}});
+  ch('ia-vs',{type:'line',data:{labels:ms.map(function(m){return MN[m];}),datasets:[
+    {label:'Giriş',data:ms.map(function(m){return d.filter(function(x){return x.ay===m;}).length;}),borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.08)',fill:true,tension:.4,pointRadius:5,pointBackgroundColor:'#10b981',datalabels:{display:true,anchor:'end',align:'top',color:'#6ee7b7',font:{family:'Inter',size:10,weight:'700'},formatter:function(v){return v===0?'':v;}}},
+    {label:'Çıkış',data:ms.map(function(m){return D.ayrilanlar.filter(function(x){return x.ay===m;}).length;}),borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.08)',fill:true,tension:.4,pointRadius:5,pointBackgroundColor:'#ef4444',datalabels:{display:true,anchor:'end',align:'bottom',color:'#fca5a5',font:{family:'Inter',size:10,weight:'700'},formatter:function(v){return v===0?'':v;}}}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{family:'Inter',size:11},boxWidth:9}},tooltip:TT},scales:{x:SX,y:SY}}});
+  var iauvc={};d.forEach(function(x){if(x.unvan)iauvc[x.unvan]=(iauvc[x.unvan]||0)+1;});
+  var iauTop=Object.entries(iauvc).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
+  if(document.getElementById('ia-unvan-top5')){
+    ch('ia-unvan-top5',{type:'bar',data:{labels:iauTop.map(function(x){return x[0].length>22?x[0].substring(0,22)+'…':x[0];}),datasets:[{data:iauTop.map(function(x){return x[1];}),backgroundColor:PAL.map(function(c){return c+'99';}),borderColor:PAL,borderWidth:2,borderRadius:7,datalabels:DL_RIGHT}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:TT},scales:{x:SX,y:{grid:{display:false},ticks:{color:'#94a3b8',font:{family:'Inter',size:10}}}}}});
+  }
+  var iadc={};d.forEach(function(x){iadc[x.dept]=(iadc[x.dept]||0)+1;});
+  var iasd=Object.entries(iadc).sort(function(a,b){return b[1]-a[1];});var iamx=iasd[0]?iasd[0][1]:1;
+  if(document.getElementById('ia-dept-bars')){
+    document.getElementById('ia-dept-bars').innerHTML=iasd.map(function(item,i){return '<div class="drow"><div class="dn" title="'+item[0]+'">'+item[0]+'</div><div class="dt"><div class="df" style="width:'+(item[1]/iamx*100)+'%;background:linear-gradient(90deg,'+PAL[i%PAL.length]+'66,'+PAL[i%PAL.length]+')"></div></div><div class="dc">'+item[1]+'</div></div>';}).join('');
+  }
+  iaTbl();
+}
+function iaTbl(){
+  var PS=12,d=_iaD,tp=Math.ceil(d.length/PS)||1;
+  document.getElementById('ia-ti').textContent=d.length+' kayıt';
+  var sl=d.slice((_iaP-1)*PS,_iaP*PS);
+  document.getElementById('ia-tb').innerHTML=sl.length?sl.map(function(r,i){return '<tr><td style="color:var(--t4);font-size:10.5px">'+(_iaP-1)*PS+(i+1)+'</td><td><strong>'+r.ad+'</strong></td><td style="color:var(--t2)">'+r.dept+'</td><td style="color:var(--t3)">'+r.bolum+'</td><td style="color:var(--t4);font-size:11px">'+r.unvan+'</td><td style="color:var(--t2);font-size:11.5px">'+r.tarih+'</td></tr>';}).join(''):'<tr><td colspan="6" class="nod">Kayıt bulunamadı</td></tr>';
+  document.getElementById('ia-pi').textContent='Sayfa '+_iaP+'/'+tp;
+  document.getElementById('ia-prv').disabled=_iaP===1;
+  document.getElementById('ia-nxt').disabled=_iaP===tp||tp===0;
+}
+function iaPrv(){if(_iaP>1){_iaP--;iaTbl();}}
+function iaNxt(){if(_iaP<Math.ceil(_iaD.length/12)){_iaP++;iaTbl();}}
+
+
+// ── TURNOVER ───────────────────────────────────────────────
+function renderTV(){
+  var tv=D.turnover,oz=D.ozet||{};
+  // Özet 6 kart
+  document.getElementById('tv-ozet-kpis').innerHTML=
+    '<div class="k krd" style="text-align:center"><div class="kl">YTD Turnover</div><div class="tvbig" style="color:#f87171">%'+(oz.ytd_turnover||'—')+'</div><div class="ks">'+(oz.ay_sayisi||0)+' ay · V.İ. hariç</div></div>'+
+    '<div class="k kpu" style="text-align:center"><div class="kl">Simüle Yıl Sonu</div><div class="tvbig" style="color:#a78bfa">%'+(oz.simule_yilsonu||'—')+'</div><div class="ks">mevcut trende göre</div></div>'+
+    '<div class="k kgn" style="text-align:center"><div class="kl">İstenen Turnover YTD</div><div class="tvbig" style="color:#34d399">%'+(oz.ytd_istenen||'—')+'</div><div class="ks">'+(oz.istenen_count||0)+' kişi · işveren kararı</div></div>'+
+    '<div class="k krd" style="text-align:center"><div class="kl">İstenmeyen Turnover YTD</div><div class="tvbig" style="color:#f87171">%'+(oz.ytd_istenmeyen||'—')+'</div><div class="ks">'+(oz.istenmeyen_count||0)+' kişi · istifa vb.</div></div>'+
+    '<div class="k kgn" style="text-align:center;opacity:.85"><div class="kl">Simüle İstenen YS</div><div class="tvbig" style="color:#34d399;font-size:26px">%'+(oz.simule_istenen||'—')+'</div><div class="ks">yıl sonu tahmini</div></div>'+
+    '<div class="k krd" style="text-align:center;opacity:.85"><div class="kl">Simüle İstenmeyen YS</div><div class="tvbig" style="color:#f87171;font-size:26px">%'+(oz.simule_istenmeyen||'—')+'</div><div class="ks">yıl sonu tahmini</div></div>';
+
+  // Alt 4 kart
+  var totC=tv.reduce(function(a,b){return a+b.cikis_asil;},0);
+  var totG=tv.reduce(function(a,b){return a+b.giris;},0);
+  var avgO=tv.length?(tv.reduce(function(a,b){return a+(b.oran_asil||b.oran);},0)/tv.length).toFixed(2):0;
+  document.getElementById('tv-kpis').innerHTML=
+    '<div class="c" style="text-align:center"><div class="tvbig rr">'+totC+'</div><div style="font-size:10px;color:var(--t3);margin-top:4px;font-weight:700;text-transform:uppercase;letter-spacing:.6px">2026 Toplam Çıkış</div><div style="font-size:11px;color:var(--t4);margin-top:3px">2025: <strong style="color:#94a3b8">'+(oz.cikis_2025||146)+'</strong> çıkış</div></div>'+
+    '<div class="c" style="text-align:center"><div class="tvbig rg">'+totG+'</div><div style="font-size:10px;color:var(--t3);margin-top:4px;font-weight:700;text-transform:uppercase;letter-spacing:.6px">2026 Toplam Giriş</div><div style="font-size:11px;color:var(--t4);margin-top:3px">2025: <strong style="color:#94a3b8">'+(oz.giris_2025||170)+'</strong> giriş</div></div>'+
+    '<div class="c" style="text-align:center"><div class="tvbig" style="color:#fbbf24">'+(oz.ort_cikis_ay||'—')+'</div><div style="font-size:10px;color:var(--t3);margin-top:4px;font-weight:700;text-transform:uppercase;letter-spacing:.6px">Ort. Çıkış / Ay</div><div style="font-size:11px;color:var(--t4);margin-top:3px">'+(oz.ay_sayisi||0)+' ay üzerinden</div></div>'+
+    '<div class="c" style="text-align:center"><div class="tvbig" style="color:#a78bfa">%'+avgO+'</div><div style="font-size:10px;color:var(--t3);margin-top:4px;font-weight:700;text-transform:uppercase;letter-spacing:.6px">Aylık Ort. Oran</div><div style="font-size:11px;color:var(--t4);margin-top:3px">V.İ. hariç</div></div>';
+
+  var lbs=tv.map(function(d){var p=d.donem.split('-');return MN[+p[1]]||d.donem;});
+  ch('tv-rate',{type:'line',data:{labels:lbs,datasets:[{label:'Turnover %',data:tv.map(function(d){return d.oran_asil||d.oran;}),borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.1)',fill:true,tension:.4,pointBackgroundColor:'#ef4444',pointRadius:6,pointBorderColor:'#fff',pointBorderWidth:2,datalabels:{display:true,anchor:'end',align:'top',color:'#fca5a5',font:{family:'Inter',size:11,weight:'700'},formatter:function(v){return '%'+v;}}}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:function(c){return ' %'+c.raw;}}}},scales:{x:SX,y:{...SY,ticks:{...SY.ticks,callback:function(v){return v+'%';}}}}}});
+
+  ch('tv-mv',{type:'bar',data:{labels:lbs,datasets:[
+    {label:'Giriş',data:tv.map(function(d){return d.giris;}),backgroundColor:'rgba(16,185,129,.7)',borderColor:'#10b981',borderWidth:2,borderRadius:5,datalabels:DL_TOP},
+    {label:'Çıkış',data:tv.map(function(d){return d.cikis_asil||d.cikis;}),backgroundColor:'rgba(239,68,68,.7)',borderColor:'#ef4444',borderWidth:2,borderRadius:5,datalabels:DL_TOP}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{family:'Inter',size:11},boxWidth:9}},tooltip:TT},scales:{x:SX,y:SY}}});
+
+  var rc=function(r){return r>4?'rr':r>2.5?'ry':'rg';};
+  var rl=function(r){return r>4?'⚠️ Yüksek Risk':r>2.5?'⚡ Dikkat':'✅ Normal';};
+  document.getElementById('tv-tb').innerHTML=tv.map(function(d){
+    var ayNo=parseInt((d.donem||'').split('-')[1]||0);
+    var ist=D.ayrilanlar.filter(function(x){return x.ay===ayNo&&x.istenen;}).length;
+    var istmyn=D.ayrilanlar.filter(function(x){return x.ay===ayNo&&!x.istenen;}).length;
+    var oran=d.oran_asil||d.oran;
+    return '<tr><td style="font-weight:700">'+d.donem+'</td><td>'+(d.calisan_asil||d.calisan)+'</td><td><span style="color:#34d399;font-weight:700">+'+d.giris+'</span></td><td><span style="color:#f87171;font-weight:700">-'+(d.cikis_asil||d.cikis)+'</span></td><td><strong class="'+rc(oran)+'">%'+oran+'</strong></td><td><span style="color:#34d399;font-weight:700">'+ist+'</span></td><td><span style="color:#f87171;font-weight:700">'+istmyn+'</span></td><td class="'+rc(oran)+'">'+rl(oran)+'</td></tr>';
+  }).join('');
+}
+
+// ── İZİN ───────────────────────────────────────────────────
+var _izP=1,_izD=[];
+function izFilter(){
+  var bol=document.getElementById('iz-bol').value;
+  var q=(document.getElementById('iz-s').value||'').toLowerCase();
+  _izD=D.izin.filter(function(d){if(bol&&d.bolum!==bol)return false;if(q&&!(d.ad+d.dept).toLowerCase().includes(q))return false;return true;});
+  _izP=1;izTbl();
+}
+function renderIZ(){
+  _izD=[...D.izin];_izP=1;
+  document.getElementById('iz-ak').textContent=D.normal.length;
+  var valid=D.izin.filter(function(x){return x.bakiye!==null&&!isNaN(x.bakiye);});
+  var topBak=valid.reduce(function(a,b){return a+b.bakiye;},0);
+  document.getElementById('iz-avg').textContent=D.normal.length?(topBak/D.normal.length).toFixed(1):0;
+  document.getElementById('iz-neg').textContent=valid.filter(function(x){return x.bakiye<0;}).length;
+  document.getElementById('iz-hi').textContent=valid.filter(function(x){return x.bakiye>=30;}).length;
+  var di={};D.izin.forEach(function(x){if(x.bakiye&&x.bakiye>0)di[x.dept]=(di[x.dept]||0)+x.bakiye;});
+  var sd2=Object.entries(di).sort(function(a,b){return b[1]-a[1];}).slice(0,10);
+  ch('iz-dept',{type:'bar',data:{labels:sd2.map(function(x){return x[0];}),datasets:[{data:sd2.map(function(x){return Math.round(x[1]);}),backgroundColor:PAL.map(function(c){return c+'88';}),borderColor:PAL,borderWidth:2,borderRadius:6,datalabels:{display:true,anchor:'end',align:'right',color:'#e2e8f0',font:{family:'Inter',size:10,weight:'700'},formatter:function(v){return v+' gün';}}}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:function(c){return ' '+c.raw+' gün toplam';}}}},scales:{x:SX,y:{grid:{display:false},ticks:{color:'#94a3b8',font:{family:'Inter',size:11}}}}}});
+  var kd={};D.normal.forEach(function(x){kd[x.bolum]=(kd[x.bolum]||0)+1;});
+  ch('iz-kad',{type:'doughnut',data:{labels:Object.keys(kd),datasets:[{data:Object.values(kd),backgroundColor:PAL.map(function(c){return c+'88';}),borderColor:PAL,borderWidth:2,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'50%',plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{family:'Inter',size:11},padding:10,boxWidth:8}},tooltip:TT}}});
+  izTbl();
+}
+function izTbl(){
+  var PS=12,d=_izD,tp=Math.ceil(d.length/PS)||1;
+  document.getElementById('iz-ti').textContent=d.length+' kayıt';
+  var sl=d.slice((_izP-1)*PS,_izP*PS);
+  document.getElementById('iz-tb').innerHTML=sl.length?sl.map(function(r,i){
+    var b=r.bakiye;var cls=b===null?'':b<0?'rr':b<5?'ry':'rg';var lbl=b===null?'—':b<0?'⚠️ Borçta':b<5?'⚡ Az Bakiye':'✅ Normal';
+    return '<tr><td style="color:var(--t4);font-size:10.5px">'+(_izP-1)*PS+(i+1)+'</td><td><strong>'+r.ad+'</strong></td><td style="color:var(--t2)">'+r.dept+'</td><td style="color:var(--t3)">'+r.bolum+'</td><td><strong class="'+cls+'" style="font-size:13.5px">'+(b!==null?b:'—')+'</strong> <span style="color:var(--t4);font-size:11px">gün</span></td><td style="color:var(--t3);font-size:11.5px">'+(r.kullanilan!==null?r.kullanilan:'—')+' gün</td><td class="'+cls+'">'+lbl+'</td></tr>';
+  }).join(''):'<tr><td colspan="7" class="nod">Kayıt bulunamadı</td></tr>';
+  document.getElementById('iz-pi').textContent='Sayfa '+_izP+'/'+tp;
+  document.getElementById('iz-prv').disabled=_izP===1;
+  document.getElementById('iz-nxt').disabled=_izP===tp||tp===0;
+}
+function izPrv(){if(_izP>1){_izP--;izTbl();}}
+function izNxt(){if(_izP<Math.ceil(_izD.length/12)){_izP++;izTbl();}}
+
+// ── MESAİ ──────────────────────────────────────────────────
+var _mesP=1,_mesD=[];
+function mesFilter(){var q=(document.getElementById('mes-s').value||'').toLowerCase();_mesD=D.mesai_kisi.filter(function(d){return !q||(d.ad+d.dept+d.unvan).toLowerCase().includes(q);});_mesP=1;mesTbl();}
+function renderMES(){
+  var mk=D.mesai_kisi||[],ma=D.mesai_aylik||[],md=D.mesai_dept||[];
+  var topTL=ma.reduce(function(s,x){return s+x.toplam;},0);
+  var topKisi=ma.reduce(function(s,x){return s+x.kisi;},0);
+  var peakAy=ma.reduce(function(a,b){return b.toplam>a.toplam?b:a;},ma[0]||{});
+  document.getElementById('mes-toplam').textContent=topTL.toLocaleString('tr-TR',{maximumFractionDigits:0})+' ₺';
+  document.getElementById('mes-kisi').textContent=topKisi;
+  document.getElementById('mes-peak-ay').textContent=peakAy.ay||'—';
+  document.getElementById('mes-peak-ks').innerHTML='<em>'+(peakAy.toplam||0).toLocaleString('tr-TR',{maximumFractionDigits:0})+' ₺</em>';
+  ch('mes-aylik',{type:'bar',data:{labels:ma.map(function(x){return x.ay;}),datasets:[{label:'Tutar',data:ma.map(function(x){return x.toplam;}),backgroundColor:PAL.map(function(c){return c+'88';}),borderColor:PAL,borderWidth:2,borderRadius:7,datalabels:{display:true,anchor:'end',align:'top',color:'#e2e8f0',font:{family:'Inter',size:9,weight:'700'},formatter:function(v){return (v/1000).toFixed(0)+'K ₺';}}}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:function(c){return ' '+c.raw.toLocaleString('tr-TR')+' ₺';}}}},scales:{x:SX,y:{...SY,ticks:{...SY.ticks,callback:function(v){return (v/1000).toFixed(0)+'K';}}}}}});
+  var mdS=[...md].sort(function(a,b){return b.toplam-a.toplam;});var mdMx=mdS[0]?mdS[0].toplam:1;
+  document.getElementById('mes-dept-bars').innerHTML=mdS.map(function(x,i){return '<div class="drow"><div class="dn" title="'+x.dept+'" style="width:100px">'+x.dept+'</div><div class="dt"><div class="df" style="width:'+(x.toplam/mdMx*100)+'%;background:linear-gradient(90deg,'+PAL[i%PAL.length]+'66,'+PAL[i%PAL.length]+')"></div></div><div class="dc" style="width:80px;font-size:10px;text-align:right">'+(x.toplam/1000).toFixed(0)+'K ₺</div></div>';}).join('');
+  // Bölüm grafikleri
+  var AY_LBL=['Ocak','Şubat','Mart','Nisan','Mayıs'];
+  var mb=D.mes_bolum||{servis:{},satis:{},idari:{}};
+  function makeBChart(cid,bData){
+    var el=document.getElementById(cid);if(!el)return;
+    var depts=Object.keys(bData);
+    var datasets=depts.map(function(dept,i){return{label:dept,data:bData[dept],backgroundColor:PAL[i%PAL.length]+'99',borderColor:PAL[i%PAL.length],borderWidth:2,borderRadius:4,datalabels:{display:false}};});
+    if(el._c)el._c.destroy();
+    el._c=new Chart(el,{type:'bar',data:{labels:AY_LBL,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{family:'Inter',size:9},padding:6,boxWidth:8}},tooltip:{...TT,callbacks:{label:function(c){return ' '+c.dataset.label+': '+(c.raw/1000).toFixed(1)+'K ₺';}}}},scales:{x:{stacked:true,...SX,ticks:{...SX.ticks,font:{family:'Inter',size:10}}},y:{stacked:true,...SY,ticks:{...SY.ticks,callback:function(v){return (v/1000).toFixed(0)+'K';}}}}}});
+  }
+  makeBChart('mes-servis-chart',mb.servis);
+  makeBChart('mes-satis-chart',mb.satis);
+  makeBChart('mes-idari-chart',mb.idari);
+  _mesD=[...mk];_mesP=1;mesTbl();
+}
+function mesTbl(){
+  var PS=12,d=_mesD,tp=Math.ceil(d.length/PS)||1;
+  document.getElementById('mes-ti').textContent=d.length+' kayıt';
+  var sl=d.slice((_mesP-1)*PS,_mesP*PS);
+  document.getElementById('mes-tb').innerHTML=sl.length?sl.map(function(r,i){return '<tr><td style="color:var(--t4);font-size:10.5px">'+(_mesP-1)*PS+(i+1)+'</td><td><strong>'+r.ad+'</strong></td><td style="color:var(--t2);font-size:12px">'+r.dept+'</td><td style="color:var(--t3);font-size:12px">'+r.bolum+'</td><td style="color:var(--t4);font-size:11px">'+r.unvan+'</td><td style="font-size:11px;color:var(--t3)">'+(r.ocak?r.ocak.toLocaleString('tr-TR')+'  ₺':'—')+'</td><td style="font-size:11px;color:var(--t3)">'+(r.subat?r.subat.toLocaleString('tr-TR')+' ₺':'—')+'</td><td style="font-size:11px;color:var(--t3)">'+(r.mart?r.mart.toLocaleString('tr-TR')+' ₺':'—')+'</td><td style="font-size:11px;color:var(--t3)">'+(r.nisan?r.nisan.toLocaleString('tr-TR')+' ₺':'—')+'</td><td style="font-size:11px;color:var(--t3)">'+(r.mayis?r.mayis.toLocaleString('tr-TR')+' ₺':'—')+'</td><td><strong style="color:#fbbf24">'+r.toplam.toLocaleString('tr-TR')+' ₺</strong></td><td><span style="color:#a78bfa;font-weight:700">'+r.pct+'%</span></td></tr>';}).join(''):'<tr><td colspan="12" class="nod">Kayıt bulunamadı</td></tr>';
+  document.getElementById('mes-pi').textContent='Sayfa '+_mesP+'/'+tp;
+  document.getElementById('mes-prv').disabled=_mesP===1;
+  document.getElementById('mes-nxt').disabled=_mesP===tp||tp===0;
+}
+function mesPrv(){if(_mesP>1){_mesP--;mesTbl();}}
+function mesNxt(){if(_mesP<Math.ceil(_mesD.length/12)){_mesP++;mesTbl();}}
+
+// ── ARABULUCULUK ───────────────────────────────────────────
+var _arbP=1,_arbD=[],_arbDur='';
+function arbSetDur(v,btn){_arbDur=v;document.querySelectorAll('#p-arb .fbar .pill').forEach(function(p){p.classList.remove('on');});btn.classList.add('on');arbFilter();}
+function arbFilter(){
+  var dept=document.getElementById('arb-dept-sel').value;
+  var q=(document.getElementById('arb-s').value||'').toLowerCase();
+  _arbD=D.arabuluculuk.filter(function(d){
+    if(_arbDur&&d.arabulucu!==_arbDur)return false;
+    if(dept&&d.dept!==dept)return false;
+    if(q&&!d.ad.toLowerCase().includes(q))return false;
+    return true;
+  });
+  _arbP=1;arbTbl();
+}
+function renderARB(){
+  var arb=D.arabuluculuk||[];
+  var tot=arb.length;
+  var yap=arb.filter(function(x){return x.arabulucu==='YAPILDI';}).length;
+  var yapm=arb.filter(function(x){return x.arabulucu==='YAPILMADI';}).length;
+  document.getElementById('arb-tot').textContent=tot;
+  document.getElementById('arb-yapildi').textContent=yap;
+  document.getElementById('arb-yapildi-pct').innerHTML='<em>'+Math.round(yap/tot*100)+'%</em> oran';
+  document.getElementById('arb-yapilmadi').textContent=yapm;
+  document.getElementById('arb-yapilmadi-pct').innerHTML='<em>'+Math.round(yapm/tot*100)+'%</em> oran';
+
+  // Durum donut
+  ch('arb-durum',{type:'doughnut',data:{labels:['Yapıldı','Yapılmadı'],datasets:[{data:[yap,yapm],backgroundColor:['rgba(16,185,129,.7)','rgba(239,68,68,.7)'],borderColor:['#10b981','#ef4444'],borderWidth:2,hoverOffset:8,datalabels:{display:true,color:'#fff',font:{family:'Inter',size:13,weight:'700'},formatter:function(v,ctx){var t=ctx.chart.data.datasets[0].data.reduce(function(a,b){return a+b;},0);return v+'\n('+Math.round(v/t*100)+'%)';}}}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'45%',plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{family:'Inter',size:11},padding:10,boxWidth:8}},tooltip:TT}}});
+
+  // Detay panel: Departman bars + Yapılmadı nedenleri
+  var dc={};arb.forEach(function(x){if(x.dept)dc[x.dept]=(dc[x.dept]||0)+1;});
+  var dcs=Object.entries(dc).sort(function(a,b){return b[1]-a[1];});var dmx=dcs[0]?dcs[0][1]:1;
+  var yapNed=[
+    {label:'6 Ay Altı Kıdem',count:14,color:'#f59e0b'},
+    {label:'Askerlik Sebebiyle',count:2,color:'#10b981'},
+    {label:'Haklı Fesih',count:1,color:'#ef4444'},
+    {label:'İhtar',count:1,color:'#8b5cf6'}
+  ];
+  var det='<div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Departman Dağılımı</div>';
+  det+=dcs.map(function(item,i){return '<div class="drow"><div class="dn" title="'+item[0]+'" style="width:100px">'+item[0]+'</div><div class="dt"><div class="df" style="width:'+(item[1]/dmx*100)+'%;background:linear-gradient(90deg,'+PAL[i%PAL.length]+'66,'+PAL[i%PAL.length]+')"></div></div><div class="dc">'+item[1]+'</div></div>';}).join('');
+  det+='<div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.6px;margin:16px 0 10px">Yapılmadı Nedenleri</div>';
+  det+=yapNed.map(function(x){return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="width:10px;height:10px;border-radius:50%;background:'+x.color+';flex-shrink:0"></div><div style="font-size:12px;color:#94a3b8;flex:1">'+x.label+'</div><div style="font-size:13px;font-weight:700;color:#eef4ff">'+x.count+'</div></div>';}).join('');
+  document.getElementById('arb-detail').innerHTML=det;
+
+  _arbD=[...arb];_arbP=1;arbTbl();
+}
+function arbTbl(){
+  var PS=12,d=_arbD,tp=Math.ceil(d.length/PS)||1;
+  document.getElementById('arb-ti').textContent=d.length+' kayıt';
+  var sl=d.slice((_arbP-1)*PS,_arbP*PS);
+  var notCls=function(n){return n==='YAPILDI'?'ba':n==='YAPILMADI'?'bi':n==='6 AY ALTI KIDEM'?'biv':'bd';};
+  document.getElementById('arb-tb').innerHTML=sl.length?sl.map(function(r,i){return '<tr><td style="color:var(--t4);font-size:10.5px">'+(_arbP-1)*PS+(i+1)+'</td><td><strong style="font-size:12px">'+r.ad+'</strong></td><td style="color:var(--t2);font-size:11px">'+r.dept+'</td><td style="color:var(--t3);font-size:11px">'+r.bolum+'</td><td style="color:var(--t4);font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.unvan+'</td><td style="font-size:11px;color:var(--t3)">'+r.giris+'</td><td style="font-size:11px;color:var(--t3)">'+r.cikis+'</td><td style="font-size:11px;color:var(--t4)">'+String(r.sure).split('/')[0].trim()+'</td><td style="font-size:10px;color:var(--t3);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+r.neden+'">'+r.neden+'</td><td><span class="bdg '+(r.arabulucu==='YAPILDI'?'ba':'bi')+'">'+r.arabulucu+'</span></td><td><span class="bdg '+notCls(r.not_)+'" style="font-size:9px">'+r.not_+'</span></td></tr>';}).join(''):'<tr><td colspan="11" class="nod">Kayıt bulunamadı</td></tr>';
+  document.getElementById('arb-pi').textContent='Sayfa '+_arbP+'/'+tp;
+  document.getElementById('arb-prv').disabled=_arbP===1;
+  document.getElementById('arb-nxt').disabled=_arbP===tp||tp===0;
+}
+function arbPrv(){if(_arbP>1){_arbP--;arbTbl();}}
+function arbNxt(){if(_arbP<Math.ceil(_arbD.length/12)){_arbP++;arbTbl();}}
+
+// ── INIT ───────────────────────────────────────────────────
+documen// renderOV ve renderAY2 loadData() tarafından çağrılıyor
+
+// ── AYRILIK ANKETİ (2026) ───────────────────────────────────
+var AY2_DATA=[
+  {tarih:'08.01.2026',ad:'Yaren Yüksel',dept:'PSA',unvan:'Servis Danışmanı',neden:'İŞ TATMİNSİZLİĞİ',col42:'İŞ TATMİNSİZLİĞİ',excelneden:'İŞ DEĞİŞİKLİĞİ',
+   skorlar:{isTat:4,ucret:3,gorevBel:2,kariyer:5,yanHak:2,isyeri:2,yonetici:1,arkadaslar:2,egitim:3,odullendirme:3,yukFaz:3,saat:3,sektor:3,ailevi:2,sirketEgitim:3,evlilik:1,askerlik:1,tasinma:1,saglik:1,kultur:1,diger:1,okulDurum:2,gorevDisinda:1,isYasam:1},
+   geriDon:'Evet',olumsuzOlay:'Hayır',kalanKosul:'Kariyer rotasyonu',oneri:'Maaş politikası iyileştirilebilir. Cumartesi nöbetleşe yapılabilir'},
+  {tarih:'17.01.2026',ad:'Murat Tunç',dept:'Fiat',unvan:'Satış Danışmanı',neden:'FARKLI BİR İŞ',col42:'FARKLI BİR İŞ',excelneden:'İŞ DEĞİŞİKLİĞİ',
+   skorlar:{isTat:1,ucret:5,gorevBel:1,kariyer:1,yanHak:3,isyeri:3,yonetici:3,arkadaslar:1,egitim:1,odullendirme:3,yukFaz:3,saat:1,sektor:5,ailevi:1,sirketEgitim:1,evlilik:1,askerlik:1,tasinma:1,saglik:1,kultur:1,diger:1,okulDurum:1,gorevDisinda:1,isYasam:1},
+   geriDon:'Evet',olumsuzOlay:'Hayır (farklı teklif)',kalanKosul:'Farklı teklif aldı',oneri:''},
+  {tarih:'20.01.2026',ad:'Seyfullah Sabuncu',dept:'PSA',unvan:'Mekaniker',neden:'MAAŞ',col42:'MAAŞ',excelneden:'İŞ YERİ AÇACAK',
+   skorlar:{isTat:1,ucret:3,gorevBel:1,kariyer:1,yanHak:3,isyeri:5,yonetici:2,arkadaslar:1,egitim:1,odullendirme:1,yukFaz:5,saat:1,sektor:5,ailevi:1,sirketEgitim:1,evlilik:1,askerlik:1,tasinma:1,saglik:1,kultur:1,diger:1,okulDurum:1,gorevDisinda:1,isYasam:1},
+   geriDon:'Hayır',olumsuzOlay:'—',kalanKosul:'—',oneri:''},
+  {tarih:'29.01.2026',ad:'Serhat Bağrıaçık',dept:'Fiat',unvan:'Showrumcu',neden:'ÇALIŞMA KOŞULLARI',col42:'ÇALIŞMA KOŞULLARI',excelneden:'İŞ DEĞİŞİKLİĞİ',
+   skorlar:{isTat:5,ucret:1,gorevBel:5,kariyer:5,yanHak:3,isyeri:5,yonetici:1,arkadaslar:1,egitim:1,odullendirme:1,yukFaz:5,saat:1,sektor:1,ailevi:1,sirketEgitim:1,evlilik:1,askerlik:1,tasinma:1,saglik:1,kultur:4,diger:1,okulDurum:1,gorevDisinda:5,isYasam:3},
+   geriDon:'Hayır',olumsuzOlay:'—',kalanKosul:'—',oneri:''},
+  {tarih:'18.02.2026',ad:'Kübra Pençe',dept:'Muhasebe',unvan:'Marka Muhasebe Sorumlusu',neden:'YÖNETİCİYLE ANLAŞAMAMA',col42:'YÖNETİCİYLE ANLAŞAMAMA',excelneden:'ÖZEL SEBEPLER',
+   skorlar:{isTat:1,ucret:1,gorevBel:1,kariyer:1,yanHak:1,isyeri:3,yonetici:5,arkadaslar:3,egitim:1,odullendirme:2,yukFaz:5,saat:2,sektor:1,ailevi:1,sirketEgitim:1,evlilik:1,askerlik:1,tasinma:1,saglik:1,kultur:1,diger:1,okulDurum:1,gorevDisinda:1,isYasam:1},
+   geriDon:'Hayır',olumsuzOlay:'Evet',kalanKosul:'Hiçbir koşul',oneri:'Az dedikodu çok iş'},
+  {tarih:'23.02.2026',ad:'Selahattin Kavuklu',dept:'Jaecoo',unvan:'Mekaniker',neden:'FARKLI BİR İŞ',col42:'FARKLI BİR İŞ',excelneden:'İŞ YERİ AÇACAK',
+   skorlar:{isTat:5,ucret:5,gorevBel:3,kariyer:3,yanHak:1,isyeri:4,yonetici:1,arkadaslar:1,egitim:1,odullendirme:3,yukFaz:3,saat:1,sektor:5,ailevi:1,sirketEgitim:1,evlilik:1,askerlik:1,tasinma:1,saglik:1,kultur:2,diger:1,okulDurum:1,gorevDisinda:2,isYasam:2},
+   geriDon:'Evet',olumsuzOlay:'Hayır',kalanKosul:'—',oneri:'Kendi işini açacak'},
+  {tarih:'24.02.2026',ad:'Furkan Kaan Belik',dept:'Hasar',unvan:'Oto Boyacı',neden:'FARKLI BİR İŞ',col42:'FARKLI BİR İŞ',excelneden:'İŞ ORTAMINI BEĞENMEDİĞİ İÇİN',
+   skorlar:{isTat:2,ucret:2,gorevBel:2,kariyer:3,yanHak:1,isyeri:4,yonetici:1,arkadaslar:1,egitim:1,odullendirme:1,yukFaz:1,saat:1,sektor:1,ailevi:4,sirketEgitim:1,evlilik:1,askerlik:1,tasinma:5,saglik:1,kultur:1,diger:1,okulDurum:1,gorevDisinda:1,isYasam:1},
+   geriDon:'Evet',olumsuzOlay:'Hayır',kalanKosul:'İşe başladıktan hemen sonra karar verdi',oneri:''},
+  {tarih:'16.03.2026',ad:'Burak Enez Akbucak',dept:'Satış',unvan:'Satış Danışmanı',neden:'MAAŞ',col42:'MAAŞ',excelneden:'MAAŞ',
+   skorlar:{isTat:1,ucret:5,gorevBel:1,kariyer:5,yanHak:5,isyeri:5,yonetici:1,arkadaslar:1,egitim:3,odullendirme:5,yukFaz:5,saat:5,sektor:1,ailevi:1,sirketEgitim:3,evlilik:1,askerlik:1,tasinma:1,saglik:1,kultur:4,diger:1,okulDurum:1,gorevDisinda:1,isYasam:1},
+   geriDon:'Hayır',olumsuzOlay:'Evet - Asgari ücrete 425 TL zam',kalanKosul:'Koşul önermek mantıksız',oneri:'Personele değer verilmesi'},
+  {tarih:'16.03.2026',ad:'Mahmut Kan',dept:'Motor Mekanik Peugeot',unvan:'Usta',neden:'ŞEHİR DEĞİŞİKLİĞİ',col42:'ŞEHİR DEĞİŞİKLİĞİ',excelneden:'ŞEHİR DEĞİŞİKLİĞİ',
+   skorlar:{isTat:1,ucret:2,gorevBel:1,kariyer:1,yanHak:1,isyeri:1,yonetici:1,arkadaslar:1,egitim:1,odullendirme:3,yukFaz:1,saat:1,sektor:1,ailevi:2,sirketEgitim:1,evlilik:1,askerlik:1,tasinma:5,saglik:1,kultur:1,diger:1,okulDurum:1,gorevDisinda:1,isYasam:2},
+   geriDon:'Evet',olumsuzOlay:'Hayır',kalanKosul:'Taşındı',oneri:'İşçi hakları gözden geçirilmeli'},
+  {tarih:'16.03.2026',ad:'Aleyna Akbulut',dept:'Pazarlama',unvan:'Pazarlama Uzman Yardımcısı',neden:'MAAŞ',col42:'MAAŞ',excelneden:'STAJ BİTİMİ',
+   skorlar:{isTat:1,ucret:3,gorevBel:1,kariyer:1,yanHak:3,isyeri:3,yonetici:1,arkadaslar:1,egitim:1,odullendirme:1,yukFaz:2,saat:1,sektor:1,ailevi:1,sirketEgitim:1,evlilik:1,askerlik:1,tasinma:5,saglik:1,kultur:1,diger:1,okulDurum:1,gorevDisinda:1,isYasam:1},
+   geriDon:'Evet',olumsuzOlay:'Hayır',kalanKosul:'Cumartesi çalışmaları kaldırılsa',oneri:''},
+  {tarih:'30.03.2026',ad:'Mustafa Sakitaş',dept:'Citroen',unvan:'Satış Danışmanı',neden:'ASKERLİK',col42:'ASKERLİK',excelneden:'ASKERLİK',
+   skorlar:{isTat:2,ucret:5,gorevBel:2,kariyer:3,yanHak:3,isyeri:4,yonetici:1,arkadaslar:1,egitim:1,odullendirme:3,yukFaz:1,saat:1,sektor:1,ailevi:1,sirketEgitim:1,evlilik:1,askerlik:1,tasinma:1,saglik:1,kultur:1,diger:1,okulDurum:1,gorevDisinda:1,isYasam:1},
+   geriDon:'Evet',olumsuzOlay:'Hayır',kalanKosul:'—',oneri:''},
+  {tarih:'30.03.2026',ad:'Muhammed Ali Erkılıç',dept:'Hasar',unvan:'Mekaniker',neden:'MAAŞ',col42:'MAAŞ',excelneden:'YÖNETİCİ SORUNU',
+   skorlar:{isTat:2,ucret:3,gorevBel:1,kariyer:4,yanHak:4,isyeri:1,yonetici:2,arkadaslar:1,egitim:1,odullendirme:1,yukFaz:2,saat:1,sektor:3,ailevi:2,sirketEgitim:2,evlilik:2,askerlik:1,tasinma:1,saglik:1,kultur:1,diger:1,okulDurum:2,gorevDisinda:1,isYasam:2},
+   geriDon:'Hayır',olumsuzOlay:'Hayır',kalanKosul:'—',oneri:''},
+  {tarih:'06.04.2026',ad:'Haluk Arslantaş',dept:'Yıkama/Teslimat/Showrom',unvan:'Yönetici',neden:'MAAŞ',col42:'MAAŞ',excelneden:'İŞ YERİ AÇACAK',
+   skorlar:{isTat:1,ucret:2,gorevBel:1,kariyer:1,yanHak:1,isyeri:5,yonetici:1,arkadaslar:2,egitim:1,odullendirme:1,yukFaz:1,saat:1,sektor:1,ailevi:1,sirketEgitim:1,evlilik:1,askerlik:1,tasinma:1,saglik:1,kultur:2,diger:1,okulDurum:1,gorevDisinda:1,isYasam:1},
+   geriDon:'Hayır',olumsuzOlay:'Hayır',kalanKosul:'Ulaşım sorunu',oneri:'Faydalı personeli kaybetmemek için ortak paydada buluşulmalı'},
+  {tarih:'10.04.2026',ad:'Recep Aydın',dept:'PSA',unvan:'Servis Danışmanı',neden:'MAAŞ',col42:'MAAŞ',excelneden:'İŞ DEĞİŞİKLİĞİ',
+   skorlar:{isTat:1,ucret:4,gorevBel:1,kariyer:2,yanHak:2,isyeri:2,yonetici:1,arkadaslar:1,egitim:1,odullendirme:2,yukFaz:1,saat:2,sektor:1,ailevi:1,sirketEgitim:1,evlilik:1,askerlik:1,tasinma:1,saglik:1,kultur:1,diger:1,okulDurum:1,gorevDisinda:2,isYasam:2},
+   geriDon:'Evet',olumsuzOlay:'Hayır',kalanKosul:'Maaş iyileştirmesi',oneri:'İyi ki çalıştım diyor'},
+  {tarih:'11.04.2026',ad:'Ayşenur Bozdoğanlı',dept:'Servis',unvan:'Resepsiyonist',neden:'MAAŞ',col42:'MAAŞ',excelneden:'SAĞLIK SEBEBİ',
+   skorlar:{isTat:5,ucret:5,gorevBel:1,kariyer:5,yanHak:3,isyeri:2,yonetici:1,arkadaslar:1,egitim:1,odullendirme:4,yukFaz:3,saat:3,sektor:1,ailevi:2,sirketEgitim:1,evlilik:1,askerlik:1,tasinma:1,saglik:4,kultur:2,diger:1,okulDurum:1,gorevDisinda:1,isYasam:4},
+   geriDon:'Hayır',olumsuzOlay:'Hayır',kalanKosul:'Hayır',oneri:'Hayır'},
+  {tarih:'24.04.2026',ad:'Mustafa Baynaz',dept:'BMW Rot Balans',unvan:'Rot Balans',neden:'YÖNETİCİYLE ANLAŞAMAMA',col42:'YÖNETİCİYLE ANLAŞAMAMA',excelneden:'YÖNETİCİ SORUNU',
+   skorlar:{isTat:1,ucret:5,gorevBel:1,kariyer:1,yanHak:1,isyeri:1,yonetici:5,arkadaslar:1,egitim:1,odullendirme:1,yukFaz:1,saat:1,sektor:1,ailevi:1,sirketEgitim:1,evlilik:1,askerlik:1,tasinma:1,saglik:1,kultur:1,diger:1,okulDurum:1,gorevDisinda:1,isYasam:1},
+   geriDon:'Evet',olumsuzOlay:'Mobbing (Servis Müdürü)',kalanKosul:'Müdür değişirse döner',oneri:''},
+  {tarih:'29.04.2026',ad:'Muhammed Furkan Doker',dept:'Fiat Yedek Parça',unvan:'Yedek Parça Satış Elemanı',neden:'FARKLI BİR İŞ',col42:'FARKLI BİR İŞ',excelneden:'İŞ DEĞİŞİKLİĞİ',
+   skorlar:{isTat:1,ucret:1,gorevBel:1,kariyer:1,yanHak:1,isyeri:1,yonetici:1,arkadaslar:1,egitim:1,odullendirme:1,yukFaz:1,saat:1,sektor:2,ailevi:1,sirketEgitim:1,evlilik:1,askerlik:1,tasinma:1,saglik:1,kultur:1,diger:1,okulDurum:1,gorevDisinda:1,isYasam:1},
+   geriDon:'Evet',olumsuzOlay:'Hayır',kalanKosul:'Şartlar uygunsa',oneri:'Yok'},
+  {tarih:'30.04.2026',ad:'Dilaver Aldemir',dept:'Hasar',unvan:'Oto Kaportacı',neden:'MAAŞ',col42:'MAAŞ',excelneden:'İŞ DEĞİŞİKLİĞİ',
+   skorlar:{isTat:2,ucret:2,gorevBel:2,kariyer:2,yanHak:2,isyeri:2,yonetici:2,arkadaslar:2,egitim:2,odullendirme:2,yukFaz:2,saat:2,sektor:2,ailevi:2,sirketEgitim:2,evlilik:2,askerlik:2,tasinma:2,saglik:2,kultur:2,diger:2,okulDurum:2,gorevDisinda:2,isYasam:2},
+   geriDon:'Evet',olumsuzOlay:'Hayır',kalanKosul:'Hayır',oneri:'Hayır'},
+  {tarih:'30.04.2026',ad:'Erhan Cingoz',dept:'Temizlik/Showrom',unvan:'Showrom Elemanı',neden:'İŞ YÜKÜ',col42:'İŞ YÜKÜ',excelneden:'YÖNETİCİ SORUNU',
+   skorlar:{isTat:2,ucret:2,gorevBel:2,kariyer:2,yanHak:5,isyeri:2,yonetici:3,arkadaslar:2,egitim:2,odullendirme:2,yukFaz:5,saat:3,sektor:2,ailevi:2,sirketEgitim:2,evlilik:2,askerlik:2,tasinma:2,saglik:2,kultur:2,diger:2,okulDurum:2,gorevDisinda:2,isYasam:2},
+   geriDon:'Hayır',olumsuzOlay:'Evet',kalanKosul:'—',oneri:'Yok'},
+  {tarih:'07.05.2026',ad:'Şükrü Doğanay',dept:'PSA',unvan:'Teknisyen',neden:'ÖZEL SEBEPLER',col42:'ÖZEL SEBEPLER',excelneden:'İSTİFA',
+   skorlar:{isTat:1,ucret:1,gorevBel:1,kariyer:1,yanHak:1,isyeri:1,yonetici:1,arkadaslar:1,egitim:1,odullendirme:1,yukFaz:1,saat:1,sektor:1,ailevi:5,sirketEgitim:1,evlilik:1,askerlik:1,tasinma:1,saglik:1,kultur:1,diger:1,okulDurum:1,gorevDisinda:1,isYasam:1},
+   geriDon:'Evet',olumsuzOlay:'Hayır',kalanKosul:'Ailevi sorun çözülürse',oneri:''},
+  {tarih:'20.05.2026',ad:'Berat Aydın',dept:'Motor Mekanik',unvan:'Usta',neden:'—',col42:'',excelneden:'İSTİFA',
+   skorlar:{isTat:1,ucret:2,gorevBel:2,kariyer:2,yanHak:2,isyeri:2,yonetici:2,arkadaslar:2,egitim:2,odullendirme:2,yukFaz:2,saat:2,sektor:2,ailevi:2,sirketEgitim:2,evlilik:2,askerlik:2,tasinma:2,saglik:2,kultur:2,diger:2,okulDurum:2,gorevDisinda:2,isYasam:2},
+   geriDon:'Hayır',olumsuzOlay:'Hayır',kalanKosul:'Hayır',oneri:'Hayır'},
+  {tarih:'13.06.2026',ad:'Fidan Erkeç',dept:'Jaecoo Otokoç',unvan:'Servis Dan./Sosyal Medya',neden:'—',col42:'',excelneden:'',
+   skorlar:{isTat:1,ucret:4,gorevBel:5,kariyer:3,yanHak:1,isyeri:1,yonetici:1,arkadaslar:1,egitim:1,odullendirme:3,yukFaz:3,saat:1,sektor:1,ailevi:5,sirketEgitim:3,evlilik:1,askerlik:1,tasinma:5,saglik:1,kultur:3,diger:1,okulDurum:1,gorevDisinda:3,isYasam:1},
+   geriDon:'Evet',olumsuzOlay:'Hayır - ekip iyiydi',kalanKosul:'Daha fazla eğitim, tek kişiye çok görev verilmemesi',oneri:'Ödüllendirme daha gerçek olsun'},
+  {tarih:'20.06.2026',ad:'Volkan Yurttadurmaz',dept:'Mekanik',unvan:'Diagnostik',neden:'—',col42:'',excelneden:'',
+   skorlar:{isTat:5,ucret:5,gorevBel:5,kariyer:5,yanHak:5,isyeri:5,yonetici:5,arkadaslar:5,egitim:5,odullendirme:5,yukFaz:5,saat:5,sektor:5,ailevi:5,sirketEgitim:5,evlilik:5,askerlik:5,tasinma:5,saglik:5,kultur:5,diger:5,okulDurum:5,gorevDisinda:5,isYasam:5},
+   geriDon:'Hayır',olumsuzOlay:'Çalışma saati & maaş zammı',kalanKosul:'Çalışmayı düşünmüyor',oneri:'Hayır'}
+];
+
+function renderAY2(){
+  var d=AY2_DATA;
+  var n=d.length;
+
+  // KPI'lar
+  var geriEvet=d.filter(function(x){return x.geriDon==='Evet';}).length;
+  var olmsz=d.filter(function(x){return x.olumsuzOlay&&x.olumsuzOlay!=='Hayır'&&x.olumsuzOlay!=='—'&&x.olumsuzOlay!=='Hayır (farklı teklif)'&&x.olumsuzOlay!=='Hayır - ekip iyiydi';}).length;
+  document.getElementById('ay2-tot').textContent=n;
+  document.getElementById('ay2-geridon').textContent=geriEvet;
+  document.getElementById('ay2-geridonp').innerHTML='<em>'+Math.round(geriEvet/n*100)+'%</em> geri dönebilir';
+  document.getElementById('ay2-olm').textContent=olmsz;
+  document.getElementById('ay2-olmp').innerHTML='<em>'+Math.round(olmsz/n*100)+'%</em> olumsuz deneyim';
+
+  // Neden dağılımı
+  var nedenMap={};
+  d.forEach(function(x){var k=x.neden||'—'; nedenMap[k]=(nedenMap[k]||0)+1;});
+  var nedenArr=Object.entries(nedenMap).sort(function(a,b){return b[1]-a[1];});
+  var nColors=['#ef4444','#f59e0b','#3b82f6','#10b981','#8b5cf6','#06b6d4','#f97316','#ec4899','#a3a3a3'];
+
+  ch('ay2-neden',{type:'doughnut',
+    data:{labels:nedenArr.map(function(x){return x[0];}),datasets:[{data:nedenArr.map(function(x){return x[1];}),backgroundColor:nColors.slice(0,nedenArr.length).map(function(c){return c+'bb';}),borderColor:nColors.slice(0,nedenArr.length),borderWidth:2,hoverOffset:8}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'45%',plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{family:'Inter',size:10},padding:7,boxWidth:8}},tooltip:TT,datalabels:{display:true,color:'#fff',font:{family:'Inter',size:11,weight:'700'},formatter:function(v,ctx){var t=ctx.chart.data.datasets[0].data.reduce(function(a,b){return a+b;},0);return v>1?v+'\n('+Math.round(v/t*100)+'%)':'';}}}}}
+  );
+
+  // Aylık ayrılma sayısı
+  var monMap={};
+  d.forEach(function(x){
+    var parts=x.tarih.split('.');
+    if(parts.length>=2){var m=parseInt(parts[1]);monMap[m]=(monMap[m]||0)+1;}
+  });
+  var monNames=['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+  var mKeys=Object.keys(monMap).map(Number).sort(function(a,b){return a-b;});
+  ch('ay2-aylik',{type:'bar',
+    data:{labels:mKeys.map(function(m){return monNames[m-1];}),datasets:[{label:'Çıkış',data:mKeys.map(function(m){return monMap[m];}),backgroundColor:'rgba(99,102,241,.7)',borderColor:'#6366f1',borderWidth:2,borderRadius:5,datalabels:{display:true,anchor:'end',align:'top',color:'#c4b5fd',font:{family:'Inter',size:11,weight:'700'}}}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT,datalabels:{display:true}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#64748b',font:{family:'Inter',size:11}}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#64748b',font:{family:'Inter',size:11}},beginAtZero:true}}}});
+
+  // Radar: ortalama faktör skorları (iş/ücret/yönetici/kariyer/kültür/yan hak/yük)
+  var keys=['isTat','ucret','yonetici','kariyer','kultur','yanHak','yukFaz','isYasam','gorevBel'];
+  var labels=['İş Tatmini','Ücret','Yönetici','Kariyer','Şirket Kültürü','Yan Haklar','İş Yükü','İş/Yaşam Dengesi','Görev Belirsizliği'];
+  var avgs=keys.map(function(k){
+    var sum=d.reduce(function(a,x){return a+(x.skorlar[k]||1);},0);
+    return +(sum/d.length).toFixed(2);
+  });
+  ch('ay2-radar',{type:'radar',
+    data:{labels:labels,datasets:[{label:'Ort. Etki Skoru (1=Az, 5=Çok)',data:avgs,backgroundColor:'rgba(239,68,68,.15)',borderColor:'#ef4444',borderWidth:2,pointBackgroundColor:'#ef4444',pointRadius:4,datalabels:{display:false}}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{family:'Inter',size:11}}},tooltip:TT,datalabels:{display:false}},scales:{r:{grid:{color:'rgba(255,255,255,.08)'},angleLines:{color:'rgba(255,255,255,.08)'},pointLabels:{color:'#94a3b8',font:{family:'Inter',size:10}},ticks:{color:'#64748b',font:{family:'Inter',size:10},backdropColor:'transparent',stepSize:1},min:0,max:5}}}});
+
+  // Top faktörler bar
+  var allFactors=[
+    {k:'ucret',l:'Ücret'},
+    {k:'isTat',l:'İş Tatminsizliği'},
+    {k:'kariyer',l:'Kariyer Beklentisi'},
+    {k:'yonetici',l:'Yönetici Anlaşmazlığı'},
+    {k:'yukFaz',l:'İş Yükü'},
+    {k:'isyeri',l:'İşyeri Şartları'},
+    {k:'isYasam',l:'İş/Yaşam Dengesi'},
+    {k:'sektor',l:'Sektör Değişikliği'},
+    {k:'kultur',l:'Çalışma Kültürü'},
+    {k:'gorevBel',l:'Görev Belirsizliği'},
+    {k:'tasinma',l:'Taşınma'},
+    {k:'ailevi',l:'Ailevi Nedenler'},
+    {k:'gorevDisinda',l:'Görev Dışı İş'},
+    {k:'yanHak',l:'Yan Haklar'},
+    {k:'odullendirme',l:'Ödüllendirme'}
+  ];
+  var factorAvgs=allFactors.map(function(f){
+    var sum=d.reduce(function(a,x){return a+(x.skorlar[f.k]||1);},0);
+    return {l:f.l,avg:+(sum/d.length).toFixed(2)};
+  }).sort(function(a,b){return b.avg-a.avg;});
+  var topF=factorAvgs.slice(0,10);
+  ch('ay2-faktors',{type:'bar',
+    data:{labels:topF.map(function(x){return x.l;}),datasets:[{label:'Ort. Etki',data:topF.map(function(x){return x.avg;}),backgroundColor:topF.map(function(x,i){var r=x.avg;return r>=4?'rgba(239,68,68,.75)':r>=3?'rgba(245,158,11,.75)':'rgba(59,130,246,.75)';}),borderColor:topF.map(function(x){return x.avg>=4?'#ef4444':x.avg>=3?'#f59e0b':'#3b82f6';}),borderWidth:2,borderRadius:5,datalabels:{display:true,anchor:'end',align:'right',color:'#eef4ff',font:{family:'Inter',size:11,weight:'700'}}}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:TT,datalabels:{display:true}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#64748b',font:{family:'Inter',size:10}},max:5,beginAtZero:true},y:{grid:{display:false},ticks:{color:'#94a3b8',font:{family:'Inter',size:11}}}}}});
+
+  // Departman dağılımı
+  var deptMap={};
+  d.forEach(function(x){deptMap[x.dept]=(deptMap[x.dept]||0)+1;});
+  var deptArr=Object.entries(deptMap).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+  var dmx=deptArr[0]?deptArr[0][1]:1;
+  var dhtml=deptArr.map(function(item,i){return '<div class="drow"><div class="dn" title="'+item[0]+'">'+item[0]+'</div><div class="dt"><div class="df" style="width:'+(item[1]/dmx*100)+'%;background:linear-gradient(90deg,'+PAL[i%PAL.length]+'66,'+PAL[i%PAL.length]+')"></div></div><div class="dc" style="color:'+PAL[i%PAL.length]+'">'+item[1]+'</div></div>';}).join('');
+  document.getElementById('ay2-deptbars').innerHTML=dhtml;
+
+  // Geri dönmek ister mi
+  var gdMap={'Evet':0,'Hayır':0};
+  d.forEach(function(x){if(x.geriDon==='Evet')gdMap['Evet']++;else if(x.geriDon==='Hayır')gdMap['Hayır']++;});
+  ch('ay2-geridon-ch',{type:'doughnut',
+    data:{labels:['Geri Döner','Dönmez'],datasets:[{data:[gdMap['Evet'],gdMap['Hayır']],backgroundColor:['rgba(16,185,129,.7)','rgba(239,68,68,.7)'],borderColor:['#10b981','#ef4444'],borderWidth:2,hoverOffset:6,datalabels:{display:true,color:'#fff',font:{family:'Inter',size:12,weight:'700'},formatter:function(v,ctx){var t=ctx.chart.data.datasets[0].data.reduce(function(a,b){return a+b;},0);return v+'\n('+Math.round(v/t*100)+'%)';}}}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'48%',plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{family:'Inter',size:11},padding:9,boxWidth:8}},tooltip:TT,datalabels:{display:true}}}});
+
+  // Excel Çıkış Nedeni (L sütunu) — sadece eşleşenler
+  var exMap={};
+  d.forEach(function(x){if(x.excelneden)exMap[x.excelneden]=(exMap[x.excelneden]||0)+1;});
+  var exArr=Object.entries(exMap).sort(function(a,b){return b[1]-a[1];});
+  var exColors=['#10b981','#3b82f6','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#f97316','#ec4899','#a3a3a3'];
+  ch('ay2-excelneden',{type:'bar',
+    data:{labels:exArr.map(function(x){return x[0];}),datasets:[{label:'Kişi',data:exArr.map(function(x){return x[1];}),backgroundColor:exColors.slice(0,exArr.length).map(function(c){return c+'bb';}),borderColor:exColors.slice(0,exArr.length),borderWidth:2,borderRadius:6,datalabels:{display:true,anchor:'end',align:'top',color:'#eef4ff',font:{family:'Inter',size:12,weight:'700'}}}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT,datalabels:{display:true}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#94a3b8',font:{family:'Inter',size:10},maxRotation:30}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#64748b',font:{family:'Inter',size:11}},beginAtZero:true}}}});
+
+  // IK Kategorisi (Column 42) bar chart
+  var c42Map={};
+  d.forEach(function(x){if(x.col42)c42Map[x.col42]=(c42Map[x.col42]||0)+1;});
+  var c42Arr=Object.entries(c42Map).sort(function(a,b){return b[1]-a[1];});
+  var c42Colors=['#ef4444','#f59e0b','#3b82f6','#10b981','#8b5cf6','#06b6d4','#f97316','#ec4899','#a3a3a3','#84cc16'];
+  ch('ay2-col42',{type:'bar',
+    data:{labels:c42Arr.map(function(x){return x[0];}),datasets:[{label:'Kişi',data:c42Arr.map(function(x){return x[1];}),backgroundColor:c42Colors.slice(0,c42Arr.length).map(function(c){return c+'bb';}),borderColor:c42Colors.slice(0,c42Arr.length),borderWidth:2,borderRadius:6,datalabels:{display:true,anchor:'end',align:'top',color:'#eef4ff',font:{family:'Inter',size:12,weight:'700'}}}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT,datalabels:{display:true}},scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#94a3b8',font:{family:'Inter',size:11},maxRotation:30}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#64748b',font:{family:'Inter',size:11}},beginAtZero:true}}}});
+
+  // Tablo
+  ay2Tbl(d);
+}
+
+var _ay2D=[],_ay2P=1;
+function ay2Tbl(d){
+  _ay2D=d;_ay2P=1;ay2Render();
+}
+function ay2Render(){
+  var PS=12,d=_ay2D,tp=Math.ceil(d.length/PS)||1;
+  document.getElementById('ay2-ti').textContent=d.length+' yanıt';
+  var sl=d.slice((_ay2P-1)*PS,_ay2P*PS);
+  var nedenCls=function(n){
+    if(!n||n==='—')return 'bd';
+    if(n.includes('MAAŞ')||n.includes('ÜCRET'))return 'bi';
+    if(n.includes('YÖNETİCİ'))return 'biv';
+    if(n.includes('FARKLI'))return 'ba';
+    if(n.includes('ÖZEL')||n.includes('ASKERLİK')||n.includes('ŞEHİR'))return 'be';
+    return 'bd';
+  };
+  var gdCls=function(g){return g==='Evet'?'ba':'bi';};
+  document.getElementById('ay2-tb').innerHTML=sl.length?sl.map(function(r,i){
+    var topSkors=Object.entries(r.skorlar).sort(function(a,b){return b[1]-a[1];}).slice(0,2);
+    var topLabel={'isTat':'İş Tat.','ucret':'Ücret','gorevBel':'Görev Bel.','kariyer':'Kariyer','yanHak':'Yan Hak','isyeri':'İşyeri','yonetici':'Yönetici','arkadaslar':'Arkadaşlar','egitim':'Eğitim','odullendirme':'Ödül','yukFaz':'İş Yükü','saat':'Çalışma Saati','sektor':'Sektör','ailevi':'Ailevi','sirketEgitim':'Şirket Eğit.','evlilik':'Evlilik','askerlik':'Askerlik','tasinma':'Taşınma','saglik':'Sağlık','kultur':'Kültür','diger':'Diğer','okulDurum':'Okul','gorevDisinda':'Görev Dışı','isYasam':'İş/Yaşam'};
+    var skrHtml=topSkors.map(function(s){return '<span style="background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.2);padding:1px 6px;border-radius:10px;font-size:9px;font-weight:700;margin-right:3px">'+(topLabel[s[0]]||s[0])+' '+s[1]+'</span>';}).join('');
+    return '<tr><td style="color:var(--t4);font-size:10.5px">'+(_ay2P-1)*PS+(i+1)+'</td><td><strong style="font-size:12px">'+r.ad+'</strong><div style="font-size:10px;color:var(--t4);margin-top:2px">'+r.tarih+'</div></td><td style="color:var(--t2);font-size:11px">'+r.dept+'</td><td style="color:var(--t3);font-size:11px">'+r.unvan+'</td><td><span class="bdg '+nedenCls(r.neden)+'">'+r.neden+'</span></td><td>'+(r.col42?'<span class="bdg biv" style="font-size:9px">'+r.col42+'</span>':'<span style="color:var(--t4);font-size:10px">—</span>')+'</td><td>'+(r.excelneden?'<span class="bdg ba" style="font-size:9px">'+r.excelneden+'</span>':'<span style="color:var(--t4);font-size:10px">—</span>')+'</td><td>'+skrHtml+'</td><td><span class="bdg '+gdCls(r.geriDon)+'">'+r.geriDon+'</span></td></tr>';
+  }).join(''):'<tr><td colspan="9" class="nod">Kayıt bulunamadı</td></tr>';
+  document.getElementById('ay2-pi').textContent='Sayfa '+_ay2P+'/'+tp;
+  document.getElementById('ay2-prv').disabled=_ay2P===1;
+  document.getElementById('ay2-nxt').disabled=_ay2P===tp||tp===0;
+}
+function ay2Prv(){if(_ay2P>1){_ay2P--;ay2Render();}}
+function ay2Nxt(){if(_ay2P<Math.ceil(_ay2D.length/12)){_ay2P++;ay2Render();}}
+</script>
+<!-- AYRILIK ANKETİ ANALİZİ -->
+<div class="pg" id="p-ay2">
+  <div class="pghd"><h2>Ayrılış Anketi Analizi</h2><p>2026 yılı · Google Forms sonuçları (Ocak–Haziran)</p></div>
+  <div class="kpis k4">
+    <div class="k krd"><div class="kl">Toplam Yanıt</div><div class="kv" id="ay2-tot" style="color:#f87171">—</div><div class="ks">2026 ayrılış anketi</div></div>
+    <div class="k kgn"><div class="kl">Geri Döner</div><div class="kv" id="ay2-geridon" style="color:#34d399">—</div><div class="ks" id="ay2-geridonp"></div></div>
+    <div class="k kyw"><div class="kl">Olumsuz Olay</div><div class="kv" id="ay2-olm" style="color:#fbbf24">—</div><div class="ks" id="ay2-olmp"></div></div>
+    <div class="k kpu"><div class="kl">En Büyük Neden</div><div class="kv" style="color:#a78bfa;font-size:14px;margin:6px 0 2px">MAAŞ</div><div class="ks">9 kişi · %39</div></div>
+  </div>
+
+  <div class="g3">
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(239,68,68,.15)">📊</div><span class="ct">Ayrılma Nedeni Dağılımı</span></div><div class="cs">Kategorik dağılım</div><div class="cw h260"><canvas id="ay2-neden"></canvas></div></div>
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(99,102,241,.15)">📅</div><span class="ct">Aylık Çıkış Sayısı</span></div><div class="cs">Anket doldurulma tarihi bazında</div><div class="cw h260"><canvas id="ay2-aylik"></canvas></div></div>
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(16,185,129,.15)">🔄</div><span class="ct">Geri Dönme İsteği</span></div><div class="cs">Tekrar çalışmayı düşünür mü?</div><div class="cw h260"><canvas id="ay2-geridon-ch"></canvas></div></div>
+  </div>
+
+  <div class="g2">
+    <div class="c" style="grid-column:span 1"><div class="ch"><div class="ci" style="background:rgba(239,68,68,.15)">🎯</div><span class="ct">Top 10 Etki Faktörü</span></div><div class="cs">Ortalama etki skoru (1=Az, 5=Çok etkili) · Kırmızı ≥4, Sarı ≥3</div><div class="cw h300"><canvas id="ay2-faktors"></canvas></div></div>
+    <div class="c" style="grid-column:span 1"><div class="ch"><div class="ci" style="background:rgba(245,158,11,.15)">🕸️</div><span class="ct">Faktör Profili (Radar)</span></div><div class="cs">Temel faktörler ağ görünümü</div><div class="cw h300"><canvas id="ay2-radar"></canvas></div></div>
+  </div>
+
+  <div class="g2">
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(59,130,246,.15)">🏢</div><span class="ct">Departman Dağılımı</span></div><div class="cs">Hangi departmandan kaç kişi ayrıldı</div><div id="ay2-deptbars" class="dbars" style="max-height:240px;overflow-y:auto;margin-top:6px"></div></div>
+    <div class="c"><div class="ch"><div class="ci" style="background:rgba(16,185,129,.15)">📂</div><span class="ct">Excel Çıkış Nedeni Dağılımı</span><span style="margin-left:8px;font-size:10px;background:rgba(16,185,129,.15);color:#6ee7b7;border:1px solid rgba(16,185,129,.3);padding:2px 8px;border-radius:10px;font-weight:700">L Sütunu</span></div><div class="cs">İşten çıkış tablosundaki resmi neden (yalnızca anketle eşleşen istifalar)</div><div class="cw h240"><canvas id="ay2-excelneden"></canvas></div></div>
+  </div>
+
+  <!-- IK Kategori (Column 42) -->
+  <div class="c" style="margin-bottom:14px">
+    <div class="ch"><div class="ci" style="background:rgba(245,158,11,.15)">🏷️</div><span class="ct">İK Kategorisi Dağılımı</span><span style="margin-left:10px;font-size:10px;background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.3);padding:2px 8px;border-radius:10px;font-weight:700">Column 42</span></div>
+    <div class="cs">İK tarafından atanan kategori bazında ayrılma dağılımı (kategori girilmemiş kişiler hariç)</div>
+    <div class="cw h220"><canvas id="ay2-col42"></canvas></div>
+  </div>
+
+  <!-- Tablo -->
+  <div class="c">
+    <div class="ch" style="margin-bottom:10px;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:7px"><div class="ci" style="background:rgba(59,130,246,.15)">📋</div><span class="ct">Tüm Yanıtlar</span></div>
+      <span id="ay2-ti" style="font-size:11px;color:var(--t4)"></span>
+    </div>
+    <div class="tbw"><table>
+      <thead><tr><th>#</th><th>Ad Soyad</th><th>Departman</th><th>Unvan</th><th>Ayrılma Nedeni</th><th>İK Kategorisi</th><th>Excel Çıkış Nedeni</th><th>Yüksek Etki Faktörleri</th><th>Geri Döner?</th></tr></thead>
+      <tbody id="ay2-tb"></tbody>
+    </table></div>
+    <div class="pag"><span class="pagi" id="ay2-pi"></span><div class="pgb"><button class="pb" id="ay2-prv" onclick="ay2Prv()">‹ Önceki</button><button class="pb" id="ay2-nxt" onclick="ay2Nxt()">Sonraki ›</button></div></div>
+  </div>
+</div>
+
+
+<!-- Cache engelle + versiyon kontrolü -->
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function(regs) {
+    regs.forEach(function(r) { r.unregister(); });
+  });
+}
+if ('caches' in window) {
+  caches.keys().then(function(keys) {
+    keys.forEach(function(k) { caches.delete(k); });
+  });
+}
+var PAGE_VERSION = '202606241402';
+var stored = sessionStorage.getItem('ik_version');
+if (stored && stored !== PAGE_VERSION) {
+  sessionStorage.setItem('ik_version', PAGE_VERSION);
+  window.location.reload(true);
+} else {
+  sessionStorage.setItem('ik_version', PAGE_VERSION);
+}
+</script>
+</body>
+</html>
