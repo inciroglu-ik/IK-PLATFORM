@@ -1378,16 +1378,18 @@ function renderMES(){
   // Bölüm grafikleri
   var AY_LBL=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz'];
   var mb=D.mes_bolum||{servis:{},satis:{},idari:{}};
-  function makeBChart(cid,bData){
+  function makeBChart(cid,bData,detay){
     var el=document.getElementById(cid);if(!el)return;
     var depts=Object.keys(bData);
-    var datasets=depts.map(function(dept,i){return{label:dept,data:bData[dept],backgroundColor:PAL[i%PAL.length]+'99',borderColor:PAL[i%PAL.length],borderWidth:2,borderRadius:4,datalabels:{display:false}};});
+    var dl={labels:{total:{display:function(ctx){return ctx.datasetIndex===ctx.chart.data.datasets.length-1;},anchor:'end',align:'end',clamp:true,color:'#111B21',font:{family:'Inter',size:9,weight:'700'},formatter:function(v,ctx){var s=0;ctx.chart.data.datasets.forEach(function(ds){var x=ds.data[ctx.dataIndex];if(typeof x==='number')s+=x;});return s>0?(s/1000).toFixed(0)+'K':'';}}}};
+    if(detay){dl.labels.value={display:function(ctx){var v=ctx.dataset.data[ctx.dataIndex];return typeof v==='number'&&v>=2500;},anchor:'center',align:'center',color:'#0C2937',textStrokeColor:'rgba(255,255,255,0.9)',textStrokeWidth:3,font:{family:'Inter',size:8,weight:'700'},formatter:function(v){return v>=10000?(v/1000).toFixed(0)+'K':(v/1000).toFixed(1)+'K';}};}
+    var datasets=depts.map(function(dept,i){return{label:dept,data:bData[dept],backgroundColor:PAL[i%PAL.length]+'99',borderColor:PAL[i%PAL.length],borderWidth:2,borderRadius:4,datalabels:dl};});
     if(el._c)el._c.destroy();
-    el._c=new Chart(el,{type:'bar',data:{labels:AY_LBL,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#5B6B77',font:{family:'Inter',size:9},padding:6,boxWidth:8}},tooltip:{...TT,callbacks:{label:function(c){return ' '+c.dataset.label+': '+(c.raw/1000).toFixed(1)+'K  TL';}}}},scales:{x:{stacked:true,...SX,ticks:{...SX.ticks,font:{family:'Inter',size:10}}},y:{stacked:true,...SY,ticks:{...SY.ticks,callback:function(v){return (v/1000).toFixed(0)+'K';}}}}}});
+    el._c=new Chart(el,{type:'bar',data:{labels:AY_LBL,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#5B6B77',font:{family:'Inter',size:9},padding:6,boxWidth:8}},tooltip:{...TT,callbacks:{label:function(c){return ' '+c.dataset.label+': '+(c.raw/1000).toFixed(1)+'K  TL';}}}},scales:{x:{stacked:true,...SX,ticks:{...SX.ticks,font:{family:'Inter',size:10}}},y:{stacked:true,grace:'12%',...SY,ticks:{...SY.ticks,callback:function(v){return (v/1000).toFixed(0)+'K';}}}}}});
   }
-  makeBChart('mes-servis-chart',mb.servis);
-  makeBChart('mes-satis-chart',mb.satis);
-  makeBChart('mes-idari-chart',mb.idari);
+  makeBChart('mes-servis-chart',mb.servis,true);
+  makeBChart('mes-satis-chart',mb.satis,false);
+  makeBChart('mes-idari-chart',mb.idari,true);
   _mesD=[...mk];_mesP=1;mesTbl();
 }
 function mesTbl(){
