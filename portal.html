@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>İnciroğlu Otomotiv · İK Portalı</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand:#16324e; --brand-2:#1f456b; --accent:#c9a227; --accent-2:#e0be4f;
+  --page:#eef1f4; --surface:#ffffff; --ink:#0e1b28; --ink-2:#52514e; --muted:#8a8f96;
+  --line:#cfd4da; --ok:#0ca30c; --bad:#d03b3b;
+  --sidebar-w:248px;
+  --font:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --serif:"Source Serif 4","Source Serif Pro",Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--font);background:var(--page);color:var(--ink);overflow:hidden}
+
+/* ---------- GİRİŞ ---------- */
+#login{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#16324e,#0e1f30 60%,#1f456b)}
+.login-card{background:var(--surface);border-radius:16px;width:min(400px,92vw);padding:34px 32px 30px;
+  box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.login-badge{width:52px;height:52px;border-radius:13px;background:linear-gradient(135deg,var(--brand),var(--brand-2));
+  display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:20px;font-family:var(--serif);margin-bottom:16px}
+.login-card h1{font-family:var(--serif);font-size:21px;font-weight:700;color:var(--brand)}
+.login-card .sub{font-size:12.5px;color:var(--muted);margin:3px 0 22px}
+.fld{margin-bottom:14px}
+.fld label{display:block;font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:5px}
+.fld input{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:9px;font-size:14px;font-family:var(--font);outline:none}
+.fld input:focus{border-color:var(--brand-2);box-shadow:0 0 0 3px rgba(31,69,107,.12)}
+.login-btn{width:100%;margin-top:6px;padding:12px;border:none;border-radius:9px;cursor:pointer;
+  background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;font-size:14.5px;font-weight:600;font-family:var(--font)}
+.login-btn:hover{filter:brightness(1.08)}
+.login-err{color:var(--bad);font-size:12.5px;min-height:17px;margin-top:8px}
+.login-foot{text-align:center;font-size:11px;color:var(--muted);margin-top:18px}
+
+/* ---------- UYGULAMA ---------- */
+#app{display:none;height:100%}
+#app.on{display:grid;grid-template-columns:var(--sidebar-w) 1fr}
+.side{background:var(--brand);color:#fff;display:flex;flex-direction:column;height:100%;overflow:hidden}
+.side-hd{padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,.09)}
+.side-hd .mark{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  display:flex;align-items:center;justify-content:center;color:var(--brand);font-weight:800;font-size:17px;font-family:var(--serif);margin-bottom:11px}
+.side-hd .t{font-family:var(--serif);font-size:16px;font-weight:600;line-height:1.25}
+.side-hd .s{font-size:11px;color:#a9bdd2;margin-top:2px}
+.side-nav{flex:1;overflow-y:auto;padding:12px 10px}
+.side-nav .lbl{font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;color:#7f97ad;padding:8px 12px 6px;font-weight:700}
+.nav-item{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:transparent;border:none;color:#cdd9e6;
+  padding:11px 12px;border-radius:9px;cursor:pointer;font-size:14px;font-family:var(--font);font-weight:500;margin-bottom:2px;transition:background .12s}
+.nav-item:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav-item.on{background:rgba(201,162,39,.16);color:#fff}
+.nav-item.on .ico{filter:none}
+.nav-item .ico{font-size:17px;width:22px;text-align:center}
+.nav-item .cap{flex:1}
+.nav-item.on .cap{font-weight:600}
+.side-foot{padding:12px 14px;border-top:1px solid rgba(255,255,255,.09);display:flex;align-items:center;gap:10px}
+.side-foot .who{flex:1;min-width:0}
+.side-foot .who b{display:block;font-size:12.5px;color:#fff}
+.side-foot .who span{font-size:11px;color:#a9bdd2}
+.logout{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;
+  padding:7px 11px;font-size:12px;cursor:pointer;font-family:var(--font)}
+.logout:hover{background:rgba(208,59,59,.25);border-color:rgba(208,59,59,.5)}
+
+.main{position:relative;height:100%;background:var(--page)}
+.main-bar{height:46px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;
+  padding:0 18px;gap:12px;position:relative;z-index:2}
+.main-bar .crumb{font-size:13px;color:var(--ink-2)}
+.main-bar .crumb b{color:var(--brand);font-weight:600}
+.main-bar .sp{flex:1}
+.main-bar a.newtab{font-size:12px;color:var(--brand-2);text-decoration:none;border:1px solid var(--line);border-radius:7px;padding:6px 10px}
+.main-bar a.newtab:hover{background:var(--page)}
+.frame-wrap{position:absolute;inset:46px 0 0 0}
+.frame-wrap iframe{width:100%;height:100%;border:none;background:#fff}
+.welcome{position:absolute;inset:46px 0 0 0;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;color:var(--muted);padding:30px}
+.welcome .big{font-family:var(--serif);font-size:22px;color:var(--brand);font-weight:600;margin-bottom:6px}
+.spin{position:absolute;inset:46px 0 0 0;display:none;align-items:center;justify-content:center;background:rgba(255,255,255,.7);z-index:1}
+.spin.on{display:flex}
+.spin i{width:34px;height:34px;border:3px solid var(--line);border-top-color:var(--brand-2);border-radius:50%;animation:sp 0.8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media(max-width:720px){#app.on{grid-template-columns:64px 1fr}.side-hd .t,.side-hd .s,.side-nav .lbl,.nav-item .cap,.side-foot .who{display:none}.nav-item{justify-content:center}.side-foot{justify-content:center}}
+</style>
+</head>
+<body>
+
+<!-- GİRİŞ -->
+<div id="login">
+  <form class="login-card" id="loginForm" autocomplete="off">
+    <div class="login-badge">İK</div>
+    <h1>İK Portalı</h1>
+    <div class="sub">İnciroğlu Otomotiv · Tüm panolara tek giriş</div>
+    <div class="fld"><label>Kullanıcı Adı</label><input id="u" type="text" autocomplete="username" placeholder="ik123"></div>
+    <div class="fld"><label>Şifre</label><input id="p" type="password" autocomplete="current-password" placeholder="••••••"></div>
+    <button class="login-btn" type="submit">Giriş Yap</button>
+    <div class="login-err" id="err"></div>
+    <div class="login-foot">© İnciroğlu Otomotiv · İnsan Kaynakları</div>
+  </form>
+</div>
+
+<!-- UYGULAMA -->
+<div id="app">
+  <aside class="side">
+    <div class="side-hd">
+      <div class="mark">İK</div>
+      <div class="t">İK Portalı</div>
+      <div class="s">İnciroğlu Otomotiv</div>
+    </div>
+    <nav class="side-nav" id="nav">
+      <div class="lbl">Panolar</div>
+    </nav>
+    <div class="side-foot">
+      <div class="who"><b id="whoAd">İnsan Kaynakları</b><span>ik123</span></div>
+      <button class="logout" id="logout">Çıkış</button>
+    </div>
+  </aside>
+  <section class="main">
+    <div class="main-bar">
+      <div class="crumb">Aktif pano: <b id="crumb">—</b></div>
+      <div class="sp"></div>
+      <a class="newtab" id="newtab" href="#" target="_blank" rel="noopener" style="display:none">↗ Yeni sekmede aç</a>
+    </div>
+    <div class="welcome" id="welcome">
+      <div class="big">Hoş geldiniz 👋</div>
+      <div>Soldaki listeden bir pano seçin; burada açılsın.</div>
+    </div>
+    <div class="spin" id="spin"><i></i></div>
+    <div class="frame-wrap" id="frameWrap" style="display:none"><iframe id="frame" title="Pano"></iframe></div>
+  </section>
+</div>
+
+<script>
+/* ---------------- Panolar ---------------- */
+var PANOLAR=[
+  {id:'satis',   ad:'Satış Panosu',    ico:'📊', url:'https://inciroglu-ik.github.io/satis-panosu/'},
+  {id:'servis',  ad:'Servis Panosu',   ico:'🔧', url:'https://inciroglu-ik.github.io/servis-panosu/'},
+  {id:'ikdash',  ad:'İK Dashboard',    ico:'📁', url:'https://inciroglu-ik.github.io/IK-PLATFORM/'},
+  {id:'yetenek', ad:'Yetenek Havuzu',  ico:'⭐', url:'https://inciroglu-ik.github.io/yetenek-havuzu/'},
+  {id:'isealim', ad:'İşe Alım Süreci', ico:'🧭', url:'https://inciroglu-ik.github.io/ise-alim-sureci/'}
+];
+var SSO_KEY='inc_portal_sso';        /* paneller bunu okur (aynı origin) */
+var SES_KEY='inc_portal_ses';        /* portal oturumu (bu sekme) */
+var KULLANICI='ik123', SIFRE='ik123';
+
+var $=function(id){return document.getElementById(id);};
+var aktif=null;
+
+/* ---------------- Giriş ---------------- */
+$('loginForm').addEventListener('submit',function(e){
+  e.preventDefault();
+  var u=($('u').value||'').trim().toLowerCase(), p=$('p').value||'';
+  if(u!==KULLANICI||p!==SIFRE){ $('err').textContent='Kullanıcı adı veya şifre hatalı.'; return; }
+  $('err').textContent='';
+  girisYap();
+});
+
+function ssoYaz(){
+  try{
+    var t={ok:true, u:KULLANICI, ad:'İnsan Kaynakları', ts:Date.now()};
+    localStorage.setItem(SSO_KEY, JSON.stringify(t));
+  }catch(e){}
+}
+function girisYap(){
+  ssoYaz();
+  try{ sessionStorage.setItem(SES_KEY,'1'); }catch(e){}
+  $('login').style.display='none';
+  $('app').classList.add('on');
+  navKur();
+  /* İlk panoyu otomatik aç */
+  panoAc(PANOLAR[0].id);
+}
+
+/* Oturumu sürdür (sekme yenilenince) */
+(function(){
+  try{ if(sessionStorage.getItem(SES_KEY)==='1'){ setTimeout(girisYap,0); } }catch(e){}
+})();
+
+/* ---------------- Navigasyon ---------------- */
+function navKur(){
+  var nav=$('nav');
+  nav.innerHTML='<div class="lbl">Panolar</div>'+PANOLAR.map(function(x){
+    return '<button class="nav-item" data-p="'+x.id+'"><span class="ico">'+x.ico+'</span><span class="cap">'+x.ad+'</span></button>';
+  }).join('');
+  Array.prototype.forEach.call(nav.querySelectorAll('.nav-item'),function(b){
+    b.onclick=function(){ panoAc(b.getAttribute('data-p')); };
+  });
+}
+function panoAc(id){
+  var pano=null; PANOLAR.forEach(function(x){ if(x.id===id)pano=x; });
+  if(!pano)return;
+  aktif=id;
+  ssoYaz(); /* her geçişte tazele */
+  Array.prototype.forEach.call($('nav').querySelectorAll('.nav-item'),function(b){
+    b.classList.toggle('on', b.getAttribute('data-p')===id);
+  });
+  $('crumb').textContent=pano.ad;
+  var nt=$('newtab'); nt.href=pano.url; nt.style.display='';
+  $('welcome').style.display='none';
+  $('frameWrap').style.display='';
+  $('spin').classList.add('on');
+  var fr=$('frame');
+  fr.onload=function(){ $('spin').classList.remove('on'); };
+  /* güvenlik ağı: 6 sn sonra spinner'ı kaldır */
+  setTimeout(function(){ $('spin').classList.remove('on'); },6000);
+  if(fr.getAttribute('src')!==pano.url) fr.setAttribute('src', pano.url);
+  else { $('spin').classList.remove('on'); }
+}
+
+/* ---------------- Çıkış ---------------- */
+$('logout').addEventListener('click',function(){
+  try{ localStorage.removeItem(SSO_KEY); }catch(e){}
+  try{ sessionStorage.removeItem(SES_KEY); }catch(e){}
+  $('frame').setAttribute('src','about:blank');
+  $('app').classList.remove('on');
+  $('login').style.display='flex';
+  $('p').value='';
+});
+</script>
+</body>
+</html>
