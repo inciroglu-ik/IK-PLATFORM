@@ -1566,6 +1566,24 @@ function renderRP(){rpDeptDoldur();rpLib();rpRenderDrop();rpBuild();}
 
 // -- INIT --------------------------------------------------─
 document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){goPage('ov');buildSidebarDeptList();},0);});
+/* İK Portalı SSO: yalnızca portal iframe'i içinde + geçerli portal token varsa kilidi otomatik açar.
+   Doğrudan (portal dışı) açılışta kilit ekranı normal şekilde gelir — başka kimse görmez. */
+(function(){
+  function tryPortalSSO(){
+    try{
+      if(window.top===window.self)return;                 /* yalnız iframe içinde */
+      var t=JSON.parse(localStorage.getItem('inc_portal_sso')||'null');
+      if(!t||!t.ok||(Date.now()-(t.ts||0))>12*3600*1000)return;
+      var lock=document.getElementById('lock'); if(lock)lock.style.display='none';
+      var fn=document.getElementById('sb-foot-name'); if(fn)fn.textContent='İnsan Kaynakları';
+      var fr=document.getElementById('sb-foot-role'); /* dokunma: hafta bilgisi kalsın */
+      var av=document.getElementById('sb-avatar'); if(av)av.textContent='İK';
+      if(typeof buildSidebarDeptList==='function')buildSidebarDeptList();
+    }catch(e){}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(tryPortalSSO,40);});
+  else setTimeout(tryPortalSSO,40);
+})();
 
 // -- AYRILIK ANKETİ (2026) ----------------------------------─
 

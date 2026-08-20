@@ -159,9 +159,19 @@ $('loginForm').addEventListener('submit',function(e){
 
 function ssoYaz(){
   try{
-    var t={ok:true, u:KULLANICI, ad:'İnsan Kaynakları', ts:Date.now()};
-    localStorage.setItem(SSO_KEY, JSON.stringify(t));
+    /* İK Dashboard (IK-PLATFORM) bunu okur: iframe içinde + token varsa kilidi açar. */
+    localStorage.setItem(SSO_KEY, JSON.stringify({ok:true, u:KULLANICI, ad:'İnsan Kaynakları', ts:Date.now()}));
+    /* Satış + Servis: aynı origin sessionStorage'ı iframe ile paylaşıldığından, panelin
+       kendi "oturumu sürdür" kodu bu kaydı görüp otomatik giriş yapar (panele dokunmadan).
+       İkisinde de gerçek 'admin' kullanıcısı kullanılır. */
+    sessionStorage.setItem('sp_ses', JSON.stringify({kullanici:'admin', ad:'İnsan Kaynakları', rol:'admin'}));
+    sessionStorage.setItem('sp_servis_ses', JSON.stringify({kullanici:'admin', ad:'İnsan Kaynakları', rol:'admin', marka:''}));
   }catch(e){}
+}
+function ssoTemizle(){
+  try{ localStorage.removeItem(SSO_KEY);
+       sessionStorage.removeItem('sp_ses');
+       sessionStorage.removeItem('sp_servis_ses'); }catch(e){}
 }
 function girisYap(){
   ssoYaz();
@@ -211,7 +221,7 @@ function panoAc(id){
 
 /* ---------------- Çıkış ---------------- */
 $('logout').addEventListener('click',function(){
-  try{ localStorage.removeItem(SSO_KEY); }catch(e){}
+  ssoTemizle();
   try{ sessionStorage.removeItem(SES_KEY); }catch(e){}
   $('frame').setAttribute('src','about:blank');
   $('app').classList.remove('on');
