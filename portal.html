@@ -261,6 +261,9 @@ $('loginForm').addEventListener('submit',function(e){
   if(!k){ $('err').textContent='Kullanıcı adı veya şifre hatalı.'; return; }
   $('err').textContent='';
   AKTIF_KULLANICI=k;
+  /* Yeni portal girişi: Yetenek/İşe Alım'da tarayıcıda kalmış (paylaşılan) Firebase
+     oturumunu geçersiz kıl — bu kişi panoya kendi hesabıyla girsin, admin devralmasın. */
+  try{ sessionStorage.removeItem('fbFormLogin'); }catch(e){}
   try{ sessionStorage.setItem(SES_KEY, JSON.stringify({u:k.u})); }catch(e){}
   anaEkran();
 });
@@ -336,7 +339,7 @@ function ssoYaz(id){
     }
   }catch(e){}
 }
-function ssoTemizle(){ try{ localStorage.removeItem(SSO_KEY); sessionStorage.removeItem('sp_ses'); sessionStorage.removeItem('sp_servis_ses'); }catch(e){} }
+function ssoTemizle(){ try{ localStorage.removeItem(SSO_KEY); sessionStorage.removeItem('sp_ses'); sessionStorage.removeItem('sp_servis_ses'); sessionStorage.removeItem('fbFormLogin'); }catch(e){} }
 
 /* ============================================================
    PANO AÇ (iframe + geri)
