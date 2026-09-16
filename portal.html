@@ -63,22 +63,41 @@ body{font-family:var(--font);background:var(--page);color:var(--ink);overflow:hi
 .topbar .pill{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;background:rgba(201,162,39,.2);border:1px solid rgba(201,162,39,.4);color:#f0dca0;border-radius:20px;padding:2px 9px;margin-top:3px}
 .topbar .lo{margin-left:16px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:8px 13px;font-size:12.5px;cursor:pointer;font-family:var(--font)}
 .topbar .lo:hover{background:rgba(192,57,43,.3);border-color:rgba(192,57,43,.55)}
-.home-body{flex:1;max-width:1180px;width:100%;margin:0 auto;padding:44px 30px 60px}
-.home-head{margin-bottom:30px}
-.home-head h1{font-family:var(--serif);font-size:30px;font-weight:700;color:var(--navy);letter-spacing:-.01em}
-.home-head p{font-size:14.5px;color:var(--ink-2);margin-top:6px}
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px}
-.tile{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px 22px;cursor:pointer;text-align:left;font-family:var(--font);
-  box-shadow:0 1px 2px rgba(15,26,32,.05);transition:transform .16s,box-shadow .18s,border-color .16s;overflow:hidden}
-.tile::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,var(--navy),var(--brass));opacity:0;transition:opacity .2s}
-.tile:hover{transform:translateY(-3px);box-shadow:0 14px 34px -18px rgba(15,26,32,.4);border-color:#b9c6d3}
-.tile:hover::before{opacity:1}
-.tile .ico{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:16px;background:var(--page)}
-.tile h3{font-family:var(--serif);font-size:18px;font-weight:700;color:var(--navy);margin-bottom:5px}
-.tile p{font-size:12.8px;color:var(--ink-2);line-height:1.5}
-.tile .go{position:absolute;right:20px;bottom:20px;font-size:18px;color:var(--navy-2);opacity:0;transform:translateX(-6px);transition:.2s}
-.tile:hover .go{opacity:1;transform:none}
-.home-note{margin-top:30px;font-size:12px;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:14px 16px;line-height:1.55}
+.home-body{flex:1;max-width:1200px;width:100%;margin:0 auto;padding:46px 32px 64px}
+.home-head{margin-bottom:26px}
+.home-head h1{font-family:var(--serif);font-size:31px;font-weight:700;color:var(--navy);letter-spacing:-.015em;line-height:1.15}
+.home-head p{font-size:14.5px;color:var(--ink-2);margin-top:8px;max-width:60ch;line-height:1.55}
+/* rol + modül sayısı + tarih şeridi (yaşayan üst bilgi) */
+.home-meta{display:flex;flex-wrap:wrap;gap:9px;margin:18px 0 6px}
+.home-meta .chip{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--ink-2);
+  background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:7px 12px}
+.home-meta .chip b{color:var(--navy);font-weight:700}
+.home-meta .chip .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(27,138,75,.14)}
+.sec-label{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:26px 0 14px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:16px}
+.tile{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px 22px 18px;cursor:pointer;text-align:left;font-family:var(--font);
+  box-shadow:0 1px 2px rgba(15,26,32,.04);transition:transform .18s cubic-bezier(.2,.7,.3,1),box-shadow .2s,border-color .18s;overflow:hidden;
+  animation:tileIn .42s both}
+@keyframes tileIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.tile::after{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--brass),var(--brass-2));transform:scaleY(0);transform-origin:top;transition:transform .22s}
+.tile:hover{transform:translateY(-3px);box-shadow:0 18px 40px -22px rgba(15,26,32,.45);border-color:#c2ccd7}
+.tile:hover::after{transform:scaleY(1)}
+.tile .thead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:15px}
+.tile .ico{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  background:#eef2f7;border:1px solid #e0e7ef;color:var(--navy);transition:background .18s,border-color .18s,color .18s}
+.tile .ico svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tile:hover .ico{background:var(--navy);border-color:var(--navy);color:#fff}
+.tile .tag{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--navy-2);
+  background:rgba(28,61,95,.07);border-radius:20px;padding:5px 10px;white-space:nowrap;margin-top:3px}
+.tile h3{font-family:var(--serif);font-size:18px;font-weight:700;color:var(--navy);margin-bottom:6px}
+.tile p{font-size:12.8px;color:var(--ink-2);line-height:1.55;min-height:38px}
+.tile .foot{display:flex;align-items:center;gap:6px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line);
+  font-size:12.5px;font-weight:600;color:var(--navy-2)}
+.tile .foot .arw{transition:transform .2s}
+.tile:hover .foot .arw{transform:translateX(4px)}
+.home-note{margin-top:32px;font-size:12.2px;color:var(--ink-2);background:linear-gradient(180deg,var(--surface),#f7f9fb);
+  border:1px solid var(--line);border-left:3px solid var(--brass);border-radius:10px;padding:15px 18px;line-height:1.6}
+.home-note b{color:var(--navy)}
 
 /* ============ PANO GÖRÜNÜMÜ (iframe + geri) ============ */
 #viewer{position:fixed;inset:0;z-index:70;background:#fff;display:none;flex-direction:column}
@@ -134,7 +153,12 @@ body{font-family:var(--font);background:var(--page);color:var(--ink);overflow:hi
     <button class="lo" id="logout">Çıkış</button>
   </div>
   <div class="home-body">
-    <div class="home-head"><h1 id="selam">Hoş geldiniz 👋</h1><p id="altyazi">Aşağıdan girmek istediğiniz panoyu seçin.</p></div>
+    <div class="home-head">
+      <h1 id="selam">Hoş geldiniz</h1>
+      <p id="altyazi">Rolünüze tanımlı panolara buradan tek tıkla geçebilirsiniz.</p>
+      <div class="home-meta" id="homeMeta"></div>
+    </div>
+    <div class="sec-label">Yetkili Modülleriniz</div>
     <div class="tiles" id="tiles"></div>
     <div class="home-note" id="homeNote"></div>
   </div>
@@ -156,11 +180,16 @@ body{font-family:var(--font);background:var(--page);color:var(--ink);overflow:hi
    PANOLAR
    ============================================================ */
 var PANOLAR={
-  ikdash:  {ad:'İK Dashboard',   ico:'📁', renk:'#e8eef6', url:'https://inciroglu-ik.github.io/IK-PLATFORM/',      aciklama:'Turnover, ayrılanlar, işe alım, izin ve mesai analizleri.'},
-  satis:   {ad:'Satış Panosu',   ico:'📊', renk:'#e7f2ea', url:'https://inciroglu-ik.github.io/satis-panosu/',     aciklama:'Satış danışmanı karneleri, hedef ve tebliğ takibi.'},
-  servis:  {ad:'Servis Panosu',  ico:'🔧', renk:'#eef0f4', url:'https://inciroglu-ik.github.io/servis-panosu/',    aciklama:'Servis danışmanı karneleri, hedef ve tebliğ takibi.'},
-  yetenek: {ad:'Yetenek Havuzu', ico:'⭐', renk:'#fbf1de', url:'https://inciroglu-ik.github.io/yetenek-havuzu/',   aciklama:'Potansiyel, çeviklik ve teknik yetkinlik değerlendirmesi.'},
-  isealim: {ad:'İşe Alım',       ico:'🧭', renk:'#e8ecf8', url:'https://inciroglu-ik.github.io/ise-alim-sureci/',  aciklama:'Aday havuzu, görüşme, oryantasyon ve deneme süreci.'}
+  ikdash:  {ad:'İK Dashboard',   tag:'Analitik',       url:'https://inciroglu-ik.github.io/IK-PLATFORM/',      aciklama:'Turnover, işten ayrılanlar, izin ve mesai analizleri.',
+    svg:'<rect x="3" y="3" width="7" height="8.5" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="15.5" width="7" height="5.5" rx="1.5"/>'},
+  satis:   {ad:'Satış Panosu',   tag:'Performans',     url:'https://inciroglu-ik.github.io/satis-panosu/',     aciklama:'Satış danışmanı karneleri, hedef ve tebliğ takibi.',
+    svg:'<polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/>'},
+  servis:  {ad:'Servis Panosu',  tag:'Performans',     url:'https://inciroglu-ik.github.io/servis-panosu/',    aciklama:'Servis danışmanı karneleri, hedef ve tebliğ takibi.',
+    svg:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>'},
+  yetenek: {ad:'Yetenek Havuzu', tag:'Değerlendirme',  url:'https://inciroglu-ik.github.io/yetenek-havuzu/',   aciklama:'Potansiyel, çeviklik ve teknik yetkinlik değerlendirmesi.',
+    svg:'<circle cx="12" cy="8" r="6"/><path d="M15.5 13.6 17 21.5l-5-3-5 3 1.5-7.9"/>'},
+  isealim: {ad:'İşe Alım',       tag:'Aday Yönetimi',  url:'https://inciroglu-ik.github.io/ise-alim-sureci/',  aciklama:'Aday havuzu, görüşme, oryantasyon ve deneme süreci.',
+    svg:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>'}
 };
 
 /* ============================================================
@@ -177,7 +206,7 @@ var ROL_ETIKET={ik:'İK / Tam Yetki',direktor:'Direktör',satis_mudur:'Satış M
 
 /* ============================================================
    KULLANICILAR  (kullanıcı adı = ilk harf + soyad · şifre = inciroglu01)
-   Çalışan Listesi - Eyl 2026'dan üretildi: 1 İK + 11 direktör + 8 satış + 7 servis + 1 idari müdür
+   Çalışan Listesi - Eyl 2026'dan üretildi: 1 İK + 10 direktör + 8 satış + 7 servis + 1 idari müdür
    marka: servis müdürü oturumdan okunan TANIM_MARKALAR kod'u
    sUser: satış müdürünün satış panosundaki gömülü kullanıcı adı (marka oradan bulunur)
    ============================================================ */
@@ -191,7 +220,6 @@ var KULLANICILAR=[
   {u:'galtundal', p:'inciroglu01', ad:'GÖKHAN ALTUNDAL', rol:'direktor'},
   {u:'hsakiroglu', p:'inciroglu01', ad:'HÜSEYİN UĞUR ŞAKİROĞLU', rol:'direktor'},
   {u:'minciroglu', p:'inciroglu01', ad:'MELİS SU İNCİROĞLU', rol:'direktor'},
-  {u:'mkavak', p:'inciroglu01', ad:'MELİSA KAVAK', rol:'direktor'},
   {u:'ocoban', p:'inciroglu01', ad:'OSMAN ÇOBAN', rol:'direktor'},
   {u:'rerbas', p:'inciroglu01', ad:'RIFAT ERBAŞ', rol:'direktor'},
   {u:'suygunoglu', p:'inciroglu01', ad:'SERKAN UYGUNOĞLU', rol:'direktor'},
@@ -247,22 +275,40 @@ $('loginForm').addEventListener('submit',function(e){
 /* ============================================================
    ANA EKRAN (kutucuklar)
    ============================================================ */
+/* Türkçe-duyarlı başlık düzeni: "MEHMET TİRYAKİ" -> "Mehmet Tiryaki" */
+function trLower(s){return String(s||'').replace(/İ/g,'i').replace(/I/g,'ı').toLowerCase();}
+function trTitle(s){return trLower(s).split(/\s+/).map(function(w){if(!w)return w;var f=w.charAt(0);var up=(f==='i')?'İ':(f==='ı'?'I':f.toLocaleUpperCase('tr'));return up+w.slice(1);}).join(' ');}
+
 function anaEkran(){
   var k=AKTIF_KULLANICI; if(!k) return;
   $('login').classList.add('hidden');
   $('viewer').classList.remove('on');
   $('home').classList.add('on');
-  $('whoAd').textContent=k.ad;
+  var adDuzgun=(k.rol==='ik')?'İnsan Kaynakları':trTitle(k.ad);
+  $('whoAd').textContent=adDuzgun;
   $('whoRol').textContent=ROL_ETIKET[k.rol]||k.rol;
-  $('selam').textContent='Hoş geldiniz, '+(k.ad.split(' ')[0])+' 👋';
+  /* Selam: İK ekibine özel, diğerlerine ilk isim */
+  $('selam').textContent=(k.rol==='ik')?'Hoş geldiniz, İK Ekibi'
+    :('Hoş geldiniz, '+trTitle((k.ad||'').split(/\s+/)[0]));
   var kutular=ROL_KUTU[k.rol]||[];
-  $('altyazi').textContent='Yetkili olduğunuz '+kutular.length+' panoya buradan ulaşabilirsiniz.';
-  $('tiles').innerHTML=kutular.map(function(id){ var p=PANOLAR[id]; if(!p) return '';
-    return '<button class="tile" data-p="'+id+'"><div class="ico" style="background:'+p.renk+'">'+p.ico+'</div><h3>'+p.ad+'</h3><p>'+p.aciklama+'</p><span class="go">→</span></button>';
+  /* Yaşayan üst bilgi şeridi: rol · modül sayısı · tarih */
+  var tarih=new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  $('homeMeta').innerHTML=
+    '<span class="chip"><span class="dot"></span>Aktif oturum</span>'+
+    '<span class="chip">Rol: <b>'+(ROL_ETIKET[k.rol]||k.rol)+'</b></span>'+
+    '<span class="chip"><b>'+kutular.length+'</b> yetkili modül</span>'+
+    '<span class="chip">'+tarih.charAt(0).toLocaleUpperCase('tr')+tarih.slice(1)+'</span>';
+  $('tiles').innerHTML=kutular.map(function(id,i){ var p=PANOLAR[id]; if(!p) return '';
+    return '<button class="tile" data-p="'+id+'" style="animation-delay:'+(i*55)+'ms">'+
+      '<div class="thead"><div class="ico"><svg viewBox="0 0 24 24" aria-hidden="true">'+p.svg+'</svg></div>'+
+      '<span class="tag">'+p.tag+'</span></div>'+
+      '<h3>'+p.ad+'</h3><p>'+p.aciklama+'</p>'+
+      '<div class="foot">Panoya git <span class="arw">→</span></div>'+
+    '</button>';
   }).join('');
   Array.prototype.forEach.call($('tiles').querySelectorAll('.tile'),function(b){ b.onclick=function(){ panoAc(b.getAttribute('data-p')); }; });
   var firebaseVar=(kutular.indexOf('yetenek')>=0||kutular.indexOf('isealim')>=0);
-  $('homeNote').innerHTML='🔐 Satış / Servis / İK Dashboard panoları otomatik açılır.'+(firebaseVar?' Yetenek Havuzu ve İşe Alım güvenlik gereği kendi giriş bilgilerinizi bir kez ister; sonra "← Ana ekrana dön" ile buraya dönebilirsiniz.':'');
+  $('homeNote').innerHTML='<b>Tek oturum.</b> Satış, Servis ve İK Dashboard panoları siz açtığınız anda otomatik oturum açar.'+(firebaseVar?' Yetenek Havuzu ve İşe Alım, güvenlik gereği kendi giriş bilginizi bir kez ister; ardından <b>← Ana ekrana dön</b> ile buraya dönersiniz.':'');
 }
 
 /* ============================================================
@@ -283,7 +329,8 @@ function ssoYaz(id){
       sessionStorage.setItem('sp_ses', JSON.stringify(oturum));
     }
     if(id==='servis'){
-      var rolV = k.rol==='ik'?'admin' : (k.rol==='direktor'?'viewer':'mudur');
+      // Servis panosu salt-okunur direktör modunu 'direktor' rolüyle tanır (satıştaki 'viewer' değil).
+      var rolV = k.rol==='ik'?'admin' : (k.rol==='direktor'?'direktor':'mudur');
       var oturumV={kullanici:k.u, ad:k.ad, rol:rolV, marka:(rolV==='mudur'&&k.marka)?k.marka:''};
       sessionStorage.setItem('sp_servis_ses', JSON.stringify(oturumV));
     }
