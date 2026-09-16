@@ -347,15 +347,21 @@ function ssoTemizle(){ try{ localStorage.removeItem(SSO_KEY); sessionStorage.rem
 function panoAc(id){
   var p=PANOLAR[id]; if(!p) return;
   ssoYaz(id);
+  /* Firebase panoları (Yetenek/İşe Alım): HER açılışta kimlik doğrulamayı sıfırla —
+     tarayıcıda kalan İK/admin Firebase oturumu asla devralınmasın; kişi kendi
+     hesabıyla girsin. (Guard, bu işaret '1' değilken eski oturumu signOut eder.) */
+  if(id==='yetenek'||id==='isealim'){ try{ sessionStorage.removeItem('fbFormLogin'); }catch(e){} }
   $('home').classList.remove('on');
   $('viewer').classList.add('on');
   $('vcrumb').textContent=p.ad;
-  $('vnt').href=p.url;
   $('vspin').classList.add('on');
   var fr=$('frame');
   fr.onload=function(){ $('vspin').classList.remove('on'); };
   setTimeout(function(){ $('vspin').classList.remove('on'); },7000);
-  fr.setAttribute('src', p.url);
+  /* Önbellek kırıcı: iframe her açılışta EN GÜNCEL kodu yükler (eski sürüm cache'den gelmesin). */
+  var url=p.url + (p.url.indexOf('?')>=0?'&':'?') + '_t=' + Date.now();
+  $('vnt').href=url;
+  fr.setAttribute('src', url);
 }
 $('vback').addEventListener('click',function(){
   $('frame').setAttribute('src','about:blank');
