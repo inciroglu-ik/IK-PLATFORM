@@ -1259,10 +1259,10 @@ function renderIA(){
   ch('ia-trend',{type:'bar',data:{labels:ms.map(function(m){return MN[m];}),datasets:[{data:ms.map(function(m){return d.filter(function(x){return x.ay===m;}).length;}),backgroundColor:'rgba(16,185,129,.65)',borderColor:'#10b981',borderWidth:2,borderRadius:7,datalabels:DL_TOP}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:TT},scales:{x:SX,y:SY}}});
   var bc={Servis:0,'Satış':0,'İdari':0};d.forEach(function(x){if(bc[x.bolum]!==undefined)bc[x.bolum]++;});
   ch('ia-bol',{type:'doughnut',data:{labels:Object.keys(bc),datasets:[{data:Object.values(bc),backgroundColor:['rgba(30,86,210,.75)','rgba(76,124,230,.75)','rgba(139,170,238,.75)'],borderColor:['#1E56D2','#4C7CE6','#8BAAEE'],borderWidth:2,hoverOffset:8,datalabels:{display:true,color:'#111B21',font:{family:'Inter',size:13,weight:'800'},formatter:function(v){return v;}}}]},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{position:'bottom',labels:{color:'#5B6B77',font:{family:'Inter',size:11},padding:9,boxWidth:8}},tooltip:TT}}});
-  ch('ia-vs',{type:'line',data:{labels:ms.map(function(m){return MN[m];}),datasets:[
-    {label:'Giriş',data:ms.map(function(m){return d.filter(function(x){return x.ay===m;}).length;}),borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.08)',fill:true,tension:.4,pointRadius:5,pointBackgroundColor:'#10b981',datalabels:{display:true,anchor:'end',align:'top',color:'#059669',font:{family:'Inter',size:10,weight:'700'},formatter:function(v){return v===0?'':v;}}},
-    {label:'Çıkış',data:ms.map(function(m){return D.ayrilanlar.filter(function(x){return x.ay===m;}).length;}),borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.08)',fill:true,tension:.4,pointRadius:5,pointBackgroundColor:'#ef4444',datalabels:{display:true,anchor:'end',align:'bottom',color:'#DC2626',font:{family:'Inter',size:10,weight:'700'},formatter:function(v){return v===0?'':v;}}}
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#5B6B77',font:{family:'Inter',size:11},boxWidth:9}},tooltip:TT},scales:{x:SX,y:SY}}});
+  ch('ia-vs',{type:'bar',data:{labels:ms.map(function(m){return MN[m];}),datasets:[
+    {label:'Giriş',data:ms.map(function(m){return d.filter(function(x){return x.ay===m;}).length;}),backgroundColor:'#10b981',borderRadius:4,borderSkipped:false,maxBarThickness:30,datalabels:{display:true,anchor:'end',align:'top',color:'#059669',font:{family:'Inter',size:10,weight:'700'},formatter:function(v){return v===0?'':v;}}},
+    {label:'Çıkış',data:ms.map(function(m){return D.ayrilanlar.filter(function(x){return x.ay===m;}).length;}),backgroundColor:'#ef4444',borderRadius:4,borderSkipped:false,maxBarThickness:30,datalabels:{display:true,anchor:'end',align:'top',color:'#DC2626',font:{family:'Inter',size:10,weight:'700'},formatter:function(v){return v===0?'':v;}}}
+  ]},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:16}},plugins:{legend:{position:'top',align:'end',labels:{usePointStyle:true,pointStyle:'rectRounded',color:'#5B6B77',font:{family:'Inter',size:11},boxWidth:12,padding:12}},tooltip:TT},scales:{x:SX,y:SY}}});
   var iauvc={};d.forEach(function(x){if(x.unvan)iauvc[x.unvan]=(iauvc[x.unvan]||0)+1;});
   var iauTop=Object.entries(iauvc).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
   if(document.getElementById('ia-unvan-top5')){
@@ -2040,7 +2040,7 @@ if(_isIOS){setTimeout(function(){var w=document.getElementById('ios-install-wrap
 /* Cache temizle */
 if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister();})});}
 if('caches' in window){caches.keys().then(function(k){k.forEach(function(c){caches.delete(c);});});}
-var _pv='202609301600',_sv=sessionStorage.getItem('ikv');
+var _pv='202609301700',_sv=sessionStorage.getItem('ikv');
 if(_sv&&_sv!==_pv){sessionStorage.setItem('ikv',_pv);window.location.reload(true);}
 else{sessionStorage.setItem('ikv',_pv);}
 
