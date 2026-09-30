@@ -1052,11 +1052,12 @@ function renderOV(){
   document.getElementById('ov-istenmeyen').textContent=(oz.ytd_istenmeyen!=null?'%'+oz.ytd_istenmeyen:(oz.istenmeyen_count!=null?oz.istenmeyen_count:'—'));
 
   // Aylara göre personel sayısı (ay sonu)
-  ch('ov-aylik-hc',{type:'line',data:{labels:MONTHLY_HC.labels,datasets:[
-    {label:'2025 (referans)',data:MONTHLY_HC.y2025,borderColor:'#C7D0DA',backgroundColor:'transparent',fill:false,tension:.4,borderWidth:2,borderDash:[6,5],pointRadius:0,pointHoverRadius:5,pointBackgroundColor:'#C7D0DA',datalabels:{display:false}},
-    {label:'2026',data:MONTHLY_HC.y2026,borderColor:'#2563EB',backgroundColor:'rgba(37,99,235,.10)',fill:true,tension:.4,borderWidth:3,pointRadius:3.5,pointHoverRadius:6,pointBackgroundColor:'#2563EB',pointBorderColor:'#fff',pointBorderWidth:2,
-      datalabels:{display:true,anchor:'end',align:'top',offset:5,clamp:true,color:'#1D4ED8',font:{family:'Inter',size:10,weight:'700'},formatter:function(v){return v===null?'':v;}}}
-  ]},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22,right:12,left:4}},interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',align:'end',labels:{usePointStyle:true,pointStyle:'line',color:'#5B6B77',font:{family:'Inter',size:11},boxWidth:20,padding:14}},tooltip:TT},scales:{x:SX,y:{...SY,beginAtZero:false}}}});
+  ch('ov-aylik-hc',{type:'bar',data:{labels:MONTHLY_HC.labels,datasets:[
+    {label:'2025',data:MONTHLY_HC.y2025,backgroundColor:'#94A3B8',borderRadius:4,borderSkipped:false,maxBarThickness:36,
+      datalabels:{display:true,anchor:'end',align:'top',offset:1,color:'#64748B',font:{family:'Inter',size:9.5,weight:'700'},formatter:function(v){return (v===null||v===undefined)?'':v;}}},
+    {label:'2026',data:MONTHLY_HC.y2026,backgroundColor:'#14294A',borderRadius:4,borderSkipped:false,maxBarThickness:36,
+      datalabels:{display:true,anchor:'end',align:'top',offset:1,color:'#14294A',font:{family:'Inter',size:9.5,weight:'700'},formatter:function(v){return (v===null||v===undefined)?'':v;}}}
+  ]},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:18,right:8,left:4}},plugins:{legend:{position:'top',align:'end',labels:{usePointStyle:true,pointStyle:'rectRounded',color:'#5B6B77',font:{family:'Inter',size:11},boxWidth:12,padding:14}},tooltip:TT},scales:{x:SX,y:{...SY,beginAtZero:false,min:238}}}});
 
   // Departman+Bölüm kıdemi filtre seçeneklerini doldur (bir kere)
   var depSel=document.getElementById('ov-kidem-dept');
@@ -2039,7 +2040,7 @@ if(_isIOS){setTimeout(function(){var w=document.getElementById('ios-install-wrap
 /* Cache temizle */
 if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister();})});}
 if('caches' in window){caches.keys().then(function(k){k.forEach(function(c){caches.delete(c);});});}
-var _pv='202609301200',_sv=sessionStorage.getItem('ikv');
+var _pv='202609301300',_sv=sessionStorage.getItem('ikv');
 if(_sv&&_sv!==_pv){sessionStorage.setItem('ikv',_pv);window.location.reload(true);}
 else{sessionStorage.setItem('ikv',_pv);}
 
