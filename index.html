@@ -1246,7 +1246,7 @@ function renderIA(){
   _iaD=[...D.isealim];_iaP=1;
   var wbEl=document.getElementById('ia-week-badge');if(wbEl)wbEl.textContent='📅 '+CURRENT_WEEK_SHORT+' ('+CURRENT_WEEK_LABEL.match(/\((.*)\)/)[1]+') itibariyle';
   var d=D.isealim,t=d.length||1;
-  document.getElementById('ia-tot').textContent=d.length;
+  document.getElementById('ia-tot').textContent=(D.ozet&&D.ozet.ytd_giris)?D.ozet.ytd_giris:d.length;
   var srv=d.filter(function(x){return x.bolum==='Servis';}).length;
   var sat=d.filter(function(x){return x.bolum==='Satış';}).length;
   document.getElementById('ia-srv').textContent=srv;document.getElementById('ia-srvp').innerHTML='<em>'+Math.round(srv/t*100)+'%</em> servis bölümü';
@@ -2040,7 +2040,7 @@ if(_isIOS){setTimeout(function(){var w=document.getElementById('ios-install-wrap
 /* Cache temizle */
 if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister();})});}
 if('caches' in window){caches.keys().then(function(k){k.forEach(function(c){caches.delete(c);});});}
-var _pv='202609301500',_sv=sessionStorage.getItem('ikv');
+var _pv='202609301600',_sv=sessionStorage.getItem('ikv');
 if(_sv&&_sv!==_pv){sessionStorage.setItem('ikv',_pv);window.location.reload(true);}
 else{sessionStorage.setItem('ikv',_pv);}
 
