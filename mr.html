@@ -218,6 +218,17 @@ import { getFirestore, doc, onSnapshot, setDoc, getDoc, serverTimestamp } from "
 /* ===================== SABİTLER ===================== */
 const TOFAS_MARKALAR = ['Alfa Romeo','Citroen','DS Automobiles','Fiat','Jeep','Maserati','Opel','Peugeot','Spoticar'];
 const BOLUM_AD = {satis:'Satış', servis:'Servis', yonetim:'Yönetim', diger:'Diğer'};
+/* Bir çalışanın ASIL birimi (havuzdaki dept kodu), hangi Tofaş marka kaydıyla UYUMLU sayılır.
+   Buradaki eşdeğerlikle kayıtlıysa uyuşmazlık DEĞİLDİR (ör. PSA serviscisi Peugeot kaydında). */
+const DEPT_TOFAS = {
+  'fiat':['fiat','alfaromeo','jeep','maserati'],
+  'psa':['peugeot','citroen','dsautomobiles'],
+  'peugeot':['peugeot'],
+  'citroen':['citroen'],
+  'opel':['opel']
+};
+/* Tüm markalarda ortak görünen (paylaşılan) idari/destek birimleri — uyuşmazlık sayılmaz. */
+const ORTAK_DEPT=/ortak|yonetim|icra|finans|denetim|insan|mali|pazarlama|satinalma|satin alma|bilgi|dexpert|d-expert/i;
 /* İK dolduracak: her Tofaş markasının sorumlu müdürü + e-postası (silme bildirimi buraya gider) */
 const MARKA_MUDUR = {
   'Fiat':{ad:'', eposta:''},
@@ -268,9 +279,18 @@ function realDeptOf(ad){ const p=POOL_BY[nkey(ad)]; return p||null; }
 /* uyuşmazlık: havuzdaki asıl birim, kayıtlı Tofaş markalarından biriyle eşleşmiyorsa asıl birimi döndür */
 function uyusmazlik(rec){
   const p=realDeptOf(rec.ad); if(!p) return {havuzYok:true};
-  const rdn=brandNorm(p.dept);
-  const eslesti=(rec.markalar||[]).some(m=>{const mn=brandNorm(m);return mn===rdn||mn.indexOf(rdn)>=0||rdn.indexOf(mn)>=0;});
-  return {havuzYok:false, asil:p.dept, bolum:p.bolum, unvan:p.unvan, uyumsuz:!eslesti};
+  const base={havuzYok:false, asil:p.dept, bolum:p.bolum, unvan:p.unvan};
+  const dn=brandNorm(p.dept);
+  const allowed=DEPT_TOFAS[dn];
+  if(allowed){
+    const ok=(rec.markalar||[]).some(m=>allowed.includes(brandNorm(m)));
+    return Object.assign(base,{uyumsuz:!ok});
+  }
+  /* dept bir Tofaş markasına karşılık gelmiyor */
+  if(ORTAK_DEPT.test(p.dept) || brandNorm(p.bolum)==='yonetim'){
+    return Object.assign(base,{uyumsuz:false, ortak:true}); /* paylaşılan idari personel */
+  }
+  return Object.assign(base,{uyumsuz:true}); /* gerçek çapraz kayıt (BMW/Honda/2.El... kişisi Tofaş MR'ında) */
 }
 
 /* ===================== BOOT ===================== */
@@ -326,6 +346,7 @@ function rowHtml(r){
   let asilBadge='';
   if(u.havuzYok) asilBadge='<span class="badge b-havuzyok">Havuzda yok</span>';
   else if(u.uyumsuz) asilBadge='<span class="badge b-warn">⚠ Asıl: '+esc(u.asil)+'</span>';
+  else if(u.ortak) asilBadge='<span class="badge b-havuzyok">Ortak · '+esc(u.asil)+'</span>';
   else asilBadge='<span class="badge b-ok">✓ '+esc(u.asil)+'</span>';
   const markalar=(r.markalar||[]).map(m=>'<span class="badge b-marka">'+esc(m)+'</span>').join('');
   const unv=esc(r.unvan||(r.unvanlar&&r.unvanlar[0])||'');
