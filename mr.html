@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MR · Tofaş Akademi Kayıt Takibi · İnciroğlu Otomotiv</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#132a44; --navy-2:#1c3d5f; --navy-900:#0c1c2e;
+  --brass:#c9a227; --brass-2:#e0be4f;
+  --page:#eef1f4; --surface:#ffffff; --ink:#0e1b28; --ink-2:#52606b; --muted:#8a929b;
+  --line:#d5dbe1; --ok:#1b8a4b; --bad:#c0392b; --warn:#b26a00; --warn-bg:#fff4e0;
+  --font:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --serif:"Source Serif 4",Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--page);color:var(--ink);line-height:1.5}
+.hidden{display:none!important}
+button{font-family:var(--font);cursor:pointer}
+a{color:var(--navy-2)}
+
+/* ===== TOPBAR ===== */
+.topbar{background:linear-gradient(100deg,var(--navy-900),var(--navy) 60%,#1c3d5f);color:#fff;
+  display:flex;align-items:center;padding:0 24px;height:62px;gap:14px;box-shadow:0 4px 18px -8px rgba(3,15,30,.6)}
+.topbar .mk{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,var(--brass),var(--brass-2));
+  display:flex;align-items:center;justify-content:center;color:var(--navy);font-weight:800;font-size:15px;font-family:var(--serif)}
+.topbar .tt{font-family:var(--serif);font-size:16px;font-weight:700;line-height:1.15}
+.topbar .tt small{display:block;font-weight:400;font-size:10.5px;color:#9fbdd8;margin-top:1px}
+.topbar .sp{flex:1}
+.topbar .who{text-align:right;font-size:12px;color:#cfe0ee}
+.topbar .who b{display:block;color:#fff;font-weight:600;font-size:13px}
+.topbar .pill{display:inline-block;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+  background:rgba(201,162,39,.2);border:1px solid rgba(201,162,39,.4);color:#f0dca0;border-radius:20px;padding:2px 9px;margin-top:3px}
+
+/* ===== WRAP ===== */
+.wrap{max-width:1280px;margin:0 auto;padding:24px 24px 70px}
+.head h1{font-family:var(--serif);font-size:26px;font-weight:700;color:var(--navy);letter-spacing:-.01em}
+.head p{font-size:13.5px;color:var(--ink-2);margin-top:6px;max-width:92ch}
+
+/* ===== KPI ===== */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:13px;margin:20px 0 18px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:15px 16px;position:relative;overflow:hidden}
+.kpi::after{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--brass),var(--brass-2))}
+.kpi .n{font-family:var(--serif);font-size:26px;font-weight:700;color:var(--navy);line-height:1}
+.kpi .l{font-size:11px;color:var(--ink-2);margin-top:6px;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.kpi.warn .n{color:var(--warn)} .kpi.warn::after{background:linear-gradient(180deg,#e39a2e,#b26a00)}
+
+/* ===== TOOLBAR ===== */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);
+  border-radius:12px;padding:12px 14px;margin-bottom:16px}
+.search{flex:1;min-width:220px;position:relative}
+.search input{width:100%;padding:10px 12px 10px 36px;border:1px solid var(--line);border-radius:9px;font-size:14px;font-family:var(--font);outline:none}
+.search input:focus{border-color:var(--navy-2);box-shadow:0 0 0 3px rgba(28,61,95,.12)}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;stroke:var(--muted);fill:none;stroke-width:2}
+select.flt{padding:9px 12px;border:1px solid var(--line);border-radius:9px;font-size:13px;font-family:var(--font);background:#fff;color:var(--ink);outline:none}
+.vtog{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.vtog button{border:none;background:#fff;padding:9px 13px;font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.vtog button.on{background:var(--navy);color:#fff}
+.btn{border:none;border-radius:9px;padding:10px 15px;font-size:13.5px;font-weight:700;color:#fff;
+  background:linear-gradient(135deg,var(--navy),var(--navy-2));box-shadow:0 8px 20px -12px rgba(19,42,68,.8)}
+.btn:hover{filter:brightness(1.1)}
+.btn.g{background:#fff;color:var(--navy);border:1px solid var(--line);box-shadow:none}
+.chipflt{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-2);padding:8px 11px;border:1px solid var(--line);border-radius:9px;background:#fff;cursor:pointer;user-select:none}
+.chipflt.on{background:var(--warn-bg);border-color:#e3b779;color:var(--warn);font-weight:700}
+
+/* ===== TABLE ===== */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:#f5f7f9;text-align:left;padding:11px 13px;font-size:10.5px;font-weight:700;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--ink-2);border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0}
+tbody td{padding:11px 13px;border-bottom:1px solid #eceff2;vertical-align:middle}
+tbody tr:hover{background:#f8fafc}
+.nm{font-weight:600;color:var(--navy)}
+.mini{font-size:11.5px;color:var(--muted)}
+.badge{display:inline-block;font-size:11px;font-weight:600;border-radius:20px;padding:2px 9px;margin:1px 3px 1px 0;white-space:nowrap}
+.b-marka{background:#eaf0f6;color:var(--navy-2);border:1px solid #d7e2ee}
+.b-bol{background:#eef7f0;color:#1b6b3a;border:1px solid #cfe8d6}
+.b-warn{background:var(--warn-bg);color:var(--warn);border:1px solid #e9c48f}
+.b-ok{background:#eef7f0;color:#1b6b3a;border:1px solid #cfe8d6}
+.b-havuzyok{background:#f0f0f3;color:#7a828c;border:1px solid #e0e2e7}
+.del{background:#fff;border:1px solid #e6c3bd;color:var(--bad);border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600}
+.del:hover{background:#fbeceb}
+.grp-h{font-family:var(--serif);font-size:16px;font-weight:700;color:var(--navy);margin:22px 0 10px;display:flex;align-items:center;gap:10px}
+.grp-h .cnt{font-family:var(--font);font-size:12px;font-weight:600;color:var(--muted);background:#eef1f4;border-radius:20px;padding:2px 10px}
+.empty{padding:40px;text-align:center;color:var(--muted);font-size:14px}
+
+/* ===== MODAL ===== */
+.ovl{position:fixed;inset:0;background:rgba(12,28,46,.55);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+.ovl.on{display:flex}
+.modal{background:#fff;border-radius:14px;width:min(560px,100%);max-height:92vh;overflow:auto;box-shadow:0 30px 80px -20px rgba(0,0,0,.5)}
+.modal .mh{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+.modal .mh h3{font-family:var(--serif);font-size:19px;color:var(--navy)}
+.modal .mx{background:none;border:none;font-size:22px;color:var(--muted);line-height:1}
+.modal .mb{padding:20px 22px}
+.modal .mf{padding:14px 22px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end}
+.f{margin-bottom:14px}
+.f label{display:block;font-size:11px;font-weight:700;color:var(--ink-2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+.f input,.f select,.f textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-size:14px;font-family:var(--font);outline:none}
+.f input:focus,.f select:focus,.f textarea:focus{border-color:var(--navy-2);box-shadow:0 0 0 3px rgba(28,61,95,.12)}
+.mkgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.mkgrid label{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink);
+  border:1px solid var(--line);border-radius:8px;padding:7px 9px;cursor:pointer}
+.mkgrid input{width:auto}
+.note-live{font-size:12.5px;border-radius:9px;padding:9px 11px;margin-top:4px;display:none}
+.note-live.show{display:block}
+.note-live.warn{background:var(--warn-bg);color:var(--warn);border:1px solid #e9c48f}
+.note-live.ok{background:#eef7f0;color:#1b6b3a;border:1px solid #cfe8d6}
+.hint{font-size:11.5px;color:var(--muted);margin-top:4px}
+.gate{max-width:440px;margin:80px auto;background:#fff;border:1px solid var(--line);border-radius:14px;padding:30px;text-align:center}
+.gate h2{font-family:var(--serif);color:var(--navy);margin-bottom:8px}
+.gate p{color:var(--ink-2);font-size:14px;margin-bottom:16px}
+.foot-note{margin-top:22px;font-size:12px;color:var(--ink-2);background:linear-gradient(180deg,var(--surface),#f7f9fb);
+  border:1px solid var(--line);border-left:3px solid var(--brass);border-radius:10px;padding:14px 16px;line-height:1.6}
+.foot-note b{color:var(--navy)}
+@media(max-width:640px){ .mkgrid{grid-template-columns:repeat(2,1fr)} thead{display:none} tbody td{display:block;border:none;padding:4px 13px} tbody tr{display:block;border-bottom:1px solid var(--line);padding:8px 0} }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="mk">İH</div>
+  <div class="tt">MR — Tofaş Akademi Kayıt Takibi<small>İnciroğlu Otomotiv · İnsan Kaynakları</small></div>
+  <div class="sp"></div>
+  <div class="who"><b id="whoAd">—</b><span class="pill" id="whoRol">—</span></div>
+</div>
+
+<div id="gate" class="gate hidden">
+  <h2>Oturum bulunamadı</h2>
+  <p>Bu modüle İK Portalı üzerinden giriş yaparak ulaşabilirsiniz.</p>
+  <a class="btn" href="portal.html">İK Portalı'na git →</a>
+</div>
+
+<div id="app" class="wrap hidden">
+  <div class="head">
+    <h1>MR — Marka Bazlı Tofaş Akademi Kayıt Takibi</h1>
+    <p>Hangi çalışanımızın hangi markanın Tofaş Akademi kaydında (MR) göründüğünü buradan takip edin. İsimle arayın, markaya ya da departmana göre süzün. <b>Herkes kişi ekleyebilir; kayıt silme yalnızca İK (ik123) yetkisindedir.</b></p>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="toolbar">
+    <div class="search">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="q" type="text" placeholder="İsim ara — bu kişi bir markanın MR'ında kayıtlı mı?">
+    </div>
+    <select class="flt" id="fMarka"><option value="">Tüm Markalar</option></select>
+    <select class="flt" id="fBolum"><option value="">Tüm Bölümler</option><option value="satis">Satış</option><option value="servis">Servis</option><option value="yonetim">Yönetim</option></select>
+    <div class="chipflt" id="fUyus"><span>⚠</span> Yalnız uyuşmazlıklar</div>
+    <div class="vtog" id="vtog">
+      <button data-v="liste" class="on">Liste</button>
+      <button data-v="marka">Marka bazlı</button>
+      <button data-v="departman">Departman bazlı</button>
+    </div>
+    <button class="btn" id="btnAdd">+ Kişi Ekle</button>
+  </div>
+
+  <div id="content"></div>
+
+  <div class="foot-note">
+    <b>⚠ İşaret ne demek?</b> Bir kişinin bizdeki kayıtlarına göre asıl birimi, kayıtlı olduğu Tofaş markasından farklıysa satırı turuncu “Asıl: …” rozetiyle işaretleriz (ör. BMW’de çalışan biri Fiat’ın MR’ında görünüyorsa). <b>Havuzda yok</b> rozeti, kişinin güncel aktif çalışan listesinde bulunmadığını gösterir — ayrılmış olabilir, kontrol edin.
+    <br><b>Silme & bildirim:</b> İK bir kişiyi sistemden çıkardığında, o kişinin sorumlu müdürüne giden uyarı e-postası Outlook’ta hazır açılır (“… işten ayrılmıştır, Tofaş Akademi kaydını silin”).
+  </div>
+</div>
+
+<!-- ADD MODAL -->
+<div class="ovl" id="addOvl">
+  <div class="modal">
+    <div class="mh"><h3>MR'a Kişi Ekle</h3><button class="mx" data-close>×</button></div>
+    <div class="mb">
+      <div class="f">
+        <label>Çalışan Adı</label>
+        <input id="aAd" list="poolList" placeholder="İsim yazın — havuzdan seçebilirsiniz" autocomplete="off">
+        <datalist id="poolList"></datalist>
+        <div class="note-live" id="aLive"></div>
+        <div class="hint" id="aPoolInfo"></div>
+      </div>
+      <div class="f">
+        <label>Kayıt Edileceği Marka(lar) — Tofaş Akademi</label>
+        <div class="mkgrid" id="aMarka"></div>
+      </div>
+      <div class="f" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><label>Bölüm</label><select id="aBolum"><option value="satis">Satış</option><option value="servis">Servis</option><option value="yonetim">Yönetim</option></select></div>
+        <div><label>Unvan / Görev</label><input id="aUnvan" placeholder="örn. Oto Yıkama Elemanı"></div>
+      </div>
+      <div class="f"><label>Not (opsiyonel)</label><input id="aNot" placeholder="örn. BMW oto yıkamacısı, Fiat kotasında gösteriliyor"></div>
+    </div>
+    <div class="mf">
+      <button class="btn g" data-close>Vazgeç</button>
+      <button class="btn" id="aSave">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE MODAL -->
+<div class="ovl" id="delOvl">
+  <div class="modal">
+    <div class="mh"><h3>Kaydı Sil</h3><button class="mx" data-close>×</button></div>
+    <div class="mb">
+      <p style="font-size:14px;color:var(--ink);margin-bottom:14px" id="delWho"></p>
+      <div class="f"><label>İşten Ayrılış Tarihi</label><input id="delTarih" type="date"></div>
+      <div class="note-live warn show" style="margin-top:0">Silme işleminden sonra, sorumlu müdüre giden bilgilendirme e-postası Outlook’ta hazır açılacaktır. Lütfen e-postayı gönderin.</div>
+    </div>
+    <div class="mf">
+      <button class="btn g" data-close>Vazgeç</button>
+      <button class="btn" id="delGo" style="background:linear-gradient(135deg,#b23a2b,#c0392b)">Sil ve Müdürü Bilgilendir</button>
+    </div>
+  </div>
+</div>
+
+<script src="mr_data.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, onSnapshot, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+/* ===================== SABİTLER ===================== */
+const TOFAS_MARKALAR = ['Alfa Romeo','Citroen','DS Automobiles','Fiat','Jeep','Maserati','Opel','Peugeot','Spoticar'];
+const BOLUM_AD = {satis:'Satış', servis:'Servis', yonetim:'Yönetim', diger:'Diğer'};
+/* İK dolduracak: her Tofaş markasının sorumlu müdürü + e-postası (silme bildirimi buraya gider) */
+const MARKA_MUDUR = {
+  'Fiat':{ad:'', eposta:''},
+  'Alfa Romeo':{ad:'', eposta:''},
+  'Jeep':{ad:'', eposta:''},
+  'Citroen':{ad:'', eposta:''},
+  'DS Automobiles':{ad:'', eposta:''},
+  'Opel':{ad:'', eposta:''},
+  'Peugeot':{ad:'', eposta:''},
+  'Maserati':{ad:'', eposta:''},
+  'Spoticar':{ad:'', eposta:''}
+};
+
+/* ===================== OTURUM ===================== */
+function trLower(s){return String(s||'').replace(/İ/g,'i').replace(/I/g,'ı').toLowerCase();}
+function trTitle(s){return trLower(s).split(/\s+/).map(w=>{if(!w)return w;const f=w.charAt(0);const up=(f==='i')?'İ':(f==='ı'?'I':f.toLocaleUpperCase('tr'));return up+w.slice(1);}).join(' ');}
+const ROL_ET={ik:'İK / Tam Yetki',direktor:'Direktör',satis_mudur:'Satış Müdürü',servis_mudur:'Servis Müdürü',idari_mudur:'İdari Müdür'};
+let SES=null;
+try{ SES=JSON.parse(localStorage.getItem('inc_portal_sso')||'null'); }catch(e){}
+if(!SES||!SES.ok){
+  document.getElementById('gate').classList.remove('hidden');
+}else{
+  document.getElementById('app').classList.remove('hidden');
+  document.getElementById('whoAd').textContent=(SES.rol==='ik')?'İnsan Kaynakları':trTitle(SES.ad||'');
+  document.getElementById('whoRol').textContent=ROL_ET[SES.rol]||SES.rol;
+  boot();
+}
+const IS_ADMIN = !!(SES && (SES.rol==='ik' || SES.u==='ik123'));
+
+/* ===================== FIREBASE ===================== */
+const firebaseConfig={apiKey:"AIzaSyCWlB0nU-ETZxuo9xa6gG4VMYVu09P3fnE",authDomain:"yetenek-havuzu.firebaseapp.com",projectId:"yetenek-havuzu",storageBucket:"yetenek-havuzu.firebasestorage.app",messagingSenderId:"714642441227",appId:"1:714642441227:web:bf49ac51367c6d9437b30e"};
+const app=initializeApp(firebaseConfig,"mr-modulu");
+const db=getFirestore(app);
+const mrRef=doc(db,"satisVeri","mrKayitlari");
+
+/* ===================== DURUM ===================== */
+const POOL = (window.MR_POOL||[]);
+const SEED = (window.MR_SEED||[]);
+const POOL_BY = {};
+function nkey(s){return trLower(s).replace(/\s+/g,' ').trim();}
+POOL.forEach(p=>{ POOL_BY[nkey(p.ad)]=p; });
+let RECORDS=[];
+let ST={q:'',marka:'',bolum:'',uyus:false,view:'liste'};
+
+/* ===================== YARDIMCI ===================== */
+function brandNorm(s){return trLower(s).replace(/[\s\.\-&]/g,'');}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function realDeptOf(ad){ const p=POOL_BY[nkey(ad)]; return p||null; }
+/* uyuşmazlık: havuzdaki asıl birim, kayıtlı Tofaş markalarından biriyle eşleşmiyorsa asıl birimi döndür */
+function uyusmazlik(rec){
+  const p=realDeptOf(rec.ad); if(!p) return {havuzYok:true};
+  const rdn=brandNorm(p.dept);
+  const eslesti=(rec.markalar||[]).some(m=>{const mn=brandNorm(m);return mn===rdn||mn.indexOf(rdn)>=0||rdn.indexOf(mn)>=0;});
+  return {havuzYok:false, asil:p.dept, bolum:p.bolum, unvan:p.unvan, uyumsuz:!eslesti};
+}
+
+/* ===================== BOOT ===================== */
+async function boot(){
+  bindUI();
+  onSnapshot(mrRef,(snap)=>{
+    if(snap.exists() && Array.isArray(snap.data().kayitlar)){
+      RECORDS=snap.data().kayitlar;
+    }else{
+      /* ilk kurulum: tohumu yaz (herhangi bir kullanıcı ilk açtığında) */
+      RECORDS=SEED.slice();
+      setDoc(mrRef,{kayitlar:SEED,guncelleme:new Date().toISOString(),_init:true},{merge:true}).catch(()=>{});
+    }
+    render();
+  },(err)=>{ console.error('MR canlı veri hatası',err); RECORDS=SEED.slice(); render(); });
+  /* havuz datalistesi + ekleme marka kutuları */
+  const dl=document.getElementById('poolList');
+  dl.innerHTML=POOL.map(p=>'<option value="'+esc(p.ad)+'">'+esc(p.dept)+' · '+esc(p.unvan)+'</option>').join('');
+  document.getElementById('aMarka').innerHTML=TOFAS_MARKALAR.map(m=>
+    '<label><input type="checkbox" value="'+esc(m)+'"> '+esc(m)+'</label>').join('');
+}
+
+/* ===================== RENDER ===================== */
+function markaOptions(){
+  const set=new Set(); RECORDS.forEach(r=>(r.markalar||[]).forEach(m=>set.add(m)));
+  const cur=document.getElementById('fMarka').value;
+  const opts=['<option value="">Tüm Markalar</option>'].concat([...set].sort((a,b)=>a.localeCompare(b,'tr')).map(m=>'<option value="'+esc(m)+'"'+(m===cur?' selected':'')+'>'+esc(m)+'</option>'));
+  document.getElementById('fMarka').innerHTML=opts.join('');
+}
+function filtered(){
+  const q=nkey(ST.q);
+  return RECORDS.filter(r=>{
+    if(q && nkey(r.ad).indexOf(q)<0) return false;
+    if(ST.marka && !(r.markalar||[]).includes(ST.marka)) return false;
+    if(ST.bolum && r.bolum!==ST.bolum) return false;
+    if(ST.uyus){ const u=uyusmazlik(r); if(!(u.uyumsuz||u.havuzYok)) return false; }
+    return true;
+  });
+}
+function kpis(){
+  const markaSet=new Set(); let uyumsuz=0, havuzYok=0;
+  RECORDS.forEach(r=>{ (r.markalar||[]).forEach(m=>markaSet.add(m)); const u=uyusmazlik(r); if(u.havuzYok)havuzYok++; else if(u.uyumsuz)uyumsuz++; });
+  const el=document.getElementById('kpis');
+  el.innerHTML=
+    kpiCard(RECORDS.length,'Toplam MR Kaydı')+
+    kpiCard(markaSet.size,'Farklı Marka')+
+    kpiCard(uyumsuz,'Asıl Birim Uyuşmazlığı',true)+
+    kpiCard(havuzYok,'Havuzda Bulunamayan',true);
+}
+function kpiCard(n,l,warn){return '<div class="kpi'+(warn?' warn':'')+'"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>';}
+function rowHtml(r){
+  const u=uyusmazlik(r);
+  let asilBadge='';
+  if(u.havuzYok) asilBadge='<span class="badge b-havuzyok">Havuzda yok</span>';
+  else if(u.uyumsuz) asilBadge='<span class="badge b-warn">⚠ Asıl: '+esc(u.asil)+'</span>';
+  else asilBadge='<span class="badge b-ok">✓ '+esc(u.asil)+'</span>';
+  const markalar=(r.markalar||[]).map(m=>'<span class="badge b-marka">'+esc(m)+'</span>').join('');
+  const unv=esc(r.unvan||(r.unvanlar&&r.unvanlar[0])||'');
+  const delBtn=IS_ADMIN?'<button class="del" data-del="'+esc(r.id)+'">🗑 Sil</button>':'<span class="mini">—</span>';
+  return '<tr>'+
+    '<td><span class="nm">'+esc(trTitle(r.ad))+'</span>'+(r.not?'<div class="mini">'+esc(r.not)+'</div>':'')+'</td>'+
+    '<td>'+(markalar||'<span class="mini">—</span>')+'</td>'+
+    '<td><span class="badge b-bol">'+esc(BOLUM_AD[r.bolum]||r.gorevTipi||'—')+'</span></td>'+
+    '<td>'+unv+'</td>'+
+    '<td>'+asilBadge+(u.havuzYok?'':'<div class="mini">'+esc(BOLUM_AD[nkey(u.bolum)]||u.bolum||'')+(u.unvan?' · '+esc(u.unvan):'')+'</div>')+'</td>'+
+    '<td class="mini">'+esc(r.eposta||'')+'</td>'+
+    '<td class="mini">'+esc(r.iseGiris||'')+'</td>'+
+    '<td>'+delBtn+'</td>'+
+  '</tr>';
+}
+function tableHtml(list){
+  if(!list.length) return '<div class="card"><div class="empty">Kayıt bulunamadı.</div></div>';
+  return '<div class="card"><table><thead><tr>'+
+    '<th>Çalışan</th><th>Kayıtlı Marka(lar)</th><th>Bölüm</th><th>Unvan</th><th>Asıl Birim (kayıtlarımıza göre)</th><th>E-Posta</th><th>İşe Giriş</th><th></th>'+
+    '</tr></thead><tbody>'+list.map(rowHtml).join('')+'</tbody></table></div>';
+}
+function groupHtml(list,keyFn,labelFn){
+  const groups={};
+  list.forEach(r=>{ (keyFn(r)||['—']).forEach(k=>{ (groups[k]=groups[k]||[]).push(r); }); });
+  const keys=Object.keys(groups).sort((a,b)=>a.localeCompare(b,'tr'));
+  if(!keys.length) return '<div class="card"><div class="empty">Kayıt bulunamadı.</div></div>';
+  return keys.map(k=>'<div class="grp-h">'+esc(labelFn(k))+'<span class="cnt">'+groups[k].length+' kişi</span></div>'+tableHtml(groups[k])).join('');
+}
+function render(){
+  markaOptions();
+  kpis();
+  const list=filtered();
+  const c=document.getElementById('content');
+  if(ST.view==='marka') c.innerHTML=groupHtml(list,r=>(r.markalar&&r.markalar.length?r.markalar:['—']),k=>k);
+  else if(ST.view==='departman') c.innerHTML=groupHtml(list,r=>[r.bolum||'diger'],k=>BOLUM_AD[k]||k);
+  else c.innerHTML=tableHtml(list);
+  bindDel();
+}
+
+/* ===================== UI BAĞLAMA ===================== */
+function bindUI(){
+  document.getElementById('q').addEventListener('input',e=>{ST.q=e.target.value;render();});
+  document.getElementById('fMarka').addEventListener('change',e=>{ST.marka=e.target.value;render();});
+  document.getElementById('fBolum').addEventListener('change',e=>{ST.bolum=e.target.value;render();});
+  document.getElementById('fUyus').addEventListener('click',function(){ST.uyus=!ST.uyus;this.classList.toggle('on',ST.uyus);render();});
+  document.querySelectorAll('#vtog button').forEach(b=>b.addEventListener('click',function(){
+    ST.view=this.getAttribute('data-v');
+    document.querySelectorAll('#vtog button').forEach(x=>x.classList.toggle('on',x===this));
+    render();
+  }));
+  document.getElementById('btnAdd').addEventListener('click',openAdd);
+  document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',closeModals));
+  document.getElementById('aAd').addEventListener('input',onAdName);
+  document.getElementById('aSave').addEventListener('click',saveAdd);
+  document.getElementById('delGo').addEventListener('click',doDelete);
+}
+function bindDel(){
+  if(!IS_ADMIN) return;
+  document.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>openDel(b.getAttribute('data-del'))));
+}
+
+/* ===================== EKLE ===================== */
+function openAdd(){
+  document.getElementById('aAd').value='';
+  document.getElementById('aUnvan').value='';
+  document.getElementById('aNot').value='';
+  document.getElementById('aBolum').value='satis';
+  document.querySelectorAll('#aMarka input').forEach(x=>x.checked=false);
+  document.getElementById('aLive').className='note-live';
+  document.getElementById('aPoolInfo').textContent='';
+  document.getElementById('addOvl').classList.add('on');
+  setTimeout(()=>document.getElementById('aAd').focus(),50);
+}
+function onAdName(e){
+  const ad=e.target.value;
+  const live=document.getElementById('aLive');
+  const info=document.getElementById('aPoolInfo');
+  const existing=RECORDS.filter(r=>nkey(r.ad)===nkey(ad));
+  const p=realDeptOf(ad);
+  if(p){ info.textContent='Havuz: '+p.dept+' · '+(BOLUM_AD[nkey(p.bolum)]||p.bolum)+' · '+p.unvan;
+    document.getElementById('aUnvan').value=document.getElementById('aUnvan').value||p.unvan;
+    const bk=nkey(p.bolum); document.getElementById('aBolum').value=(bk.indexOf('sat')>=0?'satis':bk.indexOf('serv')>=0?'servis':'yonetim');
+  } else info.textContent = ad.trim()?'Bu isim aktif çalışan havuzunda bulunamadı.':'';
+  if(existing.length){
+    const mk=[...new Set(existing.flatMap(r=>r.markalar||[]))].join(', ');
+    live.className='note-live warn show'; live.innerHTML='⚠ Bu kişi zaten MR\'da kayıtlı: <b>'+esc(mk||'—')+'</b>. Yine de ekleyebilirsiniz.';
+  }else if(ad.trim()){ live.className='note-live ok show'; live.textContent='Bu isim MR\'da kayıtlı değil.'; }
+  else live.className='note-live';
+}
+async function saveAdd(){
+  const ad=document.getElementById('aAd').value.trim();
+  if(!ad){ alert('Lütfen çalışan adını girin.'); return; }
+  const markalar=[...document.querySelectorAll('#aMarka input:checked')].map(x=>x.value);
+  if(!markalar.length){ alert('En az bir marka seçin.'); return; }
+  const rec={
+    id:'mr'+Date.now()+Math.floor(Math.random()*1000),
+    ad:ad.toLocaleUpperCase('tr'),
+    markalar:markalar,
+    bolum:document.getElementById('aBolum').value,
+    unvan:document.getElementById('aUnvan').value.trim(),
+    unvanlar:[document.getElementById('aUnvan').value.trim()].filter(Boolean),
+    eposta:'', iseGiris:'',
+    not:document.getElementById('aNot').value.trim(),
+    kaynak:'manuel',
+    ekleyen:(SES&&SES.ad)||'', eklemeTarihi:new Date().toISOString()
+  };
+  const yeni=RECORDS.concat([rec]);
+  try{
+    await setDoc(mrRef,{kayitlar:yeni,guncelleme:new Date().toISOString()},{merge:true});
+    closeModals();
+  }catch(err){ alert('Kaydedilemedi: '+err.message); }
+}
+
+/* ===================== SİL + MAİL ===================== */
+let delId=null;
+function openDel(id){
+  if(!IS_ADMIN){ alert('Kayıt silme yetkisi yalnızca İK (ik123) hesabındadır.'); return; }
+  const r=RECORDS.find(x=>x.id===id); if(!r) return;
+  delId=id;
+  document.getElementById('delWho').innerHTML='<b>'+esc(trTitle(r.ad))+'</b> — '+esc((r.markalar||[]).join(', '))+' · '+esc(BOLUM_AD[r.bolum]||'')+(r.unvan?' · '+esc(r.unvan):'');
+  const t=new Date(); document.getElementById('delTarih').value=t.toISOString().slice(0,10);
+  document.getElementById('delOvl').classList.add('on');
+}
+async function doDelete(){
+  if(!IS_ADMIN||!delId) return;
+  const r=RECORDS.find(x=>x.id===delId); if(!r) return;
+  const tarih=document.getElementById('delTarih').value||new Date().toISOString().slice(0,10);
+  const yeni=RECORDS.filter(x=>x.id!==delId);
+  try{
+    await setDoc(mrRef,{kayitlar:yeni,guncelleme:new Date().toISOString()},{merge:true});
+    closeModals();
+    mailAt(r,tarih);
+  }catch(err){ alert('Silinemedi: '+err.message); }
+}
+function tarihTR(iso){ try{const[y,m,d]=iso.split('-');return d+'.'+m+'.'+y;}catch(e){return iso;} }
+function mailAt(r,tarih){
+  const mudurler=[]; const alicilar=[];
+  (r.markalar||[]).forEach(m=>{ const mu=MARKA_MUDUR[m]; if(mu){ if(mu.ad)mudurler.push(mu.ad+' ('+m+')'); if(mu.eposta)alicilar.push(mu.eposta); } });
+  const to=[...new Set(alicilar)].join(';');
+  const markaTxt=(r.markalar||[]).join(', ');
+  const konu='MR / Tofaş Akademi — Kayıt Silme Bildirimi: '+trTitle(r.ad);
+  const govde=
+    'DİKKAT! MR sistemindeki aşağıdaki personel işten ayrılmıştır. Lütfen Tofaş Akademi kaydını siliniz.\n\n'+
+    '• Personel: '+trTitle(r.ad)+'\n'+
+    '• Ayrılış Tarihi: '+tarihTR(tarih)+'\n'+
+    '• Tofaş Akademi Kaydı (Marka): '+markaTxt+'\n'+
+    (r.unvan?('• Unvan: '+r.unvan+'\n'):'')+
+    '\nTOFAŞ AKADEMİ KAYDINI SİLİN. (Geç/eksik işlemlerde Tofaş ceza kesebilmektedir.)\n\n'+
+    'İnciroğlu Otomotiv · İnsan Kaynakları';
+  const link='mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(konu)+'&body='+encodeURIComponent(govde);
+  try{ window.open(link,'_blank'); }catch(e){ window.location.href=link; }
+  if(!to){ setTimeout(()=>alert('Not: Bu marka(lar) için müdür e-postası tanımlı değil. E-posta penceresi boş alıcıyla açıldı; alıcıyı elle ekleyin veya MARKA_MUDUR listesini güncelleyin.'),300); }
+}
+
+function closeModals(){ document.getElementById('addOvl').classList.remove('on'); document.getElementById('delOvl').classList.remove('on'); delId=null; }
+window.addEventListener('keydown',e=>{ if(e.key==='Escape')closeModals(); });
+</script>
+</body>
+</html>
