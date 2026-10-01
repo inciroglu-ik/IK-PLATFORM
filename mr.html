@@ -234,18 +234,29 @@ const DEPT_TOFAS = {
 /* Tüm markalarda ortak görünen (paylaşılan) idari/destek birimleri — uyuşmazlık sayılmaz.
    Türkçe karakterli dept kodları için kesin liste (regex İ/Ö'de yanılır). */
 const ORTAK_DEPT_SET=new Set(['İNSAN KAYNAKLARI','FİNANS','MALİ İŞLER','DENETİM','PAZARLAMA','SATIN ALMA','BİLGİ İŞLEM','İCRA KURULU','YÖNETİM KURULU','D-EXPERT']);
-/* İK dolduracak: her Tofaş markasının sorumlu müdürü + e-postası (silme bildirimi buraya gider) */
-const MARKA_MUDUR = {
-  'Fiat':{ad:'', eposta:''},
-  'Alfa Romeo':{ad:'', eposta:''},
-  'Jeep':{ad:'', eposta:''},
-  'Citroen':{ad:'', eposta:''},
-  'DS Automobiles':{ad:'', eposta:''},
-  'Opel':{ad:'', eposta:''},
-  'Peugeot':{ad:'', eposta:''},
-  'Maserati':{ad:'', eposta:''},
-  'Spoticar':{ad:'', eposta:''}
+/* Silme bildirimi alıcıları — kişinin MR'da KAYITLI OLDUĞU markaya göre (gerçek birimine değil). */
+const MGR={
+  ugur:'ugur.sakiroglu@inciroglu.com.tr',
+  ali:'ali.buyuk@inciroglu.com.tr',
+  tiryaki:'mehmet.tiryaki@inciroglu.com.tr',
+  atici:'murat.atici@inciroglu.com.tr',
+  ufuk:'ufuk.onsal@inciroglu.com.tr',
+  ik:'ik@inciroglu.com.tr'
 };
+/* A grubu (PSA: Peugeot/Citroen/Opel/DS/Spoticar) → ali.buyuk ve ufuk.onsal HARİÇ herkes.
+   B grubu (Fiat/Alfa Romeo/Jeep/Maserati = Fiat-ARJ) → ufuk.onsal + ali.buyuk + ik. */
+const SET_A=[MGR.ugur, MGR.tiryaki, MGR.atici, MGR.ik];
+const SET_B=[MGR.ufuk, MGR.ali, MGR.ik];
+const MARKA_GRUP={
+  'Peugeot':'A','Citroen':'A','Opel':'A','DS Automobiles':'A','Spoticar':'A',
+  'Fiat':'B','Alfa Romeo':'B','Jeep':'B','Maserati':'B'
+};
+function aliciBul(markalar){
+  const s=new Set();
+  (markalar||[]).forEach(m=>{ const g=MARKA_GRUP[m]; (g==='A'?SET_A:g==='B'?SET_B:[MGR.ik]).forEach(e=>s.add(e)); });
+  if(!s.size) s.add(MGR.ik);
+  return [...s];
+}
 
 /* Tofaş export'undaki ad, bizim aktif çalışan listemizdeki addan farklı yazılmışsa
    düzelt (soyadı değişikliği / yazım farkı). Eşleşme ve gösterim düzeltilmiş adla yapılır. */
@@ -569,9 +580,7 @@ async function doDelete(){
 }
 function tarihTR(iso){ try{const[y,m,d]=iso.split('-');return d+'.'+m+'.'+y;}catch(e){return iso;} }
 function mailAt(r,tarih){
-  const mudurler=[]; const alicilar=[];
-  (r.markalar||[]).forEach(m=>{ const mu=MARKA_MUDUR[m]; if(mu){ if(mu.ad)mudurler.push(mu.ad+' ('+m+')'); if(mu.eposta)alicilar.push(mu.eposta); } });
-  const to=[...new Set(alicilar)].join(';');
+  const to=aliciBul(r.markalar).join(',');
   const markaTxt=(r.markalar||[]).join(', ');
   const konu='MR / Tofaş Akademi — Kayıt Silme Bildirimi: '+trTitle(r.ad);
   const govde=
@@ -582,9 +591,8 @@ function mailAt(r,tarih){
     (r.unvan?('• Unvan: '+r.unvan+'\n'):'')+
     '\nTOFAŞ AKADEMİ KAYDINI SİLİN. (Geç/eksik işlemlerde Tofaş ceza kesebilmektedir.)\n\n'+
     'İnciroğlu Otomotiv · İnsan Kaynakları';
-  const link='mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(konu)+'&body='+encodeURIComponent(govde);
+  const link='mailto:'+to+'?subject='+encodeURIComponent(konu)+'&body='+encodeURIComponent(govde);
   try{ window.open(link,'_blank'); }catch(e){ window.location.href=link; }
-  if(!to){ setTimeout(()=>alert('Not: Bu marka(lar) için müdür e-postası tanımlı değil. E-posta penceresi boş alıcıyla açıldı; alıcıyı elle ekleyin veya MARKA_MUDUR listesini güncelleyin.'),300); }
 }
 
 function closeModals(){ document.getElementById('addOvl').classList.remove('on'); document.getElementById('delOvl').classList.remove('on'); delId=null; }
