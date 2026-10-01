@@ -163,7 +163,7 @@ tbody tr:hover{background:#f8fafc}
 
   <div class="foot-note">
     <b>⚠ Asıl: …</b> (turuncu) → Kişinin bizdeki kayıtlara göre asıl birimi, kayıtlı olduğu Tofaş markasından farklı (ör. BMW’de çalışan biri Fiat’ın MR’ında). <b>Ortak · …</b> (mavi) → tüm markalarda ortak görünen idari/destek personeli (normaldir). <b>✓ …</b> (yeşil) → asıl birimi ile Tofaş markası uyumlu.
-    <br><b>Aktif listede yok</b> (gri) → Tofaş’ta kayıtlı ama <b>bizim güncel aktif çalışan listemizde olmayan</b> kişi — işten ayrılmış olabilir, kontrol edin.
+    <br><b>Aktif çalışan listesinde değil</b> (gri) → Tofaş’ta kayıtlı ama <b>bizim güncel aktif çalışan listemizde olmayan</b> kişi — işten ayrılmış olabilir, kontrol edin.
     <br><b>Havuz Personel</b> sekmesi → Bunun tersi: aktif çalışanımız olup <b>Tofaş’ta hiç kaydı olmayan</b> kişiler. Bir markaya kaydetmek için buradan seçip <b>+ MR’a Ekle</b> diyebilirsiniz.
     <br><b>Silme & bildirim:</b> İK bir kişiyi sistemden çıkardığında, o kişinin sorumlu müdürüne giden uyarı e-postası Outlook’ta hazır açılır (“… işten ayrılmıştır, Tofaş Akademi kaydını silin”).
   </div>
@@ -246,6 +246,18 @@ const MARKA_MUDUR = {
   'Maserati':{ad:'', eposta:''},
   'Spoticar':{ad:'', eposta:''}
 };
+
+/* Tofaş export'undaki ad, bizim aktif çalışan listemizdeki addan farklı yazılmışsa
+   düzelt (soyadı değişikliği / yazım farkı). Eşleşme ve gösterim düzeltilmiş adla yapılır. */
+const AD_DUZELT={
+  'FATMA MÜHİBE KÖKLÜ':'FATMA MÜHİBE DURDU',
+  'ONUR DEREBAŞI':'ONUR DEREBAŞ',
+  'MUSTAFA YİĞİT ÜLKER':'MUSTAFA YİĞİT ÜLGER',
+  'CANSU KAYİCİ':'CANSU KAYICI',
+  'AKGÜL USTA':'AKGÜL YILDIZ',
+  'MAKSUT AKGÜN':'MAHSUT AKGÜN'
+};
+function applyAdDuzelt(list){ return (list||[]).map(r=>{ const nx=AD_DUZELT[r.ad]; return nx?Object.assign({},r,{ad:nx}):r; }); }
 
 /* ===================== OTURUM ===================== */
 function trLower(s){return String(s||'').replace(/İ/g,'i').replace(/I/g,'ı').toLowerCase();}
@@ -331,14 +343,14 @@ async function boot(){
   bindUI();
   onSnapshot(mrRef,(snap)=>{
     if(snap.exists() && Array.isArray(snap.data().kayitlar)){
-      RECORDS=snap.data().kayitlar;
+      RECORDS=applyAdDuzelt(snap.data().kayitlar);
     }else{
       /* ilk kurulum: tohumu yaz (herhangi bir kullanıcı ilk açtığında) */
-      RECORDS=SEED.slice();
+      RECORDS=applyAdDuzelt(SEED);
       setDoc(mrRef,{kayitlar:SEED,guncelleme:new Date().toISOString(),_init:true},{merge:true}).catch(()=>{});
     }
     render();
-  },(err)=>{ console.error('MR canlı veri hatası',err); RECORDS=SEED.slice(); render(); });
+  },(err)=>{ console.error('MR canlı veri hatası',err); RECORDS=applyAdDuzelt(SEED); render(); });
   /* havuz datalistesi + ekleme marka kutuları */
   const dl=document.getElementById('poolList');
   dl.innerHTML=POOL.map(p=>'<option value="'+esc(p.ad)+'">'+esc(p.dept)+' · '+esc(p.unvan)+'</option>').join('');
@@ -383,14 +395,14 @@ function kpis(){
   el.innerHTML=
     kpiCard(RECORDS.length,'Toplam MR Kaydı')+
     kpiCard(uyumsuz,'Asıl Birim Uyuşmazlığı',true)+
-    kpiCard(aktifYok,'Aktif Listede Yok',true)+
+    kpiCard(aktifYok,'Aktif Çalışan Listesinde Değil',true)+
     kpiCard(havuzKayitsiz,'Tofaş\'ta Kayıtsız Aktif Personel');
 }
 function kpiCard(n,l,warn){return '<div class="kpi'+(warn?' warn':'')+'"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>';}
 function rowHtml(r){
   const u=uyusmazlik(r);
   let asilBadge='';
-  if(u.havuzYok) asilBadge='<span class="badge b-havuzyok">Aktif listede yok</span>';
+  if(u.havuzYok) asilBadge='<span class="badge b-havuzyok">Aktif çalışan listesinde değil</span>';
   else if(u.uyumsuz) asilBadge='<span class="badge b-warn">⚠ Asıl: '+esc(u.asil)+'</span>';
   else if(u.ortak) asilBadge='<span class="badge b-ortak">Ortak · '+esc(u.asil)+'</span>';
   else asilBadge='<span class="badge b-ok">✓ '+esc(u.asil)+'</span>';
