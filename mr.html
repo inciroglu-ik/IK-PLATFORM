@@ -81,6 +81,7 @@ tbody tr:hover{background:#f8fafc}
 .b-warn{background:var(--warn-bg);color:var(--warn);border:1px solid #e9c48f}
 .b-ok{background:#eef7f0;color:#1b6b3a;border:1px solid #cfe8d6}
 .b-havuzyok{background:#f0f0f3;color:#7a828c;border:1px solid #e0e2e7}
+.b-ortak{background:#eef2f8;color:#3a5675;border:1px solid #d3deeb}
 .del{background:#fff;border:1px solid #e6c3bd;color:var(--bad);border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600}
 .del:hover{background:#fbeceb}
 .grp-h{font-family:var(--serif);font-size:16px;font-weight:700;color:var(--navy);margin:22px 0 10px;display:flex;align-items:center;gap:10px}
@@ -349,7 +350,7 @@ function rowHtml(r){
   let asilBadge='';
   if(u.havuzYok) asilBadge='<span class="badge b-havuzyok">Havuzda yok</span>';
   else if(u.uyumsuz) asilBadge='<span class="badge b-warn">⚠ Asıl: '+esc(u.asil)+'</span>';
-  else if(u.ortak) asilBadge='<span class="badge b-havuzyok">Ortak · '+esc(u.asil)+'</span>';
+  else if(u.ortak) asilBadge='<span class="badge b-ortak">Ortak · '+esc(u.asil)+'</span>';
   else asilBadge='<span class="badge b-ok">✓ '+esc(u.asil)+'</span>';
   const markalar=(r.markalar||[]).map(m=>'<span class="badge b-marka">'+esc(m)+'</span>').join('');
   const unv=esc(r.unvan||(r.unvanlar&&r.unvanlar[0])||'');
