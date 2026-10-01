@@ -165,7 +165,7 @@ tbody tr:hover{background:#f8fafc}
     <b>⚠ Asıl: …</b> (turuncu) → Kişinin bizdeki kayıtlara göre asıl birimi, kayıtlı olduğu Tofaş markasından farklı (ör. BMW’de çalışan biri Fiat’ın MR’ında). <b>Ortak · …</b> (mavi) → tüm markalarda ortak görünen idari/destek personeli (normaldir). <b>✓ …</b> (yeşil) → asıl birimi ile Tofaş markası uyumlu.
     <br><b>Aktif çalışan listesinde değil</b> (gri) → Tofaş’ta kayıtlı ama <b>bizim güncel aktif çalışan listemizde olmayan</b> kişi — işten ayrılmış olabilir, kontrol edin.
     <br><b>Havuz Personel</b> sekmesi → Bunun tersi: aktif çalışanımız olup <b>Tofaş’ta hiç kaydı olmayan</b> kişiler. Bir markaya kaydetmek için buradan seçip <b>+ MR’a Ekle</b> diyebilirsiniz.
-    <br><b>Silme & bildirim:</b> İK bir kişiyi sistemden çıkardığında, o kişinin sorumlu müdürüne giden uyarı e-postası Outlook’ta hazır açılır (“… işten ayrılmıştır, Tofaş Akademi kaydını silin”).
+    <br><b>Silme & otomatik bildirim:</b> İK bir kişiyi sistemden çıkardığında, kişinin kayıtlı olduğu markaya göre sorumlu müdürlere uyarı e-postası <b>otomatik gönderilir</b> (“… işten ayrılmıştır, Tofaş Akademi kaydını silin”) — en geç birkaç saat içinde, elle işlem gerekmez.
   </div>
 </div>
 
@@ -205,7 +205,7 @@ tbody tr:hover{background:#f8fafc}
     <div class="mb">
       <p style="font-size:14px;color:var(--ink);margin-bottom:14px" id="delWho"></p>
       <div class="f"><label>İşten Ayrılış Tarihi</label><input id="delTarih" type="date"></div>
-      <div class="note-live warn show" style="margin-top:0">Silme işleminden sonra, sorumlu müdüre giden bilgilendirme e-postası Outlook’ta hazır açılacaktır. Lütfen e-postayı gönderin.</div>
+      <div class="note-live warn show" style="margin-top:0">Silme işleminden sonra, kişinin kayıtlı olduğu markaya göre sorumlu müdürlere bilgilendirme e-postası <b>otomatik</b> gönderilir (en geç birkaç saat içinde). Elle bir şey yapmanıza gerek yoktur.</div>
     </div>
     <div class="mf">
       <button class="btn g" data-close>Vazgeç</button>
@@ -217,7 +217,7 @@ tbody tr:hover{background:#f8fafc}
 <script src="mr_data.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, onSnapshot, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, onSnapshot, setDoc, getDoc, arrayUnion, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 /* ===================== SABİTLER ===================== */
 const TOFAS_MARKALAR = ['Alfa Romeo','Citroen','DS Automobiles','Fiat','Jeep','Maserati','Opel','Peugeot','Spoticar'];
@@ -290,6 +290,7 @@ const firebaseConfig={apiKey:"AIzaSyCWlB0nU-ETZxuo9xa6gG4VMYVu09P3fnE",authDomai
 const app=initializeApp(firebaseConfig,"mr-modulu");
 const db=getFirestore(app);
 const mrRef=doc(db,"satisVeri","mrKayitlari");
+const mailKuyrukRef=doc(db,"satisVeri","mrMailKuyruk"); /* otomatik mail robotunun okuduğu kuyruk */
 
 /* ===================== DURUM ===================== */
 const POOL = (window.MR_POOL||[]);
@@ -572,27 +573,18 @@ async function doDelete(){
   const r=RECORDS.find(x=>x.id===delId); if(!r) return;
   const tarih=document.getElementById('delTarih').value||new Date().toISOString().slice(0,10);
   const yeni=RECORDS.filter(x=>x.id!==delId);
+  const alicilar=aliciBul(r.markalar);
   try{
     await setDoc(mrRef,{kayitlar:yeni,guncelleme:new Date().toISOString()},{merge:true});
+    /* Bildirim mailini KUYRUĞA yaz — GitHub Actions robotu (scripts/mr-mail.js) otomatik gönderir.
+       Alıcılar güvenlik için robotta markaya göre YENİDEN hesaplanır; burada yalnız bilgi amaçlı. */
+    const item={id:r.id, ad:r.ad, markalar:(r.markalar||[]), bolum:r.bolum||'', unvan:r.unvan||'',
+      ayrilisTarihi:tarih, alicilar:alicilar, silen:(SES&&SES.ad)||'', olusturma:new Date().toISOString(), gonderildi:false};
+    try{ await setDoc(mailKuyrukRef,{kuyruk:arrayUnion(item),guncelleme:new Date().toISOString()},{merge:true}); }
+    catch(e){ console.error('mail kuyruğa yazılamadı',e); }
     closeModals();
-    mailAt(r,tarih);
+    alert('✓ "'+trTitle(r.ad)+'" MR\'dan silindi.\n\nSorumlu müdürlere bilgilendirme e-postası otomatik gönderilecek:\n'+alicilar.join('\n'));
   }catch(err){ alert('Silinemedi: '+err.message); }
-}
-function tarihTR(iso){ try{const[y,m,d]=iso.split('-');return d+'.'+m+'.'+y;}catch(e){return iso;} }
-function mailAt(r,tarih){
-  const to=aliciBul(r.markalar).join(',');
-  const markaTxt=(r.markalar||[]).join(', ');
-  const konu='MR / Tofaş Akademi — Kayıt Silme Bildirimi: '+trTitle(r.ad);
-  const govde=
-    'DİKKAT! MR sistemindeki aşağıdaki personel işten ayrılmıştır. Lütfen Tofaş Akademi kaydını siliniz.\n\n'+
-    '• Personel: '+trTitle(r.ad)+'\n'+
-    '• Ayrılış Tarihi: '+tarihTR(tarih)+'\n'+
-    '• Tofaş Akademi Kaydı (Marka): '+markaTxt+'\n'+
-    (r.unvan?('• Unvan: '+r.unvan+'\n'):'')+
-    '\nTOFAŞ AKADEMİ KAYDINI SİLİN. (Geç/eksik işlemlerde Tofaş ceza kesebilmektedir.)\n\n'+
-    'İnciroğlu Otomotiv · İnsan Kaynakları';
-  const link='mailto:'+to+'?subject='+encodeURIComponent(konu)+'&body='+encodeURIComponent(govde);
-  try{ window.open(link,'_blank'); }catch(e){ window.location.href=link; }
 }
 
 function closeModals(){ document.getElementById('addOvl').classList.remove('on'); document.getElementById('delOvl').classList.remove('on'); delId=null; }
