@@ -243,7 +243,6 @@ if(!SES||!SES.ok){
   document.getElementById('app').classList.remove('hidden');
   document.getElementById('whoAd').textContent=(SES.rol==='ik')?'İnsan Kaynakları':trTitle(SES.ad||'');
   document.getElementById('whoRol').textContent=ROL_ET[SES.rol]||SES.rol;
-  boot();
 }
 const IS_ADMIN = !!(SES && (SES.rol==='ik' || SES.u==='ik123'));
 
@@ -483,6 +482,9 @@ function mailAt(r,tarih){
 
 function closeModals(){ document.getElementById('addOvl').classList.remove('on'); document.getElementById('delOvl').classList.remove('on'); delId=null; }
 window.addEventListener('keydown',e=>{ if(e.key==='Escape')closeModals(); });
+
+/* Tüm const/fonksiyonlar tanımlandıktan SONRA başlat (TDZ'den kaçın) */
+if(SES && SES.ok){ boot(); }
 </script>
 </body>
 </html>
