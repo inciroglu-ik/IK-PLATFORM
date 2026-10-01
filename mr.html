@@ -273,8 +273,20 @@ const POOL = (window.MR_POOL||[]);
 const SEED = (window.MR_SEED||[]);
 const POOL_BY = {};
 function nkey(s){return trLower(s).replace(/\s+/g,' ').trim();}
-POOL.forEach(p=>{ POOL_BY[nkey(p.ad)]=p; });
+function nameTokens(s){return nkey(s).split(' ').filter(t=>t.length>=2);}
+/* Kısaltılmış ad ↔ tam ad eşleşmesi: Tofaş "ÇAĞATAY DAĞDELEN" ≡ bizim
+   "ABDURRAHMAN ÇAĞATAY DAĞDELEN". Kural: aynı SOYAD (son kelime) + küçük ad
+   kümesi büyükte TAMAMEN var + en az 2 ortak kelime. */
+function sameName(a,b){
+  if(!a.length||!b.length) return false;
+  if(a[a.length-1]!==b[b.length-1]) return false;
+  const small=a.length<=b.length?a:b, big=a.length<=b.length?b:a, bigSet=new Set(big);
+  let common=0; for(const t of small){ if(bigSet.has(t)) common++; }
+  return common===small.length && common>=2;
+}
+POOL.forEach(p=>{ p._tok=nameTokens(p.ad); POOL_BY[nkey(p.ad)]=p; });
 let RECORDS=[];
+let MATCHED=new Set(); /* MR tarafından eşleşen POOL index'leri */
 let ST={q:'',marka:'',bolum:'',uyus:false,view:'liste'};
 
 /* ===================== YARDIMCI ===================== */
@@ -282,7 +294,21 @@ let ST={q:'',marka:'',bolum:'',uyus:false,view:'liste'};
    YANLIŞ sonuç verir (FIAT -> fıat). Bu yüzden markada DÜZ (invariant) küçük harf. */
 function brandNorm(s){return String(s||'').toLowerCase().replace(/[\s\.\-&]/g,'');}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-function realDeptOf(ad){ const p=POOL_BY[nkey(ad)]; return p||null; }
+function realDeptOf(ad){
+  const k=nkey(ad); if(POOL_BY[k]) return POOL_BY[k];
+  const t=nameTokens(ad);
+  for(let i=0;i<POOL.length;i++){ if(sameName(t,POOL[i]._tok)) return POOL[i]; }
+  return null;
+}
+/* MR kayıtlarının eşleştiği POOL index'leri (kısa/tam ad toleranslı). */
+function mrMatchSet(){
+  const recs=RECORDS.map(r=>({k:nkey(r.ad),t:nameTokens(r.ad)}));
+  const m=new Set();
+  for(let i=0;i<POOL.length;i++){ const pk=nkey(POOL[i].ad), pt=POOL[i]._tok;
+    for(const r of recs){ if(r.k===pk||sameName(r.t,pt)){ m.add(i); break; } }
+  }
+  return m;
+}
 /* uyuşmazlık: havuzdaki asıl birim, kayıtlı Tofaş markalarından biriyle eşleşmiyorsa asıl birimi döndür */
 function uyusmazlik(rec){
   const p=realDeptOf(rec.ad); if(!p) return {havuzYok:true};
@@ -341,9 +367,9 @@ function poolBolumKod(b){const x=String(b||'').toLowerCase();return x.indexOf('s
 function mrNameSet(){const s=new Set();RECORDS.forEach(r=>s.add(nkey(r.ad)));return s;}
 /* Havuz Personel = aktif çalışan listemizde olup Tofaş'ta (MR'da) HİÇ kaydı olmayanlar */
 function havuzPersonel(){
-  const mr=mrNameSet(); const q=nkey(ST.q);
-  return POOL.filter(p=>{
-    if(mr.has(nkey(p.ad))) return false;
+  const q=nkey(ST.q);
+  return POOL.filter((p,i)=>{
+    if(MATCHED.has(i)) return false;
     if(q && nkey(p.ad).indexOf(q)<0) return false;
     if(ST.bolum && poolBolumKod(p.bolum)!==ST.bolum) return false;
     return true;
@@ -352,7 +378,7 @@ function havuzPersonel(){
 function kpis(){
   let uyumsuz=0, aktifYok=0;
   RECORDS.forEach(r=>{ const u=uyusmazlik(r); if(u.havuzYok)aktifYok++; else if(u.uyumsuz)uyumsuz++; });
-  const mr=mrNameSet(); const havuzKayitsiz=POOL.filter(p=>!mr.has(nkey(p.ad))).length;
+  const havuzKayitsiz=POOL.length-MATCHED.size;
   const el=document.getElementById('kpis');
   el.innerHTML=
     kpiCard(RECORDS.length,'Toplam MR Kaydı')+
@@ -415,6 +441,7 @@ function havuzTableHtml(list){
 }
 function render(){
   markaOptions();
+  MATCHED=mrMatchSet();
   kpis();
   const c=document.getElementById('content');
   if(ST.view==='havuz'){ c.innerHTML=havuzTableHtml(havuzPersonel()); bindHavuz(); return; }
