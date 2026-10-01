@@ -227,8 +227,9 @@ const DEPT_TOFAS = {
   'citroen':['citroen'],
   'opel':['opel']
 };
-/* Tüm markalarda ortak görünen (paylaşılan) idari/destek birimleri — uyuşmazlık sayılmaz. */
-const ORTAK_DEPT=/ortak|yonetim|icra|finans|denetim|insan|mali|pazarlama|satinalma|satin alma|bilgi|dexpert|d-expert/i;
+/* Tüm markalarda ortak görünen (paylaşılan) idari/destek birimleri — uyuşmazlık sayılmaz.
+   Türkçe karakterli dept kodları için kesin liste (regex İ/Ö'de yanılır). */
+const ORTAK_DEPT_SET=new Set(['İNSAN KAYNAKLARI','FİNANS','MALİ İŞLER','DENETİM','PAZARLAMA','SATIN ALMA','BİLGİ İŞLEM','İCRA KURULU','YÖNETİM KURULU','D-EXPERT']);
 /* İK dolduracak: her Tofaş markasının sorumlu müdürü + e-postası (silme bildirimi buraya gider) */
 const MARKA_MUDUR = {
   'Fiat':{ad:'', eposta:''},
@@ -273,7 +274,9 @@ let RECORDS=[];
 let ST={q:'',marka:'',bolum:'',uyus:false,view:'liste'};
 
 /* ===================== YARDIMCI ===================== */
-function brandNorm(s){return trLower(s).replace(/[\s\.\-&]/g,'');}
+/* Marka/birim adları çoğunlukla yabancı (Fiat, Citroen, PSA...) — Türkçe I/İ kuralı
+   YANLIŞ sonuç verir (FIAT -> fıat). Bu yüzden markada DÜZ (invariant) küçük harf. */
+function brandNorm(s){return String(s||'').toLowerCase().replace(/[\s\.\-&]/g,'');}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function realDeptOf(ad){ const p=POOL_BY[nkey(ad)]; return p||null; }
 /* uyuşmazlık: havuzdaki asıl birim, kayıtlı Tofaş markalarından biriyle eşleşmiyorsa asıl birimi döndür */
@@ -287,7 +290,7 @@ function uyusmazlik(rec){
     return Object.assign(base,{uyumsuz:!ok});
   }
   /* dept bir Tofaş markasına karşılık gelmiyor */
-  if(ORTAK_DEPT.test(p.dept) || brandNorm(p.bolum)==='yonetim'){
+  if(ORTAK_DEPT_SET.has(p.dept) || p.bolum==='İdari'){
     return Object.assign(base,{uyumsuz:false, ortak:true}); /* paylaşılan idari personel */
   }
   return Object.assign(base,{uyumsuz:true}); /* gerçek çapraz kayıt (BMW/Honda/2.El... kişisi Tofaş MR'ında) */
