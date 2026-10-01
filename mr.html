@@ -154,6 +154,7 @@ tbody tr:hover{background:#f8fafc}
       <button data-v="liste" class="on">Liste</button>
       <button data-v="marka">Marka bazlı</button>
       <button data-v="departman">Departman bazlı</button>
+      <button data-v="havuz">Havuz Personel</button>
     </div>
     <button class="btn" id="btnAdd">+ Kişi Ekle</button>
   </div>
@@ -161,7 +162,9 @@ tbody tr:hover{background:#f8fafc}
   <div id="content"></div>
 
   <div class="foot-note">
-    <b>⚠ İşaret ne demek?</b> Bir kişinin bizdeki kayıtlarına göre asıl birimi, kayıtlı olduğu Tofaş markasından farklıysa satırı turuncu “Asıl: …” rozetiyle işaretleriz (ör. BMW’de çalışan biri Fiat’ın MR’ında görünüyorsa). <b>Havuzda yok</b> rozeti, kişinin güncel aktif çalışan listesinde bulunmadığını gösterir — ayrılmış olabilir, kontrol edin.
+    <b>⚠ Asıl: …</b> (turuncu) → Kişinin bizdeki kayıtlara göre asıl birimi, kayıtlı olduğu Tofaş markasından farklı (ör. BMW’de çalışan biri Fiat’ın MR’ında). <b>Ortak · …</b> (mavi) → tüm markalarda ortak görünen idari/destek personeli (normaldir). <b>✓ …</b> (yeşil) → asıl birimi ile Tofaş markası uyumlu.
+    <br><b>Aktif listede yok</b> (gri) → Tofaş’ta kayıtlı ama <b>bizim güncel aktif çalışan listemizde olmayan</b> kişi — işten ayrılmış olabilir, kontrol edin.
+    <br><b>Havuz Personel</b> sekmesi → Bunun tersi: aktif çalışanımız olup <b>Tofaş’ta hiç kaydı olmayan</b> kişiler. Bir markaya kaydetmek için buradan seçip <b>+ MR’a Ekle</b> diyebilirsiniz.
     <br><b>Silme & bildirim:</b> İK bir kişiyi sistemden çıkardığında, o kişinin sorumlu müdürüne giden uyarı e-postası Outlook’ta hazır açılır (“… işten ayrılmıştır, Tofaş Akademi kaydını silin”).
   </div>
 </div>
@@ -334,21 +337,34 @@ function filtered(){
     return true;
   });
 }
+function poolBolumKod(b){const x=String(b||'').toLowerCase();return x.indexOf('sat')>=0?'satis':x.indexOf('serv')>=0?'servis':'yonetim';}
+function mrNameSet(){const s=new Set();RECORDS.forEach(r=>s.add(nkey(r.ad)));return s;}
+/* Havuz Personel = aktif çalışan listemizde olup Tofaş'ta (MR'da) HİÇ kaydı olmayanlar */
+function havuzPersonel(){
+  const mr=mrNameSet(); const q=nkey(ST.q);
+  return POOL.filter(p=>{
+    if(mr.has(nkey(p.ad))) return false;
+    if(q && nkey(p.ad).indexOf(q)<0) return false;
+    if(ST.bolum && poolBolumKod(p.bolum)!==ST.bolum) return false;
+    return true;
+  }).sort((a,b)=>String(a.ad).localeCompare(String(b.ad),'tr'));
+}
 function kpis(){
-  const markaSet=new Set(); let uyumsuz=0, havuzYok=0;
-  RECORDS.forEach(r=>{ (r.markalar||[]).forEach(m=>markaSet.add(m)); const u=uyusmazlik(r); if(u.havuzYok)havuzYok++; else if(u.uyumsuz)uyumsuz++; });
+  let uyumsuz=0, aktifYok=0;
+  RECORDS.forEach(r=>{ const u=uyusmazlik(r); if(u.havuzYok)aktifYok++; else if(u.uyumsuz)uyumsuz++; });
+  const mr=mrNameSet(); const havuzKayitsiz=POOL.filter(p=>!mr.has(nkey(p.ad))).length;
   const el=document.getElementById('kpis');
   el.innerHTML=
     kpiCard(RECORDS.length,'Toplam MR Kaydı')+
-    kpiCard(markaSet.size,'Farklı Marka')+
     kpiCard(uyumsuz,'Asıl Birim Uyuşmazlığı',true)+
-    kpiCard(havuzYok,'Havuzda Bulunamayan',true);
+    kpiCard(aktifYok,'Aktif Listede Yok',true)+
+    kpiCard(havuzKayitsiz,'Tofaş\'ta Kayıtsız Aktif Personel');
 }
 function kpiCard(n,l,warn){return '<div class="kpi'+(warn?' warn':'')+'"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>';}
 function rowHtml(r){
   const u=uyusmazlik(r);
   let asilBadge='';
-  if(u.havuzYok) asilBadge='<span class="badge b-havuzyok">Havuzda yok</span>';
+  if(u.havuzYok) asilBadge='<span class="badge b-havuzyok">Aktif listede yok</span>';
   else if(u.uyumsuz) asilBadge='<span class="badge b-warn">⚠ Asıl: '+esc(u.asil)+'</span>';
   else if(u.ortak) asilBadge='<span class="badge b-ortak">Ortak · '+esc(u.asil)+'</span>';
   else asilBadge='<span class="badge b-ok">✓ '+esc(u.asil)+'</span>';
@@ -379,11 +395,30 @@ function groupHtml(list,keyFn,labelFn){
   if(!keys.length) return '<div class="card"><div class="empty">Kayıt bulunamadı.</div></div>';
   return keys.map(k=>'<div class="grp-h">'+esc(labelFn(k))+'<span class="cnt">'+groups[k].length+' kişi</span></div>'+tableHtml(groups[k])).join('');
 }
+function havuzTableHtml(list){
+  const bilgi='<div class="foot-note" style="margin:0 0 14px 0;border-left-color:var(--navy-2)"><b>Havuz Personel:</b> Aktif çalışan listemizde olup <b>Tofaş Akademi (MR) kaydı bulunmayan</b> personel. Bir markaya kaydetmek istediğinizde buradan seçip <b>+ MR\'a Ekle</b> diyebilirsiniz.</div>';
+  if(!list.length) return bilgi+'<div class="card"><div class="empty">Tüm aktif personelin Tofaş kaydı var ya da süzgece uyan kişi yok.</div></div>';
+  const rows=list.map(p=>{
+    const kidem=p.kidem?((p.kidem/365).toFixed(1)+' yıl'):'';
+    return '<tr>'+
+      '<td><span class="nm">'+esc(trTitle(p.ad))+'</span></td>'+
+      '<td><span class="badge b-marka">'+esc(p.dept)+'</span></td>'+
+      '<td><span class="badge b-bol">'+esc(p.bolum)+'</span></td>'+
+      '<td>'+esc(p.unvan||'')+'</td>'+
+      '<td class="mini">'+esc(kidem)+'</td>'+
+      '<td><button class="del" style="border-color:#bcd0c2;color:#1b6b3a" data-havuz-ad="'+esc(p.ad)+'">+ MR\'a Ekle</button></td>'+
+    '</tr>';
+  }).join('');
+  return bilgi+'<div class="card"><table><thead><tr>'+
+    '<th>Çalışan</th><th>Asıl Birim</th><th>Bölüm</th><th>Unvan</th><th>Kıdem</th><th></th>'+
+    '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
 function render(){
   markaOptions();
   kpis();
-  const list=filtered();
   const c=document.getElementById('content');
+  if(ST.view==='havuz'){ c.innerHTML=havuzTableHtml(havuzPersonel()); bindHavuz(); return; }
+  const list=filtered();
   if(ST.view==='marka') c.innerHTML=groupHtml(list,r=>(r.markalar&&r.markalar.length?r.markalar:['—']),k=>k);
   else if(ST.view==='departman') c.innerHTML=groupHtml(list,r=>[r.bolum||'diger'],k=>BOLUM_AD[k]||k);
   else c.innerHTML=tableHtml(list);
@@ -411,18 +446,26 @@ function bindDel(){
   if(!IS_ADMIN) return;
   document.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>openDel(b.getAttribute('data-del'))));
 }
+function bindHavuz(){
+  document.querySelectorAll('[data-havuz-ad]').forEach(b=>b.addEventListener('click',()=>{
+    const p=realDeptOf(b.getAttribute('data-havuz-ad'));
+    if(p) openAdd({ad:p.ad,dept:p.dept,bolum:poolBolumKod(p.bolum),unvan:p.unvan});
+    else openAdd({ad:b.getAttribute('data-havuz-ad')});
+  }));
+}
 
 /* ===================== EKLE ===================== */
-function openAdd(){
-  document.getElementById('aAd').value='';
-  document.getElementById('aUnvan').value='';
+function openAdd(prefill){
+  const pf=prefill&&prefill.ad?prefill:null;
+  document.getElementById('aAd').value=pf?pf.ad:'';
+  document.getElementById('aUnvan').value=pf&&pf.unvan?pf.unvan:'';
   document.getElementById('aNot').value='';
-  document.getElementById('aBolum').value='satis';
+  document.getElementById('aBolum').value=(pf&&pf.bolum)?pf.bolum:'satis';
   document.querySelectorAll('#aMarka input').forEach(x=>x.checked=false);
   document.getElementById('aLive').className='note-live';
-  document.getElementById('aPoolInfo').textContent='';
+  document.getElementById('aPoolInfo').textContent=pf?('Havuz: '+pf.dept+(pf.unvan?' · '+pf.unvan:'')):'';
   document.getElementById('addOvl').classList.add('on');
-  setTimeout(()=>document.getElementById('aAd').focus(),50);
+  setTimeout(()=>document.getElementById(pf?'aUnvan':'aAd').focus(),50);
 }
 function onAdName(e){
   const ad=e.target.value;
