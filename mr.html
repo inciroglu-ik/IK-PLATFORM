@@ -189,6 +189,7 @@ const ref=doc(db,"satisVeri","mrPersonel");
 
 /* ============ DURUM ============ */
 const SEED_AKTIF=(window.MR_AKTIF||[]);
+const SEED_AYRILAN=(window.MR_AYRILAN||[]);
 let AKTIF=[], AYRILAN=[];
 let ST={tab:'aktif', q:'', sortCol:'ad', sortDir:1};
 let openMenu=null;
@@ -204,8 +205,8 @@ function boot(){
     if(snap.exists() && (Array.isArray(snap.data().aktif)||Array.isArray(snap.data().ayrilan))){
       AKTIF=snap.data().aktif||[]; AYRILAN=snap.data().ayrilan||[];
     }else{
-      AKTIF=SEED_AKTIF.slice(); AYRILAN=[];
-      setDoc(ref,{aktif:AKTIF,ayrilan:[],guncelleme:new Date().toISOString(),_init:true},{merge:true}).catch(()=>{});
+      AKTIF=SEED_AKTIF.slice(); AYRILAN=SEED_AYRILAN.slice();
+      setDoc(ref,{aktif:AKTIF,ayrilan:AYRILAN,guncelleme:new Date().toISOString(),_init:true},{merge:true}).catch(()=>{});
     }
     render();
   },(err)=>{ console.error('MR veri hatası',err); AKTIF=SEED_AKTIF.slice(); AYRILAN=[]; render(); });
