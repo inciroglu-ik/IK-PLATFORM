@@ -200,11 +200,11 @@ var PANOLAR={
    ROL -> GÖRÜNEN KUTUCUKLAR
    ============================================================ */
 var ROL_KUTU={
-  ik:           ['iksistem','ikdash','satis','servis','yetenek','isealim','mr'],   /* İK: hepsi */
-  direktor:     ['iksistem','ikdash','satis','servis','yetenek','isealim','mr'],   /* Direktör: hepsi (yetenek dışı salt-okunur) */
-  satis_mudur:  ['iksistem','satis','yetenek','isealim','mr'],                     /* Satış müdürü: servis YOK */
-  servis_mudur: ['iksistem','servis','yetenek','isealim','mr'],                    /* Servis müdürü: satış YOK */
-  idari_mudur:  ['iksistem','ikdash','yetenek','isealim','mr']                     /* İdari müdür (onaya tabi) */
+  ik:           ['iksistem','ikdash','satis','servis','yetenek','isealim','mr'],   /* İK: hepsi (İK Sistemi SADECE İK'da) */
+  direktor:     ['ikdash','satis','servis','yetenek','isealim','mr'],   /* Direktör: İK Sistemi YOK */
+  satis_mudur:  ['satis','yetenek','isealim','mr'],                     /* Satış müdürü: servis YOK, İK Sistemi YOK */
+  servis_mudur: ['servis','yetenek','isealim','mr'],                    /* Servis müdürü: satış YOK, İK Sistemi YOK */
+  idari_mudur:  ['ikdash','yetenek','isealim','mr']                     /* İdari müdür: İK Sistemi YOK */
 };
 var ROL_ETIKET={ik:'İK / Tam Yetki',direktor:'Direktör',satis_mudur:'Satış Müdürü',servis_mudur:'Servis Müdürü',idari_mudur:'İdari Müdür'};
 
