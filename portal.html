@@ -191,18 +191,20 @@ var PANOLAR={
   isealim: {ad:'İşe Alım',       tag:'Aday Yönetimi',  url:'https://inciroglu-ik.github.io/ise-alim-sureci/',  aciklama:'Aday havuzu, görüşme, oryantasyon ve deneme süreci.',
     svg:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>'},
   mr:      {ad:'MR',             tag:'Personel',       url:'https://inciroglu-ik.github.io/IK-PLATFORM/mr.html', aciklama:'Aktif çalışan listesi ve işten ayrılan personel takibi.',
-    svg:'<rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/>'}
+    svg:'<rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/>'},
+  iksistem:{ad:'İK Sistemi',     tag:'Personel Yönetimi', url:'https://inciroglu-ik.github.io/IK-PLATFORM/ik.html', aciklama:'Çalışan özlük kartları, izin, puantaj, raporlar — tek sistem (Kolay İK benzeri, gelişmekte).',
+    svg:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>'}
 };
 
 /* ============================================================
    ROL -> GÖRÜNEN KUTUCUKLAR
    ============================================================ */
 var ROL_KUTU={
-  ik:           ['ikdash','satis','servis','yetenek','isealim','mr'],   /* İK: hepsi */
-  direktor:     ['ikdash','satis','servis','yetenek','isealim','mr'],   /* Direktör: hepsi (yetenek dışı salt-okunur) */
-  satis_mudur:  ['satis','yetenek','isealim','mr'],                     /* Satış müdürü: servis YOK */
-  servis_mudur: ['servis','yetenek','isealim','mr'],                    /* Servis müdürü: satış YOK */
-  idari_mudur:  ['ikdash','yetenek','isealim','mr']                     /* İdari müdür (onaya tabi) */
+  ik:           ['iksistem','ikdash','satis','servis','yetenek','isealim','mr'],   /* İK: hepsi */
+  direktor:     ['iksistem','ikdash','satis','servis','yetenek','isealim','mr'],   /* Direktör: hepsi (yetenek dışı salt-okunur) */
+  satis_mudur:  ['iksistem','satis','yetenek','isealim','mr'],                     /* Satış müdürü: servis YOK */
+  servis_mudur: ['iksistem','servis','yetenek','isealim','mr'],                    /* Servis müdürü: satış YOK */
+  idari_mudur:  ['iksistem','ikdash','yetenek','isealim','mr']                     /* İdari müdür (onaya tabi) */
 };
 var ROL_ETIKET={ik:'İK / Tam Yetki',direktor:'Direktör',satis_mudur:'Satış Müdürü',servis_mudur:'Servis Müdürü',idari_mudur:'İdari Müdür'};
 
