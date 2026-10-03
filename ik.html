@@ -275,7 +275,7 @@ function mergeBakiye(){
     p.izinHak=b.hak; p.izinKullanilan=b.kull; p.izinKalan=b.kalan;
   }));
 }
-let ST={q:'',durum:'aktif',dep:'',bol:'',sortCol:'ad',sortDir:1,view:'grid',izTab:'yaklasan',pzAy:ym(new Date()),tlTab:'bekliyor',tlTip:'',rapSel:'calisan',rapBirim:'',rapAy:0,rapYil:0};
+let ST={q:'',durum:'aktif',dep:'',bol:'',sortCol:'ad',sortDir:1,view:'grid',izTab:'yaklasan',pzAy:ym(new Date()),tlTab:'bekliyor',tlTip:'',rapSel:'calisan',rapBirim:'',rapAy:0,rapYil:0,izAltTab:'ozet',izTur:''};
 let pfTab='profil';
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function nkey(s){return trLower(s).replace(/\s+/g,' ').trim();}
@@ -289,7 +289,7 @@ const AVC=['#2f6fed','#1b8a4b','#b26a00','#8e44ad','#c0392b','#0d9488','#4f46e5'
 function avColor(s){let h=0;for(const c of String(s)){h=(h*31+c.charCodeAt(0))>>>0;}return AVC[h%AVC.length];}
 function initials(ad){const p=String(ad||'').trim().split(/\s+/);return ((p[0]||'?').charAt(0)+((p[p.length-1]||' ').charAt(0))).toLocaleUpperCase('tr');}
 function kidemYil(giris){const d=dObj(giris);if(!d)return 0;return (new Date()-d)/(1000*3600*24*365.25);}
-function calismaSuresi(giris){const y=kidemYil(giris);if(!y)return '—';const yil=Math.floor(y);const ay=Math.floor((y-yil)*12);return (yil>0?yil+' yıl ':'')+(ay>0?ay+' ay':'')||'<1 ay';}
+function calismaSuresi(giris){const d=dObj(giris);if(!d)return '—';const now=new Date();let y=now.getFullYear()-d.getFullYear(),m=now.getMonth()-d.getMonth(),gn=now.getDate()-d.getDate();if(gn<0){m--;gn+=new Date(now.getFullYear(),now.getMonth(),0).getDate();}if(m<0){y--;m+=12;}const parts=[];if(y>0)parts.push(y+' yıl');if(m>0)parts.push(m+' ay');parts.push(gn+' gün');return parts.join(' ');}
 function allEmp(){return AKTIF.concat(AYRILAN);}
 function empById(id){return AKTIF.find(x=>x.id===id)||AYRILAN.find(x=>x.id===id);}
 function empAktifMi(id){return !!AKTIF.find(x=>x.id===id);}
@@ -470,6 +470,21 @@ function fv(k,v,em){return '<div class="fld-v"><div class="k">'+k+'</div><div cl
 function miniTbl(cols,rows){return '<div class="card" style="overflow:auto"><table class="tbl"><thead><tr>'+cols.map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr></thead><tbody>'+(rows.length?rows.map(r=>'<tr>'+r.map(c=>'<td>'+(c==null?'':c)+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+cols.length+'" class="empty">Kayıt yok.</td></tr>')+'</tbody></table></div>';}
 function gunNum(g){return +String(g==null?'':g).replace(/[^\d.]/g,'')||0;}
 function izinKullanilanTum(emp){let s=izinKullanilan(emp.id);(emp.izinler||[]).forEach(z=>{if(/yıl/i.test(z.tur||'')&&/onay/i.test(z.durum||''))s+=gunNum(z.gun);});return s;}
+/* Bu kişiye bağlı astlar (müdürlük/direktör/yönetici = bu kişi) */
+function astlari(p){const ad=trLower(p.ad||'');if(!ad)return [];return AKTIF.filter(x=>x.id!==p.id&&(trLower(x.mudurluk||'')===ad||trLower(x.direktor||'')===ad||trLower(x.yonetici||'')===ad));}
+function yonAstSection(p){
+  const as=astlari(p);
+  const birimler=[...new Set(as.map(x=>(x.departman||'')+(x.bolum?' / '+x.bolum:'')).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr'));
+  const birHtml=birimler.length?'<div style="display:flex;flex-wrap:wrap;gap:8px">'+birimler.map(b=>'<span class="badge">'+esc(b)+'</span>').join('')+'</div>':'<div class="mini">Çalışan henüz bir birime yetkili olarak atanmamış.</div>';
+  const astHtml=as.length?'<div class="empcards" style="grid-template-columns:repeat(auto-fill,minmax(190px,1fr))">'+as.slice().sort((a,b)=>String(a.ad).localeCompare(String(b.ad),'tr')).map(x=>'<div class="ec clk" data-id="'+esc(x.id)+'"><div class="av" style="width:34px;height:34px;background:'+avColor(x.ad)+'">'+esc(initials(x.ad))+'</div><div class="nm" style="font-size:12.5px">'+esc(trTitle(x.ad))+'</div><div class="de">'+esc(x.unvan||x.departman||'')+'</div></div>').join('')+'</div>':'<div class="mini">Çalışanın henüz astı bulunmuyor.</div>';
+  return '<div style="height:16px"></div><div class="card pad"><div class="sec-h"><h2 style="font-size:15px">Yönettiği Birimler</h2></div>'+birHtml+'</div>'
+    +'<div style="height:16px"></div><div class="card pad"><div class="sec-h"><h2 style="font-size:15px">Astları</h2><span class="mini">'+as.length+' kişi</span></div>'+astHtml+'</div>';
+}
+/* Özlük doluluk oranı (izlenen alanların doluluğu) */
+const OZLUK_ALANLARI=['dogum','cinsiyet','medeni','cocuk','uyruk','kanGrubu','egitimDurumu','egitimSeviye','egitimKurum','adres2','sehir','postaKodu','bankaAd','iban','hesapNo','acilAd','acilTel','acilYakin','epostaIs','telIs','epostaKisisel','telKisisel'];
+function ozlukDoluluk(p){const dolu=OZLUK_ALANLARI.filter(k=>p[k]!=null&&String(p[k]).trim()!=='').length;return {dolu,toplam:OZLUK_ALANLARI.length,pct:Math.round(dolu/OZLUK_ALANLARI.length*100)};}
+/* Pozisyon geçmişi (şu an sadece güncel pozisyon; Kolay İK pozisyon hareketleri raporu gelince genişler) */
+function pozisyonGecmisi(p){return [{bas:p.pozBaslama||p.giris,bit:'Devam Ediyor',sekil:p.calismaSekli||'Tam zamanlı',yon:p.mudurluk||p.yonetici||'',unvan:p.unvan||'',dep:p.departman||'',bol:p.bolum||''}];}
 function viewCalisan(id){
   const p=empById(id); if(!p) return '<div class="card"><div class="empty">Çalışan bulunamadı. <a href="#/calisanlar">← Listeye dön</a></div></div>';
   const eski=!empAktifMi(id);
@@ -487,7 +502,7 @@ function viewCalisan(id){
       +(eski?fv('İşten Çıkış',esc(p.cikis))+fv('Ayrılma Nedeni',esc(p.ayrilmaNedeni)):'')
       +'</div></div>'
       +(onaySurecVar?'<div class="grp" style="margin-bottom:0"><div class="gh">Onay Süreçleri</div><div class="fieldgrid">'+fv('İzin Onay Süreci',esc(p.izinOnay))+fv('Harcama Onay Süreci',esc(p.harcamaOnay))+fv('Avans Onay Süreci',esc(p.avansOnay))+fv('Mesai Onay Süreci',esc(p.mesaiOnay))+'</div></div>':'')
-      +'</div>';
+      +'</div>'+yonAstSection(p);
   } else if(pfTab==='kisisel'){
     inner='<div class="card pad"><div class="grp"><div class="gh">Vatandaşlık</div><div class="fieldgrid">'+fv('Doğum Tarihi',esc(p.dogum))+fv('Cinsiyet',esc(p.cinsiyet))+fv('Engel Derecesi',esc(p.engel))+fv('Uyruğu',esc(p.uyruk)||'Türkiye')+fv('TC Kimlik No',esc(p.tc))+fv('Askerlik Durumu',esc(p.askerlik))+'</div></div>'
       +'<div class="grp"><div class="gh">Eğitim</div><div class="fieldgrid">'+fv('Eğitim Durumu',esc(p.egitimDurumu))+fv('En Yüksek Seviye',esc(p.egitimSeviye))+fv('Son Eğitim Kurumu',esc(p.egitimKurum))+fv('Bölüm',esc(p.egitimBolum))+'</div></div>'
@@ -497,28 +512,44 @@ function viewCalisan(id){
       +'<div class="grp" style="margin-bottom:0"><div class="gh">Acil Durumda Aranacak Kişi</div><div class="fieldgrid">'+fv('Adı Soyadı',esc(p.acilAd))+fv('Telefon',esc(p.acilTel))+fv('Yakınlık Derecesi',esc(p.acilYakin))+'</div></div></div>';
   } else if(pfTab==='kariyer'){
     const ms=(p.maaslar||[]);
+    const pg=pozisyonGecmisi(p);
     inner='<div class="card pad"><div class="grp" style="margin-bottom:0"><div class="gh">Pozisyon</div><div class="fieldgrid">'+fv('Sözleşme Türü',esc(p.sozlesmeTuru)||'Süresiz')+fv('Çalışma Şekli',esc(p.calismaSekli)||'Tam zamanlı')+fv('Şirket',esc(p.sirket)||'İNCİROĞLU OTOMOTİV')+fv('Departman',esc(p.departman))+fv('Bölüm',esc(p.bolum))+fv('Unvan',esc(p.unvan))+fv('Müdürlük',esc(p.mudurluk))+fv('Direktör',esc(p.direktor))+fv('Yöneticisi',esc(p.yonetici||p.mudurluk))+'</div></div></div>'
+      +'<div style="height:16px"></div><div class="sec-h"><h2 style="font-size:15px">Pozisyon Geçmişi</h2><span class="mini">'+pg.length+' kayıt</span></div>'
+      +miniTbl(['Başlangıç','Bitiş','Çalışma Şekli','Yönetici','Unvan','Departman','Bölüm'],pg.map(x=>['<span class="mini">'+esc(x.bas)+'</span>','<span class="mini">'+esc(x.bit)+'</span>',esc(x.sekil),esc(trTitle(x.yon)),esc(x.unvan),esc(x.dep),esc(x.bol)]))
       +'<div style="height:16px"></div><div class="sec-h"><h2 style="font-size:15px">Maaş Geçmişi</h2><span class="mini">'+ms.length+' kayıt</span></div>'
       +miniTbl(['Geçerlilik Tarihi','Tutar','Maaş Türü','Ücret Türü','Net/Brüt'],ms.map(m=>['<span class="mini">'+esc(m.gecerli)+'</span>','<b>'+esc(m.tutar)+' '+esc(m.birim||'TL')+'</b>',esc(m.tur||'—'),esc(m.ucret||'—'),esc(m.netbrut||'—')]));
   } else if(pfTab==='izinler'){
-    const myz=IZIN.filter(z=>z.empId===id).sort((a,b)=>dkey(b.baslangic)-dkey(a.baslangic));
-    const imp=(p.izinler||[]);
     const b=izinBakiye(p);
-    let bakiyeBlok;
-    if(b.bilinmiyor){
-      bakiyeBlok='<div style="font-family:var(--serif);font-size:30px;font-weight:700;color:var(--muted)">—</div>'
-        +'<div class="mini">Kıdem: '+calismaSuresi(p.giris)+' · <i>İzin bakiyesi Kolay İK bakiye raporu yüklenince gösterilecek (sistem kendi hesaplamaz).</i></div>';
+    const altTab=ST.izAltTab||'ozet';
+    const sistem=IZIN.filter(z=>z.empId===id).map(z=>({bas:z.baslangic,bit:z.bitis,gun:z.gun,tur:z.tur,acik:z.aciklama,dh:izinAsamaBadge(z),imza:''}));
+    const impo=(p.izinler||[]).map(z=>({bas:z.bas,bit:z.bit,gun:z.gun,tur:z.tur,acik:z.acik,dh:(/onay/i.test(z.durum||'')?'<span class="badge b-ok">'+esc(z.durum)+'</span>':'<span class="badge b-warn">'+esc(z.durum||'—')+'</span>'),imza:z.imza}));
+    const hepsi=sistem.concat(impo);
+    const turler=[...new Set(hepsi.map(x=>x.tur).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'tr'));
+    const imzaCell=x=>{const v=String(x.imza||'').trim();return (v&&!/^(-|hayır|hayir|yok|false|0|no)$/i.test(v))?'<span style="color:var(--ok);font-weight:700">✓</span>':'<span class="mini">—</span>';};
+    const satir=arr=>miniTbl(['Başlangıç','Bitiş','Süre','İzin Türü','Açıklama','Durum','İmzalandı'],arr.slice().sort((a,b)=>dkey(b.bas)-dkey(a.bas)).map(x=>['<span class="mini">'+esc(x.bas)+'</span>','<span class="mini">'+esc(x.bit)+'</span>','<b>'+esc(x.gun)+'</b>',esc(x.tur),'<span class="mini">'+esc(x.acik||'')+'</span>',x.dh,imzaCell(x)]));
+    const altlar=[['ozet','Özet'],['izinler','İzinler'],['ekstra','Ekstra İzinler']];
+    let gov='';
+    if(altTab==='ozet'){
+      let bakiyeBlok;
+      if(b.bilinmiyor){
+        bakiyeBlok='<div style="font-family:var(--serif);font-size:30px;font-weight:700;color:var(--muted)">—</div>'
+          +'<div class="mini">Kıdem: '+calismaSuresi(p.giris)+' · <i>İzin bakiyesi Kolay İK bakiye raporu yüklenince gösterilecek (sistem kendi hesaplamaz).</i></div>';
+      } else {
+        const kalan=b.kalan, hak=b.hak;
+        const pct=(hak&&kalan!=null)?Math.max(0,Math.min(100,Math.round(kalan/hak*100))):0;
+        bakiyeBlok='<div style="font-family:var(--serif);font-size:30px;font-weight:700;color:'+(kalan>0?'var(--ok)':'var(--bad)')+'">'+kalan+' gün</div>'
+          +'<div class="ba-wrap" style="height:11px"><i style="width:'+pct+'%;background:'+(kalan>0?'linear-gradient(90deg,#1b8a4b,#15713d)':'var(--bad)')+'"></i></div>'
+          +'<div class="mini">Hak edilen: '+(hak!=null?hak:'—')+' gün · Kullanılan: '+(b.kullanilan!=null?b.kullanilan:'—')+' gün · Kıdem: '+calismaSuresi(p.giris)+'</div>';
+      }
+      gov='<div class="card pad"><div class="side-h" style="margin-bottom:12px">Yıllık İzin Bakiyesi</div>'+bakiyeBlok+'</div>';
+    } else if(altTab==='izinler'){
+      let L=hepsi; if(ST.izTur) L=L.filter(x=>x.tur===ST.izTur);
+      gov='<div class="toolbar"><select class="sel" id="izTurF"><option value="">Tüm İzin Türleri</option>'+turler.map(t=>'<option'+(ST.izTur===t?' selected':'')+'>'+esc(t)+'</option>').join('')+'</select><div style="flex:1"></div><span class="mini">'+L.length+' kayıt</span></div>'+satir(L);
     } else {
-      const kalan=b.kalan, hak=b.hak;
-      const pct=(hak&&kalan!=null)?Math.max(0,Math.min(100,Math.round(kalan/hak*100))):0;
-      bakiyeBlok='<div style="font-family:var(--serif);font-size:30px;font-weight:700;color:'+(kalan>0?'var(--ok)':'var(--bad)')+'">'+kalan+' gün</div>'
-        +'<div class="ba-wrap" style="height:11px"><i style="width:'+pct+'%;background:'+(kalan>0?'linear-gradient(90deg,#1b8a4b,#15713d)':'var(--bad)')+'"></i></div>'
-        +'<div class="mini">Hak edilen: '+(hak!=null?hak:'—')+' gün · Kullanılan: '+(b.kullanilan!=null?b.kullanilan:'—')+' gün · Kıdem: '+calismaSuresi(p.giris)+'</div>';
+      const ek=hepsi.filter(x=>!/yıl/i.test(x.tur||''));
+      gov=(ek.length?satir(ek):'<div class="card"><div class="empty">Ekstra (yıllık dışı) izin kaydı yok.</div></div>');
     }
-    inner='<div class="card pad" style="margin-bottom:16px"><div class="sec-h"><h2>Yıllık İzin Bakiyesi</h2><button class="btn sm" id="izEkleBtn">+ İzin Ekle</button></div>'+bakiyeBlok+'</div>'
-      +(myz.length?'<div class="sec-h"><h2 style="font-size:15px">Sistem Üzerinden Girilen İzinler</h2></div><div class="card" style="overflow:auto;margin-bottom:16px"><table class="tbl"><thead><tr><th>Başlangıç</th><th>Bitiş</th><th>Gün</th><th>Tür</th><th>Açıklama</th><th>Durum</th><th></th></tr></thead><tbody>'+myz.map(z=>izinRow(z,true)).join('')+'</tbody></table></div>':'')
-      +'<div class="sec-h"><h2 style="font-size:15px">İzin Geçmişi (Kolay İK)</h2><span class="mini">'+imp.length+' kayıt</span></div>'
-      +miniTbl(['Başlangıç','Bitiş','Süre','İzin Türü','Açıklama','Durum'],imp.slice().sort((a,b)=>dkey(b.bas)-dkey(a.bas)).map(z=>['<span class="mini">'+esc(z.bas)+'</span>','<span class="mini">'+esc(z.bit)+'</span>','<b>'+esc(z.gun)+'</b>',esc(z.tur),'<span class="mini">'+esc(z.acik||'')+'</span>',/onay/i.test(z.durum||'')?'<span class="badge b-ok">'+esc(z.durum)+'</span>':'<span class="badge b-warn">'+esc(z.durum||'—')+'</span>']));
+    inner='<div class="toolbar"><div class="subtabs" style="flex:1;margin:0">'+altlar.map(t=>'<button class="subtab'+(altTab===t[0]?' on':'')+'" data-izalt="'+t[0]+'">'+t[1]+'</button>').join('')+'</div><button class="btn sm" id="izEkleBtn">+ İzin Ekle</button></div>'+gov;
   } else if(pfTab==='harcamalar'){
     const mh=HARC.filter(h=>h.empId===id).sort((a,b)=>dkey(b.tarih)-dkey(a.tarih));
     const od=(p.odemeler||[]);
@@ -537,7 +568,12 @@ function viewCalisan(id){
   const mailIc='<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7.5l8.5 5.5 8.5-5.5"/></svg>';
   const telIc='<svg viewBox="0 0 24 24"><path d="M22 16.9v2.6a2 2 0 0 1-2.2 2 19.4 19.4 0 0 1-8.5-3 19.1 19.1 0 0 1-5.9-5.9 19.4 19.4 0 0 1-3-8.6A2 2 0 0 1 4.3 2H7a2 2 0 0 1 2 1.7c.1.9.3 1.7.6 2.5a2 2 0 0 1-.5 2.1L7.9 9.6a15.5 15.5 0 0 0 5.9 5.9l1.3-1.3a2 2 0 0 1 2.1-.5c.8.3 1.6.5 2.5.6A2 2 0 0 1 22 16.9z"/></svg>';
   const ci=(ic,lab,val)=>'<div class="ci"><span class="ci-ic">'+ic+'</span><div class="ci-t"><small>'+lab+'</small><div class="ci-v">'+(val?esc(val):'—')+'</div></div></div>';
+  const dl=ozlukDoluluk(p);
   const side=''
+    +'<div class="card pad"><div class="side-h">Özlük Doluluk Oranı</div>'
+      +'<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:7px"><b style="font-family:var(--serif);font-size:24px;color:'+(dl.pct>=75?'var(--ok)':dl.pct>=40?'var(--warn)':'var(--bad)')+'">%'+dl.pct+'</b><span class="mini">'+dl.dolu+'/'+dl.toplam+' alan dolu</span></div>'
+      +'<div class="ba-wrap" style="height:9px"><i style="width:'+dl.pct+'%;background:'+(dl.pct>=75?'linear-gradient(90deg,#1b8a4b,#15713d)':dl.pct>=40?'var(--warn)':'var(--bad)')+'"></i></div>'
+    +'</div>'
     +'<div class="card pad"><div class="side-h">Yöneticisi</div>'
       +(yonAd?'<div class="mgr"><div class="mgr-av" style="background:'+avColor(yonAd)+'">'+esc(initials(yonAd))+'</div><div style="min-width:0"><b>'+esc(trTitle(yonAd))+'</b><small>'+esc(p.bolum||p.departman||'—')+'</small></div></div>':'<div class="mini">—</div>')
     +'</div>'
@@ -852,6 +888,9 @@ function afterRender(r){
     const e=document.getElementById('pfEdit'); if(e) e.onclick=()=>openEmp(r.arg);
     const d=document.getElementById('pfDel'); if(d) d.onclick=()=>openDel(r.arg);
     const ie=document.getElementById('izEkleBtn'); if(ie) ie.onclick=()=>openIzin(r.arg);
+    document.querySelectorAll('[data-izalt]').forEach(t=>t.onclick=()=>{ST.izAltTab=t.getAttribute('data-izalt');render();});
+    const itf=document.getElementById('izTurF'); if(itf) itf.onchange=ev=>{ST.izTur=ev.target.value;render();};
+    document.querySelectorAll('#main .ec.clk[data-id]').forEach(el=>el.onclick=()=>{pfTab='profil';ST.izAltTab='ozet';go('calisan/'+el.getAttribute('data-id'));});
     bindIzinActions();
   }
   if(r.page==='izinler'){
