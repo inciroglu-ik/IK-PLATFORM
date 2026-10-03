@@ -291,7 +291,17 @@ function ensureAyar(){
 }
 function yillikHak(giris){const y=kidemYil(giris);if(y<1)return 0;/* İş Kanunu md.53: 1 yılı doldurmadan yıllık izne hak kazanılmaz */const k=ensureAyar().yillikKural;for(const r of k){if(y>=r.min&&y<r.max)return r.gun;}return k.length?k[k.length-1].gun:14;}
 function izinKullanilan(empId){return IZIN.filter(z=>z.empId===empId&&z.durum==='onaylandi'&&/yıllık/i.test(z.tur)).reduce((s,z)=>s+(+z.gun||0),0);}
-function izinBakiye(emp){const hak=yillikHak(emp.giris);return {hak,kullanilan:izinKullanilan(emp.id),kalan:hak-izinKullanilan(emp.id)};}
+/* İzin bakiyesi KENDİMİZ HESAPLAMIYORUZ — Kolay İK'nın kümülatif/mahsup mantığı var.
+   Yalnız Kolay İK bakiye raporundan yüklenen değerleri (izinHak/izinKullanilan/izinKalan) gösteririz. */
+function izinBakiye(emp){
+  if(emp&&(emp.izinKalan!=null||emp.izinHak!=null)){
+    const hak=(emp.izinHak!=null)?emp.izinHak:null;
+    const kull=(emp.izinKullanilan!=null)?emp.izinKullanilan:null;
+    const kalan=(emp.izinKalan!=null)?emp.izinKalan:((hak!=null&&kull!=null)?hak-kull:null);
+    return {hak,kullanilan:kull,kalan,bilinmiyor:false};
+  }
+  return {hak:null,kullanilan:null,kalan:null,bilinmiyor:true};
+}
 
 /* ===== MENÜ ===== */
 function NAVDEF(){return [
@@ -455,12 +465,19 @@ function viewCalisan(id){
   } else if(pfTab==='izinler'){
     const myz=IZIN.filter(z=>z.empId===id).sort((a,b)=>dkey(b.baslangic)-dkey(a.baslangic));
     const imp=(p.izinler||[]);
-    const hak=yillikHak(p.giris); const kull=izinKullanilanTum(p); const kalan=hak-kull;
-    const pct=hak?Math.max(0,Math.min(100,Math.round(kalan/hak*100))):0;
-    inner='<div class="card pad" style="margin-bottom:16px"><div class="sec-h"><h2>Yıllık İzin Bakiyesi</h2><button class="btn sm" id="izEkleBtn">+ İzin Ekle</button></div>'
-      +'<div style="font-family:var(--serif);font-size:30px;font-weight:700;color:'+(kalan>0?'var(--ok)':'var(--bad)')+'">'+kalan+' gün</div>'
-      +'<div class="ba-wrap" style="height:11px"><i style="width:'+pct+'%;background:'+(kalan>0?'linear-gradient(90deg,#1b8a4b,#15713d)':'var(--bad)')+'"></i></div>'
-      +'<div class="mini">Hak edilen: '+hak+' gün · Kullanılan: '+kull+' gün · Kıdem: '+calismaSuresi(p.giris)+'</div></div>'
+    const b=izinBakiye(p);
+    let bakiyeBlok;
+    if(b.bilinmiyor){
+      bakiyeBlok='<div style="font-family:var(--serif);font-size:30px;font-weight:700;color:var(--muted)">—</div>'
+        +'<div class="mini">Kıdem: '+calismaSuresi(p.giris)+' · <i>İzin bakiyesi Kolay İK bakiye raporu yüklenince gösterilecek (sistem kendi hesaplamaz).</i></div>';
+    } else {
+      const kalan=b.kalan, hak=b.hak;
+      const pct=(hak&&kalan!=null)?Math.max(0,Math.min(100,Math.round(kalan/hak*100))):0;
+      bakiyeBlok='<div style="font-family:var(--serif);font-size:30px;font-weight:700;color:'+(kalan>0?'var(--ok)':'var(--bad)')+'">'+kalan+' gün</div>'
+        +'<div class="ba-wrap" style="height:11px"><i style="width:'+pct+'%;background:'+(kalan>0?'linear-gradient(90deg,#1b8a4b,#15713d)':'var(--bad)')+'"></i></div>'
+        +'<div class="mini">Hak edilen: '+(hak!=null?hak:'—')+' gün · Kullanılan: '+(b.kullanilan!=null?b.kullanilan:'—')+' gün · Kıdem: '+calismaSuresi(p.giris)+'</div>';
+    }
+    inner='<div class="card pad" style="margin-bottom:16px"><div class="sec-h"><h2>Yıllık İzin Bakiyesi</h2><button class="btn sm" id="izEkleBtn">+ İzin Ekle</button></div>'+bakiyeBlok+'</div>'
       +(myz.length?'<div class="sec-h"><h2 style="font-size:15px">Sistem Üzerinden Girilen İzinler</h2></div><div class="card" style="overflow:auto;margin-bottom:16px"><table class="tbl"><thead><tr><th>Başlangıç</th><th>Bitiş</th><th>Gün</th><th>Tür</th><th>Açıklama</th><th>Durum</th><th></th></tr></thead><tbody>'+myz.map(z=>izinRow(z,true)).join('')+'</tbody></table></div>':'')
       +'<div class="sec-h"><h2 style="font-size:15px">İzin Geçmişi (Kolay İK)</h2><span class="mini">'+imp.length+' kayıt</span></div>'
       +miniTbl(['Başlangıç','Bitiş','Süre','İzin Türü','Açıklama','Durum'],imp.slice().sort((a,b)=>dkey(b.bas)-dkey(a.bas)).map(z=>['<span class="mini">'+esc(z.bas)+'</span>','<span class="mini">'+esc(z.bit)+'</span>','<b>'+esc(z.gun)+'</b>',esc(z.tur),'<span class="mini">'+esc(z.acik||'')+'</span>',/onay/i.test(z.durum||'')?'<span class="badge b-ok">'+esc(z.durum)+'</span>':'<span class="badge b-warn">'+esc(z.durum||'—')+'</span>']));
@@ -698,7 +715,7 @@ function raporData(id,f){
   if(id==='calismasuresi') return {baslik:'Çalışma Süresi',cols:['Ad Soyad','TC Kimlik','Departman','Bölüm','Unvan','İşe Giriş','Çalışma Süresi'],rows:AKTIF.filter(bf).map(p=>[trTitle(p.ad),p.tc,p.departman,p.bolum,p.unvan,p.giris,calismaSuresi(p.giris)])};
   if(id==='ayrilan') return {baslik:'İşten Ayrılan Çalışanlar',cols:['Ad Soyad','TC Kimlik','Departman','Bölüm','Unvan','Müdür','Direktör','İşe Giriş','İşten Çıkış','Ayrılma Nedeni','Çalışma Süresi'],rows:AYRILAN.filter(bf).filter(p=>inDonem(p.cikis,f)).map(p=>[trTitle(p.ad),p.tc,p.departman,p.bolum,p.unvan,trTitle(p.mudurluk||''),trTitle(p.direktor||''),p.giris,p.cikis,p.ayrilmaNedeni,p.calismaSuresi])};
   if(id==='isealim') return {baslik:'İşe Alım Raporu',cols:['Ad Soyad','TC Kimlik','Departman','Bölüm','Unvan','İşe Giriş','Müdür','Direktör'],rows:AKTIF.filter(bf).filter(p=>inDonem(p.giris,f)).map(p=>[trTitle(p.ad),p.tc,p.departman,p.bolum,p.unvan,p.giris,trTitle(p.mudurluk||''),trTitle(p.direktor||'')])};
-  if(id==='izinbakiye') return {baslik:'İzin Bakiye Raporu',cols:['Ad Soyad','TC Kimlik','Departman','Kıdem','Hak Edilen','Kullanılan','Kalan'],rows:AKTIF.filter(bf).map(p=>{const b=izinBakiye(p);return [trTitle(p.ad),p.tc,p.departman,calismaSuresi(p.giris),b.hak,b.kullanilan,b.kalan];})};
+  if(id==='izinbakiye') return {baslik:'İzin Bakiye Raporu',cols:['Ad Soyad','TC Kimlik','Departman','Kıdem','Hak Edilen','Kullanılan','Kalan'],rows:AKTIF.filter(bf).map(p=>{const b=izinBakiye(p);const g=x=>x==null?'—':x;return [trTitle(p.ad),p.tc,p.departman,calismaSuresi(p.giris),g(b.hak),g(b.kullanilan),g(b.kalan)];})};
   if(id==='izinkullanim') return {baslik:'Kullanılan İzin Raporu',cols:['Ad Soyad','TC Kimlik','Tür','Başlangıç','Bitiş','Gün','Durum','Onay Akışı'],rows:IZIN.filter(z=>z.durum==='onaylandi').filter(z=>{const e=recEmp(z);return (!f.birim||e.departman===f.birim)&&inDonem(z.baslangic,f);}).map(z=>[trTitle(z.empAd),recEmp(z).tc||'',z.tur,z.baslangic,z.bitis,z.gun,'Onaylandı',onayOzet(z)])};
   if(id==='onaysurec'){
     const rows=[];
@@ -714,18 +731,11 @@ function raporData(id,f){
   if(id==='harcama') return {baslik:'Harcama Raporu',cols:['Ad Soyad','TC Kimlik','Tür','Tutar','Tarih','Aşama','Onay Akışı'],rows:HARC.filter(h=>{const e=recEmp(h);return (!f.birim||e.departman===f.birim)&&inDonem(h.tarih,f);}).map(h=>[trTitle(h.empAd),recEmp(h).tc||'',h.tur,h.tutar+' TL',h.tarih,onayAsama(h),onayOzet(h)])};
   if(id==='turnover'){
     const y=f.yil||buYil();
-    const cur=(y===buYil());
     const giris=allEmp().filter(p=>dYil(p.giris)===y&&!turnoverHaric(p)).length;
     const cikis=AYRILAN.filter(p=>dYil(p.cikis)===y&&!turnoverHaric(p)).length;
     const rows=[['Yıl',y],['İşe giren',giris],['İşten ayrılan',cikis],['Net değişim',giris-cikis]];
-    if(cur){
-      const donemSonu=AKTIF.filter(p=>!turnoverHaric(p)).length;
-      const donemBasi=Math.max(0,donemSonu-girenBuYil()+ayrilanBuYil());
-      const ort=(donemBasi+donemSonu)/2;
-      const oran=ort?((ayrilanBuYil()/ort)*100).toFixed(1):0;
-      rows.push(['Aktif çalışan (dönem sonu)',donemSonu],['Dönem başı mevcut (tahmini)',donemBasi],['Dönem ortalama çalışan',Math.round(ort)],['Turnover oranı (%)',oran]);
-    } else rows.push(['Turnover oranı (%)','— (yalnız içinde bulunulan yıl için hesaplanır)']);
-    return {baslik:'Turnover (Dönüşüm) Raporu — '+y,cols:['Gösterge','Değer'],rows};
+    if(y===buYil()) rows.push(['Aktif çalışan (bugün)',AKTIF.filter(p=>!turnoverHaric(p)).length]);
+    return {baslik:'Turnover (Dönüşüm) Raporu — '+y+' (stajyer/öğrenci/V.İ. hariç)',cols:['Gösterge','Değer'],rows};
   }
   return {baslik:'—',cols:[],rows:[]};
 }
@@ -918,7 +928,7 @@ function izinFormu(id){
     +'<div class="sec">Çalışan Bilgileri</div>'
     +row('Adı Soyadı',trTitle(e.ad||z.empAd))+row('TC Kimlik No',e.tc||'')+row('Departman / Bölüm',(e.departman||'')+' / '+(e.bolum||''))+row('Unvan',e.unvan||'')+row('İşe Başlama Tarihi',e.giris||'')+row('Telefon',e.telefonIs||e.telefonKisisel||'')+row('Yerine Bakacak Kişi',z.yerine||'')
     +'<div class="sec">İzin Detayları</div>'
-    +row('İzin Türü',z.tur)+row('Kullanılan Gün Sayısı',z.gun)+row('Başlangıç Tarihi',z.baslangic)+row('Bitiş Tarihi',z.bitis)+row('Toplam Kalan İzin',b.kalan+' gün')+row('Açıklama',z.aciklama||'')
+    +row('İzin Türü',z.tur)+row('Kullanılan Gün Sayısı',z.gun)+row('Başlangıç Tarihi',z.baslangic)+row('Bitiş Tarihi',z.bitis)+row('Toplam Kalan İzin',b.kalan!=null?b.kalan+' gün':'—')+row('Açıklama',z.aciklama||'')
     +'<p style="margin-top:24px">Yukarıda belirttiğim tarihler arasında izin hakkımı kullanacağımı beyan ederim.</p>'
     +'<div class="sign"><div>Çalışan<br>'+trTitle(e.ad||z.empAd)+'<br>İmza</div><div>Yönetici Onayı<br>'+(e.yonetici||'')+'</div><div>İnsan Kaynakları Onayı</div></div>'
     +'<div class="noprint" style="margin-top:30px;text-align:center"><button onclick="window.print()" style="padding:10px 22px;font-size:14px;cursor:pointer">Yazdır / PDF</button></div>'
