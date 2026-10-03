@@ -311,16 +311,23 @@ function bekleyenToplam(){return IZIN.filter(z=>z.durum==='bekliyor').length+HAR
 
 /* AYAR varsayılanları */
 function ensureAyar(){
-  const deps=[...new Set(allEmp().map(p=>p.departman).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr'));
-  const bols=[...new Set(allEmp().map(p=>p.bolum).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr'));
-  const unv=[...new Set(allEmp().map(p=>p.unvan).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr'));
+  const dist=f=>[...new Set(allEmp().map(p=>p[f]).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'tr'));
   const d=AYAR||{};
+  const pick=(key,der)=>(d[key]&&d[key].length)?d[key]:der;
+  const sir=dist('sirket');
   return {
-    departmanlar:(d.departmanlar&&d.departmanlar.length)?d.departmanlar:deps,
-    bolumler:(d.bolumler&&d.bolumler.length)?d.bolumler:bols,
-    unvanlar:(d.unvanlar&&d.unvanlar.length)?d.unvanlar:unv,
-    izinTurleri:(d.izinTurleri&&d.izinTurleri.length)?d.izinTurleri:['Yıllık İzin','Ücretsiz İzin','Rapor (İstirahat)','Mazeret İzni','Doğum İzni','Evlilik İzni','Ölüm İzni','İdari İzin'],
-    harcamaTurleri:(d.harcamaTurleri&&d.harcamaTurleri.length)?d.harcamaTurleri:['Yol','Yemek','Konaklama','Akaryakıt','Ofis/Kırtasiye','Temsil/Ağırlama','Diğer'],
+    sirketler:pick('sirketler',sir.length?sir:['İNCİROĞLU OTOMOTİV']),
+    unvanlar:pick('unvanlar',dist('unvan')),
+    departmanlar:pick('departmanlar',dist('departman')),
+    bolumler:pick('bolumler',dist('bolum')),
+    mudurlukler:pick('mudurlukler',dist('mudurluk')),
+    direktorler:pick('direktorler',dist('direktor')),
+    izinOnaylari:pick('izinOnaylari',dist('izinOnay')),
+    harcamaOnaylari:pick('harcamaOnaylari',dist('harcamaOnay')),
+    avansOnaylari:pick('avansOnaylari',dist('avansOnay')),
+    mesaiOnaylari:pick('mesaiOnaylari',dist('mesaiOnay')),
+    izinTurleri:pick('izinTurleri',['Yıllık İzin','Ücretsiz İzin','Rapor (İstirahat)','Mazeret İzni','Doğum İzni','Evlilik İzni','Ölüm İzni','İdari İzin']),
+    harcamaTurleri:pick('harcamaTurleri',['Yol','Yemek','Konaklama','Akaryakıt','Ofis/Kırtasiye','Temsil/Ağırlama','Diğer']),
     yillikKural:(d.yillikKural&&d.yillikKural.length)?d.yillikKural:[{min:0,max:5,gun:14},{min:5,max:15,gun:20},{min:15,max:99,gun:26}]
   };
 }
@@ -859,12 +866,24 @@ function xlsIndir(d,fo){
 /* ===== AYARLAR ===== */
 function viewAyarlar(){
   const a=ensureAyar();
-  const liste=(bas,key,arr)=>'<div class="card pad" style="margin-bottom:16px"><div class="sec-h"><h2>'+bas+'</h2></div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">'+arr.map(x=>'<span class="badge" style="padding:5px 10px">'+esc(x)+' <button data-del="'+key+'|'+esc(x)+'" style="background:none;border:none;color:var(--bad);cursor:pointer;font-weight:700">×</button></span>').join('')+(arr.length?'':'<span class="mini">—</span>')+'</div><div style="display:flex;gap:8px"><input class="sel" style="flex:1" id="add_'+key+'" placeholder="Yeni ekle…"><button class="btn sm" data-add="'+key+'">Ekle</button></div></div>';
+  const liste=(bas,key,arr)=>'<div class="card pad" style="margin-bottom:16px"><div class="sec-h"><h2>'+bas+' <span class="mini">('+arr.length+')</span></h2></div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">'+arr.map(x=>'<span class="badge" style="padding:5px 10px">'+esc(x)+' <button data-del="'+key+'|'+esc(x)+'" style="background:none;border:none;color:var(--bad);cursor:pointer;font-weight:700">×</button></span>').join('')+(arr.length?'':'<span class="mini">—</span>')+'</div><div style="display:flex;gap:8px"><input class="sel" style="flex:1" id="add_'+key+'" placeholder="Yeni ekle…"><button class="btn sm" data-add="'+key+'">Ekle</button></div></div>';
+  const listeUzun=(bas,key,arr)=>'<div class="card pad" style="margin-bottom:16px"><div class="sec-h"><h2>'+bas+' <span class="mini">('+arr.length+')</span></h2></div><div style="margin-bottom:12px">'+(arr.length?arr.map(x=>'<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f0f2f5"><span style="flex:1;font-size:12.5px;color:var(--ink)">'+esc(x)+'</span><button data-del="'+key+'|'+esc(x)+'" style="background:none;border:none;color:var(--bad);cursor:pointer;font-weight:700;font-size:15px">×</button></div>').join(''):'<span class="mini">—</span>')+'</div><div style="display:flex;gap:8px"><input class="sel" style="flex:1" id="add_'+key+'" placeholder="Yeni onay süreci ekle…"><button class="btn sm" data-add="'+key+'">Ekle</button></div></div>';
   const kural=a.yillikKural.map(r=>r.min+'–'+r.max+' yıl: <b>'+r.gun+' gün</b>').join(' · ');
-  return '<div style="max-width:720px">'
+  const H=t=>'<div class="sec-h" style="margin:22px 0 10px"><h2 style="font-family:var(--serif);font-size:16px">'+t+'</h2></div>';
+  return '<div style="max-width:860px">'
+    +H('Şirket Yapısı')
+    +liste('Şirketler','sirketler',a.sirketler)
+    +liste('Unvanlar','unvanlar',a.unvanlar)
     +liste('Departmanlar','departmanlar',a.departmanlar)
     +liste('Bölümler','bolumler',a.bolumler)
-    +liste('Unvanlar','unvanlar',a.unvanlar)
+    +liste('Müdürlükler','mudurlukler',a.mudurlukler)
+    +liste('Direktörler','direktorler',a.direktorler)
+    +H('Onay Süreçleri')
+    +listeUzun('İzin Onay Süreci','izinOnaylari',a.izinOnaylari)
+    +listeUzun('Harcama Onay Süreci','harcamaOnaylari',a.harcamaOnaylari)
+    +listeUzun('Avans Onay Süreci','avansOnaylari',a.avansOnaylari)
+    +listeUzun('Mesai Onay Süreci','mesaiOnaylari',a.mesaiOnaylari)
+    +H('Talep Türleri')
     +liste('İzin Türleri','izinTurleri',a.izinTurleri)
     +liste('Harcama Türleri','harcamaTurleri',a.harcamaTurleri)
     +'<div class="card pad"><div class="sec-h"><h2>Yıllık İzin Kuralı</h2></div><div class="mini" style="margin-bottom:6px">Kıdeme göre hak edilen yıllık izin (İş Kanunu varsayılanı):</div><div style="font-size:13.5px;color:var(--ink)">'+kural+'</div></div>'
