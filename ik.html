@@ -227,10 +227,19 @@ const refHarc=doc(db,"satisVeri","ikHarcama");
 const refPuan=doc(db,"satisVeri","ikPuantaj");
 const refAyar=doc(db,"satisVeri","ikAyar");
 const refTalep=doc(db,"satisVeri","ikTalep");
+const refOzluk=doc(db,"satisVeri","mrOzluk");
 
 /* ===== DURUM ===== */
 const SEED_AKTIF=(window.MR_AKTIF||[]), SEED_AYRILAN=(window.MR_AYRILAN||[]);
-let AKTIF=[], AYRILAN=[], IZIN=[], HARC=[], PUAN={}, AYAR=null, TALEP=[];
+let AKTIF=[], AYRILAN=[], IZIN=[], HARC=[], PUAN={}, AYAR=null, TALEP=[], OZLUK={};
+/* Özlük (hassas) verisi ayrı doküman; TC'ye göre roster üstüne bindirilir */
+function mergeOzluk(){
+  if(!OZLUK||!Object.keys(OZLUK).length) return;
+  [AKTIF,AYRILAN].forEach(arr=>arr.forEach(p=>{
+    const o=OZLUK[p.tc]; if(!o) return;
+    for(const k in o){ if(o[k]!=null && o[k]!=='' && (p[k]==null||p[k]==='')) p[k]=o[k]; }
+  }));
+}
 let ST={q:'',durum:'aktif',dep:'',bol:'',sortCol:'ad',sortDir:1,view:'grid',izTab:'yaklasan',pzAy:ym(new Date()),tlTab:'bekliyor',tlTip:'',rapSel:'calisan',rapBirim:'',rapAy:0,rapYil:0};
 let pfTab='profil';
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
@@ -338,13 +347,16 @@ function sub(ref,cb){ onSnapshot(ref,s=>{cb(s.exists()?s.data():null);},e=>conso
 let ready=0;
 function boot(){
   bindGlobal();
-  sub(refPers,d=>{ if(d&&(Array.isArray(d.aktif)||Array.isArray(d.ayrilan))){AKTIF=d.aktif||[];AYRILAN=d.ayrilan||[];} else {AKTIF=SEED_AKTIF.slice();AYRILAN=SEED_AYRILAN.slice();setDoc(refPers,{aktif:AKTIF,ayrilan:AYRILAN,guncelleme:new Date().toISOString(),_init:true},{merge:true}).catch(()=>{});} ready=1; render(); });
+  sub(refPers,d=>{ if(d&&(Array.isArray(d.aktif)||Array.isArray(d.ayrilan))){AKTIF=d.aktif||[];AYRILAN=d.ayrilan||[];} else {AKTIF=SEED_AKTIF.slice();AYRILAN=SEED_AYRILAN.slice();setDoc(refPers,{aktif:AKTIF,ayrilan:AYRILAN,guncelleme:new Date().toISOString(),_init:true},{merge:true}).catch(()=>{});} mergeOzluk(); ready=1; render(); });
+  sub(refOzluk,d=>{ OZLUK=(d&&d.veri)?d.veri:{}; mergeOzluk(); if(ready)render(); });
   sub(refIzin,d=>{ IZIN=(d&&Array.isArray(d.izinler))?d.izinler:[]; if(ready)render(); });
   sub(refHarc,d=>{ HARC=(d&&Array.isArray(d.harcamalar))?d.harcamalar:[]; if(ready)render(); });
   sub(refPuan,d=>{ PUAN=(d&&d.veri)?d.veri:{}; if(ready)render(); });
   sub(refAyar,d=>{ AYAR=d||null; if(ready)render(); });
   sub(refTalep,d=>{ TALEP=(d&&Array.isArray(d.talepler))?d.talepler:[]; if(ready)render(); });
 }
+/* Özlük verisini Firestore'a yükleme kancası (yalnız İK; CDP ile toplu yükleme için) */
+window.__seedOzluk=async function(veri){ if(!IS_IK) throw new Error('yetki yok'); await setDoc(refOzluk,{veri,guncelleme:new Date().toISOString()},{merge:false}); OZLUK=veri; mergeOzluk(); if(ready)render(); return Object.keys(veri).length; };
 async function kaydetPers(){ try{await setDoc(refPers,{aktif:AKTIF,ayrilan:AYRILAN,guncelleme:new Date().toISOString()},{merge:true});}catch(e){alert('Kaydedilemedi: '+e.message);} }
 async function kaydetIzin(){ try{await setDoc(refIzin,{izinler:IZIN,guncelleme:new Date().toISOString()},{merge:true});}catch(e){alert('Kaydedilemedi: '+e.message);} }
 async function kaydetHarc(){ try{await setDoc(refHarc,{harcamalar:HARC,guncelleme:new Date().toISOString()},{merge:true});}catch(e){alert('Kaydedilemedi: '+e.message);} }
@@ -406,43 +418,63 @@ function tableHtml(L){const ayr=ST.durum==='ayrilan';return '<div class="card" s
 
 /* ===== ÇALIŞAN KARTI ===== */
 function fv(k,v,em){return '<div class="fld-v"><div class="k">'+k+'</div><div class="v'+(em?' em':'')+'">'+(v&&String(v).length?v:(em||'—'))+'</div></div>';}
+function miniTbl(cols,rows){return '<div class="card" style="overflow:auto"><table class="tbl"><thead><tr>'+cols.map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr></thead><tbody>'+(rows.length?rows.map(r=>'<tr>'+r.map(c=>'<td>'+(c==null?'':c)+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+cols.length+'" class="empty">Kayıt yok.</td></tr>')+'</tbody></table></div>';}
+function gunNum(g){return +String(g==null?'':g).replace(/[^\d.]/g,'')||0;}
+function izinKullanilanTum(emp){let s=izinKullanilan(emp.id);(emp.izinler||[]).forEach(z=>{if(/yıl/i.test(z.tur||'')&&/onay/i.test(z.durum||''))s+=gunNum(z.gun);});return s;}
 function viewCalisan(id){
   const p=empById(id); if(!p) return '<div class="card"><div class="empty">Çalışan bulunamadı. <a href="#/calisanlar">← Listeye dön</a></div></div>';
   const eski=!empAktifMi(id);
   const tabs=[['profil','Profil'],['kisisel','Kişisel Bilgiler'],['kariyer','Kariyer & Maaş'],['izinler','İzinler'],['harcamalar','Harcamalar'],['mesailer','Mesai/Puantaj']];
   let inner='';
+  const onaySurecVar=p.izinOnay||p.harcamaOnay||p.avansOnay||p.mesaiOnay;
   if(pfTab==='profil'){
-    inner='<div class="card pad"><div class="fieldgrid">'
-      +fv('İşe Başlama',esc(p.giris))+fv('Çalışma Süresi',esc(eski&&p.calismaSuresi?p.calismaSuresi:calismaSuresi(p.giris)))
-      +fv('Durum',eski?'<span class="badge b-bad">İşten Ayrıldı'+(p.cikis?' · '+esc(p.cikis):'')+'</span>':'<span class="badge b-ok">Aktif</span>')
-      +fv('Departman',esc(p.departman))+fv('Bölüm',esc(p.bolum))+fv('Unvan',esc(p.unvan))
-      +fv('Müdürlük / Yönetici',esc(p.mudurluk||p.yonetici))+fv('Direktör',esc(p.direktor))+fv('TC Kimlik No',esc(p.tc))
-      +(eski?fv('İşten Çıkış',esc(p.cikis))+fv('Ayrılma Nedeni',esc(p.ayrilmaNedeni)):fv('İş E-postası',esc(p.epostaIs))+fv('İş Telefonu',esc(p.telefonIs)))
-      +'</div></div>';
+    inner='<div class="card pad"><div class="grp"><div class="gh">Pozisyon</div><div class="fieldgrid">'
+      +fv('İşe Başlama Tarihi',esc(p.giris))+fv('Sözleşme Türü',esc(p.sozlesmeTuru)||'Süresiz')
+      +fv('Çalışma Süresi',esc(eski&&p.calismaSuresi?p.calismaSuresi:calismaSuresi(p.giris)))+fv('Çalışma Şekli',esc(p.calismaSekli)||'Tam zamanlı')
+      +fv('Durum',eski?'<span class="badge b-bad">İşten Ayrıldı'+(p.cikis?' · '+esc(p.cikis):'')+'</span>':'<span class="badge b-ok">Aktif</span>')+fv('Şirket',esc(p.sirket)||'İNCİROĞLU OTOMOTİV')
+      +fv('Unvan',esc(p.unvan))+fv('Departman',esc(p.departman))+fv('Bölüm',esc(p.bolum))
+      +fv('Müdürlük',esc(p.mudurluk))+fv('Direktör',esc(p.direktor))+fv('TC Kimlik No',esc(p.tc))
+      +(eski?fv('İşten Çıkış',esc(p.cikis))+fv('Ayrılma Nedeni',esc(p.ayrilmaNedeni)):'')
+      +'</div></div>'
+      +(onaySurecVar?'<div class="grp"><div class="gh">Onay Süreçleri</div><div class="fieldgrid">'+fv('İzin Onay Süreci',esc(p.izinOnay))+fv('Harcama Onay Süreci',esc(p.harcamaOnay))+fv('Avans Onay Süreci',esc(p.avansOnay))+fv('Mesai Onay Süreci',esc(p.mesaiOnay))+'</div></div>':'')
+      +'<div class="grp" style="margin-bottom:0"><div class="gh">İletişim</div><div class="fieldgrid">'+fv('E-Posta (İş)',esc(p.epostaIs))+fv('Telefon (İş)',esc(p.telIs))+fv('E-Posta (Kişisel)',esc(p.epostaKisisel))+fv('Telefon (Kişisel)',esc(p.telKisisel))+'</div></div></div>';
   } else if(pfTab==='kisisel'){
-    inner='<div class="card pad"><div class="grp"><div class="gh">Vatandaşlık</div><div class="fieldgrid">'+fv('Doğum Tarihi',esc(p.dogum))+fv('Cinsiyet',esc(p.cinsiyet))+fv('TC Kimlik No',esc(p.tc))+fv('Uyruğu',esc(p.uyruk)||'Türkiye')+fv('Askerlik Durumu',esc(p.askerlik))+'</div></div>'
-      +'<div class="grp"><div class="gh">Aile</div><div class="fieldgrid">'+fv('Medeni Hal',esc(p.medeni))+fv('Çocuk Sayısı',esc(p.cocuk))+fv('Eğitim Durumu',esc(p.egitim))+'</div></div>'
-      +'<div class="grp"><div class="gh">İletişim & Adres</div><div class="fieldgrid">'+fv('İş E-postası',esc(p.epostaIs))+fv('Kişisel E-posta',esc(p.epostaKisisel))+fv('İş Telefonu',esc(p.telefonIs))+fv('Kişisel Telefon',esc(p.telefonKisisel))+fv('Adres',esc(p.adres))+fv('Şehir',esc(p.sehir))+'</div></div>'
-      +'<div class="grp" style="margin-bottom:0"><div class="gh">Banka</div><div class="fieldgrid">'+fv('Banka',esc(p.banka))+fv('IBAN',esc(p.iban))+'</div></div></div>';
+    inner='<div class="card pad"><div class="grp"><div class="gh">Vatandaşlık</div><div class="fieldgrid">'+fv('Doğum Tarihi',esc(p.dogum))+fv('Cinsiyet',esc(p.cinsiyet))+fv('Engel Derecesi',esc(p.engel))+fv('Uyruğu',esc(p.uyruk)||'Türkiye')+fv('TC Kimlik No',esc(p.tc))+fv('Askerlik Durumu',esc(p.askerlik))+'</div></div>'
+      +'<div class="grp"><div class="gh">Eğitim</div><div class="fieldgrid">'+fv('Eğitim Durumu',esc(p.egitimDurumu))+fv('En Yüksek Seviye',esc(p.egitimSeviye))+fv('Son Eğitim Kurumu',esc(p.egitimKurum))+fv('Bölüm',esc(p.egitimBolum))+'</div></div>'
+      +'<div class="grp"><div class="gh">Aile</div><div class="fieldgrid">'+fv('Medeni Hal',esc(p.medeni))+fv('Çocuk Sayısı',esc(p.cocuk))+fv('Kan Grubu',esc(p.kanGrubu))+'</div></div>'
+      +'<div class="grp"><div class="gh">Adres</div><div class="fieldgrid">'+fv('Adres',esc(p.adres))+fv('Adres (devam)',esc(p.adres2))+fv('Şehir',esc(p.sehir))+fv('Ülke',esc(p.ulke)||'Türkiye')+fv('Posta Kodu',esc(p.postaKodu))+fv('Ev Telefonu',esc(p.evTel))+'</div></div>'
+      +'<div class="grp"><div class="gh">Banka Hesabı</div><div class="fieldgrid">'+fv('Banka Adı',esc(p.bankaAd))+fv('Hesap Tipi',esc(p.hesapTipi))+fv('Hesap No',esc(p.hesapNo))+fv('IBAN',esc(p.iban))+'</div></div>'
+      +'<div class="grp" style="margin-bottom:0"><div class="gh">Acil Durumda Aranacak Kişi</div><div class="fieldgrid">'+fv('Adı Soyadı',esc(p.acilAd))+fv('Telefon',esc(p.acilTel))+fv('Yakınlık Derecesi',esc(p.acilYakin))+'</div></div></div>';
   } else if(pfTab==='kariyer'){
-    inner='<div class="card pad"><div class="grp"><div class="gh">Pozisyon</div><div class="fieldgrid">'+fv('Sözleşme Türü',esc(p.sozlesmeTuru)||'Süresiz')+fv('Çalışma Şekli',esc(p.calismaSekli)||'Tam zamanlı')+fv('Şirket',esc(p.sirket)||'İNCİROĞLU OTOMOTİV')+fv('Departman',esc(p.departman))+fv('Bölüm',esc(p.bolum))+fv('Unvan',esc(p.unvan))+fv('Müdürlük',esc(p.mudurluk))+fv('Direktör',esc(p.direktor))+fv('Yöneticisi',esc(p.yonetici))+'</div></div>'
-      +'<div class="grp" style="margin-bottom:0"><div class="gh">Maaş</div><div class="fieldgrid">'+fv('Maaş',p.maas?esc(p.maas)+' '+esc(p.maasBirim||'TL'):'',false)+fv('Periyot',esc(p.maasPeriyot)||'Aylık')+fv('Net/Brüt',esc(p.netBrut))+'</div>'+(p.maas?'':'<div class="mini" style="margin-top:8px">Maaş bilgisi girilmemiş. "Düzenle" ile ekleyebilirsiniz.</div>')+'</div></div>';
+    const ms=(p.maaslar||[]);
+    inner='<div class="card pad"><div class="grp" style="margin-bottom:0"><div class="gh">Pozisyon</div><div class="fieldgrid">'+fv('Sözleşme Türü',esc(p.sozlesmeTuru)||'Süresiz')+fv('Çalışma Şekli',esc(p.calismaSekli)||'Tam zamanlı')+fv('Şirket',esc(p.sirket)||'İNCİROĞLU OTOMOTİV')+fv('Departman',esc(p.departman))+fv('Bölüm',esc(p.bolum))+fv('Unvan',esc(p.unvan))+fv('Müdürlük',esc(p.mudurluk))+fv('Direktör',esc(p.direktor))+fv('Yöneticisi',esc(p.yonetici||p.mudurluk))+'</div></div></div>'
+      +'<div style="height:16px"></div><div class="sec-h"><h2 style="font-size:15px">Maaş Geçmişi</h2><span class="mini">'+ms.length+' kayıt</span></div>'
+      +miniTbl(['Geçerlilik Tarihi','Tutar','Maaş Türü','Ücret Türü','Net/Brüt'],ms.map(m=>['<span class="mini">'+esc(m.gecerli)+'</span>','<b>'+esc(m.tutar)+' '+esc(m.birim||'TL')+'</b>',esc(m.tur||'—'),esc(m.ucret||'—'),esc(m.netbrut||'—')]));
   } else if(pfTab==='izinler'){
-    const b=izinBakiye(p); const myz=IZIN.filter(z=>z.empId===id).sort((a,b)=>dkey(b.baslangic)-dkey(a.baslangic));
-    const pct=b.hak?Math.max(0,Math.round(b.kalan/b.hak*100)):0;
+    const myz=IZIN.filter(z=>z.empId===id).sort((a,b)=>dkey(b.baslangic)-dkey(a.baslangic));
+    const imp=(p.izinler||[]);
+    const hak=yillikHak(p.giris); const kull=izinKullanilanTum(p); const kalan=hak-kull;
+    const pct=hak?Math.max(0,Math.min(100,Math.round(kalan/hak*100))):0;
     inner='<div class="card pad" style="margin-bottom:16px"><div class="sec-h"><h2>Yıllık İzin Bakiyesi</h2><button class="btn sm" id="izEkleBtn">+ İzin Ekle</button></div>'
-      +'<div style="font-family:var(--serif);font-size:30px;font-weight:700;color:'+(b.kalan>0?'var(--ok)':'var(--bad)')+'">'+b.kalan+' gün</div>'
-      +'<div class="ba-wrap" style="height:11px"><i style="width:'+pct+'%;background:'+(b.kalan>0?'linear-gradient(90deg,#1b8a4b,#15713d)':'var(--bad)')+'"></i></div>'
-      +'<div class="mini">Hak edilen: '+b.hak+' gün · Kullanılan: '+b.kullanilan+' gün · Kıdem: '+calismaSuresi(p.giris)+'</div></div>'
-      +'<div class="card" style="overflow:auto"><table class="tbl"><thead><tr><th>Başlangıç</th><th>Bitiş</th><th>Gün</th><th>Tür</th><th>Açıklama</th><th>Durum</th><th></th></tr></thead><tbody>'
-      +(myz.length?myz.map(z=>izinRow(z,true)).join(''):'<tr><td colspan="7" class="empty">Bu çalışana ait izin kaydı yok.</td></tr>')+'</tbody></table></div>';
+      +'<div style="font-family:var(--serif);font-size:30px;font-weight:700;color:'+(kalan>0?'var(--ok)':'var(--bad)')+'">'+kalan+' gün</div>'
+      +'<div class="ba-wrap" style="height:11px"><i style="width:'+pct+'%;background:'+(kalan>0?'linear-gradient(90deg,#1b8a4b,#15713d)':'var(--bad)')+'"></i></div>'
+      +'<div class="mini">Hak edilen: '+hak+' gün · Kullanılan: '+kull+' gün · Kıdem: '+calismaSuresi(p.giris)+'</div></div>'
+      +(myz.length?'<div class="sec-h"><h2 style="font-size:15px">Sistem Üzerinden Girilen İzinler</h2></div><div class="card" style="overflow:auto;margin-bottom:16px"><table class="tbl"><thead><tr><th>Başlangıç</th><th>Bitiş</th><th>Gün</th><th>Tür</th><th>Açıklama</th><th>Durum</th><th></th></tr></thead><tbody>'+myz.map(z=>izinRow(z,true)).join('')+'</tbody></table></div>':'')
+      +'<div class="sec-h"><h2 style="font-size:15px">İzin Geçmişi (Kolay İK)</h2><span class="mini">'+imp.length+' kayıt</span></div>'
+      +miniTbl(['Başlangıç','Bitiş','Süre','İzin Türü','Açıklama','Durum'],imp.slice().sort((a,b)=>dkey(b.bas)-dkey(a.bas)).map(z=>['<span class="mini">'+esc(z.bas)+'</span>','<span class="mini">'+esc(z.bit)+'</span>','<b>'+esc(z.gun)+'</b>',esc(z.tur),'<span class="mini">'+esc(z.acik||'')+'</span>',/onay/i.test(z.durum||'')?'<span class="badge b-ok">'+esc(z.durum)+'</span>':'<span class="badge b-warn">'+esc(z.durum||'—')+'</span>']));
   } else if(pfTab==='harcamalar'){
     const mh=HARC.filter(h=>h.empId===id).sort((a,b)=>dkey(b.tarih)-dkey(a.tarih));
-    inner='<div class="card" style="overflow:auto"><table class="tbl"><thead><tr><th>Tarih</th><th>Tür</th><th>Tutar</th><th>Açıklama</th><th>Durum</th><th>Ödendi</th></tr></thead><tbody>'+(mh.length?mh.map(h=>'<tr><td class="mini">'+esc(h.tarih)+'</td><td>'+esc(h.tur)+'</td><td><b>'+esc(h.tutar)+' TL</b></td><td class="mini">'+esc(h.aciklama||'')+'</td><td>'+durumBadge(h.durum)+'</td><td>'+(h.odendi?'<span class="badge b-ok">Ödendi</span>':'<span class="badge b-gray">—</span>')+'</td></tr>').join(''):'<tr><td colspan="6" class="empty">Harcama kaydı yok.</td></tr>')+'</tbody></table></div>';
+    const od=(p.odemeler||[]);
+    inner=(mh.length?'<div class="sec-h"><h2 style="font-size:15px">Sistem Üzerinden Girilen Harcamalar</h2></div><div class="card" style="overflow:auto;margin-bottom:16px"><table class="tbl"><thead><tr><th>Tarih</th><th>Tür</th><th>Tutar</th><th>Açıklama</th><th>Durum</th><th>Ödendi</th></tr></thead><tbody>'+mh.map(h=>'<tr><td class="mini">'+esc(h.tarih)+'</td><td>'+esc(h.tur)+'</td><td><b>'+esc(h.tutar)+' TL</b></td><td class="mini">'+esc(h.aciklama||'')+'</td><td>'+izinAsamaBadge(h)+'</td><td>'+(h.odendi?'<span class="badge b-ok">Ödendi</span>':'<span class="badge b-gray">—</span>')+'</td></tr>').join('')+'</tbody></table></div>':'')
+      +'<div class="sec-h"><h2 style="font-size:15px">Ödeme / Harcama Geçmişi (Kolay İK)</h2><span class="mini">'+od.length+' kayıt</span></div>'
+      +miniTbl(['Oluşturulma','Kategori','Tür','Tutar','Net/Brüt'],od.slice().sort((a,b)=>dkey(b.olus)-dkey(a.olus)).map(o=>['<span class="mini">'+esc(o.olus)+'</span>',esc(o.kategori||'—'),esc(o.tur||'—'),'<b>'+esc(o.tutar)+'</b>',esc(o.netbrut||'—')]));
   } else if(pfTab==='mesailer'){
     const ayv=PUAN[ST.pzAy]||{}; const row=ayv[id]||{};
     const gun=ayGunSayi(ST.pzAy); let cC=0,cI=0,cT=0; for(let d=1;d<=gun;d++){const v=row[d];if(v==='C')cC++;else if(v==='I')cI++;else if(v==='T')cT++;}
-    inner='<div class="card pad"><div class="sec-h"><h2>Puantaj Özeti — '+ayAd(ST.pzAy)+'</h2><a href="#/puantaj" class="btn g sm">Puantaj modülü →</a></div><div class="fieldgrid">'+fv('Çalışılan Gün',cC||'0')+fv('İzinli Gün',cI||'0')+fv('Tatil',cT||'0')+'</div><div class="mini" style="margin-top:10px">Detaylı aylık puantaj için Puantaj modülünü kullanın.</div></div>';
+    const me=(p.mesailer||[]);
+    inner='<div class="card pad" style="margin-bottom:16px"><div class="sec-h"><h2>Puantaj Özeti — '+ayAd(ST.pzAy)+'</h2><a href="#/puantaj" class="btn g sm">Puantaj modülü →</a></div><div class="fieldgrid">'+fv('Çalışılan Gün',cC||'0')+fv('İzinli Gün',cI||'0')+fv('Tatil',cT||'0')+'</div></div>'
+      +'<div class="sec-h"><h2 style="font-size:15px">Mesai Geçmişi (Kolay İK)</h2><span class="mini">'+me.length+' kayıt</span></div>'
+      +miniTbl(['Mesai Başlangıç','Açıklama','Oluşturulma'],me.slice().sort((a,b)=>dkey(b.bas)-dkey(a.bas)).map(m=>['<span class="mini">'+esc(m.bas)+'</span>',esc(m.acik||'—'),'<span class="mini">'+esc(m.olus)+'</span>']));
   }
   return '<div style="margin-bottom:6px"><a href="#/calisanlar" style="font-size:13px;color:var(--ink-2)">← Çalışanlar</a></div>'
     +'<div class="card pad"><div class="pf-head"><div class="pf-av" style="background:'+avColor(p.ad)+'">'+esc(initials(p.ad))+'</div>'
@@ -477,11 +509,19 @@ function viewTalepler(){
 /* ===== İZİNLER ===== */
 function durumBadge(d){return d==='onaylandi'?'<span class="badge b-ok">Onaylandı</span>':d==='reddedildi'?'<span class="badge b-bad">Reddedildi</span>':'<span class="badge b-warn">Onay Bekliyor</span>';}
 /* ---- ONAY AKIŞI (Müdür → Direktör → İnsan Kaynakları) + DENETİM İZİ ---- */
+function ikOnaycisi(emp){
+  const raw=emp&&emp.izinOnay; if(!raw) return 'İnsan Kaynakları';
+  const s=String(raw).replace(/\s*(İZİN|HARCAMA|AVANS|MESAİ)\s+ONAY.*$/i,'').replace(/\s+ONAY\s+SÜRE(Cİ|Ç).*$/i,'');
+  const parts=s.split(',').map(x=>x.trim()).filter(Boolean);
+  const mud=(emp.mudurluk||'').toLocaleUpperCase('tr'), dir=(emp.direktor||'').toLocaleUpperCase('tr');
+  const rem=parts.filter(x=>{const u=x.toLocaleUpperCase('tr');return u!==mud&&u!==dir;});
+  return rem.length?trTitle(rem[rem.length-1]):'İnsan Kaynakları';
+}
 function onayZinciri(emp){
   const c=[];
   if(emp&&emp.mudurluk) c.push({rol:'Müdür',ad:emp.mudurluk,durum:'bekliyor'});
   if(emp&&emp.direktor&&trLower(emp.direktor)!==trLower(emp.mudurluk||'')) c.push({rol:'Direktör',ad:emp.direktor,durum:'bekliyor'});
-  c.push({rol:'İnsan Kaynakları',ad:'İnsan Kaynakları',durum:'bekliyor'});
+  c.push({rol:'İnsan Kaynakları',ad:ikOnaycisi(emp),durum:'bekliyor'});
   return c;
 }
 function curStep(z){return (z.onayAkis||[]).find(s=>s.durum==='bekliyor');}
