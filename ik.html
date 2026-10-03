@@ -367,7 +367,7 @@ function viewCalisanlar(){
 }
 function cardHtml(p){return '<div class="ec" data-id="'+esc(p.id)+'"><div class="av" style="background:'+avColor(p.ad)+'">'+esc(initials(p.ad))+'</div><div class="nm">'+esc(trTitle(p.ad))+'</div><div class="de">'+esc(p.departman||'—')+' · '+esc(p.bolum||'—')+'</div><div class="em">'+esc(p.unvan||'')+'</div></div>';}
 function th(c,l){const on=ST.sortCol===c;return '<th class="srt" data-sort="'+c+'">'+l+'<span class="ar">'+(on?(ST.sortDir>0?'▲':'▼'):'')+'</span></th>';}
-function tableHtml(L){const ayr=ST.durum==='ayrilan';return '<div class="card" style="overflow:auto"><table class="tbl"><thead><tr>'+th('ad','Ad Soyad')+th('departman','Departman')+th('bolum','Bölüm')+th('unvan','Unvan')+th('giris','İşe Giriş')+(ayr?th('cikis','İşten Çıkış'):'')+'</tr></thead><tbody>'+L.map(p=>'<tr class="clk" data-id="'+esc(p.id)+'"><td><div style="display:flex;align-items:center;gap:10px"><div style="width:30px;height:30px;border-radius:8px;font-size:11px;background:'+avColor(p.ad)+';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">'+esc(initials(p.ad))+'</div><b style="color:var(--navy);font-weight:600">'+esc(trTitle(p.ad))+'</b></div></td><td><span class="badge">'+esc(p.departman||'—')+'</span></td><td><span class="badge b-bol">'+esc(p.bolum||'—')+'</span></td><td>'+esc(p.unvan||'—')+'</td><td class="mini">'+esc(p.giris||'')+'</td>'+(ayr?'<td style="color:var(--bad)">'+esc(p.cikis||'')+'</td>':'')+'</tr>').join('')+'</tbody></table></div>';}
+function tableHtml(L){const ayr=ST.durum==='ayrilan';return '<div class="card" style="overflow:auto"><table class="tbl"><thead><tr>'+th('ad','Ad Soyad')+th('departman','Departman')+th('bolum','Bölüm')+th('unvan','Unvan')+th('giris','İşe Giriş')+(ayr?th('cikis','İşten Çıkış')+'<th>Ayrılma Nedeni</th>':'')+'</tr></thead><tbody>'+L.map(p=>'<tr class="clk" data-id="'+esc(p.id)+'"><td><div style="display:flex;align-items:center;gap:10px"><div style="width:30px;height:30px;border-radius:8px;font-size:11px;background:'+avColor(p.ad)+';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">'+esc(initials(p.ad))+'</div><b style="color:var(--navy);font-weight:600">'+esc(trTitle(p.ad))+'</b></div></td><td><span class="badge">'+esc(p.departman||'—')+'</span></td><td><span class="badge b-bol">'+esc(p.bolum||'—')+'</span></td><td>'+esc(p.unvan||'—')+'</td><td class="mini">'+esc(p.giris||'')+'</td>'+(ayr?'<td style="color:var(--bad)">'+esc(p.cikis||'')+'</td><td class="mini">'+esc(p.ayrilmaNedeni||'')+'</td>':'')+'</tr>').join('')+'</tbody></table></div>';}
 
 /* ===== ÇALIŞAN KARTI ===== */
 function fv(k,v,em){return '<div class="fld-v"><div class="k">'+k+'</div><div class="v'+(em?' em':'')+'">'+(v&&String(v).length?v:(em||'—'))+'</div></div>';}
@@ -378,10 +378,11 @@ function viewCalisan(id){
   let inner='';
   if(pfTab==='profil'){
     inner='<div class="card pad"><div class="fieldgrid">'
-      +fv('İşe Başlama',esc(p.giris))+fv('Çalışma Süresi',esc(calismaSuresi(p.giris)))
+      +fv('İşe Başlama',esc(p.giris))+fv('Çalışma Süresi',esc(eski&&p.calismaSuresi?p.calismaSuresi:calismaSuresi(p.giris)))
       +fv('Durum',eski?'<span class="badge b-bad">İşten Ayrıldı'+(p.cikis?' · '+esc(p.cikis):'')+'</span>':'<span class="badge b-ok">Aktif</span>')
       +fv('Departman',esc(p.departman))+fv('Bölüm',esc(p.bolum))+fv('Unvan',esc(p.unvan))
-      +fv('Yöneticisi',esc(p.yonetici))+fv('Direktör',esc(p.direktor))+fv('İş E-postası',esc(p.epostaIs))+fv('İş Telefonu',esc(p.telefonIs))
+      +fv('Müdürlük / Yönetici',esc(p.mudurluk||p.yonetici))+fv('Direktör',esc(p.direktor))+fv('TC Kimlik No',esc(p.tc))
+      +(eski?fv('İşten Çıkış',esc(p.cikis))+fv('Ayrılma Nedeni',esc(p.ayrilmaNedeni)):fv('İş E-postası',esc(p.epostaIs))+fv('İş Telefonu',esc(p.telefonIs)))
       +'</div></div>';
   } else if(pfTab==='kisisel'){
     inner='<div class="card pad"><div class="grp"><div class="gh">Vatandaşlık</div><div class="fieldgrid">'+fv('Doğum Tarihi',esc(p.dogum))+fv('Cinsiyet',esc(p.cinsiyet))+fv('TC Kimlik No',esc(p.tc))+fv('Uyruğu',esc(p.uyruk)||'Türkiye')+fv('Askerlik Durumu',esc(p.askerlik))+'</div></div>'
@@ -501,7 +502,7 @@ function viewRaporlar(){
 }
 function raporData(id){
   if(id==='calisan') return {baslik:'Mevcut Çalışan Listesi',cols:['Ad Soyad','Departman','Bölüm','Unvan','İşe Giriş'],rows:AKTIF.map(p=>[trTitle(p.ad),p.departman,p.bolum,p.unvan,p.giris])};
-  if(id==='ayrilan') return {baslik:'İşten Ayrılan Çalışanlar',cols:['Ad Soyad','Departman','Bölüm','Unvan','İşe Giriş','İşten Çıkış'],rows:AYRILAN.map(p=>[trTitle(p.ad),p.departman,p.bolum,p.unvan,p.giris,p.cikis])};
+  if(id==='ayrilan') return {baslik:'İşten Ayrılan Çalışanlar',cols:['Ad Soyad','TC','Departman','Bölüm','Unvan','İşe Giriş','İşten Çıkış','Ayrılma Nedeni','Çalışma Süresi'],rows:AYRILAN.map(p=>[trTitle(p.ad),p.tc,p.departman,p.bolum,p.unvan,p.giris,p.cikis,p.ayrilmaNedeni,p.calismaSuresi])};
   if(id==='izinbakiye') return {baslik:'İzin Bakiye Raporu',cols:['Ad Soyad','Departman','Kıdem','Hak Edilen','Kullanılan','Kalan'],rows:AKTIF.map(p=>{const b=izinBakiye(p);return [trTitle(p.ad),p.departman,calismaSuresi(p.giris),b.hak,b.kullanilan,b.kalan];})};
   if(id==='izinkullanim') return {baslik:'Kullanılan İzin Raporu',cols:['Ad Soyad','Tür','Başlangıç','Bitiş','Gün','Durum'],rows:IZIN.filter(z=>z.durum==='onaylandi').map(z=>[trTitle(z.empAd),z.tur,z.baslangic,z.bitis,z.gun,'Onaylandı'])};
   if(id==='departman'){const d=depDagilim();return {baslik:'Departman Dağılımı',cols:['Departman','Çalışan Sayısı','Oran %'],rows:d.map(([k,v])=>[k,v,Math.round(v/AKTIF.length*100)])};}
