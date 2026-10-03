@@ -228,16 +228,25 @@ const refPuan=doc(db,"satisVeri","ikPuantaj");
 const refAyar=doc(db,"satisVeri","ikAyar");
 const refTalep=doc(db,"satisVeri","ikTalep");
 const refOzluk=doc(db,"satisVeri","mrOzluk");
+const refIzinBakiye=doc(db,"satisVeri","mrIzinBakiye");
 
 /* ===== DURUM ===== */
 const SEED_AKTIF=(window.MR_AKTIF||[]), SEED_AYRILAN=(window.MR_AYRILAN||[]);
-let AKTIF=[], AYRILAN=[], IZIN=[], HARC=[], PUAN={}, AYAR=null, TALEP=[], OZLUK={};
+let AKTIF=[], AYRILAN=[], IZIN=[], HARC=[], PUAN={}, AYAR=null, TALEP=[], OZLUK={}, BAKIYE={};
 /* Özlük (hassas) verisi ayrı doküman; TC'ye göre roster üstüne bindirilir */
 function mergeOzluk(){
   if(!OZLUK||!Object.keys(OZLUK).length) return;
   [AKTIF,AYRILAN].forEach(arr=>arr.forEach(p=>{
     const o=OZLUK[p.tc]; if(!o) return;
     for(const k in o){ if(o[k]!=null && o[k]!=='' && (p[k]==null||p[k]==='')) p[k]=o[k]; }
+  }));
+}
+/* İzin bakiyesi Kolay İK "Çalışan İzin Bakiye Raporu"ndan; KENDİMİZ HESAPLAMIYORUZ. TC->{hak,kull,kalan} */
+function mergeBakiye(){
+  if(!BAKIYE||!Object.keys(BAKIYE).length) return;
+  [AKTIF,AYRILAN].forEach(arr=>arr.forEach(p=>{
+    const b=BAKIYE[p.tc]; if(!b) return;
+    p.izinHak=b.hak; p.izinKullanilan=b.kull; p.izinKalan=b.kalan;
   }));
 }
 let ST={q:'',durum:'aktif',dep:'',bol:'',sortCol:'ad',sortDir:1,view:'grid',izTab:'yaklasan',pzAy:ym(new Date()),tlTab:'bekliyor',tlTip:'',rapSel:'calisan',rapBirim:'',rapAy:0,rapYil:0};
@@ -359,8 +368,9 @@ function sub(ref,cb){ onSnapshot(ref,s=>{cb(s.exists()?s.data():null);},e=>conso
 let ready=0;
 function boot(){
   bindGlobal();
-  sub(refPers,d=>{ if(d&&(Array.isArray(d.aktif)||Array.isArray(d.ayrilan))){AKTIF=d.aktif||[];AYRILAN=d.ayrilan||[];} else {AKTIF=SEED_AKTIF.slice();AYRILAN=SEED_AYRILAN.slice();setDoc(refPers,{aktif:AKTIF,ayrilan:AYRILAN,guncelleme:new Date().toISOString(),_init:true},{merge:true}).catch(()=>{});} mergeOzluk(); ready=1; render(); });
+  sub(refPers,d=>{ if(d&&(Array.isArray(d.aktif)||Array.isArray(d.ayrilan))){AKTIF=d.aktif||[];AYRILAN=d.ayrilan||[];} else {AKTIF=SEED_AKTIF.slice();AYRILAN=SEED_AYRILAN.slice();setDoc(refPers,{aktif:AKTIF,ayrilan:AYRILAN,guncelleme:new Date().toISOString(),_init:true},{merge:true}).catch(()=>{});} mergeOzluk(); mergeBakiye(); ready=1; render(); });
   sub(refOzluk,d=>{ OZLUK=(d&&d.veri)?d.veri:{}; mergeOzluk(); if(ready)render(); });
+  sub(refIzinBakiye,d=>{ BAKIYE=(d&&d.veri)?d.veri:{}; mergeBakiye(); if(ready)render(); });
   sub(refIzin,d=>{ IZIN=(d&&Array.isArray(d.izinler))?d.izinler:[]; if(ready)render(); });
   sub(refHarc,d=>{ HARC=(d&&Array.isArray(d.harcamalar))?d.harcamalar:[]; if(ready)render(); });
   sub(refPuan,d=>{ PUAN=(d&&d.veri)?d.veri:{}; if(ready)render(); });
@@ -369,6 +379,7 @@ function boot(){
 }
 /* Özlük verisini Firestore'a yükleme kancası (yalnız İK; CDP ile toplu yükleme için) */
 window.__seedOzluk=async function(veri){ if(!IS_IK) throw new Error('yetki yok'); await setDoc(refOzluk,{veri,guncelleme:new Date().toISOString()},{merge:false}); OZLUK=veri; mergeOzluk(); if(ready)render(); return Object.keys(veri).length; };
+window.__seedBakiye=async function(veri){ if(!IS_IK) throw new Error('yetki yok'); await setDoc(refIzinBakiye,{veri,guncelleme:new Date().toISOString()},{merge:false}); BAKIYE=veri; mergeBakiye(); if(ready)render(); return Object.keys(veri).length; };
 async function kaydetPers(){ try{await setDoc(refPers,{aktif:AKTIF,ayrilan:AYRILAN,guncelleme:new Date().toISOString()},{merge:true});}catch(e){alert('Kaydedilemedi: '+e.message);} }
 async function kaydetIzin(){ try{await setDoc(refIzin,{izinler:IZIN,guncelleme:new Date().toISOString()},{merge:true});}catch(e){alert('Kaydedilemedi: '+e.message);} }
 async function kaydetHarc(){ try{await setDoc(refHarc,{harcamalar:HARC,guncelleme:new Date().toISOString()},{merge:true});}catch(e){alert('Kaydedilemedi: '+e.message);} }
