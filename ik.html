@@ -177,6 +177,12 @@ table.tbl tbody tr.clk{cursor:pointer}table.tbl tbody tr.clk:hover{background:#f
   <div class="mb" id="harcBody"></div>
   <div class="mf"><button class="btn g" data-close>Vazgeç</button><button class="btn" id="hcSave">Kaydet</button></div>
 </div></div>
+<!-- MESAI/AVANS TALEP -->
+<div class="ovl" id="talepOvl"><div class="modal">
+  <div class="mh"><h3 id="talepTitle">Talep</h3><button class="mx" data-close>×</button></div>
+  <div class="mb" id="talepBody"></div>
+  <div class="mf"><button class="btn g" data-close>Vazgeç</button><button class="btn" id="tlSave">Kaydet</button></div>
+</div></div>
 <!-- İŞTEN AYRILDI -->
 <div class="ovl" id="delOvl"><div class="modal">
   <div class="mh"><h3>İşten Ayrıldı Olarak İşaretle</h3><button class="mx" data-close>×</button></div>
@@ -209,11 +215,12 @@ const refIzin=doc(db,"satisVeri","ikIzin");
 const refHarc=doc(db,"satisVeri","ikHarcama");
 const refPuan=doc(db,"satisVeri","ikPuantaj");
 const refAyar=doc(db,"satisVeri","ikAyar");
+const refTalep=doc(db,"satisVeri","ikTalep");
 
 /* ===== DURUM ===== */
 const SEED_AKTIF=(window.MR_AKTIF||[]), SEED_AYRILAN=(window.MR_AYRILAN||[]);
-let AKTIF=[], AYRILAN=[], IZIN=[], HARC=[], PUAN={}, AYAR=null;
-let ST={q:'',durum:'aktif',dep:'',bol:'',sortCol:'ad',sortDir:1,view:'grid',izTab:'yaklasan',pzAy:ym(new Date())};
+let AKTIF=[], AYRILAN=[], IZIN=[], HARC=[], PUAN={}, AYAR=null, TALEP=[];
+let ST={q:'',durum:'aktif',dep:'',bol:'',sortCol:'ad',sortDir:1,view:'grid',izTab:'yaklasan',pzAy:ym(new Date()),tlTab:'bekliyor',tlTip:''};
 let pfTab='profil';
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function nkey(s){return trLower(s).replace(/\s+/g,' ').trim();}
@@ -235,6 +242,15 @@ function buYil(){return new Date().getFullYear();}
 function yilEq(d,yy){const k=dkey(d);return !!k&&Math.floor(k/10000)===yy;}
 function ayrilanBuYil(){return AYRILAN.filter(p=>yilEq(p.cikis,buYil())).length;}
 function girenBuYil(){return allEmp().filter(p=>yilEq(p.giris,buYil())).length;}
+/* Tüm talepler (izin+harcama+mesai/avans) birleşik görünüm */
+function allTalepler(){
+  const L=[];
+  IZIN.forEach(z=>L.push({tip:'İzin',empAd:z.empAd,ozet:z.tur+' · '+z.gun+' gün',alt:(z.baslangic||'')+' → '+(z.bitis||''),tarih:z.baslangic,durum:z.durum,k:'izin',id:z.id}));
+  HARC.forEach(h=>L.push({tip:'Harcama',empAd:h.empAd,ozet:h.tur+' · '+h.tutar+' TL',alt:h.aciklama||'',tarih:h.tarih,durum:h.durum,k:'harc',id:h.id}));
+  TALEP.forEach(t=>L.push({tip:t.tip,empAd:t.empAd,ozet:t.ozet,alt:t.aciklama||'',tarih:t.tarih,durum:t.durum,k:'talep',id:t.id}));
+  return L;
+}
+function bekleyenToplam(){return IZIN.filter(z=>z.durum==='bekliyor').length+HARC.filter(h=>h.durum==='bekliyor').length+TALEP.filter(t=>t.durum==='bekliyor').length;}
 
 /* AYAR varsayılanları */
 function ensureAyar(){
@@ -260,6 +276,7 @@ function NAVDEF(){return [
   {sec:'Genel'},
   {id:'',ad:'Ana Sayfa',svg:'<rect x="3" y="3" width="7" height="8" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="15" width="7" height="6" rx="1.5"/>'},
   {id:'calisanlar',ad:'Çalışanlar',cnt:AKTIF.length,svg:'<circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/><path d="M21 21v-2a4 4 0 0 0-3-3.8"/>'},
+  {id:'talepler',ad:'Talepler',cnt:bekleyenToplam()||'',svg:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'},
   {sec:'Modüller'},
   {id:'izinler',ad:'İzinler',cnt:IZIN.filter(z=>z.durum==='bekliyor').length||'',svg:'<path d="M3 11l19-9-9 19-2-8-8-2z"/>'},
   {id:'takvim',ad:'Takvim',svg:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'},
@@ -281,7 +298,7 @@ function renderNav(){
 /* ===== ROUTER ===== */
 function route(){ const h=(location.hash||'#/').replace(/^#\//,''); const parts=h.split('/'); return {page:parts[0]||'', arg:parts[1]||''}; }
 function go(p){ location.hash='#/'+p; }
-const TITLES={'':'Ana Sayfa',calisanlar:'Çalışanlar',calisan:'Çalışan Kartı',izinler:'İzinler',takvim:'Takvim',harcamalar:'Harcamalar',puantaj:'Puantaj',raporlar:'Raporlar',ayarlar:'Ayarlar'};
+const TITLES={'':'Ana Sayfa',calisanlar:'Çalışanlar',calisan:'Çalışan Kartı',talepler:'Talepler',izinler:'İzinler',takvim:'Takvim',harcamalar:'Harcamalar',puantaj:'Puantaj',raporlar:'Raporlar',ayarlar:'Ayarlar'};
 function render(){
   closeMenu(); const r=route();
   document.getElementById('pgTitle').textContent=TITLES[r.page]||'';
@@ -292,6 +309,7 @@ function render(){
     if(r.page==='') m.innerHTML=viewAna();
     else if(r.page==='calisanlar') m.innerHTML=viewCalisanlar();
     else if(r.page==='calisan') m.innerHTML=viewCalisan(r.arg);
+    else if(r.page==='talepler') m.innerHTML=viewTalepler();
     else if(r.page==='izinler') m.innerHTML=viewIzinler();
     else if(r.page==='takvim') m.innerHTML=viewTakvim();
     else if(r.page==='harcamalar') m.innerHTML=viewHarcamalar();
@@ -314,12 +332,14 @@ function boot(){
   sub(refHarc,d=>{ HARC=(d&&Array.isArray(d.harcamalar))?d.harcamalar:[]; if(ready)render(); });
   sub(refPuan,d=>{ PUAN=(d&&d.veri)?d.veri:{}; if(ready)render(); });
   sub(refAyar,d=>{ AYAR=d||null; if(ready)render(); });
+  sub(refTalep,d=>{ TALEP=(d&&Array.isArray(d.talepler))?d.talepler:[]; if(ready)render(); });
 }
 async function kaydetPers(){ try{await setDoc(refPers,{aktif:AKTIF,ayrilan:AYRILAN,guncelleme:new Date().toISOString()},{merge:true});}catch(e){alert('Kaydedilemedi: '+e.message);} }
 async function kaydetIzin(){ try{await setDoc(refIzin,{izinler:IZIN,guncelleme:new Date().toISOString()},{merge:true});}catch(e){alert('Kaydedilemedi: '+e.message);} }
 async function kaydetHarc(){ try{await setDoc(refHarc,{harcamalar:HARC,guncelleme:new Date().toISOString()},{merge:true});}catch(e){alert('Kaydedilemedi: '+e.message);} }
 async function kaydetPuan(){ try{await setDoc(refPuan,{veri:PUAN,guncelleme:new Date().toISOString()},{merge:true});}catch(e){alert('Kaydedilemedi: '+e.message);} }
 async function kaydetAyar(a){ try{await setDoc(refAyar,Object.assign({guncelleme:new Date().toISOString()},a),{merge:true});}catch(e){alert('Kaydedilemedi: '+e.message);} }
+async function kaydetTalep(){ try{await setDoc(refTalep,{talepler:TALEP,guncelleme:new Date().toISOString()},{merge:true});}catch(e){alert('Kaydedilemedi: '+e.message);} }
 
 /* ===== ANA SAYFA ===== */
 function depDagilim(){const o={};AKTIF.forEach(p=>{const d=p.departman||'—';o[d]=(o[d]||0)+1;});return Object.entries(o).sort((a,b)=>b[1]-a[1]);}
@@ -371,7 +391,7 @@ function viewCalisanlar(){
 }
 function cardHtml(p){return '<div class="ec" data-id="'+esc(p.id)+'"><div class="av" style="background:'+avColor(p.ad)+'">'+esc(initials(p.ad))+'</div><div class="nm">'+esc(trTitle(p.ad))+'</div><div class="de">'+esc(p.departman||'—')+' · '+esc(p.bolum||'—')+'</div><div class="em">'+esc(p.unvan||'')+'</div></div>';}
 function th(c,l){const on=ST.sortCol===c;return '<th class="srt" data-sort="'+c+'">'+l+'<span class="ar">'+(on?(ST.sortDir>0?'▲':'▼'):'')+'</span></th>';}
-function tableHtml(L){const ayr=ST.durum==='ayrilan';return '<div class="card" style="overflow:auto"><table class="tbl"><thead><tr>'+th('ad','Ad Soyad')+th('departman','Departman')+th('bolum','Bölüm')+th('unvan','Unvan')+th('giris','İşe Giriş')+(ayr?th('cikis','İşten Çıkış')+'<th>Ayrılma Nedeni</th>':'')+'</tr></thead><tbody>'+L.map(p=>'<tr class="clk" data-id="'+esc(p.id)+'"><td><div style="display:flex;align-items:center;gap:10px"><div style="width:30px;height:30px;border-radius:8px;font-size:11px;background:'+avColor(p.ad)+';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">'+esc(initials(p.ad))+'</div><b style="color:var(--navy);font-weight:600">'+esc(trTitle(p.ad))+'</b></div></td><td><span class="badge">'+esc(p.departman||'—')+'</span></td><td><span class="badge b-bol">'+esc(p.bolum||'—')+'</span></td><td>'+esc(p.unvan||'—')+'</td><td class="mini">'+esc(p.giris||'')+'</td>'+(ayr?'<td style="color:var(--bad)">'+esc(p.cikis||'')+'</td><td class="mini">'+esc(p.ayrilmaNedeni||'')+'</td>':'')+'</tr>').join('')+'</tbody></table></div>';}
+function tableHtml(L){const ayr=ST.durum==='ayrilan';return '<div class="card" style="overflow:auto"><table class="tbl"><thead><tr>'+th('ad','Ad Soyad')+th('departman','Departman')+th('bolum','Bölüm')+th('unvan','Unvan')+th('mudurluk','Müdür')+th('direktor','Direktör')+th('giris','İşe Giriş')+(ayr?th('cikis','İşten Çıkış')+'<th>Ayrılma Nedeni</th>':'')+'</tr></thead><tbody>'+L.map(p=>'<tr class="clk" data-id="'+esc(p.id)+'"><td><div style="display:flex;align-items:center;gap:10px"><div style="width:30px;height:30px;border-radius:8px;font-size:11px;background:'+avColor(p.ad)+';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">'+esc(initials(p.ad))+'</div><b style="color:var(--navy);font-weight:600">'+esc(trTitle(p.ad))+'</b></div></td><td><span class="badge">'+esc(p.departman||'—')+'</span></td><td><span class="badge b-bol">'+esc(p.bolum||'—')+'</span></td><td>'+esc(p.unvan||'—')+'</td><td class="mini">'+esc(p.mudurluk?trTitle(p.mudurluk):'—')+'</td><td class="mini">'+esc(p.direktor?trTitle(p.direktor):'—')+'</td><td class="mini">'+esc(p.giris||'')+'</td>'+(ayr?'<td style="color:var(--bad)">'+esc(p.cikis||'')+'</td><td class="mini">'+esc(p.ayrilmaNedeni||'')+'</td>':'')+'</tr>').join('')+'</tbody></table></div>';}
 
 /* ===== ÇALIŞAN KARTI ===== */
 function fv(k,v,em){return '<div class="fld-v"><div class="k">'+k+'</div><div class="v'+(em?' em':'')+'">'+(v&&String(v).length?v:(em||'—'))+'</div></div>';}
@@ -419,6 +439,23 @@ function viewCalisan(id){
     +'<button class="btn g sm" id="pfEdit">Düzenle</button>'+(!eski?'<button class="btn warn sm" id="pfDel">İşten Ayrıldı</button>':'')+'</div>'
     +'<div class="tabs">'+tabs.map(t=>'<button class="tab'+(pfTab===t[0]?' on':'')+'" data-tab="'+t[0]+'">'+t[1]+'</button>').join('')+'</div></div>'
     +'<div style="height:16px"></div>'+inner;
+}
+
+/* ===== TALEPLER ===== */
+function tipBadge(t){const c={'İzin':'','Harcama':'b-warn','Mesai':'b-bol','Avans':'b-gray'};return '<span class="badge '+(c[t]||'')+'">'+esc(t)+'</span>';}
+function viewTalepler(){
+  const tabs=[['bekliyor','Bekleyenler'],['onaylandi','Onaylananlar'],['reddedildi','Reddedilenler'],['tumu','Tümü']];
+  let L=allTalepler();
+  if(ST.tlTab!=='tumu') L=L.filter(x=>x.durum===ST.tlTab);
+  if(ST.tlTip) L=L.filter(x=>x.tip===ST.tlTip);
+  L.sort((a,b)=>dkey(b.tarih)-dkey(a.tarih));
+  const all=allTalepler(); const cnt=t=>t==='tumu'?all.length:all.filter(x=>x.durum===t).length;
+  const tipler=['İzin','Harcama','Mesai','Avans'];
+  return '<div class="toolbar"><select class="sel" id="tlTip"><option value="">Tüm Talep Türleri</option>'+tipler.map(t=>'<option'+(ST.tlTip===t?' selected':'')+'>'+t+'</option>').join('')+'</select><div style="flex:1"></div>'
+    +'<button class="btn g sm" data-yt="İzin">+ İzin</button><button class="btn g sm" data-yt="Harcama">+ Harcama</button><button class="btn g sm" data-yt="Mesai">+ Mesai</button><button class="btn sm" data-yt="Avans">+ Avans</button></div>'
+    +'<div class="subtabs">'+tabs.map(t=>'<button class="subtab'+(ST.tlTab===t[0]?' on':'')+'" data-tltab="'+t[0]+'">'+t[1]+' <span class="tag">'+cnt(t[0])+'</span></button>').join('')+'</div>'
+    +'<div class="card" style="overflow:auto"><table class="tbl"><thead><tr><th>Tür</th><th>Çalışan</th><th>Özet</th><th>Tarih</th><th>Durum</th><th>İşlem</th></tr></thead><tbody>'
+    +(L.length?L.map(x=>'<tr><td>'+tipBadge(x.tip)+'</td><td><b style="color:var(--navy)">'+esc(trTitle(x.empAd))+'</b></td><td>'+esc(x.ozet)+(x.alt&&x.alt.trim()&&x.alt.trim()!=='→'?'<div class="mini">'+esc(x.alt)+'</div>':'')+'</td><td class="mini">'+esc(x.tarih||'')+'</td><td>'+durumBadge(x.durum)+'</td><td style="white-space:nowrap">'+(x.durum==='bekliyor'?'<button class="btn ok sm" data-tlonay="'+x.k+'|'+esc(x.id)+'">Onayla</button> <button class="btn bad sm" data-tlred="'+x.k+'|'+esc(x.id)+'">Reddet</button>':'<span class="mini">—</span>')+'</td></tr>').join(''):'<tr><td colspan="6" class="empty">Talep bulunmuyor.</td></tr>')+'</tbody></table></div>';
 }
 
 /* ===== İZİNLER ===== */
@@ -526,17 +563,25 @@ function raporData(id){
 }
 function renderRapor(id){
   const d=raporData(id);
-  const html='<div class="card pad"><div class="sec-h"><h2>'+esc(d.baslik)+' <span class="mini">('+d.rows.length+' kayıt)</span></h2><button class="btn sm" id="rapCsv">⬇ Excel (CSV) indir</button></div>'
+  const html='<div class="card pad"><div class="sec-h"><h2>'+esc(d.baslik)+' <span class="mini">('+d.rows.length+' kayıt)</span></h2><button class="btn sm" id="rapCsv">⬇ Excel indir</button></div>'
     +'<div style="overflow:auto"><table class="tbl"><thead><tr>'+d.cols.map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr></thead><tbody>'+(d.rows.length?d.rows.map(r=>'<tr>'+r.map(c=>'<td>'+esc(c==null?'':c)+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+d.cols.length+'" class="empty">Kayıt yok.</td></tr>')+'</tbody></table></div></div>';
   document.getElementById('rapOut').innerHTML=html;
-  document.getElementById('rapCsv').onclick=()=>csvIndir(d);
+  document.getElementById('rapCsv').onclick=()=>xlsIndir(d);
   document.getElementById('rapOut').scrollIntoView({behavior:'smooth',block:'start'});
 }
-function csvIndir(d){
-  const q=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';
-  const csv=[d.cols.map(q).join(';')].concat(d.rows.map(r=>r.map(q).join(';'))).join('\r\n');
-  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=d.baslik.replace(/[^\wğüşıöçĞÜŞİÖÇ ]/g,'')+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+function xlsIndir(d){
+  const h=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const head='<tr>'+d.cols.map(c=>'<th>'+h(c)+'</th>').join('')+'</tr>';
+  const body=d.rows.map(r=>'<tr>'+r.map(c=>'<td>'+h(c)+'</td>').join('')+'</tr>').join('');
+  const html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8">'
+    +'<style>table{border-collapse:collapse;font-family:Calibri,Arial,sans-serif;font-size:11pt}'
+    +'caption{font-size:14pt;font-weight:bold;color:#132a44;text-align:left;padding:8px 0;mso-number-format:"\\@"}'
+    +'th{background:#132a44;color:#ffffff;font-weight:bold;border:1px solid #0c1c2e;padding:7px 12px;text-align:left;white-space:nowrap}'
+    +'td{border:1px solid #d5dbe1;padding:5px 11px;vertical-align:top;mso-number-format:"\\@"}'
+    +'tr:nth-child(even) td{background:#f6f8fa}</style></head><body>'
+    +'<table><caption>'+h(d.baslik)+' — İnciroğlu Otomotiv ('+new Date().toLocaleDateString('tr-TR')+')</caption><thead>'+head+'</thead><tbody>'+body+'</tbody></table></body></html>';
+  const blob=new Blob(['﻿'+html],{type:'application/vnd.ms-excel;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(d.baslik.replace(/[^\wğüşıöçĞÜŞİÖÇ ]/g,'').trim()||'rapor')+'.xls';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
 }
 
 /* ===== AYARLAR ===== */
@@ -577,6 +622,13 @@ function afterRender(r){
     document.querySelectorAll('[data-iztab]').forEach(t=>t.onclick=()=>{ST.izTab=t.getAttribute('data-iztab');render();});
     document.getElementById('btnIzin').onclick=()=>openIzin();
     bindIzinActions();
+  }
+  if(r.page==='talepler'){
+    document.getElementById('tlTip').onchange=e=>{ST.tlTip=e.target.value;render();};
+    document.querySelectorAll('[data-tltab]').forEach(t=>t.onclick=()=>{ST.tlTab=t.getAttribute('data-tltab');render();});
+    document.querySelectorAll('[data-yt]').forEach(b=>b.onclick=()=>yeniTalep(b.getAttribute('data-yt')));
+    document.querySelectorAll('[data-tlonay]').forEach(b=>b.onclick=()=>talepDurum(b.getAttribute('data-tlonay'),'onaylandi'));
+    document.querySelectorAll('[data-tlred]').forEach(b=>b.onclick=()=>talepDurum(b.getAttribute('data-tlred'),'reddedildi'));
   }
   if(r.page==='takvim'||r.page==='puantaj'){
     const g=document.getElementById('ayGeri'),i=document.getElementById('ayIleri');
@@ -711,6 +763,34 @@ async function hcDurum(id,d){const h=HARC.find(x=>x.id===id);if(!h)return;h.duru
 async function hcOdendi(id){const h=HARC.find(x=>x.id===id);if(!h)return;h.odendi=true;await kaydetHarc();}
 async function hcSil(id){if(!confirm('Harcama silinsin mi?'))return;HARC=HARC.filter(x=>x.id!==id);await kaydetHarc();}
 
+/* ===== MESAİ / AVANS TALEP ===== */
+let talepTip=null;
+function yeniTalep(tip){ if(tip==='İzin')return openIzin(); if(tip==='Harcama')return openHarc(); openTalep(tip); }
+function openTalep(tip){
+  talepTip=tip; const emps=AKTIF.slice().sort((x,y)=>String(x.ad).localeCompare(String(y.ad),'tr'));
+  document.getElementById('talepTitle').textContent=tip+' Talebi';
+  const opt='<option value=""></option>'+emps.map(e=>'<option value="'+e.id+'">'+esc(trTitle(e.ad))+'</option>').join('');
+  let f='<div class="f"><label>Çalışan</label><select id="tlEmp">'+opt+'</select></div><div class="f"><label>Tarih</label><input id="tlTarih" type="date" value="'+new Date().toISOString().slice(0,10)+'"></div>';
+  if(tip==='Mesai') f+='<div class="f"><label>Mesai Süresi (saat)</label><input id="tlVal" type="number" min="0" step="0.5" placeholder="örn. 3"></div>';
+  else f+='<div class="f"><label>Avans Tutarı (TL)</label><input id="tlVal" type="number" min="0" step="0.01"></div>';
+  f+='<div class="f"><label>Açıklama</label><textarea id="tlAcik" rows="2"></textarea></div><div class="f"><label class="chk"><input type="checkbox" id="tlOnayli"> Onaylı olarak ekle</label></div>';
+  document.getElementById('talepBody').innerHTML=f;
+  document.getElementById('talepOvl').classList.add('on');
+}
+async function saveTalep(){
+  const empId=v('tlEmp'); if(!empId){alert('Çalışan seçin.');return;}
+  const val=v('tlVal'); if(!val){alert(talepTip==='Mesai'?'Mesai süresi girin.':'Tutar girin.');return;}
+  const e=empById(empId); const tr=v('tlTarih');
+  const ozet=talepTip==='Mesai'?(val+' saat mesai'):(val+' TL avans');
+  TALEP=TALEP.concat([{id:uid('t'),tip:talepTip,empId,empAd:e?e.ad:'',tarih:tr?trFromISO(tr):'',deger:+val,ozet,aciklama:v('tlAcik'),durum:document.getElementById('tlOnayli').checked?'onaylandi':'bekliyor',olusturma:new Date().toISOString()}]);
+  await kaydetTalep(); closeModals();
+}
+async function talepDurum(spec,d){ const i=spec.indexOf('|'); const k=spec.slice(0,i),id=spec.slice(i+1);
+  if(k==='izin'){const z=IZIN.find(x=>x.id===id);if(z){z.durum=d;await kaydetIzin();}}
+  else if(k==='harc'){const h=HARC.find(x=>x.id===id);if(h){h.durum=d;await kaydetHarc();}}
+  else {const t=TALEP.find(x=>x.id===id);if(t){t.durum=d;await kaydetTalep();}}
+}
+
 /* ===== İŞTEN AYRILDI ===== */
 let delId=null;
 function openDel(id){const p=AKTIF.find(x=>x.id===id);if(!p)return;delId=id;document.getElementById('delWho').innerHTML='<b>'+esc(trTitle(p.ad))+'</b> — '+esc(p.departman||'')+' · '+esc(p.bolum||'');document.getElementById('delCikis').value=new Date().toISOString().slice(0,10);document.getElementById('delOvl').classList.add('on');}
@@ -721,7 +801,7 @@ async function ayarEkle(key){const el=document.getElementById('add_'+key);const 
 async function ayarSil(spec){const i=spec.indexOf('|');const key=spec.slice(0,i),val=spec.slice(i+1);const a=ensureAyar();const o={};o[key]=a[key].filter(x=>x!==val);await kaydetAyar(o);}
 
 /* ===== ORTAK ===== */
-function closeModals(){['empOvl','izinOvl','harcOvl','delOvl'].forEach(id=>document.getElementById(id).classList.remove('on'));delId=null;editId=null;izEmpFix=null;}
+function closeModals(){['empOvl','izinOvl','harcOvl','talepOvl','delOvl'].forEach(id=>document.getElementById(id).classList.remove('on'));delId=null;editId=null;izEmpFix=null;talepTip=null;}
 let openMenu=null; function closeMenu(){if(openMenu){openMenu.remove();openMenu=null;}}
 function bindGlobal(){
   document.getElementById('logout').onclick=()=>{location.href='portal.html';};
@@ -729,6 +809,7 @@ function bindGlobal(){
   document.getElementById('eSave').onclick=saveEmp;
   document.getElementById('izSave').onclick=saveIzin;
   document.getElementById('hcSave').onclick=saveHarc;
+  document.getElementById('tlSave').onclick=saveTalep;
   document.getElementById('delGo').onclick=doDel;
   const gq=document.getElementById('gq');gq.oninput=()=>{if(route().page!=='calisanlar'){ST.q=gq.value;go('calisanlar');}else{ST.q=gq.value;const lq=document.getElementById('lq');if(lq)lq.value=gq.value;softList();}};
   window.addEventListener('keydown',e=>{if(e.key==='Escape')closeModals();});
