@@ -260,8 +260,10 @@ function empById(id){return AKTIF.find(x=>x.id===id)||AYRILAN.find(x=>x.id===id)
 function empAktifMi(id){return !!AKTIF.find(x=>x.id===id);}
 function buYil(){return new Date().getFullYear();}
 function yilEq(d,yy){const k=dkey(d);return !!k&&Math.floor(k/10000)===yy;}
-function ayrilanBuYil(){return AYRILAN.filter(p=>yilEq(p.cikis,buYil())).length;}
-function girenBuYil(){return allEmp().filter(p=>yilEq(p.giris,buYil())).length;}
+/* Turnover/giriş-çıkış sayımına DAHİL EDİLMEYENLER: stajyer, analist öğrenci, departman V.İ. */
+function turnoverHaric(p){const u=(p&&p.unvan||'').toLocaleLowerCase('tr');const d=(p&&p.departman||'').trim();return u.indexOf('staj')>=0||u.indexOf('öğrenci')>=0||d==='V.İ.'||d==='V.I.';}
+function ayrilanBuYil(){return AYRILAN.filter(p=>yilEq(p.cikis,buYil())&&!turnoverHaric(p)).length;}
+function girenBuYil(){return allEmp().filter(p=>yilEq(p.giris,buYil())&&!turnoverHaric(p)).length;}
 /* Tüm talepler (izin+harcama+mesai/avans) birleşik görünüm */
 function allTalepler(){
   const L=[];
@@ -287,7 +289,7 @@ function ensureAyar(){
     yillikKural:(d.yillikKural&&d.yillikKural.length)?d.yillikKural:[{min:0,max:5,gun:14},{min:5,max:15,gun:20},{min:15,max:99,gun:26}]
   };
 }
-function yillikHak(giris){const k=ensureAyar().yillikKural;const y=kidemYil(giris);for(const r of k){if(y>=r.min&&y<r.max)return r.gun;}return k.length?k[k.length-1].gun:14;}
+function yillikHak(giris){const y=kidemYil(giris);if(y<1)return 0;/* İş Kanunu md.53: 1 yılı doldurmadan yıllık izne hak kazanılmaz */const k=ensureAyar().yillikKural;for(const r of k){if(y>=r.min&&y<r.max)return r.gun;}return k.length?k[k.length-1].gun:14;}
 function izinKullanilan(empId){return IZIN.filter(z=>z.empId===empId&&z.durum==='onaylandi'&&/yıllık/i.test(z.tur)).reduce((s,z)=>s+(+z.gun||0),0);}
 function izinBakiye(emp){const hak=yillikHak(emp.giris);return {hak,kullanilan:izinKullanilan(emp.id),kalan:hak-izinKullanilan(emp.id)};}
 
@@ -442,7 +444,7 @@ function viewCalisan(id){
     inner='<div class="card pad"><div class="grp"><div class="gh">Vatandaşlık</div><div class="fieldgrid">'+fv('Doğum Tarihi',esc(p.dogum))+fv('Cinsiyet',esc(p.cinsiyet))+fv('Engel Derecesi',esc(p.engel))+fv('Uyruğu',esc(p.uyruk)||'Türkiye')+fv('TC Kimlik No',esc(p.tc))+fv('Askerlik Durumu',esc(p.askerlik))+'</div></div>'
       +'<div class="grp"><div class="gh">Eğitim</div><div class="fieldgrid">'+fv('Eğitim Durumu',esc(p.egitimDurumu))+fv('En Yüksek Seviye',esc(p.egitimSeviye))+fv('Son Eğitim Kurumu',esc(p.egitimKurum))+fv('Bölüm',esc(p.egitimBolum))+'</div></div>'
       +'<div class="grp"><div class="gh">Aile</div><div class="fieldgrid">'+fv('Medeni Hal',esc(p.medeni))+fv('Çocuk Sayısı',esc(p.cocuk))+fv('Kan Grubu',esc(p.kanGrubu))+'</div></div>'
-      +'<div class="grp"><div class="gh">Adres</div><div class="fieldgrid">'+fv('Adres',esc(p.adres))+fv('Adres (devam)',esc(p.adres2))+fv('Şehir',esc(p.sehir))+fv('Ülke',esc(p.ulke)||'Türkiye')+fv('Posta Kodu',esc(p.postaKodu))+fv('Ev Telefonu',esc(p.evTel))+'</div></div>'
+      +'<div class="grp"><div class="gh">Adres</div><div class="fieldgrid">'+fv('Adres',esc(p.adres||p.adres2))+(p.adres&&p.adres2?fv('Adres (devam)',esc(p.adres2)):'')+fv('Şehir',esc(p.sehir))+fv('Ülke',esc(p.ulke)||'Türkiye')+fv('Posta Kodu',esc(p.postaKodu))+fv('Ev Telefonu',esc(p.evTel))+'</div></div>'
       +'<div class="grp"><div class="gh">Banka Hesabı</div><div class="fieldgrid">'+fv('Banka Adı',esc(p.bankaAd))+fv('Hesap Tipi',esc(p.hesapTipi))+fv('Hesap No',esc(p.hesapNo))+fv('IBAN',esc(p.iban))+'</div></div>'
       +'<div class="grp" style="margin-bottom:0"><div class="gh">Acil Durumda Aranacak Kişi</div><div class="fieldgrid">'+fv('Adı Soyadı',esc(p.acilAd))+fv('Telefon',esc(p.acilTel))+fv('Yakınlık Derecesi',esc(p.acilYakin))+'</div></div></div>';
   } else if(pfTab==='kariyer'){
@@ -713,11 +715,11 @@ function raporData(id,f){
   if(id==='turnover'){
     const y=f.yil||buYil();
     const cur=(y===buYil());
-    const giris=allEmp().filter(p=>dYil(p.giris)===y).length;
-    const cikis=AYRILAN.filter(p=>dYil(p.cikis)===y).length;
+    const giris=allEmp().filter(p=>dYil(p.giris)===y&&!turnoverHaric(p)).length;
+    const cikis=AYRILAN.filter(p=>dYil(p.cikis)===y&&!turnoverHaric(p)).length;
     const rows=[['Yıl',y],['İşe giren',giris],['İşten ayrılan',cikis],['Net değişim',giris-cikis]];
     if(cur){
-      const donemSonu=AKTIF.length;
+      const donemSonu=AKTIF.filter(p=>!turnoverHaric(p)).length;
       const donemBasi=Math.max(0,donemSonu-girenBuYil()+ayrilanBuYil());
       const ort=(donemBasi+donemSonu)/2;
       const oran=ort?((ayrilanBuYil()/ort)*100).toFixed(1):0;
