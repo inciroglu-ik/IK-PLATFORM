@@ -183,6 +183,12 @@ table.tbl tbody tr.clk{cursor:pointer}table.tbl tbody tr.clk:hover{background:#f
   <div class="mb" id="talepBody"></div>
   <div class="mf"><button class="btn g" data-close>Vazgeç</button><button class="btn" id="tlSave">Kaydet</button></div>
 </div></div>
+<!-- ONAY AKIŞI / DENETİM İZİ -->
+<div class="ovl" id="akisOvl"><div class="modal">
+  <div class="mh"><h3>Onay Akışı & Denetim İzi</h3><button class="mx" data-close>×</button></div>
+  <div class="mb" id="akisBody"></div>
+  <div class="mf"><button class="btn g" data-close>Kapat</button></div>
+</div></div>
 <!-- İŞTEN AYRILDI -->
 <div class="ovl" id="delOvl"><div class="modal">
   <div class="mh"><h3>İşten Ayrıldı Olarak İşaretle</h3><button class="mx" data-close>×</button></div>
@@ -245,9 +251,9 @@ function girenBuYil(){return allEmp().filter(p=>yilEq(p.giris,buYil())).length;}
 /* Tüm talepler (izin+harcama+mesai/avans) birleşik görünüm */
 function allTalepler(){
   const L=[];
-  IZIN.forEach(z=>L.push({tip:'İzin',empAd:z.empAd,ozet:z.tur+' · '+z.gun+' gün',alt:(z.baslangic||'')+' → '+(z.bitis||''),tarih:z.baslangic,durum:z.durum,k:'izin',id:z.id}));
-  HARC.forEach(h=>L.push({tip:'Harcama',empAd:h.empAd,ozet:h.tur+' · '+h.tutar+' TL',alt:h.aciklama||'',tarih:h.tarih,durum:h.durum,k:'harc',id:h.id}));
-  TALEP.forEach(t=>L.push({tip:t.tip,empAd:t.empAd,ozet:t.ozet,alt:t.aciklama||'',tarih:t.tarih,durum:t.durum,k:'talep',id:t.id}));
+  IZIN.forEach(z=>L.push({tip:'İzin',empAd:z.empAd,ozet:z.tur+' · '+z.gun+' gün',alt:(z.baslangic||'')+' → '+(z.bitis||''),tarih:z.baslangic,durum:z.durum,statusBadge:izinAsamaBadge(z),k:'izin',id:z.id}));
+  HARC.forEach(h=>L.push({tip:'Harcama',empAd:h.empAd,ozet:h.tur+' · '+h.tutar+' TL',alt:h.aciklama||'',tarih:h.tarih,durum:h.durum,statusBadge:durumBadge(h.durum),k:'harc',id:h.id}));
+  TALEP.forEach(t=>L.push({tip:t.tip,empAd:t.empAd,ozet:t.ozet,alt:t.aciklama||'',tarih:t.tarih,durum:t.durum,statusBadge:durumBadge(t.durum),k:'talep',id:t.id}));
   return L;
 }
 function bekleyenToplam(){return IZIN.filter(z=>z.durum==='bekliyor').length+HARC.filter(h=>h.durum==='bekliyor').length+TALEP.filter(t=>t.durum==='bekliyor').length;}
@@ -455,14 +461,69 @@ function viewTalepler(){
     +'<button class="btn g sm" data-yt="İzin">+ İzin</button><button class="btn g sm" data-yt="Harcama">+ Harcama</button><button class="btn g sm" data-yt="Mesai">+ Mesai</button><button class="btn sm" data-yt="Avans">+ Avans</button></div>'
     +'<div class="subtabs">'+tabs.map(t=>'<button class="subtab'+(ST.tlTab===t[0]?' on':'')+'" data-tltab="'+t[0]+'">'+t[1]+' <span class="tag">'+cnt(t[0])+'</span></button>').join('')+'</div>'
     +'<div class="card" style="overflow:auto"><table class="tbl"><thead><tr><th>Tür</th><th>Çalışan</th><th>Özet</th><th>Tarih</th><th>Durum</th><th>İşlem</th></tr></thead><tbody>'
-    +(L.length?L.map(x=>'<tr><td>'+tipBadge(x.tip)+'</td><td><b style="color:var(--navy)">'+esc(trTitle(x.empAd))+'</b></td><td>'+esc(x.ozet)+(x.alt&&x.alt.trim()&&x.alt.trim()!=='→'?'<div class="mini">'+esc(x.alt)+'</div>':'')+'</td><td class="mini">'+esc(x.tarih||'')+'</td><td>'+durumBadge(x.durum)+'</td><td style="white-space:nowrap">'+(x.durum==='bekliyor'?'<button class="btn ok sm" data-tlonay="'+x.k+'|'+esc(x.id)+'">Onayla</button> <button class="btn bad sm" data-tlred="'+x.k+'|'+esc(x.id)+'">Reddet</button>':'<span class="mini">—</span>')+'</td></tr>').join(''):'<tr><td colspan="6" class="empty">Talep bulunmuyor.</td></tr>')+'</tbody></table></div>';
+    +(L.length?L.map(x=>{
+      let islem='';
+      if(x.durum==='bekliyor'){
+        if(x.k==='izin') islem='<button class="btn ok sm" data-tlizonay="'+esc(x.id)+'">Onayla</button> <button class="btn bad sm" data-tlizred="'+esc(x.id)+'">Reddet</button> ';
+        else islem='<button class="btn ok sm" data-tlonay="'+x.k+'|'+esc(x.id)+'">Onayla</button> <button class="btn bad sm" data-tlred="'+x.k+'|'+esc(x.id)+'">Reddet</button> ';
+      }
+      if(x.k==='izin') islem+='<button class="btn g sm" data-izakis="'+esc(x.id)+'">Akış</button>';
+      if(!islem.trim()) islem='<span class="mini">—</span>';
+      return '<tr><td>'+tipBadge(x.tip)+'</td><td><b style="color:var(--navy)">'+esc(trTitle(x.empAd))+'</b></td><td>'+esc(x.ozet)+(x.alt&&x.alt.trim()&&x.alt.trim()!=='→'?'<div class="mini">'+esc(x.alt)+'</div>':'')+'</td><td class="mini">'+esc(x.tarih||'')+'</td><td>'+x.statusBadge+'</td><td style="white-space:nowrap">'+islem+'</td></tr>';
+    }).join(''):'<tr><td colspan="6" class="empty">Talep bulunmuyor.</td></tr>')+'</tbody></table></div>';
 }
 
 /* ===== İZİNLER ===== */
 function durumBadge(d){return d==='onaylandi'?'<span class="badge b-ok">Onaylandı</span>':d==='reddedildi'?'<span class="badge b-bad">Reddedildi</span>':'<span class="badge b-warn">Onay Bekliyor</span>';}
+/* ---- ONAY AKIŞI (Müdür → Direktör → İnsan Kaynakları) + DENETİM İZİ ---- */
+function onayZinciri(emp){
+  const c=[];
+  if(emp&&emp.mudurluk) c.push({rol:'Müdür',ad:emp.mudurluk,durum:'bekliyor'});
+  if(emp&&emp.direktor&&trLower(emp.direktor)!==trLower(emp.mudurluk||'')) c.push({rol:'Direktör',ad:emp.direktor,durum:'bekliyor'});
+  c.push({rol:'İnsan Kaynakları',ad:'İnsan Kaynakları',durum:'bekliyor'});
+  return c;
+}
+function curStep(z){return (z.onayAkis||[]).find(s=>s.durum==='bekliyor');}
+function izinAsamaBadge(z){
+  if(z.durum==='onaylandi') return '<span class="badge b-ok">Onaylandı</span>';
+  if(z.durum==='reddedildi'){const r=(z.onayAkis||[]).find(s=>s.durum==='reddedildi');return '<span class="badge b-bad">Reddedildi'+(r?' · '+esc(r.rol):'')+'</span>';}
+  const cur=curStep(z); return '<span class="badge b-warn">'+(cur?esc(cur.rol)+' onayında':'Bekliyor')+'</span>';
+}
+async function izinOnayla(id){
+  const z=IZIN.find(x=>x.id===id); if(!z) return;
+  if(!z.onayAkis||!z.onayAkis.length){ z.durum='onaylandi'; await kaydetIzin(); return; }
+  const cur=curStep(z); if(!cur) return;
+  cur.durum='onaylandi'; cur.tarih=new Date().toISOString(); cur.kaydeden=(SES&&SES.ad)||'İK';
+  if(!z.onayAkis.some(s=>s.durum==='bekliyor')) z.durum='onaylandi';
+  await kaydetIzin();
+}
+async function izinReddet(id){
+  const z=IZIN.find(x=>x.id===id); if(!z) return;
+  const cur=curStep(z); if(cur){ cur.durum='reddedildi'; cur.tarih=new Date().toISOString(); cur.kaydeden=(SES&&SES.ad)||'İK'; }
+  z.durum='reddedildi'; await kaydetIzin();
+}
+function akisGoster(id){
+  const z=IZIN.find(x=>x.id===id); if(!z) return;
+  const akis=z.onayAkis||[];
+  const curIdx=akis.findIndex(s=>s.durum==='bekliyor');
+  const rows=akis.length?akis.map((s,i)=>{
+    const ic=s.durum==='onaylandi'?'✓':s.durum==='reddedildi'?'✕':(i===curIdx?'●':'○');
+    const col=s.durum==='onaylandi'?'var(--ok)':s.durum==='reddedildi'?'var(--bad)':(i===curIdx?'var(--warn)':'var(--muted)');
+    const dur=s.durum==='onaylandi'?'Onaylandı':s.durum==='reddedildi'?'Reddedildi':(i===curIdx?'Onay bekliyor':'Sırada');
+    return '<div style="display:flex;gap:13px;padding:11px 0;border-bottom:1px solid #f0f2f5"><div style="width:26px;height:26px;border-radius:50%;background:'+col+';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:none">'+ic+'</div>'
+      +'<div style="flex:1"><div><b style="color:var(--navy)">'+(i+1)+'. '+esc(s.rol)+'</b>'+(s.ad&&s.ad!=='İnsan Kaynakları'?' · '+esc(trTitle(s.ad)):'')+'</div>'
+      +'<div class="mini">'+dur+(s.tarih?' · '+new Date(s.tarih).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'')+(s.kaydeden?' · <b>işlemi yapan:</b> '+esc(trTitle(s.kaydeden)):'')+'</div></div></div>';
+  }).join(''):'<div class="mini">Bu izin onay akışı olmadan (doğrudan onaylı) eklenmiş.</div>';
+  document.getElementById('akisBody').innerHTML='<div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--line)"><b style="color:var(--navy);font-size:15px">'+esc(trTitle(z.empAd))+'</b><div class="mini">'+esc(z.tur)+' · '+esc(z.gun)+' gün · '+esc(z.baslangic)+' → '+esc(z.bitis)+'</div></div>'
+    +'<div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Onay Sırası</div>'+rows
+    +(z.olusturma?'<div class="mini" style="margin-top:14px">Talep oluşturulma: '+new Date(z.olusturma).toLocaleString('tr-TR')+'</div>':'');
+  document.getElementById('akisOvl').classList.add('on');
+}
 function izinRow(z,inProfile){
-  const act=z.durum==='bekliyor'?'<button class="btn ok sm" data-izonay="'+z.id+'">Onayla</button> <button class="btn bad sm" data-izred="'+z.id+'">Reddet</button>':'<button class="btn g sm" data-izform="'+z.id+'">Form</button> <button class="btn g sm" data-izsil="'+z.id+'" style="color:var(--bad)">Sil</button>';
-  return '<tr>'+(inProfile?'':'<td><b style="color:var(--navy)">'+esc(trTitle(z.empAd))+'</b></td>')+'<td class="mini">'+esc(z.baslangic)+'</td><td class="mini">'+esc(z.bitis)+'</td><td><b>'+esc(z.gun)+'</b></td><td>'+esc(z.tur)+'</td><td class="mini">'+esc(z.aciklama||'')+'</td><td>'+durumBadge(z.durum)+'</td><td style="white-space:nowrap">'+act+'</td></tr>';
+  let act='';
+  if(z.durum==='bekliyor') act='<button class="btn ok sm" data-izonay="'+esc(z.id)+'">Onayla</button> <button class="btn bad sm" data-izred="'+esc(z.id)+'">Reddet</button> ';
+  act+='<button class="btn g sm" data-izakis="'+esc(z.id)+'">Akış</button> <button class="btn g sm" data-izform="'+esc(z.id)+'">Form</button> <button class="btn g sm" data-izsil="'+esc(z.id)+'" style="color:var(--bad)">Sil</button>';
+  return '<tr>'+(inProfile?'':'<td><b style="color:var(--navy)">'+esc(trTitle(z.empAd))+'</b></td>')+'<td class="mini">'+esc(z.baslangic)+'</td><td class="mini">'+esc(z.bitis)+'</td><td><b>'+esc(z.gun)+'</b></td><td>'+esc(z.tur)+'</td><td class="mini">'+esc(z.aciklama||'')+'</td><td>'+izinAsamaBadge(z)+'</td><td style="white-space:nowrap">'+act+'</td></tr>';
 }
 function viewIzinler(){
   const tabs=[['yaklasan','Yaklaşanlar'],['bekliyor','Onay Bekleyenler'],['onaylandi','Onaylananlar'],['reddedildi','Reddedilenler'],['tumu','Tümü']];
@@ -629,6 +690,9 @@ function afterRender(r){
     document.querySelectorAll('[data-yt]').forEach(b=>b.onclick=()=>yeniTalep(b.getAttribute('data-yt')));
     document.querySelectorAll('[data-tlonay]').forEach(b=>b.onclick=()=>talepDurum(b.getAttribute('data-tlonay'),'onaylandi'));
     document.querySelectorAll('[data-tlred]').forEach(b=>b.onclick=()=>talepDurum(b.getAttribute('data-tlred'),'reddedildi'));
+    document.querySelectorAll('[data-tlizonay]').forEach(b=>b.onclick=()=>izinOnayla(b.getAttribute('data-tlizonay')));
+    document.querySelectorAll('[data-tlizred]').forEach(b=>b.onclick=()=>izinReddet(b.getAttribute('data-tlizred')));
+    document.querySelectorAll('[data-izakis]').forEach(b=>b.onclick=()=>akisGoster(b.getAttribute('data-izakis')));
   }
   if(r.page==='takvim'||r.page==='puantaj'){
     const g=document.getElementById('ayGeri'),i=document.getElementById('ayIleri');
@@ -706,7 +770,8 @@ function openIzin(empId){
     +'<div class="f two"><div><label>Başlangıç</label><input id="izBas" type="date" value="'+new Date().toISOString().slice(0,10)+'"></div><div><label>Bitiş</label><input id="izBit" type="date" value="'+new Date().toISOString().slice(0,10)+'"></div></div>'
     +'<div class="f"><label>Açıklama</label><textarea id="izAcik" rows="2" placeholder="Opsiyonel"></textarea></div>'
     +'<div class="f"><label>Yerine Bakacak Kişi (ops.)</label><input id="izYerine"></div>'
-    +'<div class="f"><label class="chk"><input type="checkbox" id="izOnayli" checked> Onaylı olarak ekle</label></div>';
+    +'<div class="f"><label class="chk"><input type="checkbox" id="izOnayli"> Doğrudan onaylı ekle (onay akışını atla — geçmiş/hazır izinler için)</label></div>'
+    +'<div class="mini">İşaretlenmezse izin <b>Müdür → Direktör → İnsan Kaynakları</b> onay akışına girer.</div>';
   document.getElementById('izinOvl').classList.add('on');
   const bas=document.getElementById('izBas'),bit=document.getElementById('izBit'),gun=document.getElementById('izGun');
   const calc=()=>{const a=new Date(bas.value),b=new Date(bit.value);if(!isNaN(a)&&!isNaN(b)&&b>=a){gun.value=Math.round((b-a)/(1000*3600*24))+1;}};
@@ -715,16 +780,19 @@ function openIzin(empId){
 async function saveIzin(){
   const empId=izEmpFix||v('izEmp'); if(!empId){alert('Çalışan seçin.');return;}
   const emp=empById(empId); const bas=v('izBas'),bit=v('izBit');
-  const rec={id:uid('z'),empId,empAd:emp?emp.ad:'',tur:v('izTur'),gun:+v('izGun')||0,baslangic:bas?trFromISO(bas):'',bitis:bit?trFromISO(bit):'',aciklama:v('izAcik'),yerine:v('izYerine'),durum:document.getElementById('izOnayli').checked?'onaylandi':'bekliyor',olusturma:new Date().toISOString()};
+  const onayli=document.getElementById('izOnayli').checked;
+  const akis=onayZinciri(emp);
+  if(onayli) akis.forEach(s=>{s.durum='onaylandi';s.tarih=new Date().toISOString();s.kaydeden=(SES&&SES.ad)||'İK';});
+  const rec={id:uid('z'),empId,empAd:emp?emp.ad:'',tur:v('izTur'),gun:+v('izGun')||0,baslangic:bas?trFromISO(bas):'',bitis:bit?trFromISO(bit):'',aciklama:v('izAcik'),yerine:v('izYerine'),durum:onayli?'onaylandi':'bekliyor',onayAkis:akis,olusturma:new Date().toISOString()};
   IZIN=IZIN.concat([rec]); await kaydetIzin(); closeModals();
 }
 function bindIzinActions(){
-  document.querySelectorAll('[data-izonay]').forEach(b=>b.onclick=()=>izDurum(b.getAttribute('data-izonay'),'onaylandi'));
-  document.querySelectorAll('[data-izred]').forEach(b=>b.onclick=()=>izDurum(b.getAttribute('data-izred'),'reddedildi'));
+  document.querySelectorAll('[data-izonay]').forEach(b=>b.onclick=()=>izinOnayla(b.getAttribute('data-izonay')));
+  document.querySelectorAll('[data-izred]').forEach(b=>b.onclick=()=>izinReddet(b.getAttribute('data-izred')));
   document.querySelectorAll('[data-izsil]').forEach(b=>b.onclick=()=>izSil(b.getAttribute('data-izsil')));
   document.querySelectorAll('[data-izform]').forEach(b=>b.onclick=()=>izinFormu(b.getAttribute('data-izform')));
+  document.querySelectorAll('[data-izakis]').forEach(b=>b.onclick=()=>akisGoster(b.getAttribute('data-izakis')));
 }
-async function izDurum(id,d){const z=IZIN.find(x=>x.id===id);if(!z)return;z.durum=d;await kaydetIzin();}
 async function izSil(id){if(!confirm('İzin kaydı silinsin mi?'))return;IZIN=IZIN.filter(x=>x.id!==id);await kaydetIzin();}
 function izinFormu(id){
   const z=IZIN.find(x=>x.id===id);if(!z)return;const e=empById(z.empId)||{};const b=izinBakiye(e);
@@ -801,7 +869,7 @@ async function ayarEkle(key){const el=document.getElementById('add_'+key);const 
 async function ayarSil(spec){const i=spec.indexOf('|');const key=spec.slice(0,i),val=spec.slice(i+1);const a=ensureAyar();const o={};o[key]=a[key].filter(x=>x!==val);await kaydetAyar(o);}
 
 /* ===== ORTAK ===== */
-function closeModals(){['empOvl','izinOvl','harcOvl','talepOvl','delOvl'].forEach(id=>document.getElementById(id).classList.remove('on'));delId=null;editId=null;izEmpFix=null;talepTip=null;}
+function closeModals(){['empOvl','izinOvl','harcOvl','talepOvl','akisOvl','delOvl'].forEach(id=>document.getElementById(id).classList.remove('on'));delId=null;editId=null;izEmpFix=null;talepTip=null;}
 let openMenu=null; function closeMenu(){if(openMenu){openMenu.remove();openMenu=null;}}
 function bindGlobal(){
   document.getElementById('logout').onclick=()=>{location.href='portal.html';};
