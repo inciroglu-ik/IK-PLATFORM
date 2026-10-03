@@ -231,6 +231,10 @@ function calismaSuresi(giris){const y=kidemYil(giris);if(!y)return '—';const y
 function allEmp(){return AKTIF.concat(AYRILAN);}
 function empById(id){return AKTIF.find(x=>x.id===id)||AYRILAN.find(x=>x.id===id);}
 function empAktifMi(id){return !!AKTIF.find(x=>x.id===id);}
+function buYil(){return new Date().getFullYear();}
+function yilEq(d,yy){const k=dkey(d);return !!k&&Math.floor(k/10000)===yy;}
+function ayrilanBuYil(){return AYRILAN.filter(p=>yilEq(p.cikis,buYil())).length;}
+function girenBuYil(){return allEmp().filter(p=>yilEq(p.giris,buYil())).length;}
 
 /* AYAR varsayılanları */
 function ensureAyar(){
@@ -332,7 +336,7 @@ function viewAna(){
   return '<div style="margin-bottom:18px"><div style="font-family:var(--serif);font-size:22px;color:var(--navy);font-weight:700">Hoş geldiniz, '+adName+'</div><div style="color:var(--ink-2);font-size:13.5px;margin-top:3px">'+new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+'</div></div>'
     +'<div class="kpis">'
     +kpi('<circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/>',AKTIF.length,'Aktif Çalışan')
-    +kpi('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>',AYRILAN.length,'İşten Ayrılan (bu yıl)')
+    +kpi('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>',ayrilanBuYil(),'İşten Ayrılan ('+buYil()+')')
     +kpi('<path d="M3 11l19-9-9 19-2-8-8-2z"/>',bekizin,'Bekleyen İzin',bekizin>0)
     +kpi('<rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>',bekharc,'Bekleyen Harcama',bekharc>0)
     +kpi('<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/>',dep.length,'Departman')
@@ -508,7 +512,16 @@ function raporData(id){
   if(id==='departman'){const d=depDagilim();return {baslik:'Departman Dağılımı',cols:['Departman','Çalışan Sayısı','Oran %'],rows:d.map(([k,v])=>[k,v,Math.round(v/AKTIF.length*100)])};}
   if(id==='maas') return {baslik:'Maaş Bilgileri',cols:['Ad Soyad','Departman','Unvan','Maaş','Periyot','Net/Brüt'],rows:AKTIF.filter(p=>p.maas).map(p=>[trTitle(p.ad),p.departman,p.unvan,p.maas+' '+(p.maasBirim||'TL'),p.maasPeriyot||'Aylık',p.netBrut||''])};
   if(id==='harcama') return {baslik:'Harcama Raporu',cols:['Ad Soyad','Tür','Tutar','Tarih','Durum'],rows:HARC.map(h=>[trTitle(h.empAd),h.tur,h.tutar,h.tarih,h.durum==='onaylandi'?'Onaylandı':h.durum==='reddedildi'?'Reddedildi':'Bekliyor'])};
-  if(id==='turnover'){const y=new Date().getFullYear();const giris=AKTIF.filter(p=>dkey(p.giris)>=y*10000).length+AYRILAN.filter(p=>dkey(p.giris)>=y*10000).length;const cikis=AYRILAN.length;const ort=Math.round((AKTIF.length+cikis/2));const oran=ort?((cikis/ort)*100).toFixed(1):0;return {baslik:'Turnover (Dönüşüm) Raporu — '+y,cols:['Gösterge','Değer'],rows:[['Aktif çalışan',AKTIF.length],['Bu yıl işe giren',giris],['Bu yıl işten ayrılan',cikis],['Turnover oranı (%)',oran]]};}
+  if(id==='turnover'){
+    const y=buYil();
+    const girisBuYil=girenBuYil();
+    const cikisBuYil=ayrilanBuYil();
+    const donemSonu=AKTIF.length;
+    const donemBasi=Math.max(0,donemSonu-girisBuYil+cikisBuYil);
+    const ort=(donemBasi+donemSonu)/2;
+    const oran=ort?((cikisBuYil/ort)*100).toFixed(1):0;
+    return {baslik:'Turnover (Dönüşüm) Raporu — '+y,cols:['Gösterge','Değer'],rows:[['Aktif çalışan (dönem sonu)',donemSonu],['Dönem başı mevcut (tahmini)',donemBasi],['Bu yıl işe giren',girisBuYil],['Bu yıl işten ayrılan',cikisBuYil],['Dönem ortalama çalışan',Math.round(ort)],['Turnover oranı (%)',oran]]};
+  }
   return {baslik:'—',cols:[],rows:[]};
 }
 function renderRapor(id){
