@@ -132,6 +132,11 @@ table.tbl tbody tr.clk{cursor:pointer}table.tbl tbody tr.clk:hover{background:#f
 .rc .ic{width:40px;height:40px;border-radius:10px;background:var(--blue-bg);display:flex;align-items:center;justify-content:center;margin-bottom:12px}
 .rc .ic svg{width:20px;height:20px;stroke:var(--blue);fill:none;stroke-width:1.8}
 .rc h3{font-size:14px;color:var(--navy);font-weight:700;margin-bottom:4px}.rc p{font-size:12px;color:var(--ink-2)}
+.rc-kat{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--blue);background:var(--blue-bg);border-radius:6px;padding:2px 8px;margin-bottom:9px}
+.rb-grid{display:grid;grid-template-columns:2fr 1.4fr 1fr 1fr auto;gap:14px;align-items:end}
+.rb-grid .f{margin:0}.rb-grid .rb-btn{display:flex}.rb-grid .rb-btn .btn{width:100%;white-space:nowrap}
+.rb-grid select:disabled{background:#f0f2f5;color:var(--muted);cursor:not-allowed}
+@media(max-width:760px){.rb-grid{grid-template-columns:1fr 1fr}.rb-grid .rb-btn{grid-column:1/-1}}
 .pz{overflow:auto}.pz table{border-collapse:collapse;font-size:12px;white-space:nowrap}
 .pz th,.pz td{border:1px solid var(--line);padding:5px 7px;text-align:center}.pz th{background:#f6f8fa;position:sticky;top:0}
 .pz td.nm{text-align:left;font-weight:600;color:var(--navy);position:sticky;left:0;background:#fff;min-width:160px}
@@ -226,7 +231,7 @@ const refTalep=doc(db,"satisVeri","ikTalep");
 /* ===== DURUM ===== */
 const SEED_AKTIF=(window.MR_AKTIF||[]), SEED_AYRILAN=(window.MR_AYRILAN||[]);
 let AKTIF=[], AYRILAN=[], IZIN=[], HARC=[], PUAN={}, AYAR=null, TALEP=[];
-let ST={q:'',durum:'aktif',dep:'',bol:'',sortCol:'ad',sortDir:1,view:'grid',izTab:'yaklasan',pzAy:ym(new Date()),tlTab:'bekliyor',tlTip:''};
+let ST={q:'',durum:'aktif',dep:'',bol:'',sortCol:'ad',sortDir:1,view:'grid',izTab:'yaklasan',pzAy:ym(new Date()),tlTab:'bekliyor',tlTip:'',rapSel:'calisan',rapBirim:'',rapAy:0,rapYil:0};
 let pfTab='profil';
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function nkey(s){return trLower(s).replace(/\s+/g,' ').trim();}
@@ -252,8 +257,8 @@ function girenBuYil(){return allEmp().filter(p=>yilEq(p.giris,buYil())).length;}
 function allTalepler(){
   const L=[];
   IZIN.forEach(z=>L.push({tip:'İzin',empAd:z.empAd,ozet:z.tur+' · '+z.gun+' gün',alt:(z.baslangic||'')+' → '+(z.bitis||''),tarih:z.baslangic,durum:z.durum,statusBadge:izinAsamaBadge(z),k:'izin',id:z.id}));
-  HARC.forEach(h=>L.push({tip:'Harcama',empAd:h.empAd,ozet:h.tur+' · '+h.tutar+' TL',alt:h.aciklama||'',tarih:h.tarih,durum:h.durum,statusBadge:durumBadge(h.durum),k:'harc',id:h.id}));
-  TALEP.forEach(t=>L.push({tip:t.tip,empAd:t.empAd,ozet:t.ozet,alt:t.aciklama||'',tarih:t.tarih,durum:t.durum,statusBadge:durumBadge(t.durum),k:'talep',id:t.id}));
+  HARC.forEach(h=>L.push({tip:'Harcama',empAd:h.empAd,ozet:h.tur+' · '+h.tutar+' TL',alt:h.aciklama||'',tarih:h.tarih,durum:h.durum,statusBadge:izinAsamaBadge(h),k:'harc',id:h.id}));
+  TALEP.forEach(t=>L.push({tip:t.tip,empAd:t.empAd,ozet:t.ozet,alt:t.aciklama||'',tarih:t.tarih,durum:t.durum,statusBadge:izinAsamaBadge(t),k:'talep',id:t.id}));
   return L;
 }
 function bekleyenToplam(){return IZIN.filter(z=>z.durum==='bekliyor').length+HARC.filter(h=>h.durum==='bekliyor').length+TALEP.filter(t=>t.durum==='bekliyor').length;}
@@ -463,12 +468,8 @@ function viewTalepler(){
     +'<div class="card" style="overflow:auto"><table class="tbl"><thead><tr><th>Tür</th><th>Çalışan</th><th>Özet</th><th>Tarih</th><th>Durum</th><th>İşlem</th></tr></thead><tbody>'
     +(L.length?L.map(x=>{
       let islem='';
-      if(x.durum==='bekliyor'){
-        if(x.k==='izin') islem='<button class="btn ok sm" data-tlizonay="'+esc(x.id)+'">Onayla</button> <button class="btn bad sm" data-tlizred="'+esc(x.id)+'">Reddet</button> ';
-        else islem='<button class="btn ok sm" data-tlonay="'+x.k+'|'+esc(x.id)+'">Onayla</button> <button class="btn bad sm" data-tlred="'+x.k+'|'+esc(x.id)+'">Reddet</button> ';
-      }
-      if(x.k==='izin') islem+='<button class="btn g sm" data-izakis="'+esc(x.id)+'">Akış</button>';
-      if(!islem.trim()) islem='<span class="mini">—</span>';
+      if(x.durum==='bekliyor') islem='<button class="btn ok sm" data-tlonay="'+x.k+'|'+esc(x.id)+'">Onayla</button> <button class="btn bad sm" data-tlred="'+x.k+'|'+esc(x.id)+'">Reddet</button> ';
+      islem+='<button class="btn g sm" data-tlakis="'+x.k+'|'+esc(x.id)+'">Akış</button>';
       return '<tr><td>'+tipBadge(x.tip)+'</td><td><b style="color:var(--navy)">'+esc(trTitle(x.empAd))+'</b></td><td>'+esc(x.ozet)+(x.alt&&x.alt.trim()&&x.alt.trim()!=='→'?'<div class="mini">'+esc(x.alt)+'</div>':'')+'</td><td class="mini">'+esc(x.tarih||'')+'</td><td>'+x.statusBadge+'</td><td style="white-space:nowrap">'+islem+'</td></tr>';
     }).join(''):'<tr><td colspan="6" class="empty">Talep bulunmuyor.</td></tr>')+'</tbody></table></div>';
 }
@@ -489,21 +490,40 @@ function izinAsamaBadge(z){
   if(z.durum==='reddedildi'){const r=(z.onayAkis||[]).find(s=>s.durum==='reddedildi');return '<span class="badge b-bad">Reddedildi'+(r?' · '+esc(r.rol):'')+'</span>';}
   const cur=curStep(z); return '<span class="badge b-warn">'+(cur?esc(cur.rol)+' onayında':'Bekliyor')+'</span>';
 }
-async function izinOnayla(id){
-  const z=IZIN.find(x=>x.id===id); if(!z) return;
-  if(!z.onayAkis||!z.onayAkis.length){ z.durum='onaylandi'; await kaydetIzin(); return; }
+function onayFind(k,id){return (k==='izin'?IZIN:k==='harc'?HARC:TALEP).find(x=>x.id===id);}
+async function onayKaydet(k){return k==='izin'?kaydetIzin():k==='harc'?kaydetHarc():kaydetTalep();}
+async function genOnayla(k,id){
+  const z=onayFind(k,id); if(!z) return;
+  if(!z.onayAkis||!z.onayAkis.length){ z.durum='onaylandi'; await onayKaydet(k); return; }
   const cur=curStep(z); if(!cur) return;
   cur.durum='onaylandi'; cur.tarih=new Date().toISOString(); cur.kaydeden=(SES&&SES.ad)||'İK';
   if(!z.onayAkis.some(s=>s.durum==='bekliyor')) z.durum='onaylandi';
-  await kaydetIzin();
+  await onayKaydet(k);
 }
-async function izinReddet(id){
-  const z=IZIN.find(x=>x.id===id); if(!z) return;
+async function genReddet(k,id){
+  const z=onayFind(k,id); if(!z) return;
   const cur=curStep(z); if(cur){ cur.durum='reddedildi'; cur.tarih=new Date().toISOString(); cur.kaydeden=(SES&&SES.ad)||'İK'; }
-  z.durum='reddedildi'; await kaydetIzin();
+  z.durum='reddedildi'; await onayKaydet(k);
 }
-function akisGoster(id){
-  const z=IZIN.find(x=>x.id===id); if(!z) return;
+async function izinOnayla(id){return genOnayla('izin',id);}
+async function izinReddet(id){return genReddet('izin',id);}
+/* Onay akışı metin özeti (rapor/export için) */
+function onayOzet(z){
+  if(!z.onayAkis||!z.onayAkis.length) return z.durum==='onaylandi'?'Doğrudan onaylı':(z.durum==='reddedildi'?'Reddedildi':'Onay bekliyor');
+  return z.onayAkis.map(s=>{
+    const d=s.durum==='onaylandi'?'Onayladı':s.durum==='reddedildi'?'Reddetti':'Bekliyor';
+    const t=s.tarih?' ('+new Date(s.tarih).toLocaleDateString('tr-TR')+')':'';
+    return s.rol+': '+d+t;
+  }).join('  →  ');
+}
+function onayAsama(z){
+  if(z.durum==='onaylandi') return 'Onaylandı';
+  if(z.durum==='reddedildi'){const r=(z.onayAkis||[]).find(s=>s.durum==='reddedildi');return 'Reddedildi'+(r?' ('+r.rol+')':'');}
+  const c=curStep(z); return c?c.rol+' onayında':'Onay bekliyor';
+}
+function akisGoster(k,id){
+  if(id===undefined){id=k;k='izin';}
+  const z=onayFind(k,id); if(!z) return;
   const akis=z.onayAkis||[];
   const curIdx=akis.findIndex(s=>s.durum==='bekliyor');
   const rows=akis.length?akis.map((s,i)=>{
@@ -513,8 +533,13 @@ function akisGoster(id){
     return '<div style="display:flex;gap:13px;padding:11px 0;border-bottom:1px solid #f0f2f5"><div style="width:26px;height:26px;border-radius:50%;background:'+col+';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:none">'+ic+'</div>'
       +'<div style="flex:1"><div><b style="color:var(--navy)">'+(i+1)+'. '+esc(s.rol)+'</b>'+(s.ad&&s.ad!=='İnsan Kaynakları'?' · '+esc(trTitle(s.ad)):'')+'</div>'
       +'<div class="mini">'+dur+(s.tarih?' · '+new Date(s.tarih).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'')+(s.kaydeden?' · <b>işlemi yapan:</b> '+esc(trTitle(s.kaydeden)):'')+'</div></div></div>';
-  }).join(''):'<div class="mini">Bu izin onay akışı olmadan (doğrudan onaylı) eklenmiş.</div>';
-  document.getElementById('akisBody').innerHTML='<div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--line)"><b style="color:var(--navy);font-size:15px">'+esc(trTitle(z.empAd))+'</b><div class="mini">'+esc(z.tur)+' · '+esc(z.gun)+' gün · '+esc(z.baslangic)+' → '+esc(z.bitis)+'</div></div>'
+  }).join(''):'<div class="mini">Bu talep onay akışı olmadan (doğrudan onaylı) eklenmiş.</div>';
+  const tipAd=k==='izin'?'İzin':k==='harc'?'Harcama':(z.tip||'Talep');
+  let alt='';
+  if(k==='izin') alt=esc(z.tur)+' · '+esc(z.gun)+' gün · '+esc(z.baslangic)+' → '+esc(z.bitis);
+  else if(k==='harc') alt=esc(z.tur)+' · '+esc(z.tutar)+' TL · '+esc(z.tarih);
+  else alt=esc(z.ozet||'')+' · '+esc(z.tarih);
+  document.getElementById('akisBody').innerHTML='<div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--line)"><b style="color:var(--navy);font-size:15px">'+esc(trTitle(z.empAd))+'</b> '+tipBadge(tipAd)+'<div class="mini" style="margin-top:3px">'+alt+'</div></div>'
     +'<div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Onay Sırası</div>'+rows
     +(z.olusturma?'<div class="mini" style="margin-top:14px">Talep oluşturulma: '+new Date(z.olusturma).toLocaleString('tr-TR')+'</div>':'');
   document.getElementById('akisOvl').classList.add('on');
@@ -562,7 +587,7 @@ function viewHarcamalar(){
     +'<div class="kpi"><div class="n">'+ony.toLocaleString('tr-TR')+' TL</div><div class="l">Onaylanan Tutar</div></div></div>'
     +'<div class="toolbar"><div style="flex:1"></div><button class="btn" id="btnHarc">+ Harcama Ekle</button></div>'
     +'<div class="card" style="overflow:auto"><table class="tbl"><thead><tr><th>Ad Soyad</th><th>Tür</th><th>Tutar</th><th>Açıklama</th><th>Tarih</th><th>Durum</th><th>İşlem</th></tr></thead><tbody>'
-    +(L.length?L.map(h=>'<tr><td><b style="color:var(--navy)">'+esc(trTitle(h.empAd))+'</b></td><td>'+esc(h.tur)+'</td><td><b>'+esc(h.tutar)+' TL</b></td><td class="mini">'+esc(h.aciklama||'')+'</td><td class="mini">'+esc(h.tarih)+'</td><td>'+durumBadge(h.durum)+(h.odendi?' <span class="badge b-ok">Ödendi</span>':'')+'</td><td style="white-space:nowrap">'+(h.durum==='bekliyor'?'<button class="btn ok sm" data-hconay="'+h.id+'">Onayla</button> <button class="btn bad sm" data-hcred="'+h.id+'">Reddet</button>':(h.durum==='onaylandi'&&!h.odendi?'<button class="btn sm" data-hcode="'+h.id+'">Ödendi İşaretle</button> ':'')+'<button class="btn g sm" data-hcsil="'+h.id+'" style="color:var(--bad)">Sil</button>')+'</td></tr>').join(''):'<tr><td colspan="7" class="empty">Harcama kaydı yok.</td></tr>')+'</tbody></table></div>';
+    +(L.length?L.map(h=>'<tr><td><b style="color:var(--navy)">'+esc(trTitle(h.empAd))+'</b></td><td>'+esc(h.tur)+'</td><td><b>'+esc(h.tutar)+' TL</b></td><td class="mini">'+esc(h.aciklama||'')+'</td><td class="mini">'+esc(h.tarih)+'</td><td>'+izinAsamaBadge(h)+(h.odendi?' <span class="badge b-ok">Ödendi</span>':'')+'</td><td style="white-space:nowrap">'+(h.durum==='bekliyor'?'<button class="btn ok sm" data-hconay="'+h.id+'">Onayla</button> <button class="btn bad sm" data-hcred="'+h.id+'">Reddet</button> ':(h.durum==='onaylandi'&&!h.odendi?'<button class="btn sm" data-hcode="'+h.id+'">Ödendi İşaretle</button> ':''))+'<button class="btn g sm" data-hcakis="'+h.id+'">Akış</button> <button class="btn g sm" data-hcsil="'+h.id+'" style="color:var(--bad)">Sil</button></td></tr>').join(''):'<tr><td colspan="7" class="empty">Harcama kaydı yok.</td></tr>')+'</tbody></table></div>';
 }
 
 /* ===== PUANTAJ ===== */
@@ -588,49 +613,91 @@ function viewPuantaj(){
 
 /* ===== RAPORLAR ===== */
 const RAPORLAR=[
-  {id:'calisan',ad:'Mevcut Çalışan Listesi',ac:'Tüm aktif çalışanlar ve bilgileri',ic:'<circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/>'},
-  {id:'ayrilan',ad:'İşten Ayrılan Çalışanlar',ac:'Bu yıl işten ayrılanlar',ic:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>'},
-  {id:'izinbakiye',ad:'İzin Bakiye Raporu',ac:'Çalışan bazında yıllık izin bakiyesi',ic:'<path d="M3 11l19-9-9 19-2-8-8-2z"/>'},
-  {id:'izinkullanim',ad:'Kullanılan İzin Raporu',ac:'Onaylanan tüm izinler',ic:'<rect x="3" y="4" width="18" height="18" rx="2"/>'},
-  {id:'turnover',ad:'Turnover (Dönüşüm) Raporu',ac:'Giriş/çıkış ve devir oranı',ic:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'},
-  {id:'departman',ad:'Departman Dağılımı',ac:'Departman bazında çalışan sayısı',ic:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>'},
-  {id:'maas',ad:'Maaş Bilgileri',ac:'Maaş girilmiş çalışanlar',ic:'<rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="12" cy="12" r="3"/>'},
-  {id:'harcama',ad:'Harcama Raporu',ac:'Tüm harcama kayıtları',ic:'<rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>'}
+  {id:'calisan',kat:'Çalışan',ad:'Çalışan Listesi',ac:'Tüm aktif çalışanlar ve bilgileri',uses:['birim']},
+  {id:'calismasuresi',kat:'Çalışan',ad:'Çalışma Süresi',ac:'Kıdem / çalışma süresi dökümü',uses:['birim']},
+  {id:'ayrilan',kat:'İdari',ad:'İşten Ayrılan Çalışanlar',ac:'Seçili dönemde işten ayrılanlar',uses:['birim','ay','yil']},
+  {id:'isealim',kat:'İdari',ad:'İşe Alım Raporu',ac:'Seçili dönemde işe alınanlar',uses:['birim','ay','yil']},
+  {id:'turnover',kat:'İdari',ad:'Turnover (Dönüşüm) Raporu',ac:'Giriş/çıkış ve devir oranı',uses:['yil']},
+  {id:'izinbakiye',kat:'İdari',ad:'İzin Bakiye Raporu',ac:'Çalışan bazında yıllık izin bakiyesi',uses:['birim']},
+  {id:'izinkullanim',kat:'İdari',ad:'Kullanılan İzin Raporu',ac:'Seçili dönemde onaylı izinler + onay akışı',uses:['birim','ay','yil']},
+  {id:'onaysurec',kat:'İdari',ad:'Onay Süreçleri Raporu',ac:'İzin / avans / mesai / harcama onay akışları',uses:['birim','ay','yil']},
+  {id:'departman',kat:'İdari',ad:'Departman Dağılımı',ac:'Departman bazında çalışan sayısı',uses:[]},
+  {id:'maas',kat:'Finans',ad:'Maaş Bilgileri',ac:'Maaş girilmiş çalışanlar',uses:['birim']},
+  {id:'harcama',kat:'Finans',ad:'Harcama Raporu',ac:'Seçili dönemde harcamalar + onay akışı',uses:['birim','ay','yil']}
 ];
+const RAP_AYLAR=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+function dYil(s){const m=/(\d{4})\s*$/.exec(s||'');return m?+m[1]:null;}
+function dAy(s){const p=(s||'').split('.');return p.length===3?+p[1]:null;}
+function rapYillar(){const set=new Set();allEmp().forEach(p=>{const g=dYil(p.giris);if(g)set.add(g);const c=dYil(p.cikis);if(c)set.add(c);});set.add(buYil());return [...set].sort((a,b)=>b-a);}
+function inBirim(p,f){return !f.birim||p.departman===f.birim;}
+function inDonem(ds,f){if(f.yil&&dYil(ds)!==f.yil)return false;if(f.ay&&dAy(ds)!==f.ay)return false;return true;}
+function recEmp(z){return empById(z.empId)||{};}
 function viewRaporlar(){
-  return '<div class="sec-h"><h2 style="font-family:var(--serif);font-size:17px">Rapor Şablonları</h2><span class="mini">Bir rapora tıklayın; tabloyu görüp Excel (CSV) olarak indirebilirsiniz.</span></div>'
-    +'<div class="rep-cards">'+RAPORLAR.map(r=>'<div class="rc" data-rap="'+r.id+'"><div class="ic"><svg viewBox="0 0 24 24">'+r.ic+'</svg></div><h3>'+r.ad+'</h3><p>'+r.ac+'</p></div>').join('')+'</div>'
+  const deps=ensureAyar().departmanlar;
+  const yillar=rapYillar();
+  const kats=['Çalışan','İdari','Finans'];
+  const optg=kats.map(k=>'<optgroup label="'+k+'">'+RAPORLAR.filter(r=>r.kat===k).map(r=>'<option value="'+r.id+'"'+(ST.rapSel===r.id?' selected':'')+'>'+esc(r.ad)+'</option>').join('')+'</optgroup>').join('');
+  return '<div class="sec-h"><h2 style="font-family:var(--serif);font-size:17px">Rapor Oluştur</h2><span class="mini">Rapor türünü seçin, birim ve dönemi filtreleyin, Excel olarak indirin.</span></div>'
+    +'<div class="card pad"><div class="rb-grid">'
+      +'<div class="f"><label>Rapor</label><select id="rpSel">'+optg+'</select></div>'
+      +'<div class="f"><label>Birim</label><select id="rpBirim"><option value="">Tüm Birimler</option>'+deps.map(d=>'<option'+(ST.rapBirim===d?' selected':'')+'>'+esc(d)+'</option>').join('')+'</select></div>'
+      +'<div class="f"><label>Ay</label><select id="rpAy"><option value="0">Tüm Aylar</option>'+RAP_AYLAR.map((a,i)=>'<option value="'+(i+1)+'"'+(ST.rapAy===(i+1)?' selected':'')+'>'+a+'</option>').join('')+'</select></div>'
+      +'<div class="f"><label>Yıl</label><select id="rpYil"><option value="0">Tüm Yıllar</option>'+yillar.map(y=>'<option value="'+y+'"'+(ST.rapYil===y?' selected':'')+'>'+y+'</option>').join('')+'</select></div>'
+      +'<div class="f rb-btn"><button class="btn" id="rpOlustur">Oluştur</button></div>'
+    +'</div></div>'
+    +'<div class="sec-h" style="margin-top:24px"><h2 style="font-family:var(--serif);font-size:15px">Hazır Şablonlar</h2><span class="mini">Kartlar tüm kayıtları getirir; yukarıdaki filtrelerle daraltabilirsiniz.</span></div>'
+    +'<div class="rep-cards">'+RAPORLAR.map(r=>'<div class="rc" data-rap="'+r.id+'"><div class="rc-kat">'+r.kat+'</div><h3>'+esc(r.ad)+'</h3><p>'+esc(r.ac)+'</p></div>').join('')+'</div>'
     +'<div id="rapOut" style="margin-top:22px"></div>';
 }
-function raporData(id){
-  if(id==='calisan') return {baslik:'Mevcut Çalışan Listesi',cols:['Ad Soyad','Departman','Bölüm','Unvan','İşe Giriş'],rows:AKTIF.map(p=>[trTitle(p.ad),p.departman,p.bolum,p.unvan,p.giris])};
-  if(id==='ayrilan') return {baslik:'İşten Ayrılan Çalışanlar',cols:['Ad Soyad','TC','Departman','Bölüm','Unvan','İşe Giriş','İşten Çıkış','Ayrılma Nedeni','Çalışma Süresi'],rows:AYRILAN.map(p=>[trTitle(p.ad),p.tc,p.departman,p.bolum,p.unvan,p.giris,p.cikis,p.ayrilmaNedeni,p.calismaSuresi])};
-  if(id==='izinbakiye') return {baslik:'İzin Bakiye Raporu',cols:['Ad Soyad','Departman','Kıdem','Hak Edilen','Kullanılan','Kalan'],rows:AKTIF.map(p=>{const b=izinBakiye(p);return [trTitle(p.ad),p.departman,calismaSuresi(p.giris),b.hak,b.kullanilan,b.kalan];})};
-  if(id==='izinkullanim') return {baslik:'Kullanılan İzin Raporu',cols:['Ad Soyad','Tür','Başlangıç','Bitiş','Gün','Durum'],rows:IZIN.filter(z=>z.durum==='onaylandi').map(z=>[trTitle(z.empAd),z.tur,z.baslangic,z.bitis,z.gun,'Onaylandı'])};
+function raporData(id,f){
+  f=f||{birim:'',ay:0,yil:0};
+  const bf=p=>inBirim(p,f);
+  if(id==='calisan') return {baslik:'Çalışan Listesi',cols:['Ad Soyad','TC Kimlik','Departman','Bölüm','Unvan','İşe Giriş','Müdür','Direktör'],rows:AKTIF.filter(bf).map(p=>[trTitle(p.ad),p.tc,p.departman,p.bolum,p.unvan,p.giris,trTitle(p.mudurluk||''),trTitle(p.direktor||'')])};
+  if(id==='calismasuresi') return {baslik:'Çalışma Süresi',cols:['Ad Soyad','TC Kimlik','Departman','Bölüm','Unvan','İşe Giriş','Çalışma Süresi'],rows:AKTIF.filter(bf).map(p=>[trTitle(p.ad),p.tc,p.departman,p.bolum,p.unvan,p.giris,calismaSuresi(p.giris)])};
+  if(id==='ayrilan') return {baslik:'İşten Ayrılan Çalışanlar',cols:['Ad Soyad','TC Kimlik','Departman','Bölüm','Unvan','Müdür','Direktör','İşe Giriş','İşten Çıkış','Ayrılma Nedeni','Çalışma Süresi'],rows:AYRILAN.filter(bf).filter(p=>inDonem(p.cikis,f)).map(p=>[trTitle(p.ad),p.tc,p.departman,p.bolum,p.unvan,trTitle(p.mudurluk||''),trTitle(p.direktor||''),p.giris,p.cikis,p.ayrilmaNedeni,p.calismaSuresi])};
+  if(id==='isealim') return {baslik:'İşe Alım Raporu',cols:['Ad Soyad','TC Kimlik','Departman','Bölüm','Unvan','İşe Giriş','Müdür','Direktör'],rows:AKTIF.filter(bf).filter(p=>inDonem(p.giris,f)).map(p=>[trTitle(p.ad),p.tc,p.departman,p.bolum,p.unvan,p.giris,trTitle(p.mudurluk||''),trTitle(p.direktor||'')])};
+  if(id==='izinbakiye') return {baslik:'İzin Bakiye Raporu',cols:['Ad Soyad','TC Kimlik','Departman','Kıdem','Hak Edilen','Kullanılan','Kalan'],rows:AKTIF.filter(bf).map(p=>{const b=izinBakiye(p);return [trTitle(p.ad),p.tc,p.departman,calismaSuresi(p.giris),b.hak,b.kullanilan,b.kalan];})};
+  if(id==='izinkullanim') return {baslik:'Kullanılan İzin Raporu',cols:['Ad Soyad','TC Kimlik','Tür','Başlangıç','Bitiş','Gün','Durum','Onay Akışı'],rows:IZIN.filter(z=>z.durum==='onaylandi').filter(z=>{const e=recEmp(z);return (!f.birim||e.departman===f.birim)&&inDonem(z.baslangic,f);}).map(z=>[trTitle(z.empAd),recEmp(z).tc||'',z.tur,z.baslangic,z.bitis,z.gun,'Onaylandı',onayOzet(z)])};
+  if(id==='onaysurec'){
+    const rows=[];
+    const push=(z,tip,ozet,tarih)=>{const e=recEmp(z);if(f.birim&&e.departman!==f.birim)return;if(!inDonem(tarih,f))return;rows.push([trTitle(z.empAd),e.tc||'',tip,ozet,tarih,onayAsama(z),onayOzet(z)]);};
+    IZIN.forEach(z=>push(z,'İzin',z.tur+' · '+z.gun+' gün',z.baslangic));
+    HARC.forEach(h=>push(h,'Harcama',h.tur+' · '+h.tutar+' TL',h.tarih));
+    TALEP.forEach(t=>push(t,t.tip,t.ozet,t.tarih));
+    rows.sort((a,b)=>dkey(b[4])-dkey(a[4]));
+    return {baslik:'Onay Süreçleri Raporu',cols:['Ad Soyad','TC Kimlik','Tür','Özet','Tarih','Aşama','Onay Akışı'],rows};
+  }
   if(id==='departman'){const d=depDagilim();return {baslik:'Departman Dağılımı',cols:['Departman','Çalışan Sayısı','Oran %'],rows:d.map(([k,v])=>[k,v,Math.round(v/AKTIF.length*100)])};}
-  if(id==='maas') return {baslik:'Maaş Bilgileri',cols:['Ad Soyad','Departman','Unvan','Maaş','Periyot','Net/Brüt'],rows:AKTIF.filter(p=>p.maas).map(p=>[trTitle(p.ad),p.departman,p.unvan,p.maas+' '+(p.maasBirim||'TL'),p.maasPeriyot||'Aylık',p.netBrut||''])};
-  if(id==='harcama') return {baslik:'Harcama Raporu',cols:['Ad Soyad','Tür','Tutar','Tarih','Durum'],rows:HARC.map(h=>[trTitle(h.empAd),h.tur,h.tutar,h.tarih,h.durum==='onaylandi'?'Onaylandı':h.durum==='reddedildi'?'Reddedildi':'Bekliyor'])};
+  if(id==='maas') return {baslik:'Maaş Bilgileri',cols:['Ad Soyad','TC Kimlik','Departman','Unvan','Maaş','Periyot','Net/Brüt'],rows:AKTIF.filter(bf).filter(p=>p.maas).map(p=>[trTitle(p.ad),p.tc,p.departman,p.unvan,p.maas+' '+(p.maasBirim||'TL'),p.maasPeriyot||'Aylık',p.netBrut||''])};
+  if(id==='harcama') return {baslik:'Harcama Raporu',cols:['Ad Soyad','TC Kimlik','Tür','Tutar','Tarih','Aşama','Onay Akışı'],rows:HARC.filter(h=>{const e=recEmp(h);return (!f.birim||e.departman===f.birim)&&inDonem(h.tarih,f);}).map(h=>[trTitle(h.empAd),recEmp(h).tc||'',h.tur,h.tutar+' TL',h.tarih,onayAsama(h),onayOzet(h)])};
   if(id==='turnover'){
-    const y=buYil();
-    const girisBuYil=girenBuYil();
-    const cikisBuYil=ayrilanBuYil();
-    const donemSonu=AKTIF.length;
-    const donemBasi=Math.max(0,donemSonu-girisBuYil+cikisBuYil);
-    const ort=(donemBasi+donemSonu)/2;
-    const oran=ort?((cikisBuYil/ort)*100).toFixed(1):0;
-    return {baslik:'Turnover (Dönüşüm) Raporu — '+y,cols:['Gösterge','Değer'],rows:[['Aktif çalışan (dönem sonu)',donemSonu],['Dönem başı mevcut (tahmini)',donemBasi],['Bu yıl işe giren',girisBuYil],['Bu yıl işten ayrılan',cikisBuYil],['Dönem ortalama çalışan',Math.round(ort)],['Turnover oranı (%)',oran]]};
+    const y=f.yil||buYil();
+    const cur=(y===buYil());
+    const giris=allEmp().filter(p=>dYil(p.giris)===y).length;
+    const cikis=AYRILAN.filter(p=>dYil(p.cikis)===y).length;
+    const rows=[['Yıl',y],['İşe giren',giris],['İşten ayrılan',cikis],['Net değişim',giris-cikis]];
+    if(cur){
+      const donemSonu=AKTIF.length;
+      const donemBasi=Math.max(0,donemSonu-girenBuYil()+ayrilanBuYil());
+      const ort=(donemBasi+donemSonu)/2;
+      const oran=ort?((ayrilanBuYil()/ort)*100).toFixed(1):0;
+      rows.push(['Aktif çalışan (dönem sonu)',donemSonu],['Dönem başı mevcut (tahmini)',donemBasi],['Dönem ortalama çalışan',Math.round(ort)],['Turnover oranı (%)',oran]);
+    } else rows.push(['Turnover oranı (%)','— (yalnız içinde bulunulan yıl için hesaplanır)']);
+    return {baslik:'Turnover (Dönüşüm) Raporu — '+y,cols:['Gösterge','Değer'],rows};
   }
   return {baslik:'—',cols:[],rows:[]};
 }
-function renderRapor(id){
-  const d=raporData(id);
-  const html='<div class="card pad"><div class="sec-h"><h2>'+esc(d.baslik)+' <span class="mini">('+d.rows.length+' kayıt)</span></h2><button class="btn sm" id="rapCsv">⬇ Excel indir</button></div>'
+function rapFiltreOzet(f){const a=[];if(f){if(f.birim)a.push('Birim: '+f.birim);if(f.ay)a.push('Ay: '+RAP_AYLAR[f.ay-1]);if(f.yil)a.push('Yıl: '+f.yil);}return a;}
+function renderRapor(id,f){
+  f=f||{birim:ST.rapBirim||'',ay:ST.rapAy||0,yil:ST.rapYil||0};
+  const d=raporData(id,f); const fo=rapFiltreOzet(f);
+  const html='<div class="card pad"><div class="sec-h"><h2>'+esc(d.baslik)+' <span class="mini">('+d.rows.length+' kayıt'+(fo.length?' · '+esc(fo.join(' · ')):'')+')</span></h2><button class="btn sm" id="rapCsv">⬇ Excel indir</button></div>'
     +'<div style="overflow:auto"><table class="tbl"><thead><tr>'+d.cols.map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr></thead><tbody>'+(d.rows.length?d.rows.map(r=>'<tr>'+r.map(c=>'<td>'+esc(c==null?'':c)+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+d.cols.length+'" class="empty">Kayıt yok.</td></tr>')+'</tbody></table></div></div>';
   document.getElementById('rapOut').innerHTML=html;
-  document.getElementById('rapCsv').onclick=()=>xlsIndir(d);
+  document.getElementById('rapCsv').onclick=()=>xlsIndir(d,fo);
   document.getElementById('rapOut').scrollIntoView({behavior:'smooth',block:'start'});
 }
-function xlsIndir(d){
+function xlsIndir(d,fo){
   const h=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const head='<tr>'+d.cols.map(c=>'<th>'+h(c)+'</th>').join('')+'</tr>';
   const body=d.rows.map(r=>'<tr>'+r.map(c=>'<td>'+h(c)+'</td>').join('')+'</tr>').join('');
@@ -640,7 +707,7 @@ function xlsIndir(d){
     +'th{background:#132a44;color:#ffffff;font-weight:bold;border:1px solid #0c1c2e;padding:7px 12px;text-align:left;white-space:nowrap}'
     +'td{border:1px solid #d5dbe1;padding:5px 11px;vertical-align:top;mso-number-format:"\\@"}'
     +'tr:nth-child(even) td{background:#f6f8fa}</style></head><body>'
-    +'<table><caption>'+h(d.baslik)+' — İnciroğlu Otomotiv ('+new Date().toLocaleDateString('tr-TR')+')</caption><thead>'+head+'</thead><tbody>'+body+'</tbody></table></body></html>';
+    +'<table><caption>'+h(d.baslik)+' — İnciroğlu Otomotiv ('+new Date().toLocaleDateString('tr-TR')+')'+((fo&&fo.length)?'  ['+h(fo.join(' · '))+']':'')+'</caption><thead>'+head+'</thead><tbody>'+body+'</tbody></table></body></html>';
   const blob=new Blob(['﻿'+html],{type:'application/vnd.ms-excel;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(d.baslik.replace(/[^\wğüşıöçĞÜŞİÖÇ ]/g,'').trim()||'rapor')+'.xls';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
 }
@@ -688,11 +755,10 @@ function afterRender(r){
     document.getElementById('tlTip').onchange=e=>{ST.tlTip=e.target.value;render();};
     document.querySelectorAll('[data-tltab]').forEach(t=>t.onclick=()=>{ST.tlTab=t.getAttribute('data-tltab');render();});
     document.querySelectorAll('[data-yt]').forEach(b=>b.onclick=()=>yeniTalep(b.getAttribute('data-yt')));
-    document.querySelectorAll('[data-tlonay]').forEach(b=>b.onclick=()=>talepDurum(b.getAttribute('data-tlonay'),'onaylandi'));
-    document.querySelectorAll('[data-tlred]').forEach(b=>b.onclick=()=>talepDurum(b.getAttribute('data-tlred'),'reddedildi'));
-    document.querySelectorAll('[data-tlizonay]').forEach(b=>b.onclick=()=>izinOnayla(b.getAttribute('data-tlizonay')));
-    document.querySelectorAll('[data-tlizred]').forEach(b=>b.onclick=()=>izinReddet(b.getAttribute('data-tlizred')));
-    document.querySelectorAll('[data-izakis]').forEach(b=>b.onclick=()=>akisGoster(b.getAttribute('data-izakis')));
+    const splitKI=s=>{const i=s.indexOf('|');return [s.slice(0,i),s.slice(i+1)];};
+    document.querySelectorAll('[data-tlonay]').forEach(b=>b.onclick=()=>{const[k,id]=splitKI(b.getAttribute('data-tlonay'));genOnayla(k,id);});
+    document.querySelectorAll('[data-tlred]').forEach(b=>b.onclick=()=>{const[k,id]=splitKI(b.getAttribute('data-tlred'));genReddet(k,id);});
+    document.querySelectorAll('[data-tlakis]').forEach(b=>b.onclick=()=>{const[k,id]=splitKI(b.getAttribute('data-tlakis'));akisGoster(k,id);});
   }
   if(r.page==='takvim'||r.page==='puantaj'){
     const g=document.getElementById('ayGeri'),i=document.getElementById('ayIleri');
@@ -701,12 +767,20 @@ function afterRender(r){
   }
   if(r.page==='harcamalar'){
     document.getElementById('btnHarc').onclick=()=>openHarc();
-    document.querySelectorAll('[data-hconay]').forEach(b=>b.onclick=()=>hcDurum(b.getAttribute('data-hconay'),'onaylandi'));
-    document.querySelectorAll('[data-hcred]').forEach(b=>b.onclick=()=>hcDurum(b.getAttribute('data-hcred'),'reddedildi'));
+    document.querySelectorAll('[data-hconay]').forEach(b=>b.onclick=()=>genOnayla('harc',b.getAttribute('data-hconay')));
+    document.querySelectorAll('[data-hcred]').forEach(b=>b.onclick=()=>genReddet('harc',b.getAttribute('data-hcred')));
+    document.querySelectorAll('[data-hcakis]').forEach(b=>b.onclick=()=>akisGoster('harc',b.getAttribute('data-hcakis')));
     document.querySelectorAll('[data-hcode]').forEach(b=>b.onclick=()=>hcOdendi(b.getAttribute('data-hcode')));
     document.querySelectorAll('[data-hcsil]').forEach(b=>b.onclick=()=>hcSil(b.getAttribute('data-hcsil')));
   }
-  if(r.page==='raporlar'){ document.querySelectorAll('[data-rap]').forEach(c=>c.onclick=()=>renderRapor(c.getAttribute('data-rap'))); }
+  if(r.page==='raporlar'){
+    const selEl=document.getElementById('rpSel'),biEl=document.getElementById('rpBirim'),ayEl=document.getElementById('rpAy'),yiEl=document.getElementById('rpYil');
+    const enable=()=>{const rr=RAPORLAR.find(x=>x.id===selEl.value)||{uses:[]};biEl.disabled=!rr.uses.includes('birim');ayEl.disabled=!rr.uses.includes('ay');yiEl.disabled=!rr.uses.includes('yil');};
+    enable(); selEl.onchange=enable;
+    const doRap=()=>{const id=selEl.value;ST.rapSel=id;ST.rapBirim=biEl.disabled?'':biEl.value;ST.rapAy=ayEl.disabled?0:+ayEl.value;ST.rapYil=yiEl.disabled?0:+yiEl.value;renderRapor(id,{birim:ST.rapBirim,ay:ST.rapAy,yil:ST.rapYil});};
+    document.getElementById('rpOlustur').onclick=doRap;
+    document.querySelectorAll('[data-rap]').forEach(c=>c.onclick=()=>{const id=c.getAttribute('data-rap');selEl.value=id;ST.rapSel=id;enable();doRap();});
+  }
   if(r.page==='ayarlar'){
     document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>ayarEkle(b.getAttribute('data-add')));
     document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>ayarSil(b.getAttribute('data-del')));
@@ -818,13 +892,17 @@ function openHarc(){
     '<div class="f"><label>Çalışan</label><select id="hcEmp"><option value=""></option>'+emps.map(e=>'<option value="'+e.id+'">'+esc(trTitle(e.ad))+'</option>').join('')+'</select></div>'
     +'<div class="f two"><div><label>Tür</label><select id="hcTur">'+a.harcamaTurleri.map(t=>'<option>'+esc(t)+'</option>').join('')+'</select></div><div><label>Tutar (TL)</label><input id="hcTutar" type="number" min="0" step="0.01"></div></div>'
     +'<div class="f"><label>Tarih</label><input id="hcTarih" type="date" value="'+new Date().toISOString().slice(0,10)+'"></div>'
-    +'<div class="f"><label>Açıklama</label><textarea id="hcAcik" rows="2"></textarea></div>';
+    +'<div class="f"><label>Açıklama</label><textarea id="hcAcik" rows="2"></textarea></div>'
+    +'<div class="f"><label class="chk"><input type="checkbox" id="hcOnayli"> Doğrudan onaylı ekle (onay akışını atla)</label></div>';
   document.getElementById('harcOvl').classList.add('on');
 }
 async function saveHarc(){
   const empId=v('hcEmp'); if(!empId){alert('Çalışan seçin.');return;} const t=v('hcTutar'); if(!t){alert('Tutar girin.');return;}
   const e=empById(empId); const tr=v('hcTarih');
-  HARC=HARC.concat([{id:uid('h'),empId,empAd:e?e.ad:'',tur:v('hcTur'),tutar:+t,tarih:tr?trFromISO(tr):'',aciklama:v('hcAcik'),durum:'bekliyor',odendi:false,olusturma:new Date().toISOString()}]);
+  const oc=document.getElementById('hcOnayli'); const onayli=oc&&oc.checked;
+  const akis=onayZinciri(e);
+  if(onayli) akis.forEach(s=>{s.durum='onaylandi';s.tarih=new Date().toISOString();s.kaydeden=(SES&&SES.ad)||'İK';});
+  HARC=HARC.concat([{id:uid('h'),empId,empAd:e?e.ad:'',tur:v('hcTur'),tutar:+t,tarih:tr?trFromISO(tr):'',aciklama:v('hcAcik'),durum:onayli?'onaylandi':'bekliyor',onayAkis:akis,odendi:false,olusturma:new Date().toISOString()}]);
   await kaydetHarc(); closeModals();
 }
 async function hcDurum(id,d){const h=HARC.find(x=>x.id===id);if(!h)return;h.durum=d;await kaydetHarc();}
@@ -841,7 +919,7 @@ function openTalep(tip){
   let f='<div class="f"><label>Çalışan</label><select id="tlEmp">'+opt+'</select></div><div class="f"><label>Tarih</label><input id="tlTarih" type="date" value="'+new Date().toISOString().slice(0,10)+'"></div>';
   if(tip==='Mesai') f+='<div class="f"><label>Mesai Süresi (saat)</label><input id="tlVal" type="number" min="0" step="0.5" placeholder="örn. 3"></div>';
   else f+='<div class="f"><label>Avans Tutarı (TL)</label><input id="tlVal" type="number" min="0" step="0.01"></div>';
-  f+='<div class="f"><label>Açıklama</label><textarea id="tlAcik" rows="2"></textarea></div><div class="f"><label class="chk"><input type="checkbox" id="tlOnayli"> Onaylı olarak ekle</label></div>';
+  f+='<div class="f"><label>Açıklama</label><textarea id="tlAcik" rows="2"></textarea></div><div class="f"><label class="chk"><input type="checkbox" id="tlOnayli"> Doğrudan onaylı ekle (onay akışını atla)</label></div>';
   document.getElementById('talepBody').innerHTML=f;
   document.getElementById('talepOvl').classList.add('on');
 }
@@ -850,7 +928,10 @@ async function saveTalep(){
   const val=v('tlVal'); if(!val){alert(talepTip==='Mesai'?'Mesai süresi girin.':'Tutar girin.');return;}
   const e=empById(empId); const tr=v('tlTarih');
   const ozet=talepTip==='Mesai'?(val+' saat mesai'):(val+' TL avans');
-  TALEP=TALEP.concat([{id:uid('t'),tip:talepTip,empId,empAd:e?e.ad:'',tarih:tr?trFromISO(tr):'',deger:+val,ozet,aciklama:v('tlAcik'),durum:document.getElementById('tlOnayli').checked?'onaylandi':'bekliyor',olusturma:new Date().toISOString()}]);
+  const onayli=document.getElementById('tlOnayli').checked;
+  const akis=onayZinciri(e);
+  if(onayli) akis.forEach(s=>{s.durum='onaylandi';s.tarih=new Date().toISOString();s.kaydeden=(SES&&SES.ad)||'İK';});
+  TALEP=TALEP.concat([{id:uid('t'),tip:talepTip,empId,empAd:e?e.ad:'',tarih:tr?trFromISO(tr):'',deger:+val,ozet,aciklama:v('tlAcik'),durum:onayli?'onaylandi':'bekliyor',onayAkis:akis,olusturma:new Date().toISOString()}]);
   await kaydetTalep(); closeModals();
 }
 async function talepDurum(spec,d){ const i=spec.indexOf('|'); const k=spec.slice(0,i),id=spec.slice(i+1);
