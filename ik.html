@@ -423,7 +423,7 @@ window.__leanMigrate=async function(){ if(!IS_IK) throw new Error('yetki yok');
 const ROSTER_BASE=['id','ad','tc','giris','cikis','departman','bolum','unvan','mudurluk','direktor','yonetici','calismaSekli','sirket','ayrilmaNedeni','calismaSuresi','sozlesmeTuru','sozlesmeBitis','pozBaslama','pozGecmisi'];
 function leanRec(p){const o={};ROSTER_BASE.forEach(k=>{if(p[k]!=null&&p[k]!=='')o[k]=p[k];});return o;}
 async function kaydetPers(){ try{await setDoc(refPers,{aktif:AKTIF.map(leanRec),ayrilan:AYRILAN.map(leanRec),guncelleme:new Date().toISOString()},{merge:true});}catch(e){alert('Kaydedilemedi: '+e.message);} }
-async function kaydetOzluk(){ try{await setDoc(refOzluk,{veri:OZLUK,guncelleme:new Date().toISOString()},{merge:true});}catch(e){alert('Özlük kaydedilemedi: '+e.message);} }
+async function kaydetOzluk(){ for(const k in OZLUK){ if(!OZLUK[k]||!Object.keys(OZLUK[k]).length) delete OZLUK[k]; } try{await setDoc(refOzluk,{veri:OZLUK,guncelleme:new Date().toISOString()},{merge:false});}catch(e){alert('Özlük kaydedilemedi: '+e.message);} }
 /* Bir çalışanın zengin özlük alanlarını OZLUK[tc]'ye yaz + mrOzluk'a kaydet + yerel bindir */
 async function ozlukGuncelle(tc,alanlar){ if(!tc)return; const o=Object.assign({},OZLUK[tc]||{}); for(const k in alanlar){ o[k]=alanlar[k]; } OZLUK[tc]=o; const emp=[...AKTIF,...AYRILAN].find(x=>x.tc===tc); if(emp){ for(const k in alanlar){ emp[k]=alanlar[k]; } } await kaydetOzluk(); }
 async function kaydetIzin(){ try{await setDoc(refIzin,{izinler:IZIN,guncelleme:new Date().toISOString()},{merge:true});}catch(e){alert('Kaydedilemedi: '+e.message);} }
