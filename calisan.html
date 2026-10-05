@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="tr"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>İnciroğlu · Zaman Yönetimi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#132a44;--navy-2:#1d3a5c;--brass:#b5892f;--ink:#1c2530;--ink-2:#5a6676;--muted:#8a94a2;--line:#e5e9ee;--bg:#eef2f6;--ok:#1b8a4b;--bad:#c0392b;--card:#fff;--blue-bg:#eaf1f8}
+:root:not([data-theme="light"]) @media(prefers-color-scheme:dark){}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{font-family:Inter,system-ui,sans-serif;background:linear-gradient(170deg,#16304e,#0e2036);color:var(--ink);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0 16px}
+.wrap{width:100%;max-width:440px;margin:auto;padding:26px 0 40px}
+.brand{display:flex;align-items:center;gap:12px;justify-content:center;color:#fff;margin:14px 0 22px}
+.brand .lg{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,var(--brass),#8f6a1f);display:flex;align-items:center;justify-content:center;font-family:'Source Serif 4',serif;font-weight:700;font-size:20px;color:#fff}
+.brand h1{font-family:'Source Serif 4',serif;font-size:19px;margin:0;font-weight:700}.brand p{margin:1px 0 0;font-size:11.5px;color:#aebfd2;letter-spacing:.03em}
+.card{background:var(--card);border-radius:18px;padding:24px 22px;box-shadow:0 18px 50px rgba(0,0,0,.28)}
+h2{font-family:'Source Serif 4',serif;font-size:18px;margin:0 0 4px;color:var(--navy)}
+.sub{font-size:13px;color:var(--ink-2);margin-bottom:18px}
+label{font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:6px}
+input{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:11px;font-size:16px;font-family:inherit;outline:none}
+input:focus{border-color:var(--navy)}
+.btn{width:100%;padding:13px;border:none;border-radius:11px;background:var(--navy);color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:14px}
+.btn:disabled{opacity:.5}
+.who{display:flex;align-items:center;gap:13px;margin-bottom:18px}
+.who .av{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--navy),var(--navy-2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex:none}
+.who b{display:block;color:var(--navy);font-size:17px}.who small{color:var(--ink-2);font-size:12.5px}
+.stat{display:flex;gap:10px;margin:16px 0}
+.stat .box{flex:1;background:var(--blue-bg);border-radius:12px;padding:12px;text-align:center}
+.stat .box .t{font-size:11px;color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em}
+.stat .box .v{font-family:'Source Serif 4',serif;font-size:19px;font-weight:700;color:var(--navy);margin-top:3px}
+.loc{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:10px 12px;border-radius:10px;margin:14px 0;background:#f6f8fa;color:var(--ink-2)}
+.loc.ok{background:#e9f7ef;color:#15713d}.loc.bad{background:#fdecea;color:#b23228}
+.loc svg{width:16px;height:16px;flex:none}
+/* slider */
+.slider{position:relative;height:62px;border-radius:16px;background:#eef2f6;overflow:hidden;margin-top:6px;user-select:none;touch-action:none}
+.slider.cikis{background:#fbeeee}
+.slider .fill{position:absolute;top:0;left:0;bottom:0;width:62px;background:linear-gradient(135deg,var(--ok),#15713d);border-radius:16px;opacity:.18}
+.slider.cikis .fill{background:linear-gradient(135deg,var(--bad),#9e2b1f)}
+.slider .lbl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14.5px;font-weight:600;color:var(--ink-2);pointer-events:none}
+.slider .knob{position:absolute;top:5px;left:5px;width:52px;height:52px;border-radius:13px;background:var(--ok);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.2);cursor:grab}
+.slider.cikis .knob{background:var(--bad)}
+.slider .knob svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:2.4}
+.msg{margin-top:14px;font-size:13px;text-align:center;min-height:18px}
+.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}
+.gecmis{margin-top:20px}
+.gecmis h3{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 0 8px}
+.g-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f0f2f5;font-size:13px}
+.g-row .tip{font-weight:600}.g-row .giris{color:var(--ok)}.g-row .cikis{color:var(--bad)}
+.foot{text-align:center;color:#8aa0bb;font-size:11px;margin-top:22px}
+.spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.hide{display:none}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="brand"><div class="lg">İH</div><div><h1>İnciroğlu Otomotiv</h1><p>ZAMAN YÖNETİMİ · GİRİŞ-ÇIKIŞ</p></div></div>
+
+  <div class="card" id="loginCard">
+    <h2>Giriş Yap</h2>
+    <div class="sub">İşe giriş-çıkış yapmak için TC Kimlik numaranı gir.</div>
+    <label>TC Kimlik No</label>
+    <input id="tc" type="tel" inputmode="numeric" maxlength="11" placeholder="___________" autocomplete="off">
+    <button class="btn" id="girisBtn">Devam</button>
+    <div class="msg bad" id="loginMsg"></div>
+  </div>
+
+  <div class="card hide" id="pdksCard">
+    <div class="who"><div class="av" id="av">—</div><div><b id="ad">—</b><small id="dep">—</small></div></div>
+    <div class="stat">
+      <div class="box"><div class="t">Bugün Giriş</div><div class="v" id="bugunGiris">—</div></div>
+      <div class="box"><div class="t">Bugün Çıkış</div><div class="v" id="bugunCikis">—</div></div>
+    </div>
+    <div class="loc" id="locBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-5.2-7-11a7 7 0 0 1 14 0c0 5.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.6"/></svg><span id="locTxt">Konum alınıyor…</span></div>
+    <div class="slider" id="slider"><div class="fill" id="fill"></div><div class="lbl" id="slLbl">İşe Başlamak için Kaydır →</div><div class="knob" id="knob"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div></div>
+    <div class="msg" id="msg"></div>
+    <div class="gecmis"><h3>Son Hareketler</h3><div id="gecmis"></div></div>
+    <button class="btn" id="cikisBtn" style="background:#eef2f6;color:var(--ink-2);margin-top:18px">Hesaptan Çık</button>
+  </div>
+  <div class="foot">İnciroğlu İnsan Kaynakları · Konum bilgisi yalnız giriş-çıkış doğrulaması için kullanılır.</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const app=initializeApp({apiKey:"AIzaSyCWlB0nU-ETZxuo9xa6gG4VMYVu09P3fnE",authDomain:"yetenek-havuzu.firebaseapp.com",projectId:"yetenek-havuzu",storageBucket:"yetenek-havuzu.firebasestorage.app",messagingSenderId:"714642441227",appId:"1:714642441227:web:bf49ac51367c6d9437b30e"});
+const db=getFirestore(app);
+const refPers=doc(db,"satisVeri","mrPersonel");
+const refPdks=doc(db,"satisVeri","mrPdksKayit");
+
+/* 3 işyeri lokasyonu + tolerans (m) */
+const LOKASYONLAR=[
+  {ad:"Otokoç (Jaecoo / Omoda)",lat:38.75411019421271,lng:35.342363684795295},
+  {ad:"Fiat · Honda · Peugeot · Citroen · Opel",lat:38.7543545502643,lng:35.344699292008364},
+  {ad:"BMW & Mini",lat:38.75548696688437,lng:35.376267323738574}
+];
+const TOLERANS=150;
+
+function trTitle(s){return String(s||'').toLocaleLowerCase('tr').replace(/(^|[\s\-\/])([a-zçğıöşü])/g,(m,a,b)=>a+b.toLocaleUpperCase('tr'));}
+function initials(s){const p=String(s||'').trim().split(/\s+/);return((p[0]||'')[0]||'')+((p[p.length-1]||'')[0]||'');}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function bugun(){const d=new Date();return ('0'+d.getDate()).slice(-2)+'.'+('0'+(d.getMonth()+1)).slice(-2)+'.'+d.getFullYear();}
+function saat(d){d=d||new Date();return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
+function mesafe(la1,lo1,la2,lo2){const R=6371000,toR=x=>x*Math.PI/180;const dLa=toR(la2-la1),dLo=toR(lo2-lo1);const a=Math.sin(dLa/2)**2+Math.cos(toR(la1))*Math.cos(toR(la2))*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(a));}
+function enYakin(lat,lng){let best=null;LOKASYONLAR.forEach(l=>{const m=mesafe(lat,lng,l.lat,l.lng);if(!best||m<best.m)best={m:Math.round(m),ad:l.ad};});return best;}
+
+let EMP=null, ROSTER=null, KAYITLAR=[], gps=null, gpsOk=false;
+
+async function rosterYukle(){ if(ROSTER)return ROSTER; const s=await getDoc(refPers); const d=s.exists()?s.data():{}; ROSTER=(d.aktif||[]).concat(d.ayrilan||[]); return ROSTER; }
+async function pdksYukle(){ const s=await getDoc(refPdks); const d=s.exists()?s.data():{}; KAYITLAR=d.kayitlar||[]; }
+
+document.getElementById('girisBtn').onclick=async()=>{
+  const tc=(document.getElementById('tc').value||'').trim(); const m=document.getElementById('loginMsg'); m.textContent='';
+  if(!/^\d{11}$/.test(tc)){ m.textContent='Geçerli bir 11 haneli TC Kimlik No gir.'; return; }
+  document.getElementById('girisBtn').innerHTML='<span class="spin"></span>'; document.getElementById('girisBtn').disabled=true;
+  try{
+    const r=await rosterYukle(); const emp=r.find(x=>String(x.tc)===tc);
+    if(!emp){ m.textContent='Bu TC ile kayıtlı çalışan bulunamadı. İnsan Kaynakları ile görüşün.'; return; }
+    await pdksYukle(); EMP=emp; sahneGoster();
+  }catch(e){ m.textContent='Bağlantı hatası: '+e.message; }
+  finally{ document.getElementById('girisBtn').innerHTML='Devam'; document.getElementById('girisBtn').disabled=false; }
+};
+document.getElementById('tc').addEventListener('keydown',e=>{ if(e.key==='Enter')document.getElementById('girisBtn').click(); });
+document.getElementById('cikisBtn').onclick=()=>{ EMP=null; document.getElementById('pdksCard').classList.add('hide'); document.getElementById('loginCard').classList.remove('hide'); document.getElementById('tc').value=''; };
+
+function benimKayitlar(){ return KAYITLAR.filter(k=>k.tc===EMP.tc).sort((a,b)=>new Date(b.ts)-new Date(a.ts)); }
+function bugunku(){ return benimKayitlar().filter(k=>k.tarih===bugun()); }
+function sonTip(){ const bk=bugunku(); return bk.length?bk[0].tip:null; }
+
+function sahneGoster(){
+  document.getElementById('loginCard').classList.add('hide'); document.getElementById('pdksCard').classList.remove('hide');
+  document.getElementById('av').textContent=initials(EMP.ad).toLocaleUpperCase('tr');
+  document.getElementById('ad').textContent=trTitle(EMP.ad);
+  document.getElementById('dep').textContent=(EMP.unvan||'')+' · '+(EMP.departman||'');
+  tazele(); konumAl();
+}
+function tazele(){
+  const bk=bugunku();
+  const g=bk.filter(k=>k.tip==='giris').sort((a,b)=>new Date(a.ts)-new Date(b.ts))[0];
+  const c=bk.filter(k=>k.tip==='cikis').sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
+  document.getElementById('bugunGiris').textContent=g?g.saat:'—';
+  document.getElementById('bugunCikis').textContent=c?c.saat:'—';
+  const cikisModu=sonTip()==='giris';
+  const sl=document.getElementById('slider'), kn=document.getElementById('knob');
+  sl.classList.toggle('cikis',cikisModu);
+  document.getElementById('slLbl').textContent=cikisModu?'Çıkış için Kaydır →':'İşe Başlamak için Kaydır →';
+  kn.querySelector('svg').innerHTML=cikisModu?'<path d="M9 6l6 6-6 6"/>':'<path d="M9 6l6 6-6 6"/>';
+  const bana=benimKayitlar().slice(0,6);
+  document.getElementById('gecmis').innerHTML=bana.length?bana.map(k=>'<div class="g-row"><span class="tip '+(k.tip)+'">'+(k.tip==='giris'?'▲ Giriş':'▼ Çıkış')+'</span><span>'+esc(k.tarih)+' · <b>'+esc(k.saat)+'</b></span></div>').join(''):'<div style="color:var(--muted);font-size:12.5px;padding:8px 0">Henüz hareket yok.</div>';
+}
+
+function konumAl(){
+  const lb=document.getElementById('locBox'), lt=document.getElementById('locTxt');
+  lb.className='loc'; lt.textContent='Konum alınıyor…'; gpsOk=false;
+  if(!navigator.geolocation){ lb.className='loc bad'; lt.textContent='Cihaz konum desteklemiyor.'; return; }
+  navigator.geolocation.getCurrentPosition(pos=>{
+    gps={lat:pos.coords.latitude,lng:pos.coords.longitude,acc:Math.round(pos.coords.accuracy)};
+    const y=enYakin(gps.lat,gps.lng);
+    if(y.m<=TOLERANS){ gpsOk=true; lb.className='loc ok'; lt.textContent='✓ '+y.ad+' ('+y.m+' m)'; }
+    else { gpsOk=false; lb.className='loc bad'; lt.textContent='İşyeri dışındasınız — en yakın: '+y.ad+' ('+y.m+' m)'; }
+  },err=>{ lb.className='loc bad'; lt.textContent=err.code===1?'Konum izni verilmedi. İzin verin.':'Konum alınamadı.'; },{enableHighAccuracy:true,timeout:12000,maximumAge:0});
+}
+
+/* kaydırma (touch + mouse) */
+(function(){
+  const sl=document.getElementById('slider'), kn=document.getElementById('knob'), fill=document.getElementById('fill');
+  let drag=false,sx=0,max=0,cur=0,busy=false;
+  function setX(x){ x=Math.max(0,Math.min(max,x)); cur=x; kn.style.left=(5+x)+'px'; fill.style.width=(62+x)+'px'; }
+  function start(cx){ if(busy)return; drag=true; sx=cx-cur; max=sl.clientWidth-62; kn.style.cursor='grabbing'; }
+  function move(cx){ if(!drag)return; setX(cx-sx); }
+  async function end(){ if(!drag)return; drag=false; kn.style.cursor='grab';
+    if(cur>=max-6){ await tamamla(); }
+    anim(0);
+  }
+  function anim(to){ const from=cur; const t0=performance.now(); (function step(t){const k=Math.min(1,(t-t0)/180);setX(from+(to-from)*k);if(k<1)requestAnimationFrame(step);})(performance.now()); }
+  kn.addEventListener('mousedown',e=>{start(e.clientX);e.preventDefault();});
+  window.addEventListener('mousemove',e=>move(e.clientX));
+  window.addEventListener('mouseup',end);
+  kn.addEventListener('touchstart',e=>{start(e.touches[0].clientX);},{passive:true});
+  window.addEventListener('touchmove',e=>{if(drag){move(e.touches[0].clientX);e.preventDefault();}},{passive:false});
+  window.addEventListener('touchend',end);
+  async function tamamla(){
+    const msg=document.getElementById('msg'); msg.className='msg';
+    if(!gps){ msg.className='msg bad'; msg.textContent='Önce konum alınmalı. İzin verin ve bekleyin.'; konumAl(); return; }
+    const y=enYakin(gps.lat,gps.lng);
+    if(y.m>TOLERANS){ msg.className='msg bad'; msg.textContent='✕ Konumunuz işyeri dışında ('+y.m+' m). Giriş-çıkış yapılamadı.'; return; }
+    busy=true; const tip=sonTip()==='giris'?'cikis':'giris'; const now=new Date();
+    const rec={tc:EMP.tc,ad:EMP.ad,departman:EMP.departman||'',tip,ts:now.toISOString(),tarih:bugun(),saat:saat(now),lat:gps.lat,lng:gps.lng,lokasyon:y.ad,mesafe:y.m};
+    try{
+      KAYITLAR=KAYITLAR.concat([rec]);
+      await setDoc(refPdks,{kayitlar:KAYITLAR,guncelleme:now.toISOString()},{merge:true});
+      msg.className='msg ok'; msg.textContent=(tip==='giris'?'✓ İşe giriş yapıldı: ':'✓ Çıkış yapıldı: ')+rec.saat+' · '+y.ad;
+      tazele();
+    }catch(e){ KAYITLAR.pop(); msg.className='msg bad'; msg.textContent='Kaydedilemedi: '+e.message; }
+    finally{ busy=false; }
+  }
+})();
+</script>
+</body></html>
