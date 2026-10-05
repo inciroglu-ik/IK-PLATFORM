@@ -214,6 +214,12 @@ table.tbl tbody tr.clk{cursor:pointer}table.tbl tbody tr.clk:hover td{background
   <div class="mb" id="talepBody"></div>
   <div class="mf"><button class="btn g" data-close>Vazgeç</button><button class="btn" id="tlSave">Kaydet</button></div>
 </div></div>
+<!-- POZISYON EKLE -->
+<div class="ovl" id="pozOvl"><div class="modal wide">
+  <div class="mh"><h3>Pozisyon Ekle</h3><button class="mx" data-close>×</button></div>
+  <div class="mb" id="pozBody"></div>
+  <div class="mf"><button class="btn g" data-close>Vazgeç</button><button class="btn" id="pozSave">Kaydet</button></div>
+</div></div>
 <!-- ONAY AKIŞI / DENETİM İZİ -->
 <div class="ovl" id="akisOvl"><div class="modal">
   <div class="mh"><h3>Onay Akışı & Denetim İzi</h3><button class="mx" data-close>×</button></div>
@@ -503,7 +509,7 @@ function yonAstSection(p){
 const OZLUK_ALANLARI=['dogum','cinsiyet','medeni','cocuk','uyruk','kanGrubu','egitimDurumu','egitimSeviye','egitimKurum','adres2','sehir','postaKodu','bankaAd','iban','hesapNo','acilAd','acilTel','acilYakin','epostaIs','telIs','epostaKisisel','telKisisel'];
 function ozlukDoluluk(p){const dolu=OZLUK_ALANLARI.filter(k=>p[k]!=null&&String(p[k]).trim()!=='').length;return {dolu,toplam:OZLUK_ALANLARI.length,pct:Math.round(dolu/OZLUK_ALANLARI.length*100)};}
 /* Pozisyon geçmişi (şu an sadece güncel pozisyon; Kolay İK pozisyon hareketleri raporu gelince genişler) */
-function pozisyonGecmisi(p){return [{bas:p.pozBaslama||p.giris,bit:'Devam Ediyor',sekil:p.calismaSekli||'Tam zamanlı',yon:p.mudurluk||p.yonetici||'',unvan:p.unvan||'',dep:p.departman||'',bol:p.bolum||''}];}
+function pozisyonGecmisi(p){const cur={bas:p.pozBaslama||p.giris,bit:'Devam Ediyor',sekil:p.calismaSekli||'Tam zamanlı',yon:p.mudurluk||p.yonetici||'',unvan:p.unvan||'',dep:p.departman||'',bol:p.bolum||''};const past=(p.pozGecmisi||[]).map(x=>({bas:x.bas,bit:x.bit,sekil:x.sekil||'Tam zamanlı',yon:x.yon||x.mudurluk||'',unvan:x.unvan||'',dep:x.dep||x.departman||'',bol:x.bol||x.bolum||''}));return [cur].concat(past).sort((a,b)=>dkey(b.bas)-dkey(a.bas));}
 function viewCalisan(id){
   const p=empById(id); if(!p) return '<div class="card"><div class="empty">Çalışan bulunamadı. <a href="#/calisanlar">← Listeye dön</a></div></div>';
   const eski=!empAktifMi(id);
@@ -533,7 +539,7 @@ function viewCalisan(id){
     const ms=(p.maaslar||[]);
     const pg=pozisyonGecmisi(p);
     inner='<div class="card pad"><div class="grp" style="margin-bottom:0"><div class="gh">Pozisyon</div><div class="fieldgrid">'+fv('Sözleşme Türü',esc(p.sozlesmeTuru)||'Süresiz')+fv('Çalışma Şekli',esc(p.calismaSekli)||'Tam zamanlı')+fv('Şirket',esc(p.sirket)||'İNCİROĞLU OTOMOTİV')+fv('Departman',esc(p.departman))+fv('Bölüm',esc(p.bolum))+fv('Unvan',esc(p.unvan))+fv('Müdürlük',esc(p.mudurluk))+fv('Direktör',esc(p.direktor))+fv('Yöneticisi',esc(p.yonetici||p.mudurluk))+'</div></div></div>'
-      +'<div style="height:16px"></div><div class="sec-h"><h2 style="font-size:15px">Pozisyon Geçmişi</h2><span class="mini">'+pg.length+' kayıt</span></div>'
+      +'<div style="height:16px"></div><div class="sec-h"><h2 style="font-size:15px">Pozisyon Geçmişi <span class="mini">('+pg.length+' kayıt)</span></h2><button class="btn sm" id="pozEkleBtn">+ Pozisyon Ekle</button></div>'
       +miniTbl(['Başlangıç','Bitiş','Çalışma Şekli','Yönetici','Unvan','Departman','Bölüm'],pg.map(x=>['<span class="mini">'+esc(x.bas)+'</span>','<span class="mini">'+esc(x.bit)+'</span>',esc(x.sekil),esc(trTitle(x.yon)),esc(x.unvan),esc(x.dep),esc(x.bol)]))
       +'<div style="height:16px"></div><div class="sec-h"><h2 style="font-size:15px">Maaş Geçmişi</h2><span class="mini">'+ms.length+' kayıt</span></div>'
       +miniTbl(['Geçerlilik Tarihi','Tutar','Maaş Türü','Ücret Türü','Net/Brüt'],ms.map(m=>['<span class="mini">'+esc(m.gecerli)+'</span>','<b>'+esc(m.tutar)+' '+esc(m.birim||'TL')+'</b>',esc(m.tur||'—'),esc(m.ucret||'—'),esc(m.netbrut||'—')]));
@@ -920,6 +926,7 @@ function afterRender(r){
     const d=document.getElementById('pfDel'); if(d) d.onclick=()=>openDel(r.arg);
     const sl=document.getElementById('pfSil'); if(sl) sl.onclick=()=>silEmp(r.arg);
     const ie=document.getElementById('izEkleBtn'); if(ie) ie.onclick=()=>openIzin(r.arg);
+    const pze=document.getElementById('pozEkleBtn'); if(pze) pze.onclick=()=>openPozisyon(r.arg);
     document.querySelectorAll('[data-izalt]').forEach(t=>t.onclick=()=>{ST.izAltTab=t.getAttribute('data-izalt');render();});
     const itf=document.getElementById('izTurF'); if(itf) itf.onchange=ev=>{ST.izTur=ev.target.value;render();};
     document.querySelectorAll('#main .ec.clk[data-id]').forEach(el=>el.onclick=()=>{pfTab='profil';ST.izAltTab='ozet';go('calisan/'+el.getAttribute('data-id'));});
@@ -972,7 +979,7 @@ let depChartObj=null;
 function drawDep(){const cv=document.getElementById('depChart');if(!cv||!window.Chart)return;const d=depDagilim();const top=d.slice(0,11);const rest=d.slice(11).reduce((s,x)=>s+x[1],0);if(rest>0)top.push(['Diğer',rest]);const cols=top.map((x,i)=>AVC[i%AVC.length]);if(depChartObj)depChartObj.destroy();depChartObj=new Chart(cv,{type:'doughnut',data:{labels:top.map(x=>x[0]),datasets:[{data:top.map(x=>x[1]),backgroundColor:cols,borderWidth:2,borderColor:'#fff'}]},options:{cutout:'62%',plugins:{legend:{display:false}},maintainAspectRatio:false}});document.getElementById('depLeg').innerHTML=top.map((x,i)=>'<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;padding:3px 0"><span style="width:10px;height:10px;border-radius:3px;background:'+cols[i]+';flex:none"></span><span style="flex:1;color:var(--ink)">'+esc(x[0])+'</span><b style="color:var(--navy)">'+x[1]+'</b></div>').join('');}
 
 /* ===== ÇALIŞAN FORM ===== */
-let editId=null;
+let editId=null; let pozEmpId=null;
 function inp(id,lab,val,ph){return '<div><label>'+lab+'</label><input id="'+id+'" value="'+esc(val||'')+'" placeholder="'+(ph||'')+'" autocomplete="off"></div>';}
 function selF(id,lab,val,opts){return '<div><label>'+lab+'</label><select id="'+id+'"><option value=""></option>'+opts.map(o=>'<option'+(val===o?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select></div>';}
 /* Ayarlar listesinden seçimli alan; mevcut değer listede yoksa yine de eklenir (kaybolmaz) */
@@ -1017,6 +1024,26 @@ async function saveEmp(){
   await kaydetPers();
   if(hedefTc) await ozlukGuncelle(hedefTc,rich);
   closeModals();
+}
+function openPozisyon(id){
+  const p=empById(id); if(!p)return; pozEmpId=id; const a=ensureAyar();
+  document.getElementById('pozBody').innerHTML=
+    '<div class="mini" style="background:var(--blue-bg);border-radius:8px;padding:10px 12px;margin-bottom:14px">Yeni pozisyon kaydedildiğinde mevcut pozisyon geçmişe taşınır (bitişi = yeni başlangıç), yeni pozisyon "Devam Ediyor" olur.</div>'
+    +'<div class="grp"><div class="gh">Yeni Pozisyon</div>'
+    +'<div class="f two">'+selList('pzUnvan','Unvan',p.unvan,a.unvanlar)+selList('pzDep','Departman',p.departman,a.departmanlar)+'</div>'
+    +'<div class="f two">'+selList('pzBol','Bölüm',p.bolum,a.bolumler)+selF('pzCalis','Çalışma Şekli',p.calismaSekli||'Tam zamanlı',['Tam zamanlı','Yarı zamanlı'])+'</div>'
+    +'<div class="f two">'+selList('pzMud','Müdürlük',p.mudurluk,a.mudurlukler)+selList('pzDir','Direktör',p.direktor,a.direktorler)+'</div>'
+    +'<div class="f two">'+selList('pzYon','Yöneticisi',p.yonetici||p.mudurluk,a.mudurlukler)+'<div><label>Başlangıç Tarihi</label><input id="pzBas" type="date" value="'+new Date().toISOString().slice(0,10)+'"></div></div></div>';
+  document.getElementById('pozOvl').classList.add('on');
+}
+async function savePozisyon(){
+  const p=empById(pozEmpId); if(!p)return;
+  const bas=v('pzBas'); const basTr=bas?trFromISO(bas):new Date().toLocaleDateString('tr-TR');
+  const eski={bas:p.pozBaslama||p.giris,bit:basTr,unvan:p.unvan||'',dep:p.departman||'',bol:p.bolum||'',sekil:p.calismaSekli||'Tam zamanlı',yon:p.mudurluk||p.yonetici||'',mudurluk:p.mudurluk||'',direktor:p.direktor||''};
+  p.pozGecmisi=[eski].concat(p.pozGecmisi||[]);
+  p.unvan=v('pzUnvan')||p.unvan; p.departman=v('pzDep')||p.departman; p.bolum=v('pzBol')||p.bolum;
+  p.calismaSekli=v('pzCalis')||p.calismaSekli; p.mudurluk=v('pzMud')||p.mudurluk; p.direktor=v('pzDir')||p.direktor; p.yonetici=v('pzYon')||p.yonetici; p.pozBaslama=basTr;
+  await kaydetPers(); closeModals(); render();
 }
 
 /* ===== İZİN FORM ===== */
@@ -1138,7 +1165,7 @@ async function ayarEkle(key){const el=document.getElementById('add_'+key);const 
 async function ayarSil(spec){const i=spec.indexOf('|');const key=spec.slice(0,i),val=spec.slice(i+1);const a=ensureAyar();const o={};o[key]=a[key].filter(x=>x!==val);await kaydetAyar(o);}
 
 /* ===== ORTAK ===== */
-function closeModals(){['empOvl','izinOvl','harcOvl','talepOvl','akisOvl','delOvl'].forEach(id=>document.getElementById(id).classList.remove('on'));delId=null;editId=null;izEmpFix=null;talepTip=null;}
+function closeModals(){['empOvl','izinOvl','harcOvl','talepOvl','akisOvl','delOvl','pozOvl'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on');});delId=null;editId=null;izEmpFix=null;talepTip=null;pozEmpId=null;}
 let openMenu=null; function closeMenu(){if(openMenu){openMenu.remove();openMenu=null;}}
 function bindGlobal(){
   document.getElementById('logout').onclick=()=>{location.href='portal.html';};
@@ -1147,6 +1174,7 @@ function bindGlobal(){
   document.getElementById('izSave').onclick=saveIzin;
   document.getElementById('hcSave').onclick=saveHarc;
   document.getElementById('tlSave').onclick=saveTalep;
+  document.getElementById('pozSave').onclick=savePozisyon;
   document.getElementById('delGo').onclick=doDel;
   const gq=document.getElementById('gq');gq.oninput=()=>{if(route().page!=='calisanlar'){ST.q=gq.value;go('calisanlar');}else{ST.q=gq.value;const lq=document.getElementById('lq');if(lq)lq.value=gq.value;softList();}};
   window.addEventListener('keydown',e=>{if(e.key==='Escape')closeModals();});
