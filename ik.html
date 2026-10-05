@@ -596,7 +596,7 @@ function viewCalisan(id){
     +'<div class="card pad"><div class="pf-head"><div class="pf-av" style="background:'+avColor(p.ad)+'">'+esc(initials(p.ad))+'</div>'
     +'<div style="flex:1;min-width:180px"><h2>'+esc(trTitle(p.ad))+'</h2><div class="sub">'+esc(p.unvan||'')+' · '+esc(p.departman||'')+' / '+esc(p.bolum||'')+'</div>'
     +'<div style="margin-top:8px">'+(eski?'<span class="badge b-bad">İşten Ayrıldı'+(p.cikis?' · '+esc(p.cikis):'')+'</span>':'<span class="badge b-ok">Aktif</span>')+'</div></div>'
-    +'<button class="btn g sm" id="pfEdit">Düzenle</button>'+(!eski?'<button class="btn warn sm" id="pfDel">İşten Ayrıldı</button>':'')+'</div>'
+    +'<button class="btn g sm" id="pfEdit">Düzenle</button>'+(!eski?'<button class="btn warn sm" id="pfDel">İşten Ayrıldı</button>':'<button class="btn sm" id="pfSil" style="color:var(--bad);border-color:var(--bad)">Sil</button>')+'</div>'
     +'<div class="tabs">'+tabs.map(t=>'<button class="tab'+(pfTab===t[0]?' on':'')+'" data-tab="'+t[0]+'">'+t[1]+'</button>').join('')+'</div></div>'
     +'<div style="height:16px"></div>'+inner
     +'</div><aside class="pf-side">'+side+'</aside></div>';
@@ -906,6 +906,7 @@ function afterRender(r){
     document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{pfTab=t.getAttribute('data-tab');render();});
     const e=document.getElementById('pfEdit'); if(e) e.onclick=()=>openEmp(r.arg);
     const d=document.getElementById('pfDel'); if(d) d.onclick=()=>openDel(r.arg);
+    const sl=document.getElementById('pfSil'); if(sl) sl.onclick=()=>silEmp(r.arg);
     const ie=document.getElementById('izEkleBtn'); if(ie) ie.onclick=()=>openIzin(r.arg);
     document.querySelectorAll('[data-izalt]').forEach(t=>t.onclick=()=>{ST.izAltTab=t.getAttribute('data-izalt');render();});
     const itf=document.getElementById('izTurF'); if(itf) itf.onchange=ev=>{ST.izTur=ev.target.value;render();};
@@ -1110,6 +1111,7 @@ async function talepDurum(spec,d){ const i=spec.indexOf('|'); const k=spec.slice
 let delId=null;
 function openDel(id){const p=AKTIF.find(x=>x.id===id);if(!p)return;delId=id;document.getElementById('delWho').innerHTML='<b>'+esc(trTitle(p.ad))+'</b> — '+esc(p.departman||'')+' · '+esc(p.bolum||'');document.getElementById('delCikis').value=new Date().toISOString().slice(0,10);document.getElementById('delOvl').classList.add('on');}
 async function doDel(){if(!delId)return;const p=AKTIF.find(x=>x.id===delId);if(!p)return;const c=v('delCikis')||document.getElementById('delCikis').value;AKTIF=AKTIF.filter(x=>x.id!==delId);AYRILAN=[Object.assign({},p,{cikis:c?trFromISO(c):new Date().toLocaleDateString('tr-TR')})].concat(AYRILAN);await kaydetPers();closeModals();go('calisanlar');}
+async function silEmp(id){const p=empById(id);if(!p)return;if(!confirm(trTitle(p.ad)+' kaydı sistemden KALICI olarak silinecek. Bu işlem geri alınamaz. Emin misiniz?'))return;AKTIF=AKTIF.filter(x=>x.id!==id);AYRILAN=AYRILAN.filter(x=>x.id!==id);await kaydetPers();go('calisanlar');}
 
 /* ===== AYARLAR CRUD ===== */
 async function ayarEkle(key){const el=document.getElementById('add_'+key);const val=(el.value||'').trim();if(!val)return;const a=ensureAyar();const arr=a[key].slice();if(!arr.includes(val))arr.push(val);arr.sort((x,y)=>x.localeCompare(y,'tr'));const o={};o[key]=arr;await kaydetAyar(o);}
