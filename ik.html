@@ -415,6 +415,7 @@ window.__seedOzluk=async function(veri){ if(!IS_IK) throw new Error('yetki yok')
 window.__seedBakiye=async function(veri){ if(!IS_IK) throw new Error('yetki yok'); await setDoc(refIzinBakiye,{veri,guncelleme:new Date().toISOString()},{merge:false}); BAKIYE=veri; mergeBakiye(); if(ready)render(); return Object.keys(veri).length; };
 /* Bir kerelik: şişmiş mrPersonel'deki zengin alanları mrOzluk'a taşı, sonra mrPersonel'i yalın yaz (veri kaybı yok) */
 window.__leanMigrate=async function(){ if(!IS_IK) throw new Error('yetki yok');
+  if(AKTIF.length<100) throw new Error('Roster henüz yüklenmedi (AKTIF='+AKTIF.length+'), migrasyon iptal');
   [...AKTIF,...AYRILAN].forEach(p=>{ if(!p.tc)return; const o=Object.assign({},OZLUK[p.tc]||{}); for(const k in p){ if(ROSTER_BASE.indexOf(k)<0 && p[k]!=null && p[k]!=='') o[k]=p[k]; } OZLUK[p.tc]=o; });
   await kaydetOzluk(); await kaydetPers(); return 'ozluk='+Object.keys(OZLUK).length+' aktif='+AKTIF.length+' ayrilan='+AYRILAN.length; };
 /* mrPersonel YALIN tutulur (Firestore 1MB limiti): yalnız temel roster alanları yazılır.
