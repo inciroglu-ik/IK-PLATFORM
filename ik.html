@@ -413,7 +413,18 @@ function boot(){
 /* Özlük verisini Firestore'a yükleme kancası (yalnız İK; CDP ile toplu yükleme için) */
 window.__seedOzluk=async function(veri){ if(!IS_IK) throw new Error('yetki yok'); await setDoc(refOzluk,{veri,guncelleme:new Date().toISOString()},{merge:false}); OZLUK=veri; mergeOzluk(); if(ready)render(); return Object.keys(veri).length; };
 window.__seedBakiye=async function(veri){ if(!IS_IK) throw new Error('yetki yok'); await setDoc(refIzinBakiye,{veri,guncelleme:new Date().toISOString()},{merge:false}); BAKIYE=veri; mergeBakiye(); if(ready)render(); return Object.keys(veri).length; };
-async function kaydetPers(){ try{await setDoc(refPers,{aktif:AKTIF,ayrilan:AYRILAN,guncelleme:new Date().toISOString()},{merge:true});}catch(e){alert('Kaydedilemedi: '+e.message);} }
+/* Bir kerelik: şişmiş mrPersonel'deki zengin alanları mrOzluk'a taşı, sonra mrPersonel'i yalın yaz (veri kaybı yok) */
+window.__leanMigrate=async function(){ if(!IS_IK) throw new Error('yetki yok');
+  [...AKTIF,...AYRILAN].forEach(p=>{ if(!p.tc)return; const o=Object.assign({},OZLUK[p.tc]||{}); for(const k in p){ if(ROSTER_BASE.indexOf(k)<0 && p[k]!=null && p[k]!=='') o[k]=p[k]; } OZLUK[p.tc]=o; });
+  await kaydetOzluk(); await kaydetPers(); return 'ozluk='+Object.keys(OZLUK).length+' aktif='+AKTIF.length+' ayrilan='+AYRILAN.length; };
+/* mrPersonel YALIN tutulur (Firestore 1MB limiti): yalnız temel roster alanları yazılır.
+   Zengin özlük alanları mrOzluk'ta (OZLUK) saklanır; her açılışta mergeOzluk ile bindirilir. */
+const ROSTER_BASE=['id','ad','tc','giris','cikis','departman','bolum','unvan','mudurluk','direktor','yonetici','calismaSekli','sirket','ayrilmaNedeni','calismaSuresi','sozlesmeTuru','sozlesmeBitis','pozBaslama','pozGecmisi'];
+function leanRec(p){const o={};ROSTER_BASE.forEach(k=>{if(p[k]!=null&&p[k]!=='')o[k]=p[k];});return o;}
+async function kaydetPers(){ try{await setDoc(refPers,{aktif:AKTIF.map(leanRec),ayrilan:AYRILAN.map(leanRec),guncelleme:new Date().toISOString()},{merge:true});}catch(e){alert('Kaydedilemedi: '+e.message);} }
+async function kaydetOzluk(){ try{await setDoc(refOzluk,{veri:OZLUK,guncelleme:new Date().toISOString()},{merge:true});}catch(e){alert('Özlük kaydedilemedi: '+e.message);} }
+/* Bir çalışanın zengin özlük alanlarını OZLUK[tc]'ye yaz + mrOzluk'a kaydet + yerel bindir */
+async function ozlukGuncelle(tc,alanlar){ if(!tc)return; const o=Object.assign({},OZLUK[tc]||{}); for(const k in alanlar){ o[k]=alanlar[k]; } OZLUK[tc]=o; const emp=[...AKTIF,...AYRILAN].find(x=>x.tc===tc); if(emp){ for(const k in alanlar){ emp[k]=alanlar[k]; } } await kaydetOzluk(); }
 async function kaydetIzin(){ try{await setDoc(refIzin,{izinler:IZIN,guncelleme:new Date().toISOString()},{merge:true});}catch(e){alert('Kaydedilemedi: '+e.message);} }
 async function kaydetHarc(){ try{await setDoc(refHarc,{harcamalar:HARC,guncelleme:new Date().toISOString()},{merge:true});}catch(e){alert('Kaydedilemedi: '+e.message);} }
 async function kaydetPuan(){ try{await setDoc(refPuan,{veri:PUAN,guncelleme:new Date().toISOString()},{merge:true});}catch(e){alert('Kaydedilemedi: '+e.message);} }
@@ -963,6 +974,8 @@ function drawDep(){const cv=document.getElementById('depChart');if(!cv||!window.
 let editId=null;
 function inp(id,lab,val,ph){return '<div><label>'+lab+'</label><input id="'+id+'" value="'+esc(val||'')+'" placeholder="'+(ph||'')+'" autocomplete="off"></div>';}
 function selF(id,lab,val,opts){return '<div><label>'+lab+'</label><select id="'+id+'"><option value=""></option>'+opts.map(o=>'<option'+(val===o?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select></div>';}
+/* Ayarlar listesinden seçimli alan; mevcut değer listede yoksa yine de eklenir (kaybolmaz) */
+function selList(id,lab,cur,list){const seen={};const arr=[];(list||[]).concat(cur?[cur]:[]).forEach(x=>{if(x&&!seen[x]){seen[x]=1;arr.push(x);}});return '<div><label>'+lab+'</label><select id="'+id+'"><option value="">—</option>'+arr.map(x=>'<option'+(x===cur?' selected':'')+'>'+esc(x)+'</option>').join('')+'</select></div>';}
 function openEmp(id){
   editId=id||null; const p=id?empById(id):{}; const a=ensureAyar();
   document.getElementById('empTitle').textContent=id?'Çalışanı Düzenle':'Yeni Çalışan';
@@ -972,31 +985,37 @@ function openEmp(id){
    +'<div class="f three"><div><label>Doğum Tarihi</label><input id="eDogum" type="date" value="'+(p.dogum?isoFromTR(p.dogum):'')+'"></div>'+selF('eCins','Cinsiyet',p.cinsiyet,['Erkek','Kadın'])+selF('eMedeni','Medeni Hal',p.medeni,['Bekar','Evli'])+'</div>'
    +'<div class="f two">'+inp('eUyruk','Uyruğu',p.uyruk||'Türkiye')+inp('eCocuk','Çocuk Sayısı',p.cocuk)+'</div></div>'
    +'<div class="grp"><div class="gh">Pozisyon</div>'
-   +'<div class="f two"><div><label>Departman</label><input id="eDep" list="dL" value="'+esc(p.departman||'')+'"></div><div><label>Bölüm</label><input id="eBol" list="bL" value="'+esc(p.bolum||'')+'"></div></div>'
-   +'<div class="f two"><div><label>Unvan</label><input id="eUnvan" list="uL" value="'+esc(p.unvan||'')+'"></div><div><label>İşe Giriş</label><input id="eGiris" type="date" value="'+(p.giris?isoFromTR(p.giris):new Date().toISOString().slice(0,10))+'"></div></div>'
-   +'<div class="f three">'+selF('eSozl','Sözleşme',p.sozlesmeTuru||'Süresiz',['Süresiz','Belirli Süreli'])+selF('eCalis','Çalışma Şekli',p.calismaSekli||'Tam zamanlı',['Tam zamanlı','Yarı zamanlı'])+inp('eMud','Müdürlük',p.mudurluk)+'</div>'
-   +'<div class="f two">'+inp('eDir','Direktör',p.direktor)+inp('eYon','Yöneticisi',p.yonetici)+'</div></div>'
+   +'<div class="f two">'+selList('eDep','Departman',p.departman,a.departmanlar)+selList('eBol','Bölüm',p.bolum,a.bolumler)+'</div>'
+   +'<div class="f two">'+selList('eUnvan','Unvan',p.unvan,a.unvanlar)+'<div><label>İşe Giriş</label><input id="eGiris" type="date" value="'+(p.giris?isoFromTR(p.giris):new Date().toISOString().slice(0,10))+'"></div></div>'
+   +'<div class="f three">'+selF('eSozl','Sözleşme',p.sozlesmeTuru||'Süresiz',['Süresiz','Belirli Süreli'])+selF('eCalis','Çalışma Şekli',p.calismaSekli||'Tam zamanlı',['Tam zamanlı','Yarı zamanlı'])+selList('eMud','Müdürlük',p.mudurluk,a.mudurlukler)+'</div>'
+   +'<div class="f two">'+selList('eDir','Direktör',p.direktor,a.direktorler)+selList('eYon','Yöneticisi',p.yonetici||p.mudurluk,a.mudurlukler)+'</div></div>'
+   +'<div class="grp"><div class="gh">Onay Süreçleri</div>'
+   +'<div class="f two">'+selList('eIzinOnay','İzin Onay Süreci',p.izinOnay,a.izinOnaylari)+selList('eHarcOnay','Harcama Onay Süreci',p.harcamaOnay,a.harcamaOnaylari)+'</div>'
+   +'<div class="f two">'+selList('eAvansOnay','Avans Onay Süreci',p.avansOnay,a.avansOnaylari)+selList('eMesaiOnay','Mesai Onay Süreci',p.mesaiOnay,a.mesaiOnaylari)+'</div></div>'
    +'<div class="grp"><div class="gh">İletişim & Banka</div>'
    +'<div class="f two">'+inp('eEpIs','İş E-postası',p.epostaIs)+inp('eEpKis','Kişisel E-posta',p.epostaKisisel)+'</div>'
-   +'<div class="f two">'+inp('eTelIs','İş Telefonu',p.telefonIs)+inp('eTelKis','Kişisel Telefon',p.telefonKisisel)+'</div>'
-   +'<div class="f two">'+inp('eSehir','Şehir',p.sehir)+inp('eBanka','Banka',p.banka)+'</div>'
-   +'<div class="f two">'+inp('eAdres','Adres',p.adres)+inp('eIban','IBAN',p.iban)+'</div></div>'
+   +'<div class="f two">'+inp('eTelIs','İş Telefonu',p.telIs)+inp('eTelKis','Kişisel Telefon',p.telKisisel)+'</div>'
+   +'<div class="f two">'+inp('eSehir','Şehir',p.sehir)+inp('eBanka','Banka',p.bankaAd)+'</div>'
+   +'<div class="f two">'+inp('eAdres','Adres',p.adres||p.adres2)+inp('eIban','IBAN',p.iban)+'</div></div>'
    +'<div class="grp" style="margin-bottom:0"><div class="gh">Maaş</div>'
-   +'<div class="f three">'+inp('eMaas','Maaş',p.maas)+selF('eMaasP','Periyot',p.maasPeriyot||'Aylık',['Aylık','Saatlik','Günlük'])+selF('eNetB','Net/Brüt',p.netBrut,['Net','Brüt'])+'</div></div>'
-   +'<datalist id="dL">'+a.departmanlar.map(x=>'<option value="'+esc(x)+'">').join('')+'</datalist><datalist id="bL">'+a.bolumler.map(x=>'<option value="'+esc(x)+'">').join('')+'</datalist><datalist id="uL">'+a.unvanlar.map(x=>'<option value="'+esc(x)+'">').join('')+'</datalist>';
+   +'<div class="f three">'+inp('eMaas','Maaş',p.maas)+selF('eMaasP','Periyot',p.maasPeriyot||'Aylık',['Aylık','Saatlik','Günlük'])+selF('eNetB','Net/Brüt',p.netBrut,['Net','Brüt'])+'</div></div>';
   document.getElementById('empOvl').classList.add('on'); setTimeout(()=>document.getElementById('eAd').focus(),50);
 }
 function v(id){const e=document.getElementById(id);return e?e.value.trim():'';}
 async function saveEmp(){
   const ad=v('eAd'); if(!ad){alert('Ad Soyad girin.');return;}
-  const g=v('eGiris'),dog=v('eDogum');
-  const data={ad:ad.toLocaleUpperCase('tr'),tc:v('eTc'),dogum:dog?trFromISO(dog):'',cinsiyet:v('eCins'),medeni:v('eMedeni'),uyruk:v('eUyruk'),cocuk:v('eCocuk'),
-    departman:v('eDep'),bolum:v('eBol'),unvan:v('eUnvan'),giris:g?trFromISO(g):'',sozlesmeTuru:v('eSozl'),calismaSekli:v('eCalis'),mudurluk:v('eMud'),direktor:v('eDir'),yonetici:v('eYon'),
-    epostaIs:v('eEpIs'),epostaKisisel:v('eEpKis'),telefonIs:v('eTelIs'),telefonKisisel:v('eTelKis'),sehir:v('eSehir'),banka:v('eBanka'),adres:v('eAdres'),iban:v('eIban'),
-    maas:v('eMaas'),maasPeriyot:v('eMaasP'),netBrut:v('eNetB')};
-  if(editId){const arr=empAktifMi(editId)?AKTIF:AYRILAN;const pp=arr.find(x=>x.id===editId);Object.assign(pp,data);}
-  else AKTIF=AKTIF.concat([Object.assign({id:uid()},data)]);
-  await kaydetPers(); closeModals();
+  const g=v('eGiris'),dog=v('eDogum'); const tc=v('eTc');
+  /* temel roster alanları → mrPersonel (yalın) */
+  const base={ad:ad.toLocaleUpperCase('tr'),tc:tc,departman:v('eDep'),bolum:v('eBol'),unvan:v('eUnvan'),giris:g?trFromISO(g):'',sozlesmeTuru:v('eSozl'),calismaSekli:v('eCalis'),mudurluk:v('eMud'),direktor:v('eDir'),yonetici:v('eYon')};
+  /* zengin özlük alanları → mrOzluk (ekran adlarıyla hizalı) */
+  const rich={dogum:dog?trFromISO(dog):'',cinsiyet:v('eCins'),medeni:v('eMedeni'),uyruk:v('eUyruk'),cocuk:v('eCocuk'),izinOnay:v('eIzinOnay'),harcamaOnay:v('eHarcOnay'),avansOnay:v('eAvansOnay'),mesaiOnay:v('eMesaiOnay'),
+    epostaIs:v('eEpIs'),epostaKisisel:v('eEpKis'),telIs:v('eTelIs'),telKisisel:v('eTelKis'),sehir:v('eSehir'),bankaAd:v('eBanka'),adres:v('eAdres'),iban:v('eIban'),maas:v('eMaas'),maasPeriyot:v('eMaasP'),netBrut:v('eNetB')};
+  let hedefTc=tc;
+  if(editId){const arr=empAktifMi(editId)?AKTIF:AYRILAN;const pp=arr.find(x=>x.id===editId);if(pp){Object.assign(pp,base,rich);hedefTc=pp.tc||tc;}}
+  else { const rec=Object.assign({id:'e'+(tc||uid())},base,rich); AKTIF=AKTIF.concat([rec]); }
+  await kaydetPers();
+  if(hedefTc) await ozlukGuncelle(hedefTc,rich);
+  closeModals();
 }
 
 /* ===== İZİN FORM ===== */
