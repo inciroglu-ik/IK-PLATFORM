@@ -261,10 +261,11 @@ const refAyar=doc(db,"satisVeri","ikAyar");
 const refTalep=doc(db,"satisVeri","ikTalep");
 const refOzluk=doc(db,"satisVeri","mrOzluk");
 const refIzinBakiye=doc(db,"satisVeri","mrIzinBakiye");
+const refOdemeler=doc(db,"satisVeri","mrOdemeler");
 
 /* ===== DURUM ===== */
 const SEED_AKTIF=(window.MR_AKTIF||[]), SEED_AYRILAN=(window.MR_AYRILAN||[]);
-let AKTIF=[], AYRILAN=[], IZIN=[], HARC=[], PUAN={}, AYAR=null, TALEP=[], OZLUK={}, BAKIYE={};
+let AKTIF=[], AYRILAN=[], IZIN=[], HARC=[], PUAN={}, AYAR=null, TALEP=[], OZLUK={}, BAKIYE={}, ODEME={};
 /* Özlük (hassas) verisi ayrı doküman; TC'ye göre roster üstüne bindirilir */
 function mergeOzluk(){
   if(!OZLUK||!Object.keys(OZLUK).length) return;
@@ -280,6 +281,11 @@ function mergeBakiye(){
     const b=BAKIYE[p.tc]; if(!b) return;
     p.izinHak=b.hak; p.izinKullanilan=b.kull; p.izinKalan=b.kalan;
   }));
+}
+/* Ek ödeme / kesinti (Kolay İK "Ek Ödemeler ve Kesintiler" raporu) — ayrı doküman mrOdemeler. TC->{items,ekNet,ekBrut,kesintiNet} */
+function mergeOdeme(){
+  if(!ODEME||!Object.keys(ODEME).length) return;
+  [AKTIF,AYRILAN].forEach(arr=>arr.forEach(p=>{ const o=ODEME[p.tc]; if(o) p.ekOdeme=o; }));
 }
 let ST={q:'',durum:'aktif',dep:'',bol:'',sortCol:'ad',sortDir:1,view:'grid',izTab:'yaklasan',pzAy:ym(new Date()),tlTab:'bekliyor',tlTip:'',rapSel:'calisan',rapBirim:'',rapAy:0,rapYil:0,izAltTab:'ozet',izTur:''};
 let pfTab='profil';
@@ -407,9 +413,10 @@ function sub(ref,cb){ onSnapshot(ref,s=>{cb(s.exists()?s.data():null);},e=>conso
 let ready=0;
 function boot(){
   bindGlobal();
-  sub(refPers,d=>{ if(d&&(Array.isArray(d.aktif)||Array.isArray(d.ayrilan))){AKTIF=d.aktif||[];AYRILAN=d.ayrilan||[];} else {AKTIF=SEED_AKTIF.slice();AYRILAN=SEED_AYRILAN.slice();setDoc(refPers,{aktif:AKTIF,ayrilan:AYRILAN,guncelleme:new Date().toISOString(),_init:true},{merge:true}).catch(()=>{});} mergeOzluk(); mergeBakiye(); ready=1; render(); });
+  sub(refPers,d=>{ if(d&&(Array.isArray(d.aktif)||Array.isArray(d.ayrilan))){AKTIF=d.aktif||[];AYRILAN=d.ayrilan||[];} else {AKTIF=SEED_AKTIF.slice();AYRILAN=SEED_AYRILAN.slice();setDoc(refPers,{aktif:AKTIF,ayrilan:AYRILAN,guncelleme:new Date().toISOString(),_init:true},{merge:true}).catch(()=>{});} mergeOzluk(); mergeBakiye(); mergeOdeme(); ready=1; render(); });
   sub(refOzluk,d=>{ OZLUK=(d&&d.veri)?d.veri:{}; mergeOzluk(); if(ready)render(); });
   sub(refIzinBakiye,d=>{ BAKIYE=(d&&d.veri)?d.veri:{}; mergeBakiye(); if(ready)render(); });
+  sub(refOdemeler,d=>{ ODEME=(d&&d.veri)?d.veri:{}; mergeOdeme(); if(ready)render(); });
   sub(refIzin,d=>{ IZIN=(d&&Array.isArray(d.izinler))?d.izinler:[]; if(ready)render(); });
   sub(refHarc,d=>{ HARC=(d&&Array.isArray(d.harcamalar))?d.harcamalar:[]; if(ready)render(); });
   sub(refPuan,d=>{ PUAN=(d&&d.veri)?d.veri:{}; if(ready)render(); });
@@ -419,6 +426,9 @@ function boot(){
 /* Özlük verisini Firestore'a yükleme kancası (yalnız İK; CDP ile toplu yükleme için) */
 window.__seedOzluk=async function(veri){ if(!IS_IK) throw new Error('yetki yok'); await setDoc(refOzluk,{veri,guncelleme:new Date().toISOString()},{merge:false}); OZLUK=veri; mergeOzluk(); if(ready)render(); return Object.keys(veri).length; };
 window.__seedBakiye=async function(veri){ if(!IS_IK) throw new Error('yetki yok'); await setDoc(refIzinBakiye,{veri,guncelleme:new Date().toISOString()},{merge:false}); BAKIYE=veri; mergeBakiye(); if(ready)render(); return Object.keys(veri).length; };
+window.__seedOdeme=async function(veri){ if(!IS_IK) throw new Error('yetki yok'); await setDoc(refOdemeler,{veri,guncelleme:new Date().toISOString()},{merge:false}); ODEME=veri; mergeOdeme(); if(ready)render(); return Object.keys(veri).length; };
+/* Mevcut OZLUK'a alan ekle/güncelle (kaybetmeden) — ör. doğum tarihi */
+window.__mergeOzlukAlan=async function(map){ if(!IS_IK) throw new Error('yetki yok'); if(AKTIF.length<100) throw new Error('roster yuklenmedi'); let n=0; for(const tc in map){ const o=Object.assign({},OZLUK[tc]||{}); for(const k in map[tc]){ if(map[tc][k]!=null&&map[tc][k]!=='') o[k]=map[tc][k]; } OZLUK[tc]=o; n++; } await kaydetOzluk(); mergeOzluk(); if(ready)render(); return 'merged='+n+' ozluk='+Object.keys(OZLUK).length; };
 /* Bir kerelik: şişmiş mrPersonel'deki zengin alanları mrOzluk'a taşı, sonra mrPersonel'i yalın yaz (veri kaybı yok) */
 window.__leanMigrate=async function(){ if(!IS_IK) throw new Error('yetki yok');
   if(AKTIF.length<100) throw new Error('Roster henüz yüklenmedi (AKTIF='+AKTIF.length+'), migrasyon iptal');
@@ -529,7 +539,7 @@ function viewCalisan(id){
       +(onaySurecVar?'<div class="grp" style="margin-bottom:0"><div class="gh">Onay Süreçleri</div><div class="fieldgrid">'+fv('İzin Onay Süreci',esc(p.izinOnay))+fv('Harcama Onay Süreci',esc(p.harcamaOnay))+fv('Avans Onay Süreci',esc(p.avansOnay))+fv('Mesai Onay Süreci',esc(p.mesaiOnay))+'</div></div>':'')
       +'</div>'+yonAstSection(p);
   } else if(pfTab==='kisisel'){
-    inner='<div class="card pad"><div class="grp"><div class="gh">Vatandaşlık</div><div class="fieldgrid">'+fv('Doğum Tarihi',esc(p.dogum))+fv('Cinsiyet',esc(p.cinsiyet))+fv('Engel Derecesi',esc(p.engel))+fv('Uyruğu',esc(p.uyruk)||'Türkiye')+fv('TC Kimlik No',esc(p.tc))+fv('Askerlik Durumu',esc(p.askerlik))+'</div></div>'
+    inner='<div class="card pad"><div class="grp"><div class="gh">Vatandaşlık</div><div class="fieldgrid">'+fv('Doğum Tarihi',esc(p.dogum))+fv('Yaş',esc(p.yas))+fv('Cinsiyet',esc(p.cinsiyet))+fv('Engel Derecesi',esc(p.engel))+fv('Uyruğu',esc(p.uyruk)||'Türkiye')+fv('TC Kimlik No',esc(p.tc))+fv('Askerlik Durumu',esc(p.askerlik))+'</div></div>'
       +'<div class="grp"><div class="gh">Eğitim</div><div class="fieldgrid">'+fv('Eğitim Durumu',esc(p.egitimDurumu))+fv('En Yüksek Seviye',esc(p.egitimSeviye))+fv('Son Eğitim Kurumu',esc(p.egitimKurum))+fv('Bölüm',esc(p.egitimBolum))+'</div></div>'
       +'<div class="grp"><div class="gh">Aile</div><div class="fieldgrid">'+fv('Medeni Hal',esc(p.medeni))+fv('Çocuk Sayısı',esc(p.cocuk))+fv('Kan Grubu',esc(p.kanGrubu))+'</div></div>'
       +'<div class="grp"><div class="gh">Adres</div><div class="fieldgrid">'+fv('Adres',esc(p.adres||p.adres2))+(p.adres&&p.adres2?fv('Adres (devam)',esc(p.adres2)):'')+fv('Şehir',esc(p.sehir))+fv('Ülke',esc(p.ulke)||'Türkiye')+fv('Posta Kodu',esc(p.postaKodu))+fv('Ev Telefonu',esc(p.evTel))+'</div></div>'
@@ -578,7 +588,17 @@ function viewCalisan(id){
   } else if(pfTab==='harcamalar'){
     const mh=HARC.filter(h=>h.empId===id).sort((a,b)=>dkey(b.tarih)-dkey(a.tarih));
     const od=(p.odemeler||[]);
-    inner=(mh.length?'<div class="sec-h"><h2 style="font-size:15px">Sistem Üzerinden Girilen Harcamalar</h2></div><div class="card" style="overflow:auto;margin-bottom:16px"><table class="tbl"><thead><tr><th>Tarih</th><th>Tür</th><th>Tutar</th><th>Açıklama</th><th>Durum</th><th>Ödendi</th></tr></thead><tbody>'+mh.map(h=>'<tr><td class="mini">'+esc(h.tarih)+'</td><td>'+esc(h.tur)+'</td><td><b>'+esc(h.tutar)+' TL</b></td><td class="mini">'+esc(h.aciklama||'')+'</td><td>'+izinAsamaBadge(h)+'</td><td>'+(h.odendi?'<span class="badge b-ok">Ödendi</span>':'<span class="badge b-gray">—</span>')+'</td></tr>').join('')+'</tbody></table></div>':'')
+    const eo=p.ekOdeme; const tipLbl={avans:'Avans',bes:'BES/OKS',ekode:'Ek Ödeme',kesinti:'Özel Kesinti',icra:'İcra',prim:'Prim'};
+    const tl=x=>(x==null||x==='')?'—':Number(x).toLocaleString('tr-TR')+' TL';
+    let ekBlok='';
+    if(eo && ((eo.items&&eo.items.length) || eo.ekNet || eo.kesintiNet)){
+      const items=(eo.items||[]).slice().sort((a,b)=>dkey(b.tarih)-dkey(a.tarih));
+      ekBlok='<div class="sec-h"><h2 style="font-size:15px">Ek Ödemeler &amp; Kesintiler</h2><span class="mini">'+items.length+' kayıt</span></div>'
+        +'<div class="kpis" style="grid-template-columns:repeat(auto-fit,minmax(165px,1fr));margin-bottom:12px"><div class="kpi"><div class="n">'+tl(eo.ekNet)+'</div><div class="l">Toplam Ek Ödeme (Net)</div></div><div class="kpi"><div class="n">'+tl(eo.ekBrut)+'</div><div class="l">Toplam Ek Ödeme (Brüt)</div></div><div class="kpi warn"><div class="n">'+tl(eo.kesintiNet)+'</div><div class="l">Toplam Kesinti (Net)</div></div></div>'
+        +miniTbl(['Tür','Ad / Açıklama','Tutar','Tarih'],items.map(it=>['<span class="badge">'+esc(tipLbl[it.tip]||it.tip)+'</span>',esc(it.ad||it.aciklama||'—'),'<b>'+tl(it.tutar)+'</b>','<span class="mini">'+esc(it.tarih||'')+'</span>']))
+        +'<div style="height:18px"></div>';
+    }
+    inner=ekBlok+(mh.length?'<div class="sec-h"><h2 style="font-size:15px">Sistem Üzerinden Girilen Harcamalar</h2></div><div class="card" style="overflow:auto;margin-bottom:16px"><table class="tbl"><thead><tr><th>Tarih</th><th>Tür</th><th>Tutar</th><th>Açıklama</th><th>Durum</th><th>Ödendi</th></tr></thead><tbody>'+mh.map(h=>'<tr><td class="mini">'+esc(h.tarih)+'</td><td>'+esc(h.tur)+'</td><td><b>'+esc(h.tutar)+' TL</b></td><td class="mini">'+esc(h.aciklama||'')+'</td><td>'+izinAsamaBadge(h)+'</td><td>'+(h.odendi?'<span class="badge b-ok">Ödendi</span>':'<span class="badge b-gray">—</span>')+'</td></tr>').join('')+'</tbody></table></div>':'')
       +'<div class="sec-h"><h2 style="font-size:15px">Ödeme / Harcama Geçmişi (Kolay İK)</h2><span class="mini">'+od.length+' kayıt</span></div>'
       +miniTbl(['Oluşturulma','Kategori','Tür','Tutar','Net/Brüt'],od.slice().sort((a,b)=>dkey(b.olus)-dkey(a.olus)).map(o=>['<span class="mini">'+esc(o.olus)+'</span>',esc(o.kategori||'—'),esc(o.tur||'—'),'<b>'+esc(o.tutar)+'</b>',esc(o.netbrut||'—')]));
   } else if(pfTab==='mesailer'){
