@@ -1,8 +1,15 @@
 <!doctype html>
 <html lang="tr"><head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>İnciroğlu · Çalışan</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#132a44">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="İnciroğlu">
+<link rel="apple-touch-icon" href="icon-192.png"><link rel="icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:wght@600;700&display=swap" rel="stylesheet">
 <style>
@@ -33,10 +40,22 @@ input:focus,select,textarea:focus{border-color:var(--navy)}
 .hide{display:none!important}
 /* APP */
 .app{max-width:520px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:#eef2f6}
-.top{background:var(--navy);color:#fff;padding:16px 18px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:5}
-.top .av{width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex:none}
-.top b{display:block;font-size:15.5px}.top small{color:#b9c9db;font-size:11.5px}
-.top .out{margin-left:auto;background:rgba(255,255,255,.12);border:none;color:#fff;border-radius:9px;padding:8px 12px;font-size:12.5px;cursor:pointer;font-family:inherit}
+.top{background:var(--navy);color:#fff;padding:12px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:5}
+.gc-btn{display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,var(--brass),#8f6a1f);color:#fff;border:none;border-radius:13px;padding:8px 12px;font-family:inherit;font-weight:700;font-size:12px;line-height:1.1;cursor:pointer;flex:none;box-shadow:0 3px 10px rgba(0,0,0,.2)}
+.gc-btn svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2;flex:none}
+.gc-btn span{text-align:left}
+.gc-btn:active{transform:scale(.97)}
+.top-id{margin-left:auto;display:flex;align-items:center;gap:9px;min-width:0}
+.top-id .av{width:38px;height:38px;border-radius:11px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:none}
+.top-id-t{min-width:0}
+.top-id-t b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+.top-id-t small{color:#b9c9db;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:120px}
+.top .out{background:rgba(255,255,255,.12);border:none;color:#fff;border-radius:9px;padding:8px 11px;font-size:12px;cursor:pointer;font-family:inherit;flex:none}
+.back{display:inline-flex;align-items:center;gap:4px;background:none;border:none;color:var(--navy);font-weight:600;font-size:13px;cursor:pointer;padding:2px 0;margin-bottom:10px;font-family:inherit}
+.back svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2.2}
+.mini-info{font-size:12.5px;color:var(--ink-2);line-height:1.55;background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:16px}
+.loc-note{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:10px}
+.list-h{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px;font-weight:600}
 .body{flex:1;padding:18px 16px 92px;overflow-y:auto}
 .nav{position:fixed;bottom:0;left:0;right:0;max-width:520px;margin:0 auto;background:#fff;border-top:1px solid var(--line);display:flex;box-shadow:0 -4px 20px rgba(0,0,0,.06)}
 .nav a{flex:1;text-align:center;padding:10px 0 12px;font-size:11px;color:var(--muted);cursor:pointer;font-weight:600}
@@ -63,8 +82,10 @@ input:focus,select,textarea:focus{border-color:var(--navy)}
 .slider .knob svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:2.4}
 .g-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f0f2f5;font-size:13px}
 .g-row .giris{color:var(--ok);font-weight:600}.g-row .cikis{color:var(--bad);font-weight:600}
-.tbtns{display:flex;gap:8px;margin-bottom:14px}
-.tbtns .btn{margin:0}
+.tbtns{display:flex;gap:10px;margin-bottom:22px}
+.tbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;background:#fff;border:1px solid var(--line);border-radius:15px;padding:16px 8px;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--navy);box-shadow:0 2px 8px rgba(16,27,40,.05)}
+.tbtn svg{width:26px;height:26px;stroke:var(--brass);fill:none;stroke-width:1.8}
+.tbtn:active{transform:scale(.97);background:#f8fafc}
 .tcard{background:#fff;border:1px solid var(--line);border-radius:13px;padding:13px 14px;margin-bottom:10px}
 .tcard .r1{display:flex;justify-content:space-between;align-items:center}
 .tcard b{color:var(--navy);font-size:14px}
@@ -108,11 +129,29 @@ input:focus,select,textarea:focus{border-color:var(--navy)}
 
 <!-- APP -->
 <div class="app hide" id="appView">
-  <div class="top"><div class="av" id="tAv">—</div><div><b id="tAd">—</b><small id="tDep">—</small></div><button class="out" id="outBtn">Çıkış</button></div>
+  <div class="top">
+    <button class="gc-btn" id="gcBtn"><svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><line x1="15" y1="12" x2="3" y2="12"/></svg><span>İşe Giriş<br>Çıkış</span></button>
+    <div class="top-id"><div class="av" id="tAv">—</div><div class="top-id-t"><b id="tAd">—</b><small id="tDep">—</small></div></div>
+    <button class="out" id="outBtn">Çıkış</button>
+  </div>
   <div class="body">
+    <!-- TALEPLER (ANA EKRAN) -->
+    <div id="secTalep">
+      <div class="who"><div class="av" id="whoAv">—</div><div><b id="whoAd">—</b><small id="whoDep">—</small></div></div>
+      <div class="sec-h">Taleplerim</div>
+      <div class="mini-info">İzin, avans veya mesai talebini buradan oluştur. Talebin müdür → direktör → İnsan Kaynakları onayından geçer.</div>
+      <div class="tbtns">
+        <button class="tbtn" data-yt="İzin"><svg viewBox="0 0 24 24"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg><span>İzin Talebi</span></button>
+        <button class="tbtn" data-yt="Avans"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg><span>Avans Talebi</span></button>
+        <button class="tbtn" data-yt="Mesai"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Mesai Talebi</span></button>
+      </div>
+      <div class="list-h">Geçmiş Taleplerim</div>
+      <div id="talepList"></div>
+    </div>
     <!-- GIRIS-CIKIS -->
-    <div id="secPdks">
-      <div class="sec-h">Giriş / Çıkış</div>
+    <div id="secPdks" class="hide">
+      <button class="back" id="pdksBack"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg> Ana ekrana dön</button>
+      <div class="sec-h">İşe Giriş / Çıkış</div>
       <div class="stat">
         <div class="box"><div class="t">Bugün Giriş</div><div class="v" id="bugunGiris">—</div></div>
         <div class="box"><div class="t">Bugün Çıkış</div><div class="v" id="bugunCikis">—</div></div>
@@ -120,13 +159,8 @@ input:focus,select,textarea:focus{border-color:var(--navy)}
       <div class="loc" id="locBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-5.2-7-11a7 7 0 0 1 14 0c0 5.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.6"/></svg><span id="locTxt">Konum alınıyor…</span></div>
       <div class="slider" id="slider"><div class="fill" id="fill"></div><div class="lbl" id="slLbl">İşe Başlamak için Kaydır →</div><div class="knob" id="knob"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div></div>
       <div class="msg" id="pdksMsg"></div>
-      <div style="margin-top:18px"><div style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:6px">Son Hareketler</div><div id="gecmis"></div></div>
-    </div>
-    <!-- TALEPLER -->
-    <div id="secTalep" class="hide">
-      <div class="sec-h">Taleplerim</div>
-      <div class="tbtns"><button class="btn sm" data-yt="İzin">+ İzin</button><button class="btn sm" data-yt="Avans">+ Avans</button><button class="btn sm" data-yt="Mesai">+ Mesai</button></div>
-      <div id="talepList"></div>
+      <div class="loc-note">Giriş-çıkış yalnızca işyeri konumunda yapılabilir. Konumun otopark/anayol gibi bir yerdeyse sistem kabul etmez.</div>
+      <div style="margin-top:18px"><div class="list-h">Son Hareketlerim</div><div id="gecmis"></div></div>
     </div>
     <!-- EKIBIM -->
     <div id="secEkip" class="hide">
@@ -136,8 +170,7 @@ input:focus,select,textarea:focus{border-color:var(--navy)}
     </div>
   </div>
   <div class="nav">
-    <a data-sec="secPdks" class="on"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Giriş-Çıkış</a>
-    <a data-sec="secTalep"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Talepler</a>
+    <a data-sec="secTalep" class="on"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Taleplerim</a>
     <a data-sec="secEkip"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></svg>Ekibim</a>
   </div>
 </div>
@@ -225,15 +258,20 @@ el('outBtn').onclick=()=>{EMP=null;el('appView').classList.add('hide');el('login
 /* ---- APP ---- */
 function appAc(){
   el('loginView').classList.add('hide'); el('appView').classList.remove('hide');
-  el('tAv').textContent=initials(EMP.ad).toLocaleUpperCase('tr');
-  el('tAd').textContent=trTitle(EMP.ad); el('tDep').textContent=(EMP.unvan||'')+' · '+(EMP.departman||'');
-  el('av')&&(el('av').textContent=initials(EMP.ad));
-  secGoster('secPdks'); pdksTazele(); konumAl(); talepTazele(); ekipTazele();
+  const ini=initials(EMP.ad).toLocaleUpperCase('tr');
+  el('tAv').textContent=ini; el('tAd').textContent=trTitle(EMP.ad); el('tDep').textContent=(EMP.unvan||EMP.departman||'');
+  el('whoAv')&&(el('whoAv').textContent=ini); el('whoAd')&&(el('whoAd').textContent=trTitle(EMP.ad)); el('whoDep')&&(el('whoDep').textContent=(EMP.unvan||'')+(EMP.unvan&&EMP.departman?' · ':'')+(EMP.departman||''));
+  secGoster('secTalep'); pdksTazele(); talepTazele(); ekipTazele();
 }
 document.querySelectorAll('.nav a').forEach(a=>a.onclick=()=>secGoster(a.getAttribute('data-sec')));
+// Sol üst köşe: İşe Giriş-Çıkış ekranını aç (her açılışta konumu tazele)
+el('gcBtn').onclick=()=>{secGoster('secPdks');pdksTazele();konumAl();};
+el('pdksBack').onclick=()=>secGoster('secTalep');
 function secGoster(sec){
   ['secPdks','secTalep','secEkip'].forEach(s=>el(s).classList.toggle('hide',s!==sec));
   document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('on',a.getAttribute('data-sec')===sec));
+  try{el('body')&&el('body').scrollTo&&el('body').scrollTo(0,0);}catch(e){}
+  const b=document.querySelector('.body'); if(b)b.scrollTop=0;
 }
 
 /* ---- PDKS ---- */
