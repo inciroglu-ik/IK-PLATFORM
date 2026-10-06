@@ -220,10 +220,10 @@ function enYakin(lat,lng){let best=null;LOKASYONLAR.forEach(l=>{const m=mesafe(l
 function uid(p){return (p||'t')+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36);}
 function durumBadge(d){return d==='onaylandi'?'<span class="badge ok">Onaylandı</span>':d==='reddedildi'?'<span class="badge bad">Reddedildi</span>':'<span class="badge warn">Onay Bekliyor</span>';}
 
-let AUTH=null, ROSTER=null, EMP=null, KAYITLAR=[], IZINLER=[], TALEPLER=[], gps=null;
+let AUTH=null, ROSTER=null, EMP=null, KAYITLAR=[], IZINLER=[], TALEPLER=[], gps=null, AKTIFIDS=new Set();
 
 async function authYukle(){ if(AUTH)return AUTH; const s=await getDoc(refAuth); AUTH=(s.exists()&&s.data().veri)?s.data().veri:{}; return AUTH; }
-async function rosterYukle(){ if(ROSTER)return ROSTER; const s=await getDoc(refPers); const d=s.exists()?s.data():{}; ROSTER=(d.aktif||[]).concat(d.ayrilan||[]); return ROSTER; }
+async function rosterYukle(){ if(ROSTER)return ROSTER; const s=await getDoc(refPers); const d=s.exists()?s.data():{}; const akt=d.aktif||[]; AKTIFIDS=new Set(akt.map(x=>String(x.id))); ROSTER=akt.concat(d.ayrilan||[]); return ROSTER; }
 async function talepYukle(){ const a=await getDoc(refIzin); IZINLER=(a.exists()&&Array.isArray(a.data().izinler))?a.data().izinler:[]; const b=await getDoc(refTalep); TALEPLER=(b.exists()&&Array.isArray(b.data().talepler))?b.data().talepler:[]; const c=await getDoc(refPdks); KAYITLAR=(c.exists()&&Array.isArray(c.data().kayitlar))?c.data().kayitlar:[]; }
 
 /* ---- LOGIN ---- */
@@ -381,10 +381,11 @@ el('talepKaydet').onclick=async()=>{
 
 /* ---- EKIBIM ---- */
 function ekipTazele(){
-  const md=trLower(EMP.mudurluk||'');
-  const ekip=ROSTER.filter(x=>x.id!==EMP.id && md && trLower(x.mudurluk||'')===md);
-  el('ekipSub').textContent=EMP.mudurluk?('Yönetici: '+trTitle(EMP.mudurluk)+' · '+ekip.length+' ekip arkadaşı'):'Ekip bilgisi bulunamadı.';
-  el('ekipList').innerHTML=ekip.length?ekip.sort((a,b)=>String(a.ad).localeCompare(String(b.ad),'tr')).map(x=>'<div class="ekip"><div class="av" style="background:'+avColor(x.ad)+'">'+esc(initials(x.ad))+'</div><div><b>'+esc(trTitle(x.ad))+'</b><small>'+esc(x.unvan||x.departman||'')+'</small></div></div>').join(''):'<div style="color:var(--muted);font-size:13px;padding:16px 0;text-align:center">Ekip arkadaşı görünmüyor.</div>';
+  // Ekip = aynı DEPARTMAN'daki AKTİF çalışanlar (işten ayrılanlar hariç)
+  const dep=trLower(EMP.departman||'');
+  const ekip=ROSTER.filter(x=>x.id!==EMP.id && dep && trLower(x.departman||'')===dep && AKTIFIDS.has(String(x.id)));
+  el('ekipSub').textContent=EMP.departman?(trTitle(EMP.departman)+' · '+ekip.length+' ekip arkadaşı'):'Departman bilgisi bulunamadı.';
+  el('ekipList').innerHTML=ekip.length?ekip.sort((a,b)=>String(a.ad).localeCompare(String(b.ad),'tr')).map(x=>'<div class="ekip"><div class="av" style="background:'+avColor(x.ad)+'">'+esc(initials(x.ad))+'</div><div><b>'+esc(trTitle(x.ad))+'</b><small>'+esc(x.unvan||x.bolum||'')+'</small></div></div>').join(''):'<div style="color:var(--muted);font-size:13px;padding:16px 0;text-align:center">Departmanında başka aktif çalışan görünmüyor.</div>';
 }
 </script>
 </body></html>
