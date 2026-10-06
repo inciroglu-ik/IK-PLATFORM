@@ -384,7 +384,7 @@ function ekipTazele(){
   // Ekip = aynı DEPARTMAN'daki AKTİF çalışanlar (işten ayrılanlar hariç)
   const dep=trLower(EMP.departman||'');
   const ekip=ROSTER.filter(x=>x.id!==EMP.id && dep && trLower(x.departman||'')===dep && AKTIFIDS.has(String(x.id)));
-  el('ekipSub').textContent=EMP.departman?(trTitle(EMP.departman)+' · '+ekip.length+' ekip arkadaşı'):'Departman bilgisi bulunamadı.';
+  el('ekipSub').textContent=EMP.departman?(EMP.departman+' · '+ekip.length+' ekip arkadaşı'):'Departman bilgisi bulunamadı.';
   el('ekipList').innerHTML=ekip.length?ekip.sort((a,b)=>String(a.ad).localeCompare(String(b.ad),'tr')).map(x=>'<div class="ekip"><div class="av" style="background:'+avColor(x.ad)+'">'+esc(initials(x.ad))+'</div><div><b>'+esc(trTitle(x.ad))+'</b><small>'+esc(x.unvan||x.bolum||'')+'</small></div></div>').join(''):'<div style="color:var(--muted);font-size:13px;padding:16px 0;text-align:center">Departmanında başka aktif çalışan görünmüyor.</div>';
 }
 </script>
