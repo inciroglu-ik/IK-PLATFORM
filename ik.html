@@ -165,7 +165,9 @@ table.tbl tbody tr.clk{cursor:pointer}table.tbl tbody tr.clk:hover td{background
 .pz{overflow:auto}.pz table{border-collapse:collapse;font-size:12px;white-space:nowrap}
 .pz th,.pz td{border:1px solid var(--line);padding:5px 7px;text-align:center}.pz th{background:#f6f8fa;position:sticky;top:0}
 .pz td.nm{text-align:left;font-weight:600;color:var(--navy);position:sticky;left:0;background:#fff;min-width:160px}
-.pz .cell{cursor:pointer;min-width:30px}.pz .c-C{background:#eaf7ef;color:#15713d}.pz .c-I{background:#eef2fb;color:#2563eb}.pz .c-T{background:#fff4e0;color:#b26a00}.pz .c-R{background:#f6ecfb;color:#8e44ad}.pz .c-Y{background:#fff;color:#cbd2da}
+.pz .cell{cursor:pointer;min-width:30px;position:relative}.pz .c-C{background:#eaf7ef;color:#15713d}.pz .c-I{background:#eef2fb;color:#2563eb}.pz .c-T{background:#fff4e0;color:#b26a00}.pz .c-R{background:#f6ecfb;color:#8e44ad}.pz .c-Y{background:#fff;color:#cbd2da}
+.pz .pz-gec::before{content:"";position:absolute;top:0;right:0;border-top:7px solid #e8a33d;border-left:7px solid transparent}
+.pz .pz-erken::after{content:"";position:absolute;bottom:0;right:0;border-bottom:7px solid #c0392b;border-left:7px solid transparent}
 .tag{display:inline-block;font-size:9px;font-weight:700;border-radius:4px;padding:1px 5px;background:#eef1f4;color:var(--ink-2)}
 .gc-wrap{display:grid;grid-template-columns:1.9fr 1fr;gap:16px;align-items:start}
 @media(max-width:860px){.gc-wrap{grid-template-columns:1fr}}
@@ -370,7 +372,8 @@ function ensureAyar(){
     mesaiOnaylari:pick('mesaiOnaylari',dist('mesaiOnay')),
     izinTurleri:pick('izinTurleri',['Yıllık İzin','Ücretsiz İzin','Rapor (İstirahat)','Mazeret İzni','Doğum İzni','Evlilik İzni','Ölüm İzni','İdari İzin']),
     harcamaTurleri:pick('harcamaTurleri',['Yol','Yemek','Konaklama','Akaryakıt','Ofis/Kırtasiye','Temsil/Ağırlama','Diğer']),
-    yillikKural:(d.yillikKural&&d.yillikKural.length)?d.yillikKural:[{min:0,max:5,gun:14},{min:5,max:15,gun:20},{min:15,max:99,gun:26}]
+    yillikKural:(d.yillikKural&&d.yillikKural.length)?d.yillikKural:[{min:0,max:5,gun:14},{min:5,max:15,gun:20},{min:15,max:99,gun:26}],
+    mesaiBas:d.mesaiBas||'09:00', mesaiBit:d.mesaiBit||'18:00', gecTolerans:(d.gecTolerans!=null)?d.gecTolerans:15
   };
 }
 function yillikHak(giris){const y=kidemYil(giris);if(y<1)return 0;/* İş Kanunu md.53: 1 yılı doldurmadan yıllık izne hak kazanılmaz */const k=ensureAyar().yillikKural;for(const r of k){if(y>=r.min&&y<r.max)return r.gun;}return k.length?k[k.length-1].gun:14;}
@@ -835,26 +838,38 @@ function viewHarcamalar(){
 function ayGunSayi(ym){const [Y,M]=ym.split('-').map(Number);return new Date(Y,M,0).getDate();}
 function ayAd(ym){const [Y,M]=ym.split('-').map(Number);return new Date(Y,M-1,1).toLocaleDateString('tr-TR',{month:'long',year:'numeric'}).replace(/^\w/,c=>c.toLocaleUpperCase('tr'));}
 const PZ_NEXT={'Y':'C','C':'I','I':'T','T':'R','R':'Y'}; const PZ_AD={C:'Çalıştı',I:'İzinli',T:'Tatil',R:'Rapor',Y:'—'};
-function puanIzinUygula(){ // onaylı izinleri puantaja yansıt (sadece boş hücreler)
-  const [Y,M]=ST.pzAy.split('-').map(Number); const av=PUAN[ST.pzAy]=PUAN[ST.pzAy]||{};
-  IZIN.filter(z=>z.durum==='onaylandi').forEach(z=>{let a=dObj(z.baslangic),b=dObj(z.bitis);if(!a||!b)return;for(let d=new Date(a);d<=b;d.setDate(d.getDate()+1)){if(d.getFullYear()===Y&&d.getMonth()===M-1){const row=av[z.empId]=av[z.empId]||{};const dd=d.getDate();if(!row[dd]||row[dd]==='Y')row[dd]=/rapor/i.test(z.tur)?'R':'I';}}});
-}
-function puanPdksUygula(){ // canlı giriş-çıkış: giriş yapılan günü 'Çalıştı' işaretle (sadece boş hücreler; izin önceliklidir)
-  const [Y,M]=ST.pzAy.split('-').map(Number); const av=PUAN[ST.pzAy]=PUAN[ST.pzAy]||{};
+function hhmmMin(s){const m=/(\d{1,2}):(\d{2})/.exec(s||'');return m?(+m[1]*60+ +m[2]):null;}
+/* Bir ay için puantaj durum matrisi (empId->gün->C/I/T/R). PUAN manuel kayıtları + onaylı izin/rapor + canlı giriş. Salt okunur klon. */
+function puantajGrid(ym){
+  const [Y,M]=ym.split('-').map(Number);
+  const grid={}; const src=PUAN[ym]||{};
+  Object.keys(src).forEach(id=>{ grid[id]={}; Object.keys(src[id]).forEach(dd=>{ grid[id][dd]=src[id][dd]; }); });
+  IZIN.filter(z=>z.durum==='onaylandi').forEach(z=>{let a=dObj(z.baslangic),b=dObj(z.bitis);if(!a||!b)return;for(let d=new Date(a);d<=b;d.setDate(d.getDate()+1)){if(d.getFullYear()===Y&&d.getMonth()===M-1){const row=grid[z.empId]=grid[z.empId]||{};const dd=d.getDate();if(!row[dd]||row[dd]==='Y')row[dd]=/rapor/i.test(z.tur)?'R':'I';}}});
   const idByTc={}; AKTIF.forEach(p=>{ idByTc[String(p.tc)]=p.id; });
-  PDKS.forEach(k=>{ if(k.tip!=='giris')return; const d=dObj(k.tarih); if(!d||d.getFullYear()!==Y||d.getMonth()!==M-1)return; const id=idByTc[String(k.tc)]; if(!id)return; const row=av[id]=av[id]||{}; const dd=d.getDate(); if(!row[dd]||row[dd]==='Y')row[dd]='C'; });
+  PDKS.forEach(k=>{ if(k.tip!=='giris')return; const d=dObj(k.tarih); if(!d||d.getFullYear()!==Y||d.getMonth()!==M-1)return; const id=idByTc[String(k.tc)]; if(!id)return; const row=grid[id]=grid[id]||{}; const dd=d.getDate(); if(!row[dd]||row[dd]==='Y')row[dd]='C'; });
+  return grid;
+}
+/* Geç giriş / erken çıkış işaretleri (empId->gün->{giris,cikis,gec,erken}) */
+function puantajFlags(ym){
+  const [Y,M]=ym.split('-').map(Number); const a=ensureAyar();
+  const basM=hhmmMin(a.mesaiBas), bitM=hhmmMin(a.mesaiBit), tol=+a.gecTolerans||0;
+  const idByTc={}; AKTIF.forEach(p=>{ idByTc[String(p.tc)]=p.id; });
+  const fl={};
+  PDKS.forEach(k=>{ const d=dObj(k.tarih); if(!d||d.getFullYear()!==Y||d.getMonth()!==M-1)return; const id=idByTc[String(k.tc)]; if(!id)return; const dd=d.getDate(); const o=fl[id]=fl[id]||{}; (o[dd]=o[dd]||{ler:[]}).ler.push(k); });
+  Object.keys(fl).forEach(id=>Object.keys(fl[id]).forEach(dd=>{ const g=fl[id][dd]; const oz=pdksGunOzet(g.ler); g.giris=oz.ilk?oz.ilk.saat:''; g.cikis=oz.son?oz.son.saat:''; const gi=hhmmMin(g.giris), ci=hhmmMin(g.cikis); g.gec=(basM!=null&&gi!=null)&&gi>basM+tol; g.erken=(bitM!=null&&ci!=null&&!!oz.son)&&ci<bitM-tol; }));
+  return fl;
 }
 function viewPuantaj(){
-  puanIzinUygula();
-  puanPdksUygula();
+  const a=ensureAyar();
   const gun=ayGunSayi(ST.pzAy); const [Y,M]=ST.pzAy.split('-').map(Number);
   const emps=AKTIF.slice().sort((a,b)=>String(a.ad).localeCompare(String(b.ad),'tr'));
-  const av=PUAN[ST.pzAy]||{};
+  const av=puantajGrid(ST.pzAy); const fl=puantajFlags(ST.pzAy);
   let head='<tr><th class="nm" style="text-align:left">Çalışan</th>';for(let d=1;d<=gun;d++){const wd=(new Date(Y,M-1,d).getDay());const we=(wd===0||wd===6);head+='<th'+(we?' style="background:#eef1f4"':'')+'>'+d+'</th>';}head+='<th>Top.</th></tr>';
-  let rows=emps.map(p=>{const row=av[p.id]||{};let c=0;let tds='';for(let d=1;d<=gun;d++){const v=row[d]||'Y';if(v==='C')c++;tds+='<td class="cell c-'+v+'" data-emp="'+esc(p.id)+'" data-gun="'+d+'" title="'+PZ_AD[v]+'">'+(v==='Y'?'·':v)+'</td>';}return '<tr><td class="nm">'+esc(trTitle(p.ad))+'</td>'+tds+'<td><b>'+c+'</b></td></tr>';}).join('');
+  let rows=emps.map(p=>{const row=av[p.id]||{};const pf=fl[p.id]||{};let c=0;let tds='';for(let d=1;d<=gun;d++){const v=row[d]||'Y';if(v==='C')c++;const f=pf[d]||{};const fg=(v==='C'&&f.gec)?' pz-gec':'';const fe=(v==='C'&&f.erken)?' pz-erken':'';let tt=PZ_AD[v];if(f.giris){tt+=' · Giriş '+f.giris+(f.cikis?' / Çıkış '+f.cikis:'');if(f.gec)tt+=' · GEÇ GİRİŞ';if(f.erken)tt+=' · ERKEN ÇIKIŞ';}tds+='<td class="cell c-'+v+fg+fe+'" data-emp="'+esc(p.id)+'" data-gun="'+d+'" data-cur="'+v+'" title="'+esc(tt)+'">'+(v==='Y'?'·':v)+'</td>';}return '<tr><td class="nm">'+esc(trTitle(p.ad))+'</td>'+tds+'<td><b>'+c+'</b></td></tr>';}).join('');
   return '<div class="toolbar"><button class="btn g sm" id="ayGeri">←</button><div style="font-family:var(--serif);font-size:18px;font-weight:700;color:var(--navy);min-width:160px;text-align:center">'+ayAd(ST.pzAy)+'</div><button class="btn g sm" id="ayIleri">→</button><div style="flex:1"></div>'
-    +'<span class="badge" style="background:#eaf7ef;color:#15713d">C Çalıştı</span><span class="badge" style="background:#eef2fb;color:#2563eb">I İzinli</span><span class="badge" style="background:#fff4e0;color:#b26a00">T Tatil</span><span class="badge" style="background:#f6ecfb;color:#8e44ad">R Rapor</span></div>'
-    +'<div class="mini" style="margin-bottom:10px">Hücreye tıklayarak durumu değiştirin (· → C → I → T → R). Onaylı izinler ve mobil uygulamadan yapılan girişler (Çalıştı) otomatik işlenir.</div>'
+    +'<span class="badge" style="background:#eaf7ef;color:#15713d">C Çalıştı</span><span class="badge" style="background:#eef2fb;color:#2563eb">I İzinli</span><span class="badge" style="background:#fff4e0;color:#b26a00">T Tatil</span><span class="badge" style="background:#f6ecfb;color:#8e44ad">R Rapor</span>'
+    +'<span class="badge" style="background:#fff;color:#b26a00;border-color:#e8a33d">◤ Geç giriş</span><span class="badge" style="background:#fff;color:#c0392b;border-color:#e3a79f">◢ Erken çıkış</span></div>'
+    +'<div class="mini" style="margin-bottom:10px">Hücreye tıklayarak durumu değiştirin (· → C → I → T → R). Onaylı izin/rapor ve mobil uygulamadan yapılan girişler otomatik işlenir. Standart mesai <b>'+esc(a.mesaiBas)+'–'+esc(a.mesaiBit)+'</b> (±'+esc(a.gecTolerans)+' dk tolerans); sonrası geç giriş / öncesi erken çıkış olarak işaretlenir (Ayarlar → Çalışma Saatleri).</div>'
     +'<div class="card pad pz"><table>'+head+rows+'</table></div>';
 }
 
@@ -928,6 +943,8 @@ const RAPORLAR=[
   {id:'izinbakiye',kat:'İdari',ad:'İzin Bakiye Raporu',ac:'Çalışan bazında yıllık izin bakiyesi',uses:['birim']},
   {id:'izinkullanim',kat:'İdari',ad:'Kullanılan İzin Raporu',ac:'Seçili dönemde onaylı izinler + onay akışı',uses:['birim','ay','yil']},
   {id:'onaysurec',kat:'İdari',ad:'Onay Süreçleri Raporu',ac:'İzin / avans / mesai / harcama onay akışları',uses:['birim','ay','yil']},
+  {id:'puantaj',kat:'İdari',ad:'Aylık Puantaj Raporu',ac:'Seçili ayın gün gün puantaj dökümü + geç/erken özeti',uses:['birim','ay','yil']},
+  {id:'giriscikis',kat:'İdari',ad:'Giriş-Çıkış Dökümü',ac:'Seçili ayda mobil uygulama giriş-çıkış kayıtları',uses:['birim','ay','yil']},
   {id:'departman',kat:'İdari',ad:'Departman Dağılımı',ac:'Departman bazında çalışan sayısı',uses:[]},
   {id:'maas',kat:'Finans',ad:'Maaş Bilgileri',ac:'Maaş girilmiş çalışanlar',uses:['birim']},
   {id:'harcama',kat:'Finans',ad:'Harcama Raporu',ac:'Seçili dönemde harcamalar + onay akışı',uses:['birim','ay','yil']}
@@ -973,6 +990,19 @@ function raporData(id,f){
     TALEP.forEach(t=>push(t,t.tip,t.ozet,t.tarih));
     rows.sort((a,b)=>dkey(b[4])-dkey(a[4]));
     return {baslik:'Onay Süreçleri Raporu',cols:['Ad Soyad','TC Kimlik','Tür','Özet','Tarih','Aşama','Onay Akışı'],rows};
+  }
+  if(id==='puantaj'){
+    const Y=f.yil||buYil(); const M=f.ay||(new Date().getMonth()+1); const ym=Y+'-'+String(M).padStart(2,'0');
+    const gun=ayGunSayi(ym); const grid=puantajGrid(ym); const fl=puantajFlags(ym);
+    const cols=['Ad Soyad','TC Kimlik','Departman']; for(let d=1;d<=gun;d++)cols.push(String(d)); cols.push('Çalışılan','İzinli','Tatil','Rapor','Geç Giriş','Erken Çıkış');
+    const rows=AKTIF.filter(bf).map(p=>{const row=grid[p.id]||{};const pf=fl[p.id]||{};let cC=0,cI=0,cT=0,cR=0,gG=0,gE=0;const cells=[];for(let d=1;d<=gun;d++){const v=row[d]||'';if(v==='C')cC++;else if(v==='I')cI++;else if(v==='T')cT++;else if(v==='R')cR++;const ff=pf[d]||{};if(v==='C'&&ff.gec)gG++;if(v==='C'&&ff.erken)gE++;let cell=(!v||v==='Y')?'':v;if(v==='C'&&(ff.gec||ff.erken))cell+=(ff.gec?' ◤':'')+(ff.erken?' ◢':'');cells.push(cell);}return [trTitle(p.ad),p.tc,p.departman,...cells,cC,cI,cT,cR,gG,gE];});
+    return {baslik:'Aylık Puantaj Raporu — '+ayAd(ym),cols,rows};
+  }
+  if(id==='giriscikis'){
+    const Y=f.yil||buYil(); const M=f.ay||0;
+    const idByTc={}; AKTIF.forEach(p=>{idByTc[String(p.tc)]=p;}); AYRILAN.forEach(p=>{if(!idByTc[String(p.tc)])idByTc[String(p.tc)]=p;});
+    const rows=PDKS.filter(k=>{const d=dObj(k.tarih);if(!d)return false;if(d.getFullYear()!==Y)return false;if(M&&d.getMonth()!==M-1)return false;const e=idByTc[String(k.tc)];if(f.birim&&(!e||e.departman!==f.birim))return false;return true;}).sort((a,b)=>String(b.ts).localeCompare(String(a.ts))).map(k=>[trTitle(k.ad),k.tc,(idByTc[String(k.tc)]||{}).departman||'',k.tarih,k.saat,k.tip==='giris'?'Giriş':'Çıkış',k.lokasyon||'',(k.mesafe!=null?Math.round(k.mesafe)+' m':'')]);
+    return {baslik:'Giriş-Çıkış Dökümü',cols:['Ad Soyad','TC Kimlik','Departman','Tarih','Saat','Hareket','Lokasyon','Uzaklık'],rows};
   }
   if(id==='departman'){const d=depDagilim();return {baslik:'Departman Dağılımı',cols:['Departman','Çalışan Sayısı','Oran %'],rows:d.map(([k,v])=>[k,v,Math.round(v/AKTIF.length*100)])};}
   if(id==='maas') return {baslik:'Maaş Bilgileri',cols:['Ad Soyad','TC Kimlik','Departman','Unvan','Maaş','Periyot','Net/Brüt'],rows:AKTIF.filter(bf).filter(p=>p.maas).map(p=>[trTitle(p.ad),p.tc,p.departman,p.unvan,p.maas+' '+(p.maasBirim||'TL'),p.maasPeriyot||'Aylık',p.netBrut||''])};
@@ -1032,6 +1062,15 @@ function viewAyarlar(){
     +listeUzun('Harcama Onay Süreci','harcamaOnaylari',a.harcamaOnaylari)
     +listeUzun('Avans Onay Süreci','avansOnaylari',a.avansOnaylari)
     +listeUzun('Mesai Onay Süreci','mesaiOnaylari',a.mesaiOnaylari)
+    +H('Çalışma Saatleri')
+    +'<div class="card pad" style="margin-bottom:16px"><div class="sec-h"><h2>Standart Mesai &amp; Geç/Erken Eşiği</h2></div>'
+      +'<div class="mini" style="margin-bottom:12px">Puantajda giriş saati başlangıçtan geç ise <b style="color:#b26a00">geç giriş ◤</b>, çıkış saati bitişten erken ise <b style="color:#c0392b">erken çıkış ◢</b> olarak işaretlenir. Tolerans, kaç dakikaya kadar sayılmayacağını belirler.</div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end">'
+        +'<div class="f" style="margin:0"><label>Mesai Başlangıç</label><input type="time" id="aMesaiBas" value="'+esc(a.mesaiBas)+'"></div>'
+        +'<div class="f" style="margin:0"><label>Mesai Bitiş</label><input type="time" id="aMesaiBit" value="'+esc(a.mesaiBit)+'"></div>'
+        +'<div class="f" style="margin:0"><label>Tolerans (dk)</label><input type="number" min="0" max="120" id="aGecTol" value="'+esc(a.gecTolerans)+'" style="width:110px"></div>'
+        +'<button class="btn" id="aSaatKaydet">Kaydet</button><span class="mini" id="aSaatMsg"></span>'
+      +'</div></div>'
     +H('Talep Türleri')
     +liste('İzin Türleri','izinTurleri',a.izinTurleri)
     +liste('Harcama Türleri','harcamaTurleri',a.harcamaTurleri)
@@ -1080,7 +1119,7 @@ function afterRender(r){
   if(r.page==='takvim'||r.page==='puantaj'){
     const g=document.getElementById('ayGeri'),i=document.getElementById('ayIleri');
     if(g)g.onclick=()=>{ST.pzAy=ayKaydir(ST.pzAy,-1);render();}; if(i)i.onclick=()=>{ST.pzAy=ayKaydir(ST.pzAy,1);render();};
-    if(r.page==='puantaj') document.querySelectorAll('.pz .cell').forEach(c=>c.onclick=async()=>{const e=c.getAttribute('data-emp'),d=c.getAttribute('data-gun');const av=PUAN[ST.pzAy]=PUAN[ST.pzAy]||{};const row=av[e]=av[e]||{};row[d]=PZ_NEXT[row[d]||'Y'];await kaydetPuan();});
+    if(r.page==='puantaj') document.querySelectorAll('.pz .cell').forEach(c=>c.onclick=async()=>{const e=c.getAttribute('data-emp'),d=c.getAttribute('data-gun'),cur=c.getAttribute('data-cur')||'Y';const av=PUAN[ST.pzAy]=PUAN[ST.pzAy]||{};const row=av[e]=av[e]||{};row[d]=PZ_NEXT[cur];await kaydetPuan();});
   }
   if(r.page==='giriscikis'){
     const dt=document.getElementById('gcTarih'); if(dt) dt.onchange=e=>{ST.gcTarih=e.target.value?trFromISO(e.target.value):'';render();};
@@ -1106,6 +1145,7 @@ function afterRender(r){
   if(r.page==='ayarlar'){
     document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>ayarEkle(b.getAttribute('data-add')));
     document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>ayarSil(b.getAttribute('data-del')));
+    const sk=document.getElementById('aSaatKaydet'); if(sk) sk.onclick=async()=>{const bas=document.getElementById('aMesaiBas').value||'09:00';const bit=document.getElementById('aMesaiBit').value||'18:00';const tol=Math.max(0,+document.getElementById('aGecTol').value||0);const m=document.getElementById('aSaatMsg');if(m)m.textContent='Kaydediliyor…';await kaydetAyar({mesaiBas:bas,mesaiBit:bit,gecTolerans:tol});if(m){m.textContent='✓ Kaydedildi';m.style.color='var(--ok)';}};
   }
 }
 function ayKaydir(ym,n){let[Y,M]=ym.split('-').map(Number);M+=n;while(M<1){M+=12;Y--;}while(M>12){M-=12;Y++;}return Y+'-'+String(M).padStart(2,'0');}
