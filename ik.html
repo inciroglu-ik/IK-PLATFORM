@@ -839,8 +839,14 @@ function puanIzinUygula(){ // onaylı izinleri puantaja yansıt (sadece boş hü
   const [Y,M]=ST.pzAy.split('-').map(Number); const av=PUAN[ST.pzAy]=PUAN[ST.pzAy]||{};
   IZIN.filter(z=>z.durum==='onaylandi').forEach(z=>{let a=dObj(z.baslangic),b=dObj(z.bitis);if(!a||!b)return;for(let d=new Date(a);d<=b;d.setDate(d.getDate()+1)){if(d.getFullYear()===Y&&d.getMonth()===M-1){const row=av[z.empId]=av[z.empId]||{};const dd=d.getDate();if(!row[dd]||row[dd]==='Y')row[dd]=/rapor/i.test(z.tur)?'R':'I';}}});
 }
+function puanPdksUygula(){ // canlı giriş-çıkış: giriş yapılan günü 'Çalıştı' işaretle (sadece boş hücreler; izin önceliklidir)
+  const [Y,M]=ST.pzAy.split('-').map(Number); const av=PUAN[ST.pzAy]=PUAN[ST.pzAy]||{};
+  const idByTc={}; AKTIF.forEach(p=>{ idByTc[String(p.tc)]=p.id; });
+  PDKS.forEach(k=>{ if(k.tip!=='giris')return; const d=dObj(k.tarih); if(!d||d.getFullYear()!==Y||d.getMonth()!==M-1)return; const id=idByTc[String(k.tc)]; if(!id)return; const row=av[id]=av[id]||{}; const dd=d.getDate(); if(!row[dd]||row[dd]==='Y')row[dd]='C'; });
+}
 function viewPuantaj(){
   puanIzinUygula();
+  puanPdksUygula();
   const gun=ayGunSayi(ST.pzAy); const [Y,M]=ST.pzAy.split('-').map(Number);
   const emps=AKTIF.slice().sort((a,b)=>String(a.ad).localeCompare(String(b.ad),'tr'));
   const av=PUAN[ST.pzAy]||{};
@@ -848,7 +854,7 @@ function viewPuantaj(){
   let rows=emps.map(p=>{const row=av[p.id]||{};let c=0;let tds='';for(let d=1;d<=gun;d++){const v=row[d]||'Y';if(v==='C')c++;tds+='<td class="cell c-'+v+'" data-emp="'+esc(p.id)+'" data-gun="'+d+'" title="'+PZ_AD[v]+'">'+(v==='Y'?'·':v)+'</td>';}return '<tr><td class="nm">'+esc(trTitle(p.ad))+'</td>'+tds+'<td><b>'+c+'</b></td></tr>';}).join('');
   return '<div class="toolbar"><button class="btn g sm" id="ayGeri">←</button><div style="font-family:var(--serif);font-size:18px;font-weight:700;color:var(--navy);min-width:160px;text-align:center">'+ayAd(ST.pzAy)+'</div><button class="btn g sm" id="ayIleri">→</button><div style="flex:1"></div>'
     +'<span class="badge" style="background:#eaf7ef;color:#15713d">C Çalıştı</span><span class="badge" style="background:#eef2fb;color:#2563eb">I İzinli</span><span class="badge" style="background:#fff4e0;color:#b26a00">T Tatil</span><span class="badge" style="background:#f6ecfb;color:#8e44ad">R Rapor</span></div>'
-    +'<div class="mini" style="margin-bottom:10px">Hücreye tıklayarak durumu değiştirin (· → C → I → T → R). Onaylı izinler otomatik işlenir.</div>'
+    +'<div class="mini" style="margin-bottom:10px">Hücreye tıklayarak durumu değiştirin (· → C → I → T → R). Onaylı izinler ve mobil uygulamadan yapılan girişler (Çalıştı) otomatik işlenir.</div>'
     +'<div class="card pad pz"><table>'+head+rows+'</table></div>';
 }
 
