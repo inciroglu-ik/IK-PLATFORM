@@ -261,18 +261,27 @@ function konumAl(){
   },err=>{lb.className='loc bad';lt.textContent=err.code===1?'Konum izni verilmedi.':'Konum alınamadı.';},{enableHighAccuracy:true,timeout:12000,maximumAge:0});
 }
 (function(){
-  const sl=el('slider'),kn=el('knob'),fill=el('fill'); let drag=false,sx=0,max=0,cur=0,busy=false;
+  const sl=el('slider'),kn=el('knob'),fill=el('fill'); let drag=false,sx=0,max=0,cur=0,busy=false,touchMode=false,lastDone=0;
   function setX(x){x=Math.max(0,Math.min(max,x));cur=x;kn.style.left=(5+x)+'px';fill.style.width=(62+x)+'px';}
   function start(cx){if(busy)return;drag=true;sx=cx-cur;max=sl.clientWidth-62;kn.style.cursor='grabbing';}
   function move(cx){if(!drag)return;setX(cx-sx);}
   function anim(to){const from=cur,t0=performance.now();(function st(t){const k=Math.min(1,(t-t0)/180);setX(from+(to-from)*k);if(k<1)requestAnimationFrame(st);})(performance.now());}
-  async function end(){if(!drag)return;drag=false;kn.style.cursor='grab';if(cur>=max-6)await tamamla();anim(0);}
-  kn.addEventListener('mousedown',e=>{start(e.clientX);e.preventDefault();});
-  window.addEventListener('mousemove',e=>move(e.clientX)); window.addEventListener('mouseup',end);
-  kn.addEventListener('touchstart',e=>start(e.touches[0].clientX),{passive:true});
+  async function end(){
+    if(!drag)return; drag=false; kn.style.cursor='grab';
+    const tam=(cur>=max-6); anim(0);
+    // tek kaydırma = tek işlem: meşgulse ya da son işlemden bu yana 2 sn geçmediyse tetikleme (sahte fare/çift olay koruması)
+    if(tam && !busy && Date.now()-lastDone>2000){ lastDone=Date.now(); await tamamla(); }
+  }
+  // Fare olayları: dokunma modundayken (telefon) tarayıcının ürettiği sahte fare olaylarını yok say
+  kn.addEventListener('mousedown',e=>{if(touchMode)return;start(e.clientX);e.preventDefault();});
+  window.addEventListener('mousemove',e=>{if(touchMode)return;move(e.clientX);});
+  window.addEventListener('mouseup',()=>{if(touchMode)return;end();});
+  // Dokunma olayları: yalnız kaydırıcı tutulduğunda dokunma moduna gir
+  kn.addEventListener('touchstart',e=>{touchMode=true;start(e.touches[0].clientX);},{passive:true});
   window.addEventListener('touchmove',e=>{if(drag){move(e.touches[0].clientX);e.preventDefault();}},{passive:false});
-  window.addEventListener('touchend',end);
+  window.addEventListener('touchend',()=>{if(touchMode){end();setTimeout(()=>{touchMode=false;},700);}});
   async function tamamla(){
+    if(busy)return;
     const msg=el('pdksMsg'); msg.className='msg';
     if(!gps){msg.className='msg bad';msg.textContent='Önce konum alınmalı. İzin verin.';konumAl();return;}
     const y=enYakin(gps.lat,gps.lng);
