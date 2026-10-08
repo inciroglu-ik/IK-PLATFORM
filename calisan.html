@@ -104,6 +104,9 @@ input:focus,select,textarea:focus{border-color:var(--navy)}
 .ovl.on{display:flex}
 .sheet{background:#fff;width:100%;max-width:520px;margin:0 auto;border-radius:20px 20px 0 0;padding:20px 18px 26px;max-height:88vh;overflow-y:auto}
 .sheet h3{font-family:'Source Serif 4',serif;color:var(--navy);margin:0 0 12px;font-size:17px}
+.ik-uyari{background:#fff8e6;border:1px solid #f0d58f;border-radius:14px;padding:13px 15px;margin-bottom:16px;display:flex;flex-direction:column;gap:6px}
+.ik-uyari b{color:#7a5300;font-size:13.5px}.ik-uyari span{font-size:12px;color:#6b5a2e;line-height:1.5}.ik-uyari .btn{align-self:flex-start;margin-top:4px}
+.hesap-l{margin:-6px 0 14px;text-align:right}.hesap-l .link{margin-top:0;font-size:12px}
 </style></head>
 <body>
 
@@ -143,6 +146,8 @@ input:focus,select,textarea:focus{border-color:var(--navy)}
     <div id="secTalep">
       <div class="who"><div class="av" id="whoAv">—</div><div><b id="whoAd">—</b><small id="whoDep">—</small></div></div>
       <a class="ik-door hide" id="ikDoor" href="ik.html#/"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="8" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="15" width="7" height="6" rx="1.5"/></svg><div><b>İK Sistemi</b><small>Çalışanlar, izinler, puantaj, raporlar — yönetim paneli</small></div><span>→</span></a>
+      <div class="ik-uyari hide" id="ikUyari"><b>İK Sistemi için kendi şifreni belirle</b><span>Güvenlik nedeniyle İK Sistemi ortak ilk şifreyle açılmaz. Kendine ait bir şifre belirlediğinde İK Sistemi kapısı burada görünür.</span><button class="btn sm" id="ikSifreBtn">Şifremi Belirle</button></div>
+      <div class="hesap-l hide" id="hesapL"><span class="link" id="sifreLink">Şifremi değiştir</span></div>
       <div class="sec-h">Taleplerim</div>
       <div class="mini-info">İzin, avans veya mesai talebini buradan oluştur. Talebin müdür → direktör → İnsan Kaynakları onayından geçer.</div>
       <div class="tbtns">
@@ -180,6 +185,17 @@ input:focus,select,textarea:focus{border-color:var(--navy)}
   </div>
 </div>
 
+<!-- ŞİFRE BELİRLE / DEĞİŞTİR -->
+<div class="ovl" id="sifreOvl"><div class="sheet">
+  <h3 id="sifreTitle">Şifre Belirle</h3>
+  <div class="sub" style="margin-bottom:6px" id="sifreSub">En az 8 karakter; en az bir büyük harf, bir küçük harf ve bir rakam içermeli.</div>
+  <label>Yeni Şifre</label><input id="sfYeni" type="password" autocomplete="new-password">
+  <label>Yeni Şifre (tekrar)</label><input id="sfYeni2" type="password" autocomplete="new-password">
+  <button class="btn" id="sifreKaydet">Kaydet</button>
+  <button class="btn g" id="sifreKapat" style="margin-top:8px">Vazgeç</button>
+  <div class="msg" id="sifreMsg"></div>
+</div></div>
+
 <!-- TALEP MODAL -->
 <div class="ovl" id="talepOvl"><div class="sheet">
   <h3 id="talepTitle">Talep</h3>
@@ -191,14 +207,17 @@ input:focus,select,textarea:focus{border-color:var(--navy)}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 const app=initializeApp({apiKey:"AIzaSyCWlB0nU-ETZxuo9xa6gG4VMYVu09P3fnE",authDomain:"yetenek-havuzu.firebaseapp.com",projectId:"yetenek-havuzu",storageBucket:"yetenek-havuzu.firebasestorage.app",messagingSenderId:"714642441227",appId:"1:714642441227:web:bf49ac51367c6d9437b30e"});
 const db=getFirestore(app);
 const refPers=doc(db,"satisVeri","mrPersonel");
 const refAuth=doc(db,"satisVeri","mrCalisanAuth");
-const refPdks=doc(db,"satisVeri","mrPdksKayit");
+const refPdksEski=doc(db,"satisVeri","mrPdksKayit");   /* eski tek doküman — yalnız geçmiş için okunur */
 const refIzin=doc(db,"satisVeri","ikIzin");
 const refTalep=doc(db,"satisVeri","ikTalep");
+/* Giriş-çıkış kayıtları GÜNLÜK dokümanlarda tutulur (Firestore 1 MB sınırı): satisVeri/pdks_YYYY-MM-DD */
+function gunAnahtar(d){ d=d||new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function refPdksGun(k){ return doc(db,"satisVeri","pdks_"+k); }
 
 const STANDARD="inciroglu2026";
 const LOKASYONLAR=[
@@ -208,14 +227,20 @@ const LOKASYONLAR=[
 ];
 const TOLERANS=150;
 const IZIN_TURLERI=['Yıllık İzin','Ücretsiz İzin','Rapor (İstirahat)','Mazeret İzni','Doğum İzni','Evlilik İzni','Ölüm İzni','İdari İzin'];
+/* İK EKİBİ: İK Sistemi'ni (ik.html) yalnız bu kişiler, KENDİ şifreleriyle e-posta girişi yaparak görür.
+   Ad + giriş e-postası + aktiflik birlikte aranır (adaş / işten ayrılan riskine karşı). */
+const IK_EKIBI=['alaaddin çağlıköse','şahin tektaş','sena bostancı'];
+const IK_EKIBI_MAIL=['alaaddin.caglikose@inciroglu.com.tr','sahin.tektas@inciroglu.com.tr','sena.bostanci@inciroglu.com.tr'];
+const IK_SES='inc_ik_ses';      /* sessionStorage — sekme kapanınca biter */
+const HAREKETSIZ_DK=30;         /* bu süre işlem yapılmazsa oturum kapanır */
 
 function el(id){return document.getElementById(id);}
 function trLower(s){return String(s||'').toLocaleLowerCase('tr');}
 function trTitle(s){return String(s||'').toLocaleLowerCase('tr').replace(/(^|[\s\-\/])([a-zçğıöşü])/g,(m,a,b)=>a+b.toLocaleUpperCase('tr'));}
 function initials(s){const p=String(s||'').trim().split(/\s+/);return((p[0]||'')[0]||'')+((p[p.length-1]||'')[0]||'');}
-function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function avColor(s){let h=0;s=String(s||'');for(let i=0;i<s.length;i++)h=s.charCodeAt(i)+((h<<5)-h);const c=['#132a44','#1d3a5c','#b5892f','#2c5f8a','#6b4e9e','#166a5a','#9e4b3a'];return c[Math.abs(h)%c.length];}
-function hashPw(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))>>>0;return 'h'+h.toString(36);}
+function hashPw(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))>>>0;return 'h'+h.toString(36);}   /* eski biçim — yalnız geriye uyumluluk */
 function bugun(){const d=new Date();return ('0'+d.getDate()).slice(-2)+'.'+('0'+(d.getMonth()+1)).slice(-2)+'.'+d.getFullYear();}
 function saat(d){d=d||new Date();return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
 function isoTR(iso){try{const[y,m,d]=iso.split('-');return d+'.'+m+'.'+y;}catch(e){return iso;}}
@@ -225,77 +250,145 @@ function enYakin(lat,lng){let best=null;LOKASYONLAR.forEach(l=>{const m=mesafe(l
 function uid(p){return (p||'t')+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36);}
 function durumBadge(d){return d==='onaylandi'?'<span class="badge ok">Onaylandı</span>':d==='reddedildi'?'<span class="badge bad">Reddedildi</span>':'<span class="badge warn">Onay Bekliyor</span>';}
 
-let AUTH=null, ROSTER=null, EMP=null, KAYITLAR=[], IZINLER=[], TALEPLER=[], gps=null, AKTIFIDS=new Set();
+/* ---- PAROLA: PBKDF2-SHA256 (tarayıcının yerleşik crypto.subtle'ı — build gerekmez) ---- */
+function b64(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))); }
+function unb64(s){ return Uint8Array.from(atob(s),c=>c.charCodeAt(0)); }
+async function pbkdf2(pw,salt,it){ const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveBits']); return b64(await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:it,hash:'SHA-256'},k,256)); }
+async function sifreHashle(pw){ const salt=crypto.getRandomValues(new Uint8Array(16)); const it=150000; return {alg:'pbkdf2',it,salt:b64(salt),hash:await pbkdf2(pw,salt,it),ts:new Date().toISOString()}; }
+/* {ok, kisisel}: kisisel=true → kişinin kendi belirlediği şifre (İK yetkisi yalnız bununla açılır) */
+async function sifreDogrula(pw,rec){ const s=rec&&rec.sifre; if(!s) return {ok:pw===STANDARD,kisisel:false}; if(typeof s==='string') return {ok:hashPw(pw)===s,kisisel:true}; if(s.alg==='pbkdf2'&&s.salt&&s.hash){ const h=await pbkdf2(pw,unb64(s.salt),s.it||150000); return {ok:h===s.hash,kisisel:true}; } return {ok:false,kisisel:true}; }
+function sifreKurali(pw){ if(pw.length<8) return 'Şifre en az 8 karakter olmalı.'; if(!/[a-zçğıöşü]/.test(pw)) return 'Şifrede en az bir küçük harf olmalı.'; if(!/[A-ZÇĞİÖŞÜ]/.test(pw)) return 'Şifrede en az bir büyük harf olmalı.'; if(!/[0-9]/.test(pw)) return 'Şifrede en az bir rakam olmalı.'; if(pw===STANDARD) return 'Ortak ilk şifreyi kullanamazsın.'; return ''; }
 
-async function authYukle(){ if(AUTH)return AUTH; const s=await getDoc(refAuth); AUTH=(s.exists()&&s.data().veri)?s.data().veri:{}; return AUTH; }
+let AUTH=null, ROSTER=null, EMP=null, GIRIS_MAIL='', KISISEL=false;
+let KAYITLAR=[], IZINLER=[], TALEPLER=[], gps=null, AKTIFIDS=new Set();
+let PDKS_GUN={}, PDKS_ESKI=[], DINLEYICI=[];
+
+async function authYukle(){ const s=await getDoc(refAuth); AUTH=(s.exists()&&s.data().veri)?s.data().veri:{}; return AUTH; }
 async function rosterYukle(){ if(ROSTER)return ROSTER; const s=await getDoc(refPers); const d=s.exists()?s.data():{}; const akt=d.aktif||[]; AKTIFIDS=new Set(akt.map(x=>String(x.id))); ROSTER=akt.concat(d.ayrilan||[]); return ROSTER; }
-async function talepYukle(){ const a=await getDoc(refIzin); IZINLER=(a.exists()&&Array.isArray(a.data().izinler))?a.data().izinler:[]; const b=await getDoc(refTalep); TALEPLER=(b.exists()&&Array.isArray(b.data().talepler))?b.data().talepler:[]; const c=await getDoc(refPdks); KAYITLAR=(c.exists()&&Array.isArray(c.data().kayitlar))?c.data().kayitlar:[]; }
+function kayitlariBirlestir(){ const m=new Map(); const ekle=k=>{ if(k&&k.ts&&k.tc!=null) m.set(String(k.tc)+'|'+k.ts,k); }; Object.values(PDKS_GUN).forEach(a=>(a||[]).forEach(ekle)); (PDKS_ESKI||[]).forEach(ekle); KAYITLAR=[...m.values()]; }
+function dinleyicileriKapat(){ DINLEYICI.forEach(f=>{ try{ f(); }catch(e){} }); DINLEYICI=[]; }
+/* Giriş sonrası veriler: talepler CANLI (onay durumu anında görünsün); giriş-çıkış = bugün + son 7 gün + eski doküman */
+async function verileriBaglat(){
+  dinleyicileriKapat(); PDKS_GUN={};
+  DINLEYICI.push(onSnapshot(refIzin,s=>{ IZINLER=(s.exists()&&Array.isArray(s.data().izinler))?s.data().izinler:[]; if(EMP) talepTazele(); },()=>{}));
+  DINLEYICI.push(onSnapshot(refTalep,s=>{ TALEPLER=(s.exists()&&Array.isArray(s.data().talepler))?s.data().talepler:[]; if(EMP) talepTazele(); },()=>{}));
+  const gunler=[]; for(let i=0;i<=7;i++){ const d=new Date(); d.setDate(d.getDate()-i); gunler.push(gunAnahtar(d)); }
+  const sonuc=await Promise.all(gunler.map(k=>getDoc(refPdksGun(k)).then(s=>[k,(s.exists()&&Array.isArray(s.data().kayitlar))?s.data().kayitlar:[]]).catch(()=>[k,[]])));
+  sonuc.forEach(([k,a])=>{ PDKS_GUN[k]=a; });
+  try{ const e=await getDoc(refPdksEski); PDKS_ESKI=(e.exists()&&Array.isArray(e.data().kayitlar))?e.data().kayitlar:[]; }catch(_){ PDKS_ESKI=[]; }
+  kayitlariBirlestir();
+}
 
 /* ---- LOGIN ---- */
 el('tcLink').onclick=()=>{el('mailForm').classList.add('hide');el('tcForm').classList.remove('hide');el('lgMsg').textContent='';};
 el('mailLink').onclick=()=>{el('tcForm').classList.add('hide');el('mailForm').classList.remove('hide');el('lgMsg').textContent='';};
 el('pw').addEventListener('keydown',e=>{if(e.key==='Enter')el('loginBtn').click();});
 el('loginBtn').onclick=async()=>{
-  const email=trLower((el('email').value||'').trim()), pw=el('pw').value||''; const m=el('lgMsg'); m.textContent='';
+  const email=(el('email').value||'').trim().replace(/İ/g,'i').toLowerCase(), pw=el('pw').value||''; const m=el('lgMsg'); m.className='msg bad'; m.textContent='';
   if(!email||!pw){m.textContent='E-posta ve şifre girin.';return;}
   el('loginBtn').innerHTML='<span class="spin"></span>'; el('loginBtn').disabled=true;
   try{
-    const a=await authYukle(); const rec=a[email];
-    if(!rec){m.textContent='Bu e-posta ile kayıt bulunamadı.';return;}
-    const ok = rec.sifre ? (hashPw(pw)===rec.sifre) : (pw===STANDARD);
-    if(!ok){m.textContent='Şifre hatalı.';return;}
-    const r=await rosterYukle(); const emp=r.find(x=>String(x.tc)===String(rec.tc));
+    const a=await authYukle(); const rec=Object.prototype.hasOwnProperty.call(a,email)?a[email]:null;
+    if(!rec||!rec.tc){m.textContent='Bu e-posta ile kayıt bulunamadı.';return;}
+    const d=await sifreDogrula(pw,rec);
+    if(!d.ok){m.textContent='Şifre hatalı.';return;}
+    const r=await rosterYukle(); const emp=r.find(x=>x.tc&&String(x.tc)===String(rec.tc));
     if(!emp){m.textContent='Çalışan kaydı bulunamadı, İK ile görüşün.';return;}
-    await talepYukle(); EMP=emp; SIFRELI=true; appAc();
+    if(!AKTIFIDS.has(String(emp.id))){m.textContent='Bu hesap aktif bir çalışan kaydına bağlı değil. İK ile görüşün.';return;}
+    EMP=emp; GIRIS_MAIL=email; KISISEL=d.kisisel;
+    await verileriBaglat(); appAc();
   }catch(e){m.textContent='Bağlantı hatası: '+e.message;}
   finally{el('loginBtn').innerHTML='Giriş Yap';el('loginBtn').disabled=false;}
 };
 el('tcBtn').onclick=async()=>{
-  const tc=(el('tc').value||'').trim(); const m=el('lgMsg'); m.textContent='';
+  const tc=(el('tc').value||'').trim(); const m=el('lgMsg'); m.className='msg bad'; m.textContent='';
   if(!/^\d{11}$/.test(tc)){m.textContent='Geçerli 11 haneli TC girin.';return;}
   el('tcBtn').innerHTML='<span class="spin"></span>'; el('tcBtn').disabled=true;
-  try{ const r=await rosterYukle(); const emp=r.find(x=>String(x.tc)===tc); if(!emp){m.textContent='Bu TC ile çalışan bulunamadı.';return;} await talepYukle(); EMP=emp; SIFRELI=false; appAc(); }
-  catch(e){m.textContent='Bağlantı hatası: '+e.message;}
+  try{
+    const r=await rosterYukle(); const emp=r.find(x=>x.tc&&String(x.tc)===tc);
+    if(!emp){m.textContent='Bu TC ile çalışan bulunamadı.';return;}
+    if(!AKTIFIDS.has(String(emp.id))){m.textContent='Bu TC aktif bir çalışan kaydına bağlı değil. İK ile görüşün.';return;}
+    EMP=emp; GIRIS_MAIL=''; KISISEL=false;           /* TC girişi İK yetkisi AÇMAZ */
+    await verileriBaglat(); appAc();
+  }catch(e){m.textContent='Bağlantı hatası: '+e.message;}
   finally{el('tcBtn').innerHTML='Giriş Yap';el('tcBtn').disabled=false;}
 };
-el('outBtn').onclick=()=>{EMP=null;ikOturumKapat();el('appView').classList.add('hide');el('loginView').classList.remove('hide');el('pw').value='';};
-/* ---- İK EKİBİ: yalnız bu kişiler İK Sistemi'ni (ik.html) görür; diğerleri sadece bu uygulamayı ---- */
-const IK_EKIBI=['alaaddin çağlıköse','şahin tektaş','sena bostancı'];
-let SIFRELI=false;
-function ikEkibiMi(p){ const a=trLower(p&&p.ad||'').replace(/\s+/g,' ').trim(); return IK_EKIBI.indexOf(a)>=0; }
-function ikOturumKapat(){ try{ const s=JSON.parse(localStorage.getItem('inc_portal_sso')||'null'); if(s&&s.rol==='ik'&&s.kaynak==='calisan') localStorage.removeItem('inc_portal_sso'); }catch(e){} }
+function cikisYap(mesaj){
+  EMP=null; GIRIS_MAIL=''; KISISEL=false; dinleyicileriKapat(); ikOturumKapat();
+  KAYITLAR=[]; IZINLER=[]; TALEPLER=[]; PDKS_GUN={}; PDKS_ESKI=[]; gps=null;
+  ['email','pw','tc','sfYeni','sfYeni2'].forEach(i=>{ if(el(i)) el(i).value=''; });
+  el('ikDoor').classList.add('hide'); el('ikUyari').classList.add('hide'); el('hesapL').classList.add('hide');
+  el('talepOvl').classList.remove('on'); el('sifreOvl').classList.remove('on');
+  el('tcForm').classList.add('hide'); el('mailForm').classList.remove('hide');
+  const m=el('lgMsg'); m.className='msg'+(mesaj?'':' bad'); m.textContent=mesaj||'';
+  el('appView').classList.add('hide'); el('loginView').classList.remove('hide');
+}
+el('outBtn').onclick=()=>cikisYap('');
+
+/* ---- İK OTURUMU ---- */
+function ikEkibiMi(){ if(!EMP) return false; const a=trLower(EMP.ad||'').replace(/\s+/g,' ').trim(); return IK_EKIBI.includes(a)&&IK_EKIBI_MAIL.includes(GIRIS_MAIL)&&AKTIFIDS.has(String(EMP.id)); }
+function ikOturumKapat(){ try{ sessionStorage.removeItem(IK_SES); }catch(e){} try{ const s=JSON.parse(localStorage.getItem('inc_portal_sso')||'null'); if(s&&s.kaynak==='calisan') localStorage.removeItem('inc_portal_sso'); }catch(e){} }
 function ikOturumAyarla(){
-  const yetkili=SIFRELI&&ikEkibiMi(EMP);
-  if(yetkili){ try{ localStorage.setItem('inc_portal_sso',JSON.stringify({ok:true,u:'ik:'+EMP.tc,ad:trTitle(EMP.ad),rol:'ik',tc:EMP.tc,kaynak:'calisan',ts:Date.now()})); }catch(e){} }
+  const ekip=ikEkibiMi(); const yetkili=ekip&&KISISEL;
+  if(yetkili){ try{ sessionStorage.setItem(IK_SES,JSON.stringify({ok:true,rol:'ik',kaynak:'calisan',sifreli:true,tc:EMP.tc,ad:trTitle(EMP.ad),ts:Date.now()})); }catch(e){} }
   else ikOturumKapat();
   el('ikDoor').classList.toggle('hide',!yetkili);
+  el('ikUyari').classList.toggle('hide',!(ekip&&!KISISEL));
+  el('hesapL').classList.toggle('hide',!GIRIS_MAIL);
 }
+/* Sayfa her açıldığında çalışan oturumu yoktur → çalışan kaynaklı İK oturumu da kapatılır */
+ikOturumKapat();
+/* Hareketsizlik: HAREKETSIZ_DK dakika işlem yoksa oturum kapanır (paylaşılan cihaz güvenliği) */
+let SON_HAREKET=Date.now();
+['click','touchstart','keydown','scroll'].forEach(ev=>window.addEventListener(ev,()=>{SON_HAREKET=Date.now();},{passive:true}));
+setInterval(()=>{ if(EMP&&Date.now()-SON_HAREKET>HAREKETSIZ_DK*60000) cikisYap('Uzun süre işlem yapılmadığı için oturum kapatıldı. Tekrar giriş yapın.'); },30000);
+
+/* ---- ŞİFRE BELİRLE / DEĞİŞTİR ---- */
+function sifreAc(mod){ el('sifreTitle').textContent=mod==='ik'?'İK Sistemi için Şifre Belirle':'Şifremi Değiştir'; el('sfYeni').value=''; el('sfYeni2').value=''; const m=el('sifreMsg'); m.className='msg'; m.textContent=''; el('sifreOvl').classList.add('on'); setTimeout(()=>el('sfYeni').focus(),60); }
+el('ikSifreBtn').onclick=()=>sifreAc('ik');
+el('sifreLink').onclick=()=>sifreAc('degistir');
+el('sifreKapat').onclick=()=>el('sifreOvl').classList.remove('on');
+el('sifreKaydet').onclick=async()=>{
+  const m=el('sifreMsg'); m.className='msg bad'; const p1=el('sfYeni').value||'', p2=el('sfYeni2').value||'';
+  if(!EMP||!GIRIS_MAIL){ m.textContent='Şifre işlemleri için e-posta ile giriş yapmalısın.'; return; }
+  const k=sifreKurali(p1); if(k){ m.textContent=k; return; }
+  if(p1!==p2){ m.textContent='Girdiğin iki şifre aynı değil.'; return; }
+  el('sifreKaydet').disabled=true; m.className='msg'; m.textContent='Kaydediliyor…';
+  try{
+    const h=await sifreHashle(p1); const o={}; o[GIRIS_MAIL]={sifre:h};
+    await setDoc(refAuth,{veri:o,guncelleme:new Date().toISOString()},{merge:true});
+    if(AUTH&&AUTH[GIRIS_MAIL]) AUTH[GIRIS_MAIL].sifre=h;
+    KISISEL=true; ikOturumAyarla();
+    m.className='msg ok'; m.textContent='✓ Şifren kaydedildi.'+(ikEkibiMi()?' İK Sistemi kapısı açıldı.':'');
+    setTimeout(()=>el('sifreOvl').classList.remove('on'),1500);
+  }catch(e){ m.className='msg bad'; m.textContent='Kaydedilemedi: '+e.message; }
+  finally{ el('sifreKaydet').disabled=false; }
+};
 
 /* ---- APP ---- */
 function appAc(){
-  el('loginView').classList.add('hide'); el('appView').classList.remove('hide');
+  el('loginView').classList.add('hide'); el('appView').classList.remove('hide'); SON_HAREKET=Date.now();
   const ini=initials(EMP.ad).toLocaleUpperCase('tr');
   el('tAv').textContent=ini; el('tAd').textContent=trTitle(EMP.ad); el('tDep').textContent=(EMP.unvan||EMP.departman||'');
-  el('whoAv')&&(el('whoAv').textContent=ini); el('whoAd')&&(el('whoAd').textContent=trTitle(EMP.ad)); el('whoDep')&&(el('whoDep').textContent=(EMP.unvan||'')+(EMP.unvan&&EMP.departman?' · ':'')+(EMP.departman||''));
+  el('whoAv').textContent=ini; el('whoAd').textContent=trTitle(EMP.ad); el('whoDep').textContent=(EMP.unvan||'')+(EMP.unvan&&EMP.departman?' · ':'')+(EMP.departman||'');
   ikOturumAyarla();
   secGoster('secTalep'); pdksTazele(); talepTazele(); ekipTazele();
 }
 document.querySelectorAll('.nav a').forEach(a=>a.onclick=()=>secGoster(a.getAttribute('data-sec')));
-// Sol üst köşe: İşe Giriş-Çıkış ekranını aç (her açılışta konumu tazele)
 el('gcBtn').onclick=()=>{secGoster('secPdks');pdksTazele();konumAl();};
 el('pdksBack').onclick=()=>secGoster('secTalep');
 function secGoster(sec){
   ['secPdks','secTalep','secEkip'].forEach(s=>el(s).classList.toggle('hide',s!==sec));
   document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('on',a.getAttribute('data-sec')===sec));
-  try{el('body')&&el('body').scrollTo&&el('body').scrollTo(0,0);}catch(e){}
   const b=document.querySelector('.body'); if(b)b.scrollTop=0;
 }
 
-/* ---- PDKS ---- */
-function benimKayit(){return KAYITLAR.filter(k=>String(k.tc)===String(EMP.tc)).sort((a,b)=>new Date(b.ts)-new Date(a.ts));}
+/* ---- PDKS (işe giriş-çıkış) ---- */
+function benimKayit(){return EMP?KAYITLAR.filter(k=>String(k.tc)===String(EMP.tc)).sort((a,b)=>new Date(b.ts)-new Date(a.ts)):[];}
 function bugunku(){return benimKayit().filter(k=>k.tarih===bugun());}
 function sonTip(){const bk=bugunku();return bk.length?bk[0].tip:null;}
 function pdksTazele(){
+  if(!EMP) return;
   const bk=bugunku();
   const g=bk.filter(k=>k.tip==='giris').sort((a,b)=>new Date(a.ts)-new Date(b.ts))[0];
   const c=bk.filter(k=>k.tip==='cikis').sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0];
@@ -304,7 +397,7 @@ function pdksTazele(){
   el('slider').classList.toggle('cikis',cikisModu);
   el('slLbl').textContent=cikisModu?'Çıkış için Kaydır →':'İşe Başlamak için Kaydır →';
   const bana=benimKayit().slice(0,8);
-  el('gecmis').innerHTML=bana.length?bana.map(k=>'<div class="g-row"><span class="'+k.tip+'">'+(k.tip==='giris'?'▲ Giriş':'▼ Çıkış')+'</span><span>'+esc(k.tarih)+' · <b>'+esc(k.saat)+'</b></span></div>').join(''):'<div style="color:var(--muted);font-size:12.5px;padding:8px 0">Henüz hareket yok.</div>';
+  el('gecmis').innerHTML=bana.length?bana.map(k=>{const gi=k.tip==='giris';return '<div class="g-row"><span class="'+(gi?'giris':'cikis')+'">'+(gi?'▲ Giriş':'▼ Çıkış')+'</span><span>'+esc(k.tarih)+' · <b>'+esc(k.saat)+'</b></span></div>';}).join(''):'<div style="color:var(--muted);font-size:12.5px;padding:8px 0">Henüz hareket yok.</div>';
 }
 function konumAl(){
   const lb=el('locBox'), lt=el('locTxt'); lb.className='loc'; lt.textContent='Konum alınıyor…'; gps=null;
@@ -324,27 +417,32 @@ function konumAl(){
   async function end(){
     if(!drag)return; drag=false; kn.style.cursor='grab';
     const tam=(cur>=max-6); anim(0);
-    // tek kaydırma = tek işlem: meşgulse ya da son işlemden bu yana 2 sn geçmediyse tetikleme (sahte fare/çift olay koruması)
+    /* tek kaydırma = tek işlem: meşgulse ya da son işlemden bu yana 2 sn geçmediyse tetikleme (sahte fare/çift olay koruması) */
     if(tam && !busy && Date.now()-lastDone>2000){ lastDone=Date.now(); await tamamla(); }
   }
-  // Fare olayları: dokunma modundayken (telefon) tarayıcının ürettiği sahte fare olaylarını yok say
   kn.addEventListener('mousedown',e=>{if(touchMode)return;start(e.clientX);e.preventDefault();});
   window.addEventListener('mousemove',e=>{if(touchMode)return;move(e.clientX);});
   window.addEventListener('mouseup',()=>{if(touchMode)return;end();});
-  // Dokunma olayları: yalnız kaydırıcı tutulduğunda dokunma moduna gir
   kn.addEventListener('touchstart',e=>{touchMode=true;start(e.touches[0].clientX);},{passive:true});
   window.addEventListener('touchmove',e=>{if(drag){move(e.touches[0].clientX);e.preventDefault();}},{passive:false});
   window.addEventListener('touchend',()=>{if(touchMode){end();setTimeout(()=>{touchMode=false;},700);}});
   async function tamamla(){
-    if(busy)return;
+    if(busy||!EMP)return;
     const msg=el('pdksMsg'); msg.className='msg';
     if(!gps){msg.className='msg bad';msg.textContent='Önce konum alınmalı. İzin verin.';konumAl();return;}
     const y=enYakin(gps.lat,gps.lng);
     if(y.m>TOLERANS){msg.className='msg bad';msg.textContent='✕ Konumunuz işyeri dışında ('+y.m+' m). Yapılamadı.';return;}
-    busy=true; const tip=sonTip()==='giris'?'cikis':'giris'; const now=new Date();
-    const rec={tc:EMP.tc,ad:EMP.ad,departman:EMP.departman||'',tip,ts:now.toISOString(),tarih:bugun(),saat:saat(now),lat:gps.lat,lng:gps.lng,lokasyon:y.ad,mesafe:y.m};
-    try{KAYITLAR=KAYITLAR.concat([rec]);await setDoc(refPdks,{kayitlar:KAYITLAR,guncelleme:now.toISOString()},{merge:true});msg.className='msg ok';msg.textContent=(tip==='giris'?'✓ İşe giriş yapıldı: ':'✓ Çıkış yapıldı: ')+rec.saat;pdksTazele();}
-    catch(e){KAYITLAR.pop();msg.className='msg bad';msg.textContent='Kaydedilemedi: '+e.message;}
+    busy=true; const now=new Date(); const key=gunAnahtar(now); const ref=refPdksGun(key);
+    try{
+      /* başka cihazdan yapılmış kayıtları da hesaba katmak için bugünün dokümanını tazele */
+      try{ const s=await getDoc(ref); PDKS_GUN[key]=(s.exists()&&Array.isArray(s.data().kayitlar))?s.data().kayitlar:[]; kayitlariBirlestir(); }catch(_){}
+      const tip=sonTip()==='giris'?'cikis':'giris';
+      const rec={tc:EMP.tc,ad:EMP.ad,departman:EMP.departman||'',tip,ts:now.toISOString(),tarih:bugun(),saat:saat(now),lat:gps.lat,lng:gps.lng,lokasyon:y.ad,mesafe:y.m};
+      /* arrayUnion: dizinin tamamını yazmaz, yalnız ekler → başkalarının kayıtları asla silinmez */
+      await setDoc(ref,{kayitlar:arrayUnion(rec),guncelleme:now.toISOString()},{merge:true});
+      (PDKS_GUN[key]=PDKS_GUN[key]||[]).push(rec); kayitlariBirlestir();
+      msg.className='msg ok';msg.textContent=(tip==='giris'?'✓ İşe giriş yapıldı: ':'✓ Çıkış yapıldı: ')+rec.saat; pdksTazele();
+    }catch(e){msg.className='msg bad';msg.textContent='Kaydedilemedi: '+e.message;}
     finally{busy=false;}
   }
 })();
@@ -352,12 +450,14 @@ function konumAl(){
 /* ---- TALEPLER ---- */
 function onayZinciri(emp){const c=[];if(emp.mudurluk)c.push({rol:'Müdür',ad:emp.mudurluk,durum:'bekliyor'});if(emp.direktor&&trLower(emp.direktor)!==trLower(emp.mudurluk||''))c.push({rol:'Direktör',ad:emp.direktor,durum:'bekliyor'});c.push({rol:'İnsan Kaynakları',ad:'İnsan Kaynakları',durum:'bekliyor'});return c;}
 function benimTalepler(){
+  if(!EMP) return [];
   const out=[];
-  IZINLER.filter(z=>String(z.empId)===String(EMP.id)||String(z.empAd)===String(EMP.ad)).forEach(z=>out.push({tip:'İzin',ozet:z.tur+' · '+z.gun+' gün',alt:(z.baslangic||'')+' → '+(z.bitis||''),durum:z.durum,ts:z.olusturma}));
-  TALEPLER.filter(t=>String(t.empId)===String(EMP.id)||String(t.empAd)===String(EMP.ad)).forEach(t=>out.push({tip:t.tip,ozet:t.ozet,alt:t.aciklama||'',durum:t.durum,ts:t.olusturma}));
+  IZINLER.filter(z=>String(z.empId)===String(EMP.id)).forEach(z=>out.push({tip:'İzin',ozet:z.tur+' · '+z.gun+' gün',alt:(z.baslangic||'')+' → '+(z.bitis||''),durum:z.durum,ts:z.olusturma}));
+  TALEPLER.filter(t=>String(t.empId)===String(EMP.id)).forEach(t=>out.push({tip:t.tip,ozet:t.ozet,alt:t.aciklama||'',durum:t.durum,ts:t.olusturma}));
   return out.sort((a,b)=>new Date(b.ts||0)-new Date(a.ts||0));
 }
 function talepTazele(){
+  if(!EMP) return;
   const L=benimTalepler();
   el('talepList').innerHTML=L.length?L.map(x=>'<div class="tcard"><div class="r1"><b>'+esc(x.tip)+'</b>'+durumBadge(x.durum)+'</div><div style="font-size:13px;margin-top:4px">'+esc(x.ozet)+'</div>'+(x.alt&&x.alt.trim()&&x.alt.trim()!=='→'?'<div style="font-size:12px;color:var(--ink-2);margin-top:2px">'+esc(x.alt)+'</div>':'')+'</div>').join(''):'<div style="color:var(--muted);font-size:13px;padding:16px 0;text-align:center">Henüz talebin yok. Yukarıdan oluştur.</div>';
 }
@@ -371,34 +471,37 @@ function talepAc(tip){
     +'<label>Başlangıç</label><input id="fBas" type="date" value="'+bugunISO+'"><label>Bitiş</label><input id="fBit" type="date" value="'+bugunISO+'">'; }
   else if(tip==='Avans'){ f='<label>Avans Tutarı (TL)</label><input id="fVal" type="number" min="0" step="0.01" inputmode="decimal">'; }
   else { f='<label>Mesai Süresi (saat)</label><input id="fVal" type="number" min="0" step="0.5" inputmode="decimal"><label>Tarih</label><input id="fTarih" type="date" value="'+bugunISO+'">'; }
-  f+='<label>Açıklama</label><textarea id="fAcik" rows="2" placeholder="İsteğe bağlı"></textarea>';
+  f+='<label>Açıklama</label><textarea id="fAcik" rows="2" placeholder="İsteğe bağlı" maxlength="500"></textarea>';
   el('talepBody').innerHTML=f; el('talepOvl').classList.add('on');
 }
 el('talepKapat').onclick=()=>el('talepOvl').classList.remove('on');
 el('talepKaydet').onclick=async()=>{
+  if(!EMP) return;
   const m=el('talepMsg'); m.className='msg'; m.textContent='';
-  const akis=onayZinciri(EMP); const now=new Date().toISOString(); const acik=(el('fAcik')&&el('fAcik').value||'').trim();
+  const akis=onayZinciri(EMP); const now=new Date().toISOString(); const acik=(el('fAcik')&&el('fAcik').value||'').trim().slice(0,500);
   try{
     el('talepKaydet').disabled=true;
     if(talepTip==='İzin'){
       const bas=el('fBas').value,bit=el('fBit').value; if(!bas||!bit){m.className='msg bad';m.textContent='Tarihleri girin.';return;}
+      if(bit<bas){m.className='msg bad';m.textContent='Bitiş tarihi başlangıçtan önce olamaz.';return;}
       const rec={id:uid('z'),empId:EMP.id,empAd:EMP.ad,tur:el('fTur').value,gun:gunFark(bas,bit),baslangic:isoTR(bas),bitis:isoTR(bit),aciklama:acik,durum:'bekliyor',onayAkis:akis,olusturma:now};
-      IZINLER=IZINLER.concat([rec]); await setDoc(refIzin,{izinler:IZINLER,guncelleme:now},{merge:true});
+      await setDoc(refIzin,{izinler:arrayUnion(rec),guncelleme:now},{merge:true});
     } else {
-      const val=el('fVal').value; if(!val){m.className='msg bad';m.textContent=(talepTip==='Mesai'?'Süre':'Tutar')+' girin.';return;}
+      const val=el('fVal').value; if(!val||+val<=0){m.className='msg bad';m.textContent=(talepTip==='Mesai'?'Süre':'Tutar')+' girin.';return;}
       const ozet=talepTip==='Mesai'?(val+' saat mesai'):(val+' TL avans');
       const tarih=talepTip==='Mesai'?isoTR(el('fTarih').value):bugun();
       const rec={id:uid('t'),tip:talepTip,empId:EMP.id,empAd:EMP.ad,tarih,deger:+val,ozet,aciklama:acik,durum:'bekliyor',onayAkis:akis,olusturma:now};
-      TALEPLER=TALEPLER.concat([rec]); await setDoc(refTalep,{talepler:TALEPLER,guncelleme:now},{merge:true});
+      await setDoc(refTalep,{talepler:arrayUnion(rec),guncelleme:now},{merge:true});
     }
-    el('talepOvl').classList.remove('on'); talepTazele(); secGoster('secTalep');
+    el('talepOvl').classList.remove('on'); secGoster('secTalep');
   }catch(e){m.className='msg bad';m.textContent='Gönderilemedi: '+e.message;}
   finally{el('talepKaydet').disabled=false;}
 };
 
-/* ---- EKIBIM ---- */
+/* ---- EKİBİM ---- */
 function ekipTazele(){
-  // Ekip = aynı DEPARTMAN'daki AKTİF çalışanlar (işten ayrılanlar hariç)
+  if(!EMP) return;
+  /* Ekip = aynı DEPARTMAN'daki AKTİF çalışanlar (işten ayrılanlar hariç) */
   const dep=trLower(EMP.departman||'');
   const ekip=ROSTER.filter(x=>x.id!==EMP.id && dep && trLower(x.departman||'')===dep && AKTIFIDS.has(String(x.id)));
   el('ekipSub').textContent=EMP.departman?(EMP.departman+' · '+ekip.length+' ekip arkadaşı'):'Departman bilgisi bulunamadı.';

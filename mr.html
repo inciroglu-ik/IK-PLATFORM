@@ -163,7 +163,6 @@ tbody tr:hover{background:#f8fafc}
   </div>
 </div>
 
-<script src="mr_data.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -188,8 +187,7 @@ const db=getFirestore(app);
 const ref=doc(db,"satisVeri","mrPersonel");
 
 /* ============ DURUM ============ */
-const SEED_AKTIF=(window.MR_AKTIF||[]);
-const SEED_AYRILAN=(window.MR_AYRILAN||[]);
+/* (Kişisel veri içeren mr_data.js tohum dosyası güvenlik nedeniyle kaldırıldı — veri yalnız Firestore'da) */
 let AKTIF=[], AYRILAN=[];
 let ST={tab:'aktif', q:'', sortCol:'ad', sortDir:1};
 let openMenu=null;
@@ -203,15 +201,18 @@ function boot(){
   bindUI();
   onSnapshot(ref,(snap)=>{
     if(snap.exists() && (Array.isArray(snap.data().aktif)||Array.isArray(snap.data().ayrilan))){
-      AKTIF=snap.data().aktif||[]; AYRILAN=snap.data().ayrilan||[];
+      AKTIF=snap.data().aktif||[]; AYRILAN=snap.data().ayrilan||[]; ROSTER_OK=true;
     }else{
-      AKTIF=SEED_AKTIF.slice(); AYRILAN=SEED_AYRILAN.slice();
-      setDoc(ref,{aktif:AKTIF,ayrilan:AYRILAN,guncelleme:new Date().toISOString(),_init:true},{merge:true}).catch(()=>{});
+      /* Doküman yok/bozuk: ASLA üzerine yazma — personel listesi korunur */
+      AKTIF=[]; AYRILAN=[]; ROSTER_OK=false; console.warn('mrPersonel okunamadı');
     }
     render();
-  },(err)=>{ console.error('MR veri hatası',err); AKTIF=SEED_AKTIF.slice(); AYRILAN=[]; render(); });
+  },(err)=>{ console.error('MR veri hatası',err); AKTIF=[]; AYRILAN=[]; ROSTER_OK=false; render(); });
 }
+let ROSTER_OK=false;
 async function kaydet(){
+  /* Liste sunucudan yüklenmeden kayıt yapılmaz (boş listeyle personeli ezmemek için) */
+  if(!ROSTER_OK){ alert('Personel listesi henüz yüklenmedi; kayıt yapılmadı. Sayfayı yenileyip tekrar deneyin.'); return; }
   try{ await setDoc(ref,{aktif:AKTIF,ayrilan:AYRILAN,guncelleme:new Date().toISOString()},{merge:true}); }
   catch(err){ alert('Kaydedilemedi: '+err.message); }
 }
