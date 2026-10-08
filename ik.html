@@ -587,7 +587,7 @@ const DUYURULAR=[
  {t:'Puantaj otomatik dolduruluyor',a:'Mobil girişler puantaja "Çalıştı" olarak düşüyor; geç giriş/erken çıkış işaretleniyor.',d:'7 Eki'},
  {t:'Görev takip tablosu',a:'Yönetim toplantısı aksiyonları İK Sistemi üzerinden takip ediliyor.',d:'8 Eki'}
 ];
-function benKim(){ const ad=(SES&&SES.ad)||''; let e=null; if(SES&&SES.tc){ e=[...AKTIF,...AYRILAN].find(x=>String(x.tc)===String(SES.tc)); } if(!e&&ad&&trLower(ad)!=='ik'&&ad!=='ik123'){ e=AKTIF.find(x=>nkey(x.ad)===nkey(ad)); } if(e) return e; return {ad:(ad&&trLower(ad)!=='ik'&&ad!=='ik123')?ad:'İnsan Kaynakları',departman:'İNSAN KAYNAKLARI',bolum:'İdari',unvan:'İnsan Kaynakları',giris:'',mudurluk:'',_sentetik:true}; }
+function benKim(){ const ad=(SES&&SES.ad)||''; const genel=!ad||/^(ik|ık|ik123|ık123|ik ekibi)$/i.test(String(ad).trim())||/^(ik|ık)$/.test(trLower(ad)); let e=null; if(SES&&SES.tc){ e=[...AKTIF,...AYRILAN].find(x=>String(x.tc)===String(SES.tc)); } if(!e&&!genel){ e=AKTIF.find(x=>nkey(x.ad)===nkey(ad)); } if(e) return e; return {ad:genel?'İnsan Kaynakları':ad,departman:'İNSAN KAYNAKLARI',bolum:'İdari',unvan:'İnsan Kaynakları',giris:'',mudurluk:'',_sentetik:true}; }
 function kisaTarih(d){ return d.toLocaleDateString('tr-TR',{day:'numeric',month:'short'}); }
 function kisaTarihTR(s){ const d=dObj(s); return d?kisaTarih(d):(s||''); }
 function gunKala(d){ const t=new Date(); t.setHours(0,0,0,0); const diff=Math.round((d-t)/86400000); if(diff===0)return 'Bugün'; if(diff===1)return 'Yarın'; if(diff===-1)return 'Dün'; return kisaTarih(d); }
@@ -611,7 +611,7 @@ let khDonutObj=null;
 function drawHomeDonut(){ const cv=document.getElementById('khDonut'); if(!cv||!window.Chart)return; const d=depDagilim(); const top=d.slice(0,11); const rest=d.slice(11).reduce((s,x)=>s+x[1],0); if(rest>0)top.push(['Diğer',rest]); const cols=top.map((x,i)=>AVC[i%AVC.length]); if(khDonutObj)khDonutObj.destroy(); khDonutObj=new Chart(cv,{type:'doughnut',data:{labels:top.map(x=>x[0]),datasets:[{data:top.map(x=>x[1]),backgroundColor:cols,borderWidth:2,borderColor:'#fff'}]},options:{cutout:'70%',plugins:{legend:{display:false}},maintainAspectRatio:false}}); }
 function viewAna(){
   const u=benKim();
-  const first=(String(u.ad).trim().split(/\s+/)[0]||'').toLocaleUpperCase('tr');
+  const first=u._sentetik?u.ad:(String(u.ad).trim().split(/\s+/)[0]||'').toLocaleUpperCase('tr');
   const tarih=new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   return '<div class="kgreet">Merhaba '+esc(first)+'!<span>Bugün '+esc(tarih)+'</span></div>'
     +'<div class="khome">'
@@ -1461,7 +1461,9 @@ async function ayarSil(spec){const i=spec.indexOf('|');const key=spec.slice(0,i)
 function closeModals(){['empOvl','izinOvl','harcOvl','talepOvl','akisOvl','delOvl','pozOvl'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on');});delId=null;editId=null;izEmpFix=null;talepTip=null;pozEmpId=null;}
 let openMenu=null; function closeMenu(){if(openMenu){openMenu.remove();openMenu=null;}}
 function bindGlobal(){
-  document.getElementById('logout').onclick=()=>{location.href='portal.html';};
+  const lo=document.getElementById('logout');
+  if(SES&&SES.kaynak==='calisan'){ lo.textContent='← Çalışan uygulamasına dön'; lo.onclick=()=>{location.href='calisan.html';}; const n=String(SES.ad||''); const pp=n.trim().split(/\s+/); document.getElementById('meAd').textContent=n; document.getElementById('meAv').textContent=((pp[0]||'').charAt(0)+(pp.length>1?pp[pp.length-1].charAt(0):'')).toLocaleUpperCase('tr'); }
+  else lo.onclick=()=>{location.href='portal.html';};
   document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeModals);
   document.getElementById('eSave').onclick=saveEmp;
   document.getElementById('izSave').onclick=saveIzin;

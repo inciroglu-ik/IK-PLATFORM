@@ -53,6 +53,10 @@ input:focus,select,textarea:focus{border-color:var(--navy)}
 .top .out{background:rgba(255,255,255,.12);border:none;color:#fff;border-radius:9px;padding:8px 11px;font-size:12px;cursor:pointer;font-family:inherit;flex:none}
 .back{display:inline-flex;align-items:center;gap:4px;background:none;border:none;color:var(--navy);font-weight:600;font-size:13px;cursor:pointer;padding:2px 0;margin-bottom:10px;font-family:inherit}
 .back svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2.2}
+.ik-door{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,var(--navy),var(--navy-2));color:#fff;border-radius:14px;padding:14px 15px;margin-bottom:16px;text-decoration:none;box-shadow:0 6px 18px -8px rgba(19,42,68,.5)}
+.ik-door svg{width:26px;height:26px;stroke:var(--brass);fill:none;stroke-width:1.9;flex:none}
+.ik-door div{flex:1;min-width:0}.ik-door b{display:block;font-size:14.5px}.ik-door small{color:#b9c9db;font-size:11.5px}
+.ik-door span{font-size:18px;color:var(--brass)}
 .mini-info{font-size:12.5px;color:var(--ink-2);line-height:1.55;background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:16px}
 .loc-note{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:10px}
 .list-h{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px;font-weight:600}
@@ -138,6 +142,7 @@ input:focus,select,textarea:focus{border-color:var(--navy)}
     <!-- TALEPLER (ANA EKRAN) -->
     <div id="secTalep">
       <div class="who"><div class="av" id="whoAv">—</div><div><b id="whoAd">—</b><small id="whoDep">—</small></div></div>
+      <a class="ik-door hide" id="ikDoor" href="ik.html#/"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="8" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="15" width="7" height="6" rx="1.5"/></svg><div><b>İK Sistemi</b><small>Çalışanlar, izinler, puantaj, raporlar — yönetim paneli</small></div><span>→</span></a>
       <div class="sec-h">Taleplerim</div>
       <div class="mini-info">İzin, avans veya mesai talebini buradan oluştur. Talebin müdür → direktör → İnsan Kaynakları onayından geçer.</div>
       <div class="tbtns">
@@ -241,7 +246,7 @@ el('loginBtn').onclick=async()=>{
     if(!ok){m.textContent='Şifre hatalı.';return;}
     const r=await rosterYukle(); const emp=r.find(x=>String(x.tc)===String(rec.tc));
     if(!emp){m.textContent='Çalışan kaydı bulunamadı, İK ile görüşün.';return;}
-    await talepYukle(); EMP=emp; appAc();
+    await talepYukle(); EMP=emp; SIFRELI=true; appAc();
   }catch(e){m.textContent='Bağlantı hatası: '+e.message;}
   finally{el('loginBtn').innerHTML='Giriş Yap';el('loginBtn').disabled=false;}
 };
@@ -249,11 +254,22 @@ el('tcBtn').onclick=async()=>{
   const tc=(el('tc').value||'').trim(); const m=el('lgMsg'); m.textContent='';
   if(!/^\d{11}$/.test(tc)){m.textContent='Geçerli 11 haneli TC girin.';return;}
   el('tcBtn').innerHTML='<span class="spin"></span>'; el('tcBtn').disabled=true;
-  try{ const r=await rosterYukle(); const emp=r.find(x=>String(x.tc)===tc); if(!emp){m.textContent='Bu TC ile çalışan bulunamadı.';return;} await talepYukle(); EMP=emp; appAc(); }
+  try{ const r=await rosterYukle(); const emp=r.find(x=>String(x.tc)===tc); if(!emp){m.textContent='Bu TC ile çalışan bulunamadı.';return;} await talepYukle(); EMP=emp; SIFRELI=false; appAc(); }
   catch(e){m.textContent='Bağlantı hatası: '+e.message;}
   finally{el('tcBtn').innerHTML='Giriş Yap';el('tcBtn').disabled=false;}
 };
-el('outBtn').onclick=()=>{EMP=null;el('appView').classList.add('hide');el('loginView').classList.remove('hide');el('pw').value='';};
+el('outBtn').onclick=()=>{EMP=null;ikOturumKapat();el('appView').classList.add('hide');el('loginView').classList.remove('hide');el('pw').value='';};
+/* ---- İK EKİBİ: yalnız bu kişiler İK Sistemi'ni (ik.html) görür; diğerleri sadece bu uygulamayı ---- */
+const IK_EKIBI=['alaaddin çağlıköse','şahin tektaş','sena bostancı'];
+let SIFRELI=false;
+function ikEkibiMi(p){ const a=trLower(p&&p.ad||'').replace(/\s+/g,' ').trim(); return IK_EKIBI.indexOf(a)>=0; }
+function ikOturumKapat(){ try{ const s=JSON.parse(localStorage.getItem('inc_portal_sso')||'null'); if(s&&s.rol==='ik'&&s.kaynak==='calisan') localStorage.removeItem('inc_portal_sso'); }catch(e){} }
+function ikOturumAyarla(){
+  const yetkili=SIFRELI&&ikEkibiMi(EMP);
+  if(yetkili){ try{ localStorage.setItem('inc_portal_sso',JSON.stringify({ok:true,u:'ik:'+EMP.tc,ad:trTitle(EMP.ad),rol:'ik',tc:EMP.tc,kaynak:'calisan',ts:Date.now()})); }catch(e){} }
+  else ikOturumKapat();
+  el('ikDoor').classList.toggle('hide',!yetkili);
+}
 
 /* ---- APP ---- */
 function appAc(){
@@ -261,6 +277,7 @@ function appAc(){
   const ini=initials(EMP.ad).toLocaleUpperCase('tr');
   el('tAv').textContent=ini; el('tAd').textContent=trTitle(EMP.ad); el('tDep').textContent=(EMP.unvan||EMP.departman||'');
   el('whoAv')&&(el('whoAv').textContent=ini); el('whoAd')&&(el('whoAd').textContent=trTitle(EMP.ad)); el('whoDep')&&(el('whoDep').textContent=(EMP.unvan||'')+(EMP.unvan&&EMP.departman?' · ':'')+(EMP.departman||''));
+  ikOturumAyarla();
   secGoster('secTalep'); pdksTazele(); talepTazele(); ekipTazele();
 }
 document.querySelectorAll('.nav a').forEach(a=>a.onclick=()=>secGoster(a.getAttribute('data-sec')));
