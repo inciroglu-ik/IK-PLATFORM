@@ -442,6 +442,35 @@ table.tbl tbody tr.clk{cursor:pointer}table.tbl tbody tr.clk:hover td{background
 .rg-gun{width:180px;height:36px}
 @media(max-width:1100px){.rp-k4,.rp-g4{grid-template-columns:repeat(2,1fr)}.ro-g{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:620px){.rp-k4,.rp-g4,.ro-g,.rp-mg{grid-template-columns:1fr}}
+/* ===== AYARLAR (Kolay İK) ===== */
+.ay-sistem{display:flex;flex-direction:column;gap:18px;padding:8px 0 0 18px;max-width:420px}
+.ay-sk{display:flex;gap:6px;align-items:flex-start}
+.ay-ic{width:28px;height:28px;border-radius:5px;background:#1f2d4e;display:flex;align-items:center;justify-content:center;flex:none;margin-top:0;position:relative;left:-6px}
+.ay-ic svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2}
+.ay-kart{flex:1;display:block;background:#fff;border:1px solid var(--line);border-radius:4px;padding:16px 14px 10px;color:inherit;text-decoration:none;transition:box-shadow .15s,border-color .15s}
+.ay-kart:hover{border-color:#cfd6e0;box-shadow:0 8px 22px -14px rgba(16,27,40,.4)}
+.ay-kart b{display:block;font-size:13px;font-weight:500;color:#2b3445;margin-bottom:16px}
+.ay-kart small{display:block;font-size:10.5px;color:#5d6878;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.ay-yonet{display:flex;justify-content:flex-end;align-items:center;gap:3px;color:var(--blue);font-size:11px;padding-top:9px}
+.ay-yonet svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2}
+.ay-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:16px;align-items:start}
+.ay-ch{padding:5px 6px 5px 10px;display:inline-flex;align-items:center;gap:4px}
+.ay-ch button,.ay-uz button{background:none;border:none;color:var(--bad);cursor:pointer;font-weight:700;font-size:14px;line-height:1;padding:0 4px}
+.ay-uz{margin-bottom:12px;max-height:260px;overflow:auto}
+.ay-uz div{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f0f2f5;font-size:11px;color:#2b3445}
+.ay-uz div span{flex:1}
+.ay-ekle{display:flex;gap:8px}.ay-ekle .kin{flex:1}
+.ay-saat{display:grid;grid-template-columns:1fr 1fr 110px;gap:10px;margin-bottom:10px}.ay-saat .f{margin:0}
+.ay-vg{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.ay-veri{border:1px solid var(--line);border-radius:4px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.ay-veri b{font-size:18px;font-weight:600;color:#2b3445}.ay-veri span{font-size:11px;color:#3b4656}.ay-veri small{font-size:10px;color:var(--muted)}
+.ay-guv{max-width:520px;padding:10px 0 0 20px}
+.ay-guv h3{font-size:14px;font-weight:500;color:#2b3445;margin:6px 0 4px}
+.ay-guv hr{border:none;border-top:1px solid var(--line);margin:20px 0 16px}
+.ay-cb{display:flex;align-items:flex-start;gap:10px;margin:14px 0 0;cursor:default}
+.ay-cb input{margin-top:2px;width:15px;height:15px;accent-color:#2a9a49}
+.ay-cb b{display:block;font-size:11.5px;font-weight:400;color:#2b3445}.ay-cb small{display:block;font-size:10.5px;color:#5d6878;margin-top:2px}
+@media(max-width:760px){.ay-vg{grid-template-columns:repeat(2,1fr)}.ay-grid{grid-template-columns:1fr}}
 .pf-head{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
 .pf-av{width:82px;height:82px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:400;font-size:28px;color:#fff;flex:none;box-shadow:none}
 .pf-head h2{font-size:19px;color:#2b3445;font-weight:500;line-height:1.2;text-transform:uppercase}.pf-head .sub{color:var(--ink-2);font-size:12.5px;margin-top:3px}
@@ -1099,7 +1128,8 @@ const VIEWS={
   giriscikis:()=>viewZaman('giriscikis'),
   zaman:a=>viewZaman(a||'cizelge'),
   raporlar:a=>viewRaporlar(a),
-  ayarlar:()=>sayfa('Ayarlar',viewAyarlar()),
+  ayarlar:a=>viewAyarlar(a),
+  ayar:a=>viewAyarAlt(a),
   uygulamalar:()=>viewUygulamalar()
 };
 function render(){
@@ -2453,40 +2483,104 @@ function xlsIndir(d,fo){
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(d.baslik.replace(/[^\wğüşıöçĞÜŞİÖÇ ]/g,'').trim()||'rapor')+'.xls';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
 }
 
-/* ===== AYARLAR ===== */
-function viewAyarlar(){
-  const a=ensureAyar();
-  const liste=(bas,key,arr)=>'<div class="card pad" style="margin-bottom:16px"><div class="sec-h"><h2>'+bas+' <span class="mini">('+arr.length+')</span></h2></div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">'+arr.map(x=>'<span class="badge" style="padding:5px 10px">'+esc(x)+' <button data-del="'+key+'|'+esc(x)+'" style="background:none;border:none;color:var(--bad);cursor:pointer;font-weight:700">×</button></span>').join('')+(arr.length?'':'<span class="mini">—</span>')+'</div><div style="display:flex;gap:8px"><input class="sel" style="flex:1" id="add_'+key+'" placeholder="Yeni ekle…"><button class="btn sm" data-add="'+key+'">Ekle</button></div></div>';
-  const listeUzun=(bas,key,arr)=>'<div class="card pad" style="margin-bottom:16px"><div class="sec-h"><h2>'+bas+' <span class="mini">('+arr.length+')</span></h2></div><div style="margin-bottom:12px">'+(arr.length?arr.map(x=>'<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f0f2f5"><span style="flex:1;font-size:12.5px;color:var(--ink)">'+esc(x)+'</span><button data-del="'+key+'|'+esc(x)+'" style="background:none;border:none;color:var(--bad);cursor:pointer;font-weight:700;font-size:15px">×</button></div>').join(''):'<span class="mini">—</span>')+'</div><div style="display:flex;gap:8px"><input class="sel" style="flex:1" id="add_'+key+'" placeholder="Yeni onay süreci ekle…"><button class="btn sm" data-add="'+key+'">Ekle</button></div></div>';
-  const kural=a.yillikKural.map(r=>r.min+'–'+r.max+' yıl: <b>'+r.gun+' gün</b>').join(' · ');
-  const H=t=>'<div class="sec-h" style="margin:22px 0 10px"><h2 style="font-family:var(--serif);font-size:16px">'+t+'</h2></div>';
-  return '<div style="max-width:860px">'
-    +H('Şirket Yapısı')
-    +liste('Şirketler','sirketler',a.sirketler)
-    +liste('Unvanlar','unvanlar',a.unvanlar)
-    +liste('Departmanlar','departmanlar',a.departmanlar)
-    +liste('Bölümler','bolumler',a.bolumler)
-    +liste('Müdürlükler','mudurlukler',a.mudurlukler)
-    +liste('Direktörler','direktorler',a.direktorler)
-    +H('Onay Süreçleri')
-    +listeUzun('İzin Onay Süreci','izinOnaylari',a.izinOnaylari)
-    +listeUzun('Harcama Onay Süreci','harcamaOnaylari',a.harcamaOnaylari)
-    +listeUzun('Avans Onay Süreci','avansOnaylari',a.avansOnaylari)
-    +listeUzun('Mesai Onay Süreci','mesaiOnaylari',a.mesaiOnaylari)
-    +H('Çalışma Saatleri')
-    +'<div class="card pad" style="margin-bottom:16px"><div class="sec-h"><h2>Standart Mesai &amp; Geç/Erken Eşiği</h2></div>'
-      +'<div class="mini" style="margin-bottom:12px">Puantajda giriş saati başlangıçtan geç ise <b style="color:#b26a00">geç giriş ◤</b>, çıkış saati bitişten erken ise <b style="color:#c0392b">erken çıkış ◢</b> olarak işaretlenir. Tolerans, kaç dakikaya kadar sayılmayacağını belirler.</div>'
-      +'<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end">'
-        +'<div class="f" style="margin:0"><label>Mesai Başlangıç</label><input type="time" id="aMesaiBas" value="'+esc(a.mesaiBas)+'"></div>'
-        +'<div class="f" style="margin:0"><label>Mesai Bitiş</label><input type="time" id="aMesaiBit" value="'+esc(a.mesaiBit)+'"></div>'
-        +'<div class="f" style="margin:0"><label>Tolerans (dk)</label><input type="number" min="0" max="120" id="aGecTol" value="'+esc(a.gecTolerans)+'" style="width:110px"></div>'
-        +'<button class="btn" id="aSaatKaydet">Kaydet</button><span class="mini" id="aSaatMsg"></span>'
-      +'</div></div>'
-    +H('Talep Türleri')
-    +liste('İzin Türleri','izinTurleri',a.izinTurleri)
-    +liste('Harcama Türleri','harcamaTurleri',a.harcamaTurleri)
-    +'<div class="card pad"><div class="sec-h"><h2>Yıllık İzin Kuralı</h2></div><div class="mini" style="margin-bottom:6px">Kıdeme göre hak edilen yıllık izin (İş Kanunu varsayılanı):</div><div style="font-size:13.5px;color:var(--ink)">'+kural+'</div></div>'
-    +'</div>';
+/* ===== AYARLAR (Kolay İK düzeni) ===== */
+const AY_SEKME=[['sistem','Sistem Ayarları'],['sirket','Şirket Bilgileri'],['veri','Veri Aktar'],['kurallar','Kurallar'],['tatil','Tatil Takvimleri'],['egitim','Eğitimler'],['odeme','Ödeme Bilgileri'],['ozel','Özel Alanlar'],['gelistirici','Geliştirici Ayarları']];
+const AY_IC={
+  erisim:'<path d="M12 2l8 3v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V5z"/><circle cx="12" cy="11" r="2.4"/>',
+  bildirim:'<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7.5l8.5 5.5 8.5-5.5"/>',
+  profil:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>',
+  talep:'<circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>'
+};
+function ayListe(bas,key,arr,uzun){
+  return '<div class="kc2 ay-k"><div class="kc2-h"><h3>'+esc(bas)+'</h3><span class="mini">'+arr.length+'</span></div><div class="kc2-b">'
+    +(uzun?'<div class="ay-uz">'+(arr.length?arr.map(x=>'<div><span>'+esc(x)+'</span><button data-del="'+key+'|'+esc(x)+'" title="Sil">×</button></div>').join(''):'<span class="mini">—</span>')+'</div>'
+      :'<div class="chips" style="margin-bottom:12px">'+(arr.length?arr.map(x=>'<span class="badge ay-ch">'+esc(x)+'<button data-del="'+key+'|'+esc(x)+'" title="Sil">×</button></span>').join(''):'<span class="mini">—</span>')+'</div>')
+    +'<div class="ay-ekle"><input class="kin" id="add_'+key+'" placeholder="Yeni ekle…"><button class="btn sm" data-add="'+key+'">Ekle</button></div></div></div>';
+}
+function ayBos(baslik,metin){ return '<div class="kc2" style="max-width:760px"><div class="kc2-h"><h3>'+esc(baslik)+'</h3></div><div class="kc2-b"><div class="kc2-empty">'+metin+'</div></div></div>'; }
+function viewAyarlar(sekme){
+  sekme=AY_SEKME.some(t=>t[0]===sekme)?sekme:'sistem';
+  const a=ensureAyar(); let g='';
+  if(sekme==='sirket'){
+    g='<div class="kc2" style="margin-bottom:16px;max-width:760px"><div class="kc2-h"><h3>Şirket</h3></div><div class="kc2-b"><div class="kv2" style="border:none;padding:2px 0 6px">'+kvItem('Şirket Adı','İnciroğlu Otomotiv')+kvItem('Aktif Çalışan',esc(AKTIF.length))+kvItem('Departman Sayısı',esc(a.departmanlar.length))+kvItem('Bölüm Sayısı',esc(a.bolumler.length))+'</div></div></div>'
+      +'<div class="ay-grid">'+ayListe('Şirketler','sirketler',a.sirketler)+ayListe('Departmanlar','departmanlar',a.departmanlar)+ayListe('Bölümler','bolumler',a.bolumler)+ayListe('Unvanlar','unvanlar',a.unvanlar)+ayListe('Müdürlükler','mudurlukler',a.mudurlukler)+ayListe('Direktörler','direktorler',a.direktorler)+'</div>';
+  } else if(sekme==='veri'){
+    const say=(ad,n,not)=>'<div class="ay-veri"><b>'+esc(n)+'</b><span>'+esc(ad)+'</span>'+(not?'<small>'+esc(not)+'</small>':'')+'</div>';
+    g='<div class="kc2" style="max-width:900px"><div class="kc2-h"><h3>Kolay İK\'dan Aktarılan Veriler</h3></div><div class="kc2-b"><div class="ay-vg">'
+      +say('Aktif çalışan',AKTIF.length)+say('Eski çalışan',AYRILAN.length)+say('Özlük kaydı',Object.keys(OZLUK||{}).length)+say('İzin bakiyesi',Object.keys(BAKIYE||{}).length)
+      +say('Kolay İK izin kaydı',allEmp().reduce((s,p)=>s+(p.izinler||[]).length,0))+say('Sistem izin talebi',IZIN.length)+say('Harcama kaydı',HARC.length)+say('Giriş-çıkış hareketi',PDKS.length,'yüklenen aylar')
+      +'</div><div class="mini" style="margin-top:12px">Kolay İK\'dan alınan Excel raporları (çalışan listesi, özel rapor, izin bakiye, ödeme ve zaman çizelgesi) sisteme bu verileri sağlar. Güncel bir dışa aktarım yaptığınızda dosyayı vermeniz yeterli.</div></div></div>'
+      +'<div class="kc2" style="max-width:900px;margin-top:16px"><div class="kc2-h"><h3>Dışa Aktar</h3></div><div class="kc2-b"><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn ob sm" data-ayx="calisan">Çalışan listesi (Excel)</button><button class="btn ob sm" data-ayx="izinbakiye">İzin bakiyeleri (Excel)</button><button class="btn ob sm" data-ayx="izinkullanim">Kullanılan izinler (Excel)</button></div></div></div>';
+  } else if(sekme==='kurallar'){
+    const aralik=r=>r.max>=99?(r.min+' yıl ve üzeri'):(Math.max(1,r.min)+' – '+r.max+' yıl');
+    g='<div class="ay-grid">'
+      +'<div class="kc2 ay-k"><div class="kc2-h"><h3>Yıllık İzin Kuralı</h3><span class="pill var" style="margin:0">İş Kanunu</span></div><div class="kc2-b"><table class="tbl ktbl"><thead><tr><th>Kıdem</th><th>Yıllık İzin Hakkı</th></tr></thead><tbody>'+a.yillikKural.map(r=>'<tr><td>'+esc(aralik(r))+'</td><td><b>'+esc(r.gun)+' gün</b></td></tr>').join('')+'</tbody></table></div></div>'
+      +'<div class="kc2 ay-k"><div class="kc2-h"><h3>Çalışma Saatleri</h3></div><div class="kc2-b"><div class="mini" style="margin-bottom:12px">Puantajda giriş saati başlangıçtan geç ise <b style="color:#b26a00">geç giriş</b>, çıkış saati bitişten erken ise <b style="color:#c0392b">erken çıkış</b> olarak işaretlenir.</div>'
+        +'<div class="ay-saat"><div class="f"><label>Mesai Başlangıç</label><input type="time" id="aMesaiBas" value="'+esc(a.mesaiBas)+'"></div><div class="f"><label>Mesai Bitiş</label><input type="time" id="aMesaiBit" value="'+esc(a.mesaiBit)+'"></div><div class="f"><label>Tolerans (dk)</label><input type="number" min="0" max="120" id="aGecTol" value="'+esc(a.gecTolerans)+'"></div></div>'
+        +'<div style="display:flex;align-items:center;gap:10px"><button class="btn sm" id="aSaatKaydet">Kaydet</button><span class="mini" id="aSaatMsg"></span></div></div></div>'
+      +ayListe('İzin Türleri','izinTurleri',a.izinTurleri)+ayListe('Harcama Türleri','harcamaTurleri',a.harcamaTurleri)
+      +ayListe('İzin Onay Süreçleri','izinOnaylari',a.izinOnaylari,true)+ayListe('Harcama Onay Süreçleri','harcamaOnaylari',a.harcamaOnaylari,true)
+      +ayListe('Avans Onay Süreçleri','avansOnaylari',a.avansOnaylari,true)+ayListe('Mesai Onay Süreçleri','mesaiOnaylari',a.mesaiOnaylari,true)
+      +'</div>';
+  } else if(sekme==='tatil'){
+    const L=RESMI_TATIL.map(t=>({t,d:dObj(t.t)})).filter(o=>o.d).sort((x,y)=>x.d-y.d); const t0=bugun0();
+    g='<div class="kc2" style="max-width:820px"><div class="kc2-h"><h3>Türkiye Resmi Tatilleri '+esc(L.length?L[0].d.getFullYear():'')+'</h3><span class="pill var" style="margin:0">Varsayılan</span></div><div class="kc2-b" style="padding:0">'
+      +'<table class="tbl"><thead><tr><th>Tarih</th><th>Gün</th><th>Tatil</th><th>Süre</th></tr></thead><tbody>'+L.map(o=>'<tr'+(o.d<t0?' style="opacity:.55"':'')+'><td>'+esc(trUzun(o.t.t))+'</td><td>'+['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'][o.d.getDay()]+'</td><td><b style="font-weight:500">'+esc(o.t.ad)+'</b></td><td>'+esc(String(o.t.g||'1g').replace('0.5g','Yarım gün').replace(/g$/,' gün'))+'</td></tr>').join('')+'</tbody></table></div></div>';
+  } else if(sekme==='egitim') g=ayBos('Eğitimler','Tanımlı eğitim bulunmuyor. Çalışanlara atanacak eğitimler burada listelenir.');
+  else if(sekme==='odeme') g=ayBos('Ödeme Bilgileri','Ödeme türleri ve bordro ayarları Kolay İK\'da tutulur; buradan yönetilmez.');
+  else if(sekme==='ozel') g=ayBos('Özel Alanlar','Tanımlı özel alan bulunmuyor. Çalışan kartına eklenecek ek bilgi alanları burada tanımlanır.');
+  else if(sekme==='gelistirici') g=ayBos('Geliştirici Ayarları','Dış uygulamalar için API erişimi kapalı.');
+  else {
+    const kart=(k,bas,ac,href)=>'<div class="ay-sk"><span class="ay-ic"><svg viewBox="0 0 24 24">'+AY_IC[k]+'</svg></span><a class="ay-kart" href="'+href+'"><b>'+bas+'</b><small>'+ac+'</small><span class="ay-yonet">Yönet <svg viewBox="0 0 24 24">'+PIC.sag+'</svg></span></a></div>';
+    g='<div class="ay-sistem">'+kart('erisim','Erişim Ayarları','Kullanıcıların erişebileceği alanları ve güvenlik seviyesini düzenleyin.','#/ayar/erisim')
+      +kart('bildirim','Bildirim Ayarları','Eposta, mobil ve üçüncü parti uygulamalar için bildirim ayarlarını düzenleyin.','#/ayar/bildirim')
+      +kart('profil','Profil Ayarları','Hangi bilgilerin çalışanlarınız tarafından güncellenebileceğini düzenleyin.','#/ayar/profil')
+      +kart('talep','Talep Ayarları','Çalışanların talep ayarlarını düzenleyin.','#/ayar/talep')+'</div>';
+  }
+  return pageHead({title:'Ayarlar',tabs:AY_SEKME,tab:sekme})+'<div class="pc">'+g+'</div>';
+}
+/* --- Ayarlar alt sayfaları: #/ayar/{erisim|bildirim|profil|talep} --- */
+function ayChk(baslik,alt,acik){ return '<label class="ay-cb"><input type="checkbox" disabled'+(acik?' checked':'')+'><span><b>'+esc(baslik)+'</b>'+(alt?'<small>'+esc(alt)+'</small>':'')+'</span></label>'; }
+function erisimYetkiliYukle(){
+  if(ST.erAuth) return; ST.erAuth={yukleniyor:true};
+  getDoc(doc(db,"satisVeri","mrCalisanAuth")).then(s=>{ const v=(s.exists()&&s.data().veri)||{}; const ik={}; IK_GIRIS_MAIL.forEach(m=>{ const r=Object.prototype.hasOwnProperty.call(v,m)?v[m]:null; ik[m]={var:!!r,sifre:!!(r&&r.sifre&&typeof r.sifre==='object'&&r.sifre.alg==='pbkdf2')}; }); ST.erAuth={ik,hesap:Object.keys(v).length}; render(); }).catch(()=>{ ST.erAuth={hata:true}; render(); });
+}
+function viewAyarAlt(a){
+  const geri={back:'ayarlar',bc:'Ayarlar'}; let g='', baslik='';
+  if(a==='erisim'){
+    baslik='Erişim Ayarları'; const tab=ST.erTab==='guvenlik'?'guvenlik':'ayarlar';
+    if(tab==='guvenlik'){
+      g='<div class="ay-guv"><h3>Oturum</h3><div class="mini">Güvenlik açısından kullanıcıların oturumları ne zaman sonlandırılsın?</div>'
+        +ayChk('Tarayıcı kapandığında oturumu kapat','Kullanıcılar tarayıcı sekmesini kapattıklarında oturumları sonlandırılır',true)
+        +ayChk('Oturumu 30 dakika işlem yapılmadığında kapat','Kullanıcılar bir süre boyunca etkin olmadıklarında oturumları sonlandırılır',true)
+        +ayChk('Oturum en fazla 8 saat sürer','Süre dolunca yeniden giriş istenir',true)
+        +'<hr><h3>Parola</h3><div class="f" style="max-width:470px;margin:10px 0 6px"><label>Minimum Parola Uzunluğu</label><select disabled><option>8</option></select></div>'
+        +ayChk('Küçük ve büyük harf zorunlu','Parola içinde en az bir küçük harf ve en az bir büyük harf bulunsun',true)
+        +ayChk('Rakam zorunlu','Parola içinde en az bir rakam bulunsun',true)
+        +ayChk('Ortak ilk şifre kişisel şifre olamaz','Çalışanlara verilen ilk şifre, kendi belirledikleri şifre olarak kabul edilmez',true)
+        +ayChk('İK yetkisi için aktivasyon kodu','İK ekibi ilk kişisel şifresini yalnız aktivasyon koduyla belirleyebilir',true)
+        +'<div class="mini" style="margin-top:14px">Bu güvenlik kuralları sistemde sabittir ve herkes için geçerlidir.</div></div>';
+    } else {
+      erisimYetkiliYukle(); const au=ST.erAuth||{};
+      const satir=(m,i)=>{ const e=AKTIF.find(x=>trLower(x.ad||'').replace(/\s+/g,' ').trim()===IK_GIRIS_AD[i]); const d=au.ik&&au.ik[m];
+        const sifre=au.yukleniyor?'<span class="mini">…</span>':au.hata?'<span class="mini">—</span>':(d&&d.sifre?'<span class="pill onay">Belirlendi</span>':'<span class="pill bek">Henüz belirlenmedi</span>');
+        return '<tr><td><span class="izad">'+kav(e?e.ad:IK_GIRIS_AD[i],22)+'<span>'+esc(adBuyuk(e?e.ad:IK_GIRIS_AD[i]))+'</span></span></td><td>'+esc(m)+'</td><td>'+(e?'<span class="pill onay">Aktif</span>':'<span class="pill red">Aktif değil</span>')+'</td><td>'+sifre+'</td><td>İK Yetkilisi</td></tr>'; };
+      g='<div class="kc2" style="max-width:1000px"><div class="kc2-h"><h3>İK Sistemi Yetkilileri</h3><span class="mini">'+IK_GIRIS_MAIL.length+' kişi</span></div><div class="kc2-b" style="padding:0"><table class="tbl"><thead><tr><th>Ad Soyad</th><th>E-posta</th><th>Çalışan Durumu</th><th>Kişisel Şifre</th><th>Erişim Tipi</th></tr></thead><tbody>'+IK_GIRIS_MAIL.map(satir).join('')+'</tbody></table></div></div>'
+        +'<div class="kc2" style="max-width:1000px;margin-top:16px"><div class="kc2-h"><h3>Çalışan Uygulaması</h3></div><div class="kc2-b"><div class="kv2" style="border:none;padding:2px 0 6px">'+kvItem('Erişim Tipi','Çalışan')+kvItem('E-posta hesabı olan çalışan',au.hesap!=null?esc(au.hesap):'—')+kvItem('Giriş yöntemleri','İş e-postası + şifre, TC Kimlik No')+kvItem('Yapabildikleri','İzin / avans / mesai talebi, işe giriş-çıkış, ekibini görme')+'</div><div class="mini">İK Sistemi yetkisi yalnız yukarıdaki kişilere tanımlıdır; değişiklik için destek isteyin.</div></div></div>';
+    }
+    return pageHead(Object.assign({title:baslik,tabs:[['ayarlar','Ayarlar'],['guvenlik','Güvenlik']],tab:tab},geri))+'<div class="pc">'+g+'</div>';
+  }
+  if(a==='bildirim'){ baslik='Bildirim Ayarları';
+    g='<div class="ay-guv"><h3>Uygulama İçi Bildirimler</h3>'+ayChk('Onay bekleyen talepler','İzin, harcama, avans, mesai ve vize belgesi talepleri Ana Sayfa\'da ve Uygulamalar → Bildirimler\'de görünür',true)+ayChk('Talep sonucu çalışana','Çalışan, talebinin onay durumunu çalışan uygulamasında anlık görür',true)
+      +'<hr><h3>E-posta Bildirimleri</h3>'+ayChk('E-posta ile bildirim gönder','Henüz desteklenmiyor',false)+'</div>'; }
+  else if(a==='profil'){ baslik='Profil Ayarları';
+    g='<div class="ay-guv"><h3>Çalışanların güncelleyebileceği bilgiler</h3><div class="mini">Çalışan uygulamasında profil güncelleme bulunmuyor; tüm değişiklikler İnsan Kaynakları tarafından yapılır.</div>'
+      +['İletişim bilgileri','Adres bilgileri','Banka hesabı','Acil durum kişisi','Eğitim bilgileri','Aile bilgileri'].map(x=>ayChk(x,'Çalışan güncelleyemez',false)).join('')+'</div>'; }
+  else if(a==='talep'){ baslik='Talep Ayarları';
+    g='<div class="ay-guv"><h3>Çalışan uygulamasındaki talep türleri</h3>'+ayChk('İzin talebi','Müdür → Direktör → İnsan Kaynakları onayına gider',true)+ayChk('Avans talebi','Müdür → Direktör → İnsan Kaynakları onayına gider',true)+ayChk('Fazla mesai talebi','Müdür → Direktör → İnsan Kaynakları onayına gider',true)
+      +'<hr><h3>Yalnız İK tarafından girilen talepler</h3>'+ayChk('Harcama','Talep menüsü → Harcama',true)+ayChk('Vize belgesi','Talep menüsü → Vize Belgesi',true)+'</div>'; }
+  else return sayfa('Ayarlar','<div class="card"><div class="empty">Sayfa bulunamadı. <a href="#/ayarlar">Ayarlar\'a dön</a></div></div>',geri);
+  return pageHead(Object.assign({title:baslik},geri))+'<div class="pc">'+g+'</div>';
 }
 
 /* ===== afterRender ===== */
@@ -2620,8 +2714,13 @@ function afterRender(r){
     const ri=$('rgIndir'); if(ri) ri.onclick=()=>{ const g=ST.rapGor; if(!g) return; const f=g.f||{}; const d=raporData(g.id,f); const fo=rapFiltreOzet(f); if(f.gun) fo.push('Gün: '+trUzun(trFromISO(f.gun))); xlsIndir(d,fo); };
   }
   if(r.page==='ayarlar'){
+    document.querySelectorAll('[data-ktab]').forEach(b=>b.onclick=()=>go('ayarlar/'+b.getAttribute('data-ktab')));
     document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>ayarEkle(b.getAttribute('data-add')));
     document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>ayarSil(b.getAttribute('data-del')));
+    document.querySelectorAll('[data-ayx]').forEach(b=>b.onclick=()=>{ const id=b.getAttribute('data-ayx'); xlsIndir(raporData(id,{}),[]); });
+  }
+  if(r.page==='ayar'){
+    document.querySelectorAll('[data-ktab]').forEach(b=>b.onclick=()=>{ ST.erTab=b.getAttribute('data-ktab'); if(ST.erTab==='ayarlar') ST.erAuth=null; render(); });
   }
 }function ayKaydir(ym,n){let[Y,M]=ym.split('-').map(Number);M+=n;while(M<1){M+=12;Y--;}while(M>12){M-=12;Y++;}return Y+'-'+String(M).padStart(2,'0');}
 /* Arama yazarken yalnız liste ve başlıktaki sayı yenilenir (odak kaybolmasın) */
