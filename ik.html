@@ -471,6 +471,24 @@ table.tbl tbody tr.clk{cursor:pointer}table.tbl tbody tr.clk:hover td{background
 .ay-cb input{margin-top:2px;width:15px;height:15px;accent-color:#2a9a49}
 .ay-cb b{display:block;font-size:11.5px;font-weight:400;color:#2b3445}.ay-cb small{display:block;font-size:10.5px;color:#5d6878;margin-top:2px}
 @media(max-width:760px){.ay-vg{grid-template-columns:repeat(2,1fr)}.ay-grid{grid-template-columns:1fr}}
+/* ===== GELİŞMİŞ ÇALIŞAN EKLEME (Kolay İK) ===== */
+.gce{max-width:690px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.gce-k{background:#fff;border:1px solid var(--line);border-radius:4px;padding:14px 16px 6px}
+.gce-k h3{font-size:12px;font-weight:500;color:#2b3445;margin:0 0 6px}
+.gce-g2{display:grid;grid-template-columns:1fr 1fr;gap:0 22px}
+.gce-g2 .f{margin-bottom:14px}.gce-g2 .f label{font-size:10.5px}
+.gce-g2 .f input:disabled{opacity:.5}
+.gce-tel{display:flex;align-items:stretch}
+.gce-tel span{background:var(--inbg);border-bottom:1px solid #b8c1cd;border-radius:4px 0 0 0;padding:0 10px;display:flex;align-items:center;font-size:11px;color:#3b4656;white-space:nowrap;border-right:1px solid #dfe3e9}
+.gce-tel input{border-radius:0 4px 0 0!important}
+.gce-maas{max-width:390px}
+.gce-mrow{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:10px}
+.gce-mrow .f{margin:0;flex:0 1 190px}
+.gce-tutar{display:flex}.gce-tutar input{flex:1;min-width:0}.gce-tutar select{width:70px;border-left:1px solid #dfe3e9!important}
+.gce-tog{display:flex;align-items:center;gap:8px;font-size:10.5px;color:#5d6878;margin-bottom:8px}
+.gce-nb button{padding:9px 20px}
+.gce-msg{min-height:18px;text-align:center;font-size:12px;color:var(--ok);margin:-8px 0 30px}.gce-msg.bad{color:var(--bad)}
+@media(max-width:620px){.gce-g2{grid-template-columns:1fr}}
 .pf-head{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
 .pf-av{width:82px;height:82px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:400;font-size:28px;color:#fff;flex:none;box-shadow:none}
 .pf-head h2{font-size:19px;color:#2b3445;font-weight:500;line-height:1.2;text-transform:uppercase}.pf-head .sub{color:var(--ink-2);font-size:12.5px;margin-top:3px}
@@ -1120,6 +1138,7 @@ const VIEWS={
   '':()=>viewAna(),
   calisanlar:()=>viewCalisanlar(),
   calisan:a=>viewCalisan(a),
+  'calisan-ekle':()=>viewCalisanEkle(),
   talepler:()=>sayfa('Bildirimler',viewTalepler(),{back:'uygulamalar',bc:'Uygulamalar',sub:'Onayınızı bekleyen izin, harcama, avans, mesai ve vize belgesi talepleri'}),
   izinler:a=>viewIzinler(a),
   takvim:()=>viewTakvim(),
@@ -1671,6 +1690,85 @@ function izinMutabakat(id){
     +'<div class="sign"><div>Çalışan<br><br>Ad Soyad / İmza</div><div>İnsan Kaynakları<br><br>Ad Soyad / İmza</div></div>'
     +'<div class="np"><button onclick="window.print()">Yazdır / PDF olarak kaydet</button></div></body></html>');
   w.document.close();
+}
+
+/* ===== GELİŞMİŞ ÇALIŞAN EKLEME (Kolay İK düzeni): Kişisel · Pozisyon · Maaş ===== */
+function gceSel(id,lab,opts,val,bos,ops){ return '<div class="f"><label>'+lab+(ops?' <span class="ops">opsiyonel</span>':'')+'</label><select id="'+id+'">'+(bos!==false?'<option value=""></option>':'')+opts.map(o=>'<option'+(o===val?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select></div>'; }
+function gceInp(id,lab,tip,val,ops,ph){ return '<div class="f"><label>'+lab+(ops?' <span class="ops">opsiyonel</span>':'')+'</label><input id="'+id+'" type="'+(tip||'text')+'" value="'+esc(val||'')+'"'+(ph?' placeholder="'+esc(ph)+'"':'')+' autocomplete="off"></div>'; }
+function gceTel(id,lab,ops){ return '<div class="f"><label>'+lab+(ops?' <span class="ops">opsiyonel</span>':'')+'</label><div class="gce-tel"><span>TR (+90)</span><input id="'+id+'" type="tel" inputmode="tel" placeholder="'+esc(lab)+'" maxlength="14"></div></div>'; }
+function viewCalisanEkle(){
+  const a=ensureAyar(); const bugun=isoYerel(new Date());
+  const emps=AKTIF.slice().sort((x,y)=>String(x.ad).localeCompare(String(y.ad),'tr')).map(e=>adBuyuk(e.ad));
+  const sirket=a.sirketler[0]||'İNCİROĞLU OTOMOTİV';
+  return pageHead({title:'Gelişmiş Çalışan Ekleme',back:'calisanlar',bc:'Çalışanlar',actions:'<button class="btn" id="gceKaydet">Kaydet</button>'})
+    +'<div class="pc"><div class="gce">'
+    +'<div class="gce-k"><h3>Kişisel</h3><div class="gce-g2">'
+      +gceInp('gAd','Ad')+gceInp('gSoyad','Soyad')
+      +gceInp('gDogum','Doğum Tarihi','date')+gceSel('gCins','Cinsiyet',['Kadın','Erkek'])
+      +gceInp('gTc','Kimlik Numarası','text','',false,'11 haneli')+gceSel('gUyruk','Uyruğu',['Türkiye','Diğer'],'Türkiye',false)
+      +gceSel('gEngel','Engel Derecesi',['Yok','1. Derece','2. Derece','3. Derece'])+gceSel('gEgDur','Eğitim Durumu',['Mezun','Öğrenci','Terk'])
+      +gceSel('gEgSev','Tamamlanan En Yüksek Eğitim Seviyesi',['İlköğretim','Ortaokul','Lise','Ön Lisans','Lisans','Yüksek Lisans','Doktora'])+gceInp('gEgKurum','Son Tamamlanan Eğitim Kurumu','text','',true)
+      +gceInp('gEpIs','E-Posta (İş)','email')+gceInp('gEpKis','E-posta (Kişisel)','email','',true)
+      +gceTel('gTelIs','Telefon (İş)')+gceTel('gTelKis','Telefon (Kişisel)',true)
+      +gceSel('gMedeni','Medeni Hal',['Bekar','Evli'])+gceSel('gCocuk','Çocuk Sayısı',['0','1','2','3','4','5','6','7','8','9','10'],'0',false)
+      +gceInp('gAdres','Adres bilgileri')+gceSel('gUlke','Ülke',['Türkiye','Diğer'],'Türkiye',false)
+      +gceInp('gSehir','Şehir')+gceInp('gPosta','Posta Kodu','text','',true)
+      +gceInp('gIban','IBAN','text','',false,'TR')+gceInp('gHesap','Hesap No','text','',true)
+    +'</div></div>'
+    +'<div class="gce-k"><h3>Pozisyon</h3><div class="gce-g2">'
+      +gceSel('gSozTur','Sözleşme Türü',['Süresiz','Belirli Süreli'],'Süresiz',false)+gceInp('gSozBit','Sözleşme Bitiş Tarihi','date')
+      +gceInp('gGiris','İşe Başlama Tarihi','date',bugun)+gceSel('gCalis','Çalışma Şekli',['Tam zamanlı','Yarı zamanlı'],'Tam zamanlı',false)
+      +gceSel('gSirket','Şirket',a.sirketler.length?a.sirketler:[sirket],sirket,false)
+      +'<div class="f"><label>Unvan</label><input id="gUnvan" list="gUnvanL" autocomplete="off"><datalist id="gUnvanL">'+a.unvanlar.map(u=>'<option value="'+esc(u)+'">').join('')+'</datalist></div>'
+      +gceSel('gDep','Departman',a.departmanlar)+gceSel('gBol','Bölüm',a.bolumler)
+      +gceSel('gMud','Müdürlük',a.mudurlukler)+gceSel('gDir','Direktör',a.direktorler)
+      +gceSel('gIzOn','İzin Onay Süreci',a.izinOnaylari)+gceSel('gHcOn','Harcama Onay Süreci',a.harcamaOnaylari)
+      +gceSel('gAvOn','Avans Onay Süreci',a.avansOnaylari)+gceSel('gMsOn','Mesai Onay Süreci',a.mesaiOnaylari)
+      +gceSel('gYon','Yöneticisi',emps)
+    +'</div><div class="mini" id="gOneri" style="margin-top:4px"></div></div>'
+    +'<div class="gce-k gce-maas"><h3>Maaş</h3>'
+      +'<div class="gce-mrow"><div class="f"><label>Maaş</label><div class="gce-tutar"><input id="gMaas" type="number" min="0" step="0.01" placeholder="0,00"><select id="gMaasB"><option>TL</option><option>USD</option><option>EUR</option></select></div></div>'
+      +'<label class="gce-tog"><span>Asgari Ücret</span><span class="tog"><input type="checkbox" id="gAsgari"><span></span></span></label></div>'
+      +'<div class="gce-mrow"><div class="f"><label>Maaş Periyodu</label><select id="gPer"><option>Aylık</option><option>Günlük</option><option>Saatlik</option></select></div>'
+      +'<div class="seg gce-nb"><button class="on" data-gnb="Net">Net</button><button data-gnb="Brüt">Brüt</button></div></div>'
+      +'<div class="kv1" style="border:none;padding:6px 0 0"><div class="k">Geçerlilik Tarihi</div><div class="v">'+esc(trUzun(trFromISO(bugun)))+'</div></div>'
+    +'</div>'
+    +'<div class="gce-msg" id="gceMsg"></div>'
+    +'</div></div>';
+}
+/* Departman + bölüm seçilince boş alanlara o birimdeki en yaygın müdürlük/direktör/onay süreçlerini öner */
+function gceOner(){
+  const g=id=>document.getElementById(id); const dep=g('gDep').value, bol=g('gBol').value; if(!dep) return;
+  const L=AKTIF.filter(p=>p.departman===dep&&(!bol||p.bolum===bol)); if(!L.length) return;
+  const enCok=k=>{ const m={}; L.forEach(p=>{ const v=p[k]; if(v) m[v]=(m[v]||0)+1; }); const e=Object.entries(m).sort((x,y)=>y[1]-x[1])[0]; return e?e[0]:''; };
+  const dol=[]; [['gMud','mudurluk'],['gDir','direktor'],['gIzOn','izinOnay'],['gHcOn','harcamaOnay'],['gAvOn','avansOnay'],['gMsOn','mesaiOnay']].forEach(([id,k])=>{ const el=g(id); if(el&&!el.value){ const v=enCok(k); if(v&&[...el.options].some(o=>o.value===v)){ el.value=v; dol.push(id); } } });
+  if(dol.length) g('gOneri').textContent='Müdürlük, direktör ve onay süreçleri bu birimdeki çalışanlara göre önerildi; değiştirebilirsiniz.';
+}
+async function gceKaydet(){
+  const g=id=>document.getElementById(id), v2=id=>(g(id)&&g(id).value||'').trim(); const m=g('gceMsg'); m.className='gce-msg'; m.textContent='';
+  const hata=t=>{ m.className='gce-msg bad'; m.textContent=t; m.scrollIntoView({behavior:'smooth',block:'center'}); };
+  const ad=v2('gAd'), soyad=v2('gSoyad'), tc=v2('gTc').replace(/\s/g,''), giris=v2('gGiris'), dep=v2('gDep'), bol=v2('gBol');
+  if(!ad||!soyad) return hata('Ad ve soyad girin.');
+  if(!/^\d{11}$/.test(tc)) return hata('Kimlik numarası 11 haneli olmalı.');
+  if(allEmp().some(p=>String(p.tc)===tc)) return hata('Bu kimlik numarasıyla kayıtlı bir çalışan zaten var.');
+  if(!giris) return hata('İşe başlama tarihini girin.');
+  if(!dep||!bol) return hata('Departman ve bölüm seçin.');
+  const tel=id=>{ const x=v2(id).replace(/[^\d]/g,''); return x?'+90 '+x.replace(/^0/,''):''; };
+  const tamAd=(ad+' '+soyad).replace(/\s+/g,' ').toLocaleUpperCase('tr');
+  const base={id:'e'+tc,ad:tamAd,tc,departman:dep,bolum:bol,unvan:v2('gUnvan'),giris:trFromISO(giris),sozlesmeTuru:v2('gSozTur'),sozlesmeBitis:v2('gSozBit')?trFromISO(v2('gSozBit')):'',calismaSekli:v2('gCalis'),sirket:v2('gSirket'),mudurluk:v2('gMud'),direktor:v2('gDir'),yonetici:v2('gYon'),pozBaslama:trFromISO(giris)};
+  const asgari=g('gAsgari').checked, maas=v2('gMaas'); const nbEl=document.querySelector('[data-gnb].on'); const nb=nbEl?nbEl.getAttribute('data-gnb'):'Net';
+  const rich={dogum:v2('gDogum')?trFromISO(v2('gDogum')):'',cinsiyet:v2('gCins'),uyruk:v2('gUyruk'),engel:v2('gEngel'),egitimDurumu:v2('gEgDur'),egitimSeviye:v2('gEgSev'),egitimKurum:v2('gEgKurum'),
+    epostaIs:v2('gEpIs'),epostaKisisel:v2('gEpKis'),telIs:tel('gTelIs'),telKisisel:tel('gTelKis'),medeni:v2('gMedeni'),cocuk:v2('gCocuk'),adres2:v2('gAdres'),ulke:v2('gUlke'),sehir:v2('gSehir'),postaKodu:v2('gPosta'),iban:v2('gIban').replace(/\s/g,'').toUpperCase(),hesapNo:v2('gHesap'),
+    izinOnay:v2('gIzOn'),harcamaOnay:v2('gHcOn'),avansOnay:v2('gAvOn'),mesaiOnay:v2('gMsOn')};
+  if(maas||asgari){ rich.maas=maas; rich.maasBirim=v2('gMaasB'); rich.maasPeriyot=v2('gPer'); rich.netBrut=nb; rich.asgariUcret=asgari; rich.maaslar=[{gecerli:trUzun(trFromISO(isoYerel(new Date()))),tutar:maas||(asgari?'Asgari Ücret':''),birim:v2('gMaasB'),tur:asgari?'Asgari Ücret':'',ucret:v2('gPer'),netbrut:nb}]; }
+  const b=g('gceKaydet'); b.disabled=true; b.textContent='Kaydediliyor…';
+  try{
+    const rec=Object.assign({},base,rich); AKTIF=AKTIF.concat([rec]);
+    if(!(await kaydetPers())){ AKTIF=AKTIF.filter(x=>x.id!==rec.id); return hata('Personel listesi kaydedilemedi; değişiklik yapılmadı.'); }
+    const temiz={}; Object.keys(rich).forEach(k=>{ const x=rich[k]; if(x!==''&&x!=null&&!(Array.isArray(x)&&!x.length)) temiz[k]=x; });
+    await ozlukGuncelle(tc,temiz);
+    toast('Çalışan eklendi. Çalışan uygulamasına TC Kimlik No ile giriş yapabilir.'); pfTab='profil'; go('calisan/'+rec.id);
+  } finally { b.disabled=false; b.textContent='Kaydet'; }
 }
 
 /* ===== TALEPLER ===== */
@@ -2604,11 +2702,19 @@ function afterRender(r){
     const fd=$('fDurumBtn'); if(fd) fd.onclick=e=>{ e.stopPropagation(); calDurumMenu(fd); };
     const fb=$('fBirimBtn'); if(fb) fb.onclick=e=>{ e.stopPropagation(); calBirimMenu(fb); };
     document.querySelectorAll('[data-view]').forEach(c=>c.onclick=()=>{ST.view=c.getAttribute('data-view');render();});
-    if($('btnNew')) $('btnNew').onclick=()=>openEmp();
+    if($('btnNew')) $('btnNew').onclick=()=>go('calisan-ekle');
     const bt=$('btnToplu'); if(bt) bt.onclick=e=>{ e.stopPropagation(); calTopluMenu(bt); };
     bindRows();
     /* şema geniş: kökü (şirket kutusu) ekranın ortasına getir */
     if(ST.view==='org'){ const w=document.querySelector('#main .og-wrap'); if(w&&w.scrollWidth>w.clientWidth) w.scrollLeft=(w.scrollWidth-w.clientWidth)/2; }
+  }
+  if(r.page==='calisan-ekle'){
+    const kb=$('gceKaydet'); if(kb) kb.onclick=gceKaydet;
+    ['gDep','gBol'].forEach(i=>{ const el=$(i); if(el) el.onchange=gceOner; });
+    const st=$('gSozTur'), sb=$('gSozBit'); if(st&&sb){ const f=()=>{ sb.disabled=st.value!=='Belirli Süreli'; if(sb.disabled) sb.value=''; }; st.onchange=f; f(); }
+    const as=$('gAsgari'), ms=$('gMaas'); if(as&&ms) as.onchange=()=>{ ms.disabled=as.checked; if(as.checked) ms.value=''; };
+    document.querySelectorAll('[data-gnb]').forEach(b=>b.onclick=()=>{ document.querySelectorAll('[data-gnb]').forEach(x=>x.classList.toggle('on',x===b)); });
+    const tcI=$('gTc'); if(tcI) tcI.oninput=()=>{ tcI.value=tcI.value.replace(/[^\d]/g,'').slice(0,11); };
   }
   if(r.page==='calisan'){
     const id=r.arg;
