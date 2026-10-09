@@ -269,11 +269,11 @@ function kodNormal(k){ return String(k||'').toUpperCase().replace(/[^A-Z0-9]/g,'
 function sifreKurali(pw){ if(pw.length<8) return 'Şifre en az 8 karakter olmalı.'; if(!/[a-zçğıöşü]/.test(pw)) return 'Şifrede en az bir küçük harf olmalı.'; if(!/[A-ZÇĞİÖŞÜ]/.test(pw)) return 'Şifrede en az bir büyük harf olmalı.'; if(!/[0-9]/.test(pw)) return 'Şifrede en az bir rakam olmalı.'; if(pw===STANDARD) return 'Ortak ilk şifreyi kullanamazsın.'; return ''; }
 
 let AUTH=null, ROSTER=null, EMP=null, GIRIS_MAIL='', KISISEL=false;
-let KAYITLAR=[], IZINLER=[], TALEPLER=[], gps=null, AKTIFIDS=new Set();
+let KAYITLAR=[], IZINLER=[], TALEPLER=[], gps=null, AKTIFIDS=new Set(), AKTIFTC=new Set();
 let PDKS_GUN={}, PDKS_ESKI=[], DINLEYICI=[];
 
 async function authYukle(){ const s=await getDoc(refAuth); AUTH=(s.exists()&&s.data().veri)?s.data().veri:{}; return AUTH; }
-async function rosterYukle(){ if(ROSTER)return ROSTER; const s=await getDoc(refPers); const d=s.exists()?s.data():{}; const akt=d.aktif||[]; AKTIFIDS=new Set(akt.map(x=>String(x.id))); ROSTER=akt.concat(d.ayrilan||[]); return ROSTER; }
+async function rosterYukle(){ if(ROSTER)return ROSTER; const s=await getDoc(refPers); const d=s.exists()?s.data():{}; const akt=d.aktif||[]; AKTIFIDS=new Set(akt.map(x=>String(x.id))); AKTIFTC=new Set(akt.filter(x=>x.tc).map(x=>String(x.tc))); ROSTER=akt.concat(d.ayrilan||[]); return ROSTER; }
 function kayitlariBirlestir(){ const m=new Map(); const ekle=k=>{ if(k&&k.ts&&k.tc!=null) m.set(String(k.tc)+'|'+k.ts,k); }; Object.values(PDKS_GUN).forEach(a=>(a||[]).forEach(ekle)); (PDKS_ESKI||[]).forEach(ekle); KAYITLAR=[...m.values()]; }
 function dinleyicileriKapat(){ DINLEYICI.forEach(f=>{ try{ f(); }catch(e){} }); DINLEYICI=[]; }
 /* Giriş sonrası veriler: talepler CANLI (onay durumu anında görünsün); giriş-çıkış = bugün + son 7 gün + eski doküman */
@@ -303,7 +303,7 @@ el('loginBtn').onclick=async()=>{
     const a=await authYukle(); const rec=Object.prototype.hasOwnProperty.call(a,email)?a[email]:null;
     if(!rec||!rec.tc){m.textContent='Bu e-posta ile kayıt bulunamadı.';return;}
     const d=await sifreDogrula(pw,rec);
-    if(!d.ok){m.textContent='Şifre hatalı.';return;}
+    if(!d.ok){m.textContent='Şifre hatalı. Göz simgesine basıp yazılanı kontrol et — tarayıcı kayıtlı eski bir şifreyi kendiliğinden doldurmuş olabilir.';return;}
     const r=await rosterYukle(); const emp=r.find(x=>x.tc&&String(x.tc)===String(rec.tc));
     if(!emp){m.textContent='Çalışan kaydı bulunamadı, İK ile görüşün.';return;}
     if(!AKTIFIDS.has(String(emp.id))){m.textContent='Bu hesap aktif bir çalışan kaydına bağlı değil. İK ile görüşün.';return;}
@@ -338,11 +338,11 @@ function cikisYap(mesaj){
 el('outBtn').onclick=()=>cikisYap('');
 
 /* ---- İK OTURUMU ---- */
-function ikEkibiMi(){ if(!EMP) return false; const a=trLower(EMP.ad||'').replace(/\s+/g,' ').trim(); return IK_EKIBI.includes(a)&&IK_EKIBI_MAIL.includes(GIRIS_MAIL)&&AKTIFIDS.has(String(EMP.id)); }
+function ikEkibiMi(){ if(!EMP) return false; const a=trLower(EMP.ad||'').replace(/\s+/g,' ').trim(); return IK_EKIBI.includes(a)&&IK_EKIBI_MAIL.includes(GIRIS_MAIL)&&AKTIFIDS.has(String(EMP.id))&&AKTIFTC.has(String(EMP.tc)); }
 function ikOturumKapat(){ try{ sessionStorage.removeItem(IK_SES); }catch(e){} try{ const s=JSON.parse(localStorage.getItem('inc_portal_sso')||'null'); if(s&&s.kaynak==='calisan') localStorage.removeItem('inc_portal_sso'); }catch(e){} }
 function ikOturumAyarla(){
   const ekip=ikEkibiMi(); const yetkili=ekip&&KISISEL;
-  if(yetkili){ try{ sessionStorage.setItem(IK_SES,JSON.stringify({ok:true,rol:'ik',kaynak:'calisan',sifreli:true,tc:EMP.tc,ad:trTitle(EMP.ad),ts:Date.now()})); }catch(e){} }
+  if(yetkili){ const n=Date.now(); try{ sessionStorage.setItem(IK_SES,JSON.stringify({ok:true,rol:'ik',kaynak:'calisan',sifreli:true,tc:EMP.tc,ad:trTitle(EMP.ad),ts:n,son:n})); }catch(e){} }
   else ikOturumKapat();
   el('ikDoor').classList.toggle('hide',!yetkili);
   el('ikUyari').classList.toggle('hide',!(ekip&&!KISISEL));
@@ -353,8 +353,10 @@ ikOturumKapat();
 /* İK Sistemi hareketsizlikten kapandıysa bilgi ver */
 if(/[?&]oturum=bitti/.test(location.search)){ const m=el('lgMsg'); m.className='msg'; m.textContent='Uzun süre işlem yapılmadığı için İK Sistemi oturumu kapatıldı. Tekrar giriş yap.'; try{ history.replaceState(null,'',location.pathname); }catch(e){} }
 /* Hareketsizlik: HAREKETSIZ_DK dakika işlem yoksa oturum kapanır (paylaşılan cihaz güvenliği) */
-let SON_HAREKET=Date.now();
-['click','touchstart','keydown','scroll'].forEach(ev=>window.addEventListener(ev,()=>{SON_HAREKET=Date.now();},{passive:true}));
+let SON_HAREKET=Date.now(), SON_YAZ=0;
+/* Çalışan uygulamasında işlem yapıldıkça İK oturumunun "son işlem" zamanı da tazelenir (İK kapısına geçince oturum düşmesin) */
+function hareketVar(){ SON_HAREKET=Date.now(); if(SON_HAREKET-SON_YAZ>20000){ SON_YAZ=SON_HAREKET; try{ const s=JSON.parse(sessionStorage.getItem(IK_SES)||'null'); if(s&&s.ok===true&&EMP&&ikEkibiMi()&&KISISEL){ s.son=SON_HAREKET; sessionStorage.setItem(IK_SES,JSON.stringify(s)); } }catch(e){} } }
+['click','touchstart','keydown','scroll'].forEach(ev=>window.addEventListener(ev,hareketVar,{passive:true}));
 setInterval(()=>{ if(EMP&&Date.now()-SON_HAREKET>HAREKETSIZ_DK*60000) cikisYap('Uzun süre işlem yapılmadığı için oturum kapatıldı. Tekrar giriş yapın.'); },30000);
 
 /* ---- ŞİFRE BELİRLE / DEĞİŞTİR ---- */
@@ -369,7 +371,8 @@ function sifreAc(mod){
 }
 el('ikSifreBtn').onclick=()=>sifreAc('ik');
 el('sifreLink').onclick=()=>sifreAc('degistir');
-el('sifreKapat').onclick=()=>el('sifreOvl').classList.remove('on');
+function sifrePenceresiKapat(){ el('sifreOvl').classList.remove('on'); ['sfKod','sfYeni','sfYeni2'].forEach(i=>{ if(el(i)) el(i).value=''; }); gozKapat(); }
+el('sifreKapat').onclick=sifrePenceresiKapat;
 el('sifreKaydet').onclick=async()=>{
   const m=el('sifreMsg'); m.className='msg bad'; const p1=el('sfYeni').value||'', p2=el('sfYeni2').value||'';
   if(!EMP||!GIRIS_MAIL){ m.textContent='Şifre işlemleri için e-posta ile giriş yapmalısın.'; return; }
@@ -390,7 +393,8 @@ el('sifreKaydet').onclick=async()=>{
     if(AUTH&&AUTH[GIRIS_MAIL]) AUTH[GIRIS_MAIL].sifre=h;
     KISISEL=true; ikOturumAyarla();
     m.className='msg ok'; m.textContent='✓ Şifren kaydedildi.'+(ikEkibiMi()?' İK Sistemi kapısı açıldı.':'');
-    setTimeout(()=>el('sifreOvl').classList.remove('on'),1500);
+    ['sfKod','sfYeni','sfYeni2'].forEach(i=>{ if(el(i)) el(i).value=''; }); gozKapat();
+    setTimeout(sifrePenceresiKapat,1500);
   }catch(e){ m.className='msg bad'; m.textContent='Kaydedilemedi: '+e.message; }
   finally{ el('sifreKaydet').disabled=false; }
 };

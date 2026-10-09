@@ -626,30 +626,37 @@ import { getFirestore, doc, onSnapshot, setDoc, getDoc, arrayUnion, runTransacti
    İK kapısından), sekmeye bağlı (sessionStorage) ve 8 saatten taze oturumu kabul eder. Portal ik123 oturumu geçerli değildir. */
 function trLower(s){return String(s||'').replace(/İ/g,'i').replace(/I/g,'ı').toLowerCase();}
 function trTitle(s){return trLower(s).split(/\s+/).map(w=>{if(!w)return w;const f=w.charAt(0);const up=(f==='i')?'İ':(f==='ı'?'I':f.toLocaleUpperCase('tr'));return up+w.slice(1);}).join(' ');}
-const IK_SES='inc_ik_ses', OTURUM_AZAMI=8*3600*1000;
+/* Oturumun son işlem zamanı (son) oturum kaydında tutulur: sekme kapatılıp (Ctrl+Shift+T ile) yeniden açılsa bile
+   30 dk hareketsizlik sayacı sıfırlanmaz. */
+const IK_SES='inc_ik_ses', OTURUM_AZAMI=8*3600*1000, HAREKETSIZ_MS=30*60*1000;
 function oturumOku(){ try{ return JSON.parse(sessionStorage.getItem(IK_SES)||'null'); }catch(e){ return null; } }
-function oturumGecerli(s){ return !!(s&&s.ok===true&&s.rol==='ik'&&s.kaynak==='calisan'&&s.sifreli===true&&s.ts&&(Date.now()-s.ts)<OTURUM_AZAMI); }
+function oturumGecerli(s){ const n=Date.now(); return !!(s&&s.ok===true&&s.rol==='ik'&&s.kaynak==='calisan'&&s.sifreli===true&&s.ts&&(n-s.ts)<OTURUM_AZAMI&&s.son&&(n-s.son)<HAREKETSIZ_MS); }
 let SES=oturumOku();
 const IS_IK=oturumGecerli(SES);
+if(IS_IK){ SES.son=Date.now(); try{ sessionStorage.setItem(IK_SES,JSON.stringify(SES)); }catch(e){} }
 if(!IS_IK){
   if(SES){ try{ sessionStorage.removeItem(IK_SES); }catch(e){} }
   const g=document.getElementById('gate'); g.classList.remove('hidden');
   document.getElementById('sb').style.display='none'; document.getElementById('appMain').style.display='none';
-  const neden=(location.search.match(/[?&]cikis=([a-z]+)/)||[])[1];
-  if(SES&&SES.ts&&(Date.now()-SES.ts)>=OTURUM_AZAMI){ document.getElementById('gateH').textContent='Oturumun süresi doldu'; document.getElementById('gateP').textContent='Güvenlik için oturumlar 8 saatte kapanır. Tekrar giriş yap.'; }
+  let neden=(location.search.match(/[?&]cikis=([a-z]+)/)||[])[1];
+  if(SES&&SES.ts&&(Date.now()-SES.ts)>=OTURUM_AZAMI) neden='sure';
+  else if(SES&&SES.son&&(Date.now()-SES.son)>=HAREKETSIZ_MS) neden='hareketsiz';
+  if(neden==='sure'){ document.getElementById('gateH').textContent='Oturumun süresi doldu'; document.getElementById('gateP').textContent='Güvenlik için oturumlar 8 saatte kapanır. Tekrar giriş yap.'; }
   else if(neden==='hareketsiz'){ document.getElementById('gateH').textContent='Oturum kapatıldı'; document.getElementById('gateP').textContent='Uzun süre işlem yapılmadığı için oturumun kapatıldı. Tekrar giriş yap.'; }
   else if(neden==='cikis'){ document.getElementById('gateH').textContent='Çıkış yapıldı'; document.getElementById('gateP').textContent='Tekrar girmek için iş e-postan ve şifreni yaz.'; }
 }
-/* Açık sekme: oturum düşerse (süre doldu / çıkış yapıldı) sayfa kapıya döner */
+/* Açık sekme: oturum düşerse (süre doldu / çıkış yapıldı / hareketsiz kalındı) sayfa giriş ekranına döner */
 function oturumDenetle(){ if(IS_IK&&!oturumGecerli(oturumOku())) location.reload(); }
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) oturumDenetle(); });
 window.addEventListener('pageshow',e=>{ if(e.persisted) oturumDenetle(); });
 setInterval(oturumDenetle,60000);
 function oturumKapat(){ try{ sessionStorage.removeItem(IK_SES); }catch(e){} }
-/* Hareketsizlik: 30 dk işlem yapılmazsa İK oturumu kapanır (açık bırakılan bilgisayarda veriler görünmesin) */
-const HAREKETSIZ_DK=30; let SON_HAREKET=Date.now();
-['click','keydown','mousemove','scroll','touchstart','wheel'].forEach(ev=>window.addEventListener(ev,()=>{SON_HAREKET=Date.now();},{passive:true}));
-setInterval(()=>{ if(IS_IK&&Date.now()-SON_HAREKET>HAREKETSIZ_DK*60000){ oturumKapat(); location.replace('ik.html?cikis=hareketsiz'); } },30000);
+/* Hareketsizlik: 30 dk işlem yapılmazsa İK oturumu kapanır (açık bırakılan bilgisayarda veriler görünmesin).
+   Her işlemde (en fazla 20 sn'de bir) oturum kaydındaki "son" zamanı tazelenir. */
+let SON_HAREKET=Date.now(), SON_YAZ=0;
+function hareketVar(){ SON_HAREKET=Date.now(); if(IS_IK&&SON_HAREKET-SON_YAZ>20000){ SON_YAZ=SON_HAREKET; const s=oturumOku(); if(oturumGecerli(s)){ s.son=SON_HAREKET; try{ sessionStorage.setItem(IK_SES,JSON.stringify(s)); }catch(e){} } } }
+['click','keydown','mousemove','scroll','touchstart','wheel'].forEach(ev=>window.addEventListener(ev,hareketVar,{passive:true}));
+setInterval(()=>{ if(IS_IK&&Date.now()-SON_HAREKET>HAREKETSIZ_MS){ oturumKapat(); location.replace('ik.html?cikis=hareketsiz'); } },30000);
 
 /* ===== FIREBASE ===== */
 const firebaseConfig={apiKey:"AIzaSyCWlB0nU-ETZxuo9xa6gG4VMYVu09P3fnE",authDomain:"yetenek-havuzu.firebaseapp.com",projectId:"yetenek-havuzu",storageBucket:"yetenek-havuzu.firebasestorage.app",messagingSenderId:"714642441227",appId:"1:714642441227:web:bf49ac51367c6d9437b30e"};
@@ -678,13 +685,15 @@ async function ikGiris(){
     if(!rec||!rec.tc){ m.textContent='Bu e-posta ile kayıt bulunamadı.'; return; }
     const s=rec.sifre;
     if(!s||typeof s==='string'||s.alg!=='pbkdf2'||!s.salt||!s.hash){ m.innerHTML='Henüz kendi şifreni belirlememişsin. Önce <a href="calisan.html">Çalışan Uygulaması</a>\'na ortak ilk şifreyle gir ve aktivasyon kodunla kendi şifreni belirle.'; return; }
-    if(pw===ORTAK_SIFRE||(await gPbkdf2(pw,gUnB64(s.salt),s.it||150000))!==s.hash){ m.textContent='Şifre hatalı.'; return; }
+    if(pw===ORTAK_SIFRE||(await gPbkdf2(pw,gUnB64(s.salt),s.it||150000))!==s.hash){ m.textContent='Şifre hatalı. Göz simgesine basıp yazılanı kontrol et — tarayıcı kayıtlı eski bir şifreyi kendiliğinden doldurmuş olabilir.'; return; }
     const p=await getDoc(doc(db,"satisVeri","mrPersonel")); const akt=(p.exists()&&p.data().aktif)||[];
     const e=akt.find(x=>x.tc&&String(x.tc)===String(rec.tc));
     if(!e){ m.textContent='Bu hesap aktif bir çalışan kaydına bağlı değil.'; return; }
     if(!IK_GIRIS_AD.includes(trLower(e.ad||'').replace(/\s+/g,' ').trim())){ m.textContent='Bu hesap İK Sistemi yetkisine sahip değil.'; return; }
-    sessionStorage.setItem(IK_SES,JSON.stringify({ok:true,rol:'ik',kaynak:'calisan',sifreli:true,tc:e.tc,ad:trTitle(e.ad),ts:Date.now()}));
-    location.replace('ik.html#/');
+    const simdi=Date.now();
+    sessionStorage.setItem(IK_SES,JSON.stringify({ok:true,rol:'ik',kaynak:'calisan',sifreli:true,tc:e.tc,ad:trTitle(e.ad),ts:simdi,son:simdi}));
+    /* Yalnız #/ eklemek aynı sayfada kalır (yenilenmez) — sorgu ve # olmadan yeniden yükle; modül #/'yı kendisi ekler */
+    location.replace(location.pathname);
   }catch(err){ m.textContent='Bağlantı hatası: '+err.message; }
   finally{ b.disabled=false; b.textContent='Giriş Yap'; }
 }

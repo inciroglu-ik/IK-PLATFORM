@@ -175,8 +175,16 @@ let SES=null; try{ SES=JSON.parse(localStorage.getItem('inc_portal_sso')||'null'
 /* DÜZENLEME (yeni personel / işten ayrıldı / geri al / sil) YALNIZ İK ekibinin kişisel şifreyle açtığı İK oturumuyla
    (calisan.html → sessionStorage inc_ik_ses). Portal oturumu (ik123 dahil) yalnız GÖRÜNTÜLEME verir:
    bu liste, çalışan uygulamasına kimin girebileceğini ve İK yetkisini belirler. */
-function ikOturumGecerli(){ try{ const s=JSON.parse(sessionStorage.getItem('inc_ik_ses')||'null'); return !!(s&&s.ok===true&&s.rol==='ik'&&s.kaynak==='calisan'&&s.sifreli===true&&s.ts&&(Date.now()-s.ts)<8*3600*1000); }catch(e){ return false; } }
+function ikOturumGecerli(){ try{ const s=JSON.parse(sessionStorage.getItem('inc_ik_ses')||'null'); const n=Date.now(); return !!(s&&s.ok===true&&s.rol==='ik'&&s.kaynak==='calisan'&&s.sifreli===true&&s.ts&&(n-s.ts)<8*3600*1000&&s.son&&(n-s.son)<30*60*1000); }catch(e){ return false; } }
 const IS_ADMIN=ikOturumGecerli();
+/* Açık sekmede düzenleme yetkisi süreyle düşer: geri gelindiğinde/arada bir yeniden kontrol; işlem yapıldıkça "son" tazelenir */
+if(IS_ADMIN){
+  const denetle=()=>{ if(!ikOturumGecerli()) location.reload(); };
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden) denetle(); });
+  setInterval(denetle,60000);
+  let sonYaz=0; const hareket=()=>{ const n=Date.now(); if(n-sonYaz<20000) return; sonYaz=n; try{ const s=JSON.parse(sessionStorage.getItem('inc_ik_ses')||'null'); if(ikOturumGecerli()){ s.son=n; sessionStorage.setItem('inc_ik_ses',JSON.stringify(s)); } }catch(e){} };
+  ['click','keydown','scroll','touchstart'].forEach(ev=>window.addEventListener(ev,hareket,{passive:true}));
+}
 const GORUR=!!(SES&&SES.ok)||IS_ADMIN;
 if(!GORUR){ document.getElementById('gate').classList.remove('hidden'); }
 else{
@@ -217,7 +225,7 @@ function boot(){
 let ROSTER_OK=false;
 async function kaydet(){
   /* Liste sunucudan yüklenmeden kayıt yapılmaz (boş listeyle personeli ezmemek için) */
-  if(!IS_ADMIN){ alert('Personel listesinde değişiklik için İK Sistemi oturumu gerekir.'); return; }
+  if(!IS_ADMIN||!ikOturumGecerli()){ alert('Personel listesinde değişiklik için geçerli bir İK Sistemi oturumu gerekir. Oturumun kapanmış olabilir; İK Sistemi\'ne yeniden giriş yapın.'); return; }
   if(!ROSTER_OK){ alert('Personel listesi henüz yüklenmedi; kayıt yapılmadı. Sayfayı yenileyip tekrar deneyin.'); return; }
   try{ await setDoc(ref,{aktif:AKTIF,ayrilan:AYRILAN,guncelleme:new Date().toISOString()},{merge:true}); }
   catch(err){ alert('Kaydedilemedi: '+err.message); }
