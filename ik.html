@@ -1139,6 +1139,10 @@ const VIEWS={
   calisanlar:()=>viewCalisanlar(),
   calisan:a=>viewCalisan(a),
   'calisan-ekle':()=>viewCalisanEkle(),
+  mesai:()=>viewMesai(),
+  'islem-gecmisi':()=>viewIslemGecmisi(),
+  bes:()=>viewBes(),
+  toplu:()=>viewToplu(),
   talepler:()=>sayfa('Bildirimler',viewTalepler(),{back:'uygulamalar',bc:'Uygulamalar',sub:'Onayınızı bekleyen izin, harcama, avans, mesai ve vize belgesi talepleri'}),
   izinler:a=>viewIzinler(a),
   takvim:()=>viewTakvim(),
@@ -1769,6 +1773,85 @@ async function gceKaydet(){
     await ozlukGuncelle(tc,temiz);
     toast('Çalışan eklendi. Çalışan uygulamasına TC Kimlik No ile giriş yapabilir.'); pfTab='profil'; go('calisan/'+rec.id);
   } finally { b.disabled=false; b.textContent='Kaydet'; }
+}
+
+/* ===== UYGULAMALAR ALT SAYFALARI: Mesai Yönetimi · İşlem Geçmişi · BES Takip · Toplu İşlemler ===== */
+const UY_GERI={back:'uygulamalar',bc:'Uygulamalar'};
+/* --- Mesai Yönetimi: Kolay İK mesai geçmişi + çalışan uygulamasından gelen fazla mesai talepleri --- */
+function mesaiKayitlari(){
+  const L=[];
+  TALEP.filter(t=>t.tip==='Mesai').forEach(t=>{ const e=empById(t.empId)||null; L.push({k:'s',id:t.id,e,ad:e?e.ad:t.empAd,bas:t.tarih,sure:t.deger?String(t.deger).replace('.',',')+' saat':'',acik:t.aciklama||t.ozet||'',durum:t.durum,olus:t.olusturma?isoTarihSaat(t.olusturma):'',z:t}); });
+  allEmp().forEach(p=>(p.mesailer||[]).forEach(m=>L.push({k:'k',e:p,ad:p.ad,bas:m.bas,sure:'',acik:m.acik||'',durum:'',olus:trTarihSaat(m.olus)})));
+  return L.sort((a,b)=>(dtObj(b.bas)||0)-(dtObj(a.bas)||0));
+}
+function viewMesai(){
+  let L=mesaiKayitlari(); const yillar=[...new Set(L.map(x=>{ const d=dObj(x.bas); return d?d.getFullYear():null; }).filter(Boolean).concat([new Date().getFullYear()]))].sort((a,b)=>b-a);
+  const deps=[...new Set(AKTIF.map(p=>p.departman).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr'));
+  if(ST.mmYil) L=L.filter(x=>{ const d=dObj(x.bas); return d&&String(d.getFullYear())===ST.mmYil; });
+  if(ST.mmAy) L=L.filter(x=>{ const d=dObj(x.bas); return d&&String(d.getMonth()+1)===ST.mmAy; });
+  if(ST.mmDep) L=L.filter(x=>x.e&&x.e.departman===ST.mmDep);
+  if(ST.mmDur) L=L.filter(x=>ST.mmDur==='kolay'?x.k==='k':x.durum===ST.mmDur);
+  const ps=40, n=Math.max(1,Math.ceil(L.length/ps)); if(!ST.mmSayfa||ST.mmSayfa>n) ST.mmSayfa=1; const sp=ST.mmSayfa;
+  const bar='<div class="pf-bar"><select class="sel pf-f2" id="mmYil"><option value="">Tüm yıllar</option>'+yillar.map(y=>'<option'+(ST.mmYil===String(y)?' selected':'')+'>'+y+'</option>').join('')+'</select>'
+    +'<select class="sel pf-f2" id="mmAy"><option value="">Tüm aylar</option>'+AYU.map((a,i)=>'<option value="'+(i+1)+'"'+(ST.mmAy===String(i+1)?' selected':'')+'>'+a+'</option>').join('')+'</select>'
+    +'<select class="sel" id="mmDep"><option value="">Tüm departmanlar</option>'+deps.map(d=>'<option'+(ST.mmDep===d?' selected':'')+'>'+esc(d)+'</option>').join('')+'</select><div class="sp"></div>'
+    +'<select class="sel pf-f2" id="mmDur"><option value="">Tümü</option><option value="bekliyor"'+(ST.mmDur==='bekliyor'?' selected':'')+'>Onay Bekliyor</option><option value="onaylandi"'+(ST.mmDur==='onaylandi'?' selected':'')+'>Onaylandı</option><option value="reddedildi"'+(ST.mmDur==='reddedildi'?' selected':'')+'>Reddedildi</option><option value="kolay"'+(ST.mmDur==='kolay'?' selected':'')+'>Kolay İK kaydı</option></select></div>';
+  const satir=x=>'<tr><td><span class="izad"'+(x.e?' data-mmpf="'+esc(x.e.id)+'"':'')+'>'+kav(x.ad,22)+'<span>'+esc(adBuyuk(x.ad))+'</span></span></td><td>'+esc(x.e?[x.e.departman,x.e.bolum].filter(Boolean).join(' / '):'')+'</td><td>'+esc(trTarihSaat(x.bas))+'</td><td>'+esc(x.sure||'—')+'</td><td><span class="acik">'+esc(x.acik)+'</span></td><td>'+(x.k==='s'?izPill(x.durum)+(x.durum==='bekliyor'&&curStep(x.z)?'<div class="mini" style="margin-top:3px">'+esc(curStep(x.z).rol)+' onayında</div>':''):'<span class="mini">Kolay İK</span>')+'</td><td>'+esc(x.olus||'—')+'</td><td class="izisl">'+(x.k==='s'?'<button class="kdots" data-mmmenu="'+esc(x.id)+'" title="İşlemler">⋮</button>':'')+'</td></tr>';
+  return pageHead(Object.assign({title:'Mesai Yönetimi',sub:'Fazla mesai kayıtları ve onay bekleyen mesai talepleri',actions:'<button class="btn" id="mmEkle">Mesai Ekle</button>'},UY_GERI))
+    +'<div class="pc">'+bar+'<div class="tblw"><table class="tbl izl hctbl"><thead><tr><th>Ad Soyad</th><th>Birim</th><th>Başlangıç</th><th>Süre</th><th>Açıklama</th><th>Durum</th><th>Oluşturulma Tarihi</th><th></th></tr></thead><tbody>'
+    +(L.length?L.slice((sp-1)*ps,sp*ps).map(satir).join(''):'<tr><td colspan="8" class="empty">Mesai kaydı bulunamadı.</td></tr>')+'</tbody></table></div>'
+    +'<div class="tfoot2 sb2">'+pgnHtml(sp,n,'mmSayfa')+'<span>Toplam '+L.length+'</span></div></div>';
+}
+function mmSatirMenu(a,id){
+  const t=TALEP.find(x=>x.id===id); if(!t) return; const it=[];
+  if(t.durum==='bekliyor') it.push(['onay','Onayla'],['red','Reddet']);
+  it.push(['akis','Onay Akışı']);
+  const el=popAc(a,it.map(x=>'<button data-mm2="'+x[0]+'"'+(x[0]==='red'?' class="dng"':'')+'>'+x[1]+'</button>').join(''),'alt');
+  el.querySelectorAll('[data-mm2]').forEach(b=>b.onclick=()=>{ popKapat(); const k=b.getAttribute('data-mm2'); if(k==='onay') genOnayla('talep',id); else if(k==='red') genReddet('talep',id); else akisGoster('talep',id); });
+}
+/* --- İşlem Geçmişi: talep oluşturma ve onay/ret adımları (kim, ne zaman) --- */
+function islemKayitlari(){
+  const L=[];
+  const kaynak=[[IZIN,z=>'İzin · '+(z.tur||'')+' · '+gunSay(z.gun)+' gün'],[HARC,h=>'Harcama · '+(h.tur||'')+' · '+tlYaz(h.tutar)],[TALEP,t=>(t.tip||'Talep')+' · '+(t.ozet||'')]];
+  kaynak.forEach(([arr,ozet])=>arr.forEach(z=>{ const ad=adBuyuk((empById(z.empId)||{}).ad||z.empAd||'');
+    if(z.olusturma) L.push({tarih:z.olusturma,islem:'Talep oluşturuldu',kayit:ozet(z),kim:ad,yapan:'—',tip:'olus'});
+    (z.onayAkis||[]).forEach(s=>{ if(s.tarih&&(s.durum==='onaylandi'||s.durum==='reddedildi')) L.push({tarih:s.tarih,islem:s.rol+' '+(s.durum==='onaylandi'?'onayladı':'reddetti'),kayit:ozet(z),kim:ad,yapan:s.kaydeden?trTitle(s.kaydeden):'—',tip:s.durum}); }); }));
+  return L.sort((a,b)=>String(b.tarih).localeCompare(String(a.tarih)));
+}
+function viewIslemGecmisi(){
+  let L=islemKayitlari(); const q=araKey(ST.igQ||''); if(q) L=L.filter(x=>araKey(x.kim+' '+x.kayit+' '+x.islem+' '+x.yapan).indexOf(q)>=0);
+  const ps=40, n=Math.max(1,Math.ceil(L.length/ps)); if(!ST.igSayfa||ST.igSayfa>n) ST.igSayfa=1; const sp=ST.igSayfa;
+  const renk={olus:'#5d6878',onaylandi:'#2a9a49',reddedildi:'#e04848'};
+  return pageHead(Object.assign({title:'İşlem Geçmişi',sub:'Talep oluşturma, onay ve ret işlemlerinin kaydı'},UY_GERI))
+    +'<div class="pc"><div class="search" style="max-width:410px;margin-bottom:16px"><input id="igQ" placeholder="Ara (çalışan, işlem, işlemi yapan)" value="'+esc(ST.igQ||'')+'" autocomplete="off"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>'
+    +'<div class="tblw"><table class="tbl izl"><thead><tr><th>Tarih</th><th>İşlem</th><th>Kayıt</th><th>Çalışan</th><th>İşlemi Yapan</th></tr></thead><tbody>'
+    +(L.length?L.slice((sp-1)*ps,sp*ps).map(x=>'<tr><td>'+esc(isoTarihSaat(x.tarih))+'</td><td><span style="color:'+renk[x.tip]+';font-weight:500">'+esc(x.islem)+'</span></td><td>'+esc(x.kayit)+'</td><td>'+esc(x.kim)+'</td><td>'+esc(x.yapan)+'</td></tr>').join(''):'<tr><td colspan="5" class="empty">İşlem kaydı bulunamadı.</td></tr>')+'</tbody></table></div>'
+    +'<div class="tfoot2 sb2">'+pgnHtml(sp,n,'igSayfa')+'<span>Toplam '+L.length+'</span></div></div>';
+}
+/* --- BES Takip: Kolay İK ek ödeme/kesinti verisindeki BES (OKS) kayıtları --- */
+function viewBes(){
+  const L=[]; allEmp().forEach(p=>{ const eo=p.ekOdeme; if(!eo||!Array.isArray(eo.items)) return; eo.items.filter(it=>it.tip==='bes').forEach(it=>L.push({p,it})); });
+  L.sort((a,b)=>dkey(b.it.tarih)-dkey(a.it.tarih));
+  const kisi=new Set(L.map(x=>x.p.id)).size;
+  return pageHead(Object.assign({title:'BES Takip',sub:'Bireysel emeklilik (BES / OKS) kesintileri — Kolay İK verisi'},UY_GERI))
+    +'<div class="pc"><div class="mini" style="margin-bottom:12px">'+(L.length?kisi+' çalışan · '+L.length+' kayıt':'')+'</div>'
+    +'<div class="tblw"><table class="tbl izl"><thead><tr><th>Ad Soyad</th><th>Departman</th><th>Açıklama</th><th>Tutar</th><th>Tarih</th></tr></thead><tbody>'
+    +(L.length?L.map(x=>'<tr><td><span class="izad" data-mmpf="'+esc(x.p.id)+'">'+kav(x.p.ad,22)+'<span>'+esc(adBuyuk(x.p.ad))+'</span></span></td><td>'+esc(x.p.departman||'')+'</td><td>'+esc(x.it.ad||x.it.aciklama||'BES / OKS')+'</td><td><b>'+esc(tlYaz(x.it.tutar))+'</b></td><td>'+esc(trKisa(x.it.tarih))+'</td></tr>').join(''):'<tr><td colspan="5" class="empty">BES / OKS kesinti kaydı bulunmuyor.<br><span class="mini">Kolay İK ek ödeme ve kesinti raporu aktarıldığında burada listelenir.</span></td></tr>')+'</tbody></table></div></div>';
+}
+/* --- Toplu İşlemler: tek tıkla toplu Excel dışa aktarım --- */
+const TOPLU_AKTAR=[
+  ['calisan','Aktif çalışan listesi','Tüm aktif çalışanlar, departman, bölüm, unvan, müdür, direktör'],
+  ['ayrilan','İşten ayrılan çalışanlar','Tüm eski çalışanlar ve ayrılma bilgileri'],
+  ['izinbakiye','İzin bakiyeleri','Çalışan bazında Kolay İK izin bakiyesi'],
+  ['izinkullanim','Kullanılan izinler','Tüm onaylı izin kayıtları'],
+  ['maas','Maaş bilgileri','Kolay İK maaş geçmişindeki en güncel kayıt'],
+  ['demografi','Yaş, cinsiyet ve eğitim','Çalışanların demografik bilgileri'],
+  ['harcama','Harcamalar','Tüm harcama kayıtları ve onay akışları'],
+  ['onaysurec','Onay süreçleri','İzin, harcama ve taleplerin onay akışları']
+];
+function viewToplu(){
+  return pageHead(Object.assign({title:'Toplu İşlemler',sub:'Listeleri tek seferde Excel olarak dışa aktarın'},UY_GERI))
+    +'<div class="pc"><div class="rp-g4">'+TOPLU_AKTAR.map(([id,ad,ac])=>'<div class="rp-hc tp-k"><div class="rp-kat"><span class="rp-mini" style="background:#e3f6e8;color:#2a9a49"><svg viewBox="0 0 24 24">'+NIC.doc+'</svg></span>EXCEL</div><b>'+esc(ad)+'</b><small class="rp-ac">'+esc(ac)+'</small><div><button class="btn ob sm" data-tpx="'+id+'">Excel indir</button></div></div>').join('')+'</div></div>';
 }
 
 /* ===== TALEPLER ===== */
@@ -2708,6 +2791,14 @@ function afterRender(r){
     /* şema geniş: kökü (şirket kutusu) ekranın ortasına getir */
     if(ST.view==='org'){ const w=document.querySelector('#main .og-wrap'); if(w&&w.scrollWidth>w.clientWidth) w.scrollLeft=(w.scrollWidth-w.clientWidth)/2; }
   }
+  if(r.page==='mesai'){
+    ['mmYil','mmAy','mmDep','mmDur'].forEach(i=>{ const el=$(i); if(el) el.onchange=()=>{ ST[i]=el.value; ST.mmSayfa=1; render(); }; });
+    const me=$('mmEkle'); if(me) me.onclick=()=>openTalep('Mesai');
+    document.querySelectorAll('[data-mmmenu]').forEach(b=>b.onclick=e=>{e.stopPropagation();mmSatirMenu(b,b.getAttribute('data-mmmenu'));});
+  }
+  if(r.page==='mesai'||r.page==='bes') document.querySelectorAll('[data-mmpf]').forEach(el=>el.onclick=()=>{pfTab=r.page==='bes'?'odemeler':'mesailer';go('calisan/'+el.getAttribute('data-mmpf'));});
+  if(r.page==='islem-gecmisi'){ const q=$('igQ'); if(q) q.oninput=()=>{ ST.igQ=q.value; ST.igSayfa=1; clearTimeout(window.__igT); window.__igT=setTimeout(()=>{ render(); const z=$('igQ'); if(z){ z.focus(); z.setSelectionRange(z.value.length,z.value.length); } },300); }; }
+  if(r.page==='toplu') document.querySelectorAll('[data-tpx]').forEach(b=>b.onclick=()=>xlsIndir(raporData(b.getAttribute('data-tpx'),{}),[]));
   if(r.page==='calisan-ekle'){
     const kb=$('gceKaydet'); if(kb) kb.onclick=gceKaydet;
     ['gDep','gBol'].forEach(i=>{ const el=$(i); if(el) el.onchange=gceOner; });
