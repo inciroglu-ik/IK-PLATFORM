@@ -380,6 +380,14 @@ table.tbl tbody tr.clk{cursor:pointer}table.tbl tbody tr.clk:hover td{background
 .iz-dt{display:grid;grid-template-columns:1fr 92px;gap:8px}
 .iz-say{font-size:10px;color:#2a9a49;margin-top:4px}
 @media(max-width:620px){.iz-g2{grid-template-columns:1fr}}
+/* ===== HARCAMA (Kolay İK) ===== */
+.hc-bar{gap:10px}
+.hc-tarih{display:flex;align-items:center;gap:6px;background:var(--inbg);border-bottom:1px solid #b8c1cd;border-radius:4px 4px 0 0;padding:0 6px 0 10px;height:36px;flex:0 1 430px;min-width:300px}
+.hc-tarih input{border:none;background:transparent;font-size:11.5px;font-family:var(--font);color:var(--ink);outline:none;min-width:0;flex:1}
+.hc-tarih span{color:#5d6878}
+.hc-tarih button{border:none;background:none;color:#5d6878;font-size:17px;line-height:1;padding:2px 6px;border-radius:3px}.hc-tarih button:hover{background:#e7ebf1}
+.hc-emp{width:290px;height:36px}.hc-bir{width:290px}
+.hctbl .acik{display:block;max-width:260px;white-space:normal;line-height:1.4}
 .pf-head{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
 .pf-av{width:82px;height:82px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:400;font-size:28px;color:#fff;flex:none;box-shadow:none}
 .pf-head h2{font-size:19px;color:#2b3445;font-weight:500;line-height:1.2;text-transform:uppercase}.pf-head .sub{color:var(--ink-2);font-size:12.5px;margin-top:3px}
@@ -1031,7 +1039,7 @@ const VIEWS={
   talepler:()=>sayfa('Bildirimler',viewTalepler(),{back:'uygulamalar',bc:'Uygulamalar',sub:'Onayınızı bekleyen izin, harcama, avans, mesai ve vize belgesi talepleri'}),
   izinler:a=>viewIzinler(a),
   takvim:()=>sayfa('Takvim',viewTakvim(),{sub:'İzin, resmi tatiller gibi etkinlikleri görüntüleyebilirsiniz.'}),
-  harcamalar:()=>sayfa('Harcama',viewHarcamalar()),
+  harcamalar:a=>viewHarcamalar(a),
   puantaj:()=>viewZaman('puantaj'),
   giriscikis:()=>viewZaman('giriscikis'),
   zaman:a=>viewZaman(a||'cizelge'),
@@ -1831,17 +1839,72 @@ function viewTakvim(){
 }
 
 /* ===== HARCAMALAR ===== */
-function viewHarcamalar(){
-  const L=HARC.slice().sort((a,b)=>dkey(b.tarih)-dkey(a.tarih));
-  const bek=HARC.filter(h=>h.durum==='bekliyor').reduce((s,h)=>s+(+h.tutar||0),0);
-  const ony=HARC.filter(h=>h.durum==='onaylandi').reduce((s,h)=>s+(+h.tutar||0),0);
-  return '<div class="kpis" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">'
-    +'<div class="kpi"><div class="n">'+HARC.length+'</div><div class="l">Toplam Harcama Kaydı</div></div>'
-    +'<div class="kpi warn"><div class="n">'+bek.toLocaleString('tr-TR')+' TL</div><div class="l">Onay Bekleyen Tutar</div></div>'
-    +'<div class="kpi"><div class="n">'+ony.toLocaleString('tr-TR')+' TL</div><div class="l">Onaylanan Tutar</div></div></div>'
-    +'<div class="toolbar"><div style="flex:1"></div><button class="btn" id="btnHarc">+ Harcama Ekle</button></div>'
-    +'<div class="card" style="overflow:auto"><table class="tbl"><thead><tr><th>Ad Soyad</th><th>Tür</th><th>Tutar</th><th>Açıklama</th><th>Tarih</th><th>Durum</th><th>İşlem</th></tr></thead><tbody>'
-    +(L.length?L.map(h=>'<tr><td><b style="color:var(--navy)">'+esc(trTitle(h.empAd))+'</b></td><td>'+esc(h.tur)+'</td><td><b>'+esc(h.tutar)+' TL</b></td><td class="mini">'+esc(h.aciklama||'')+'</td><td class="mini">'+esc(h.tarih)+'</td><td>'+izinAsamaBadge(h)+(h.odendi?' <span class="badge b-ok">Ödendi</span>':'')+'</td><td style="white-space:nowrap">'+(h.durum==='bekliyor'?'<button class="btn ok sm" data-hconay="'+esc(h.id)+'">Onayla</button> <button class="btn bad sm" data-hcred="'+esc(h.id)+'">Reddet</button> ':(h.durum==='onaylandi'&&!h.odendi?'<button class="btn sm" data-hcode="'+esc(h.id)+'">Ödendi İşaretle</button> ':''))+'<button class="btn g sm" data-hcakis="'+esc(h.id)+'">Akış</button> <button class="btn g sm" data-hcsil="'+esc(h.id)+'" style="color:var(--bad)">Sil</button></td></tr>').join(''):'<tr><td colspan="7" class="empty">Harcama kaydı yok.</td></tr>')+'</tbody></table></div>';
+/* ===== HARCAMA (Kolay İK düzeni): Harcama · Fiş · Ayarlar ===== */
+const HC_SEKME=[['harcama','Harcama'],['fis','Fiş'],['ayarlar','Ayarlar']];
+function tlYaz(x){ const n=Number(x); return (x===''||x==null||isNaN(n))?String(x||''):n.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' TL'; }
+function hcTarihi(h){ if(h.olusturma){ const d=new Date(h.olusturma); if(!isNaN(d)) return d; } return dObj(h.tarih); }
+/* Varsayılan tarih aralığı: son bir ay (Kolay İK gibi); × ile kaldırılır */
+function hcFiltreli(){
+  if(ST.hcBas===undefined){ const a=new Date(); a.setMonth(a.getMonth()-1); ST.hcBas=isoYerel(a); ST.hcBit=isoYerel(new Date()); }
+  const bas=ST.hcBas?new Date(ST.hcBas+'T00:00'):null, bit=ST.hcBit?new Date(ST.hcBit+'T23:59:59'):null;
+  return HARC.filter(h=>{ const d=hcTarihi(h); if(bas&&(!d||d<bas)) return false; if(bit&&(!d||d>bit)) return false; if(ST.hcEmp&&h.empId!==ST.hcEmp) return false; const e=empById(h.empId)||{}; if(ST.hcDep&&e.departman!==ST.hcDep) return false; if(ST.hcBol&&e.bolum!==ST.hcBol) return false; return true; })
+    .sort((a,b)=>(hcTarihi(b)||0)-(hcTarihi(a)||0));
+}
+function viewHarcamalar(sekme){
+  sekme=HC_SEKME.some(t=>t[0]===sekme)?sekme:'harcama';
+  const g=sekme==='fis'?hcFis():sekme==='ayarlar'?hcAyarlar():hcListe();
+  return pageHead({title:'Harcama',tabs:HC_SEKME,tab:sekme,actions:'<button class="btn" id="hcRapor">Rapor İndir</button>'})+'<div class="pc">'+g+'</div>';
+}
+function hcListe(){
+  const L=hcFiltreli();
+  const filt=[ST.hcDep,ST.hcBol].filter(Boolean).join(' · ')||'Birimler';
+  const bar='<div class="ctool hc-bar"><div class="hc-tarih"><input type="date" id="hcBas" value="'+esc(ST.hcBas||'')+'" title="Başlangıç"><span>-</span><input type="date" id="hcBit" value="'+esc(ST.hcBit||'')+'" title="Bitiş"><button id="hcTarihSil" title="Tarih filtresini kaldır">×</button></div>'
+    +'<select class="sel hc-emp" id="hcEmp"><option value="">Çalışan seç</option>'+AKTIF.slice().sort((x,y)=>String(x.ad).localeCompare(String(y.ad),'tr')).map(e=>'<option value="'+esc(e.id)+'"'+(ST.hcEmp===e.id?' selected':'')+'>'+esc(adBuyuk(e.ad))+'</option>').join('')+'</select>'
+    +'<button class="fbtn hc-bir'+(ST.hcDep||ST.hcBol?' sec':'')+'" id="hcBirim"><span class="v">'+esc(filt)+'</span><svg viewBox="0 0 24 24">'+VIC.filt+'</svg></button>'
+    +'<button class="btn o" id="hcYonet">Yönet +</button></div>';
+  const satir=h=>{ const e=empById(h.empId)||{}; const ad=e.ad||h.empAd; const birim=[e.departman,e.bolum].filter(Boolean).join(' / ');
+    return '<tr><td><span class="izad"'+(e.id?' data-hcpf="'+esc(e.id)+'"':'')+'>'+kav(ad,22)+'<span>'+esc(adBuyuk(ad))+'</span></span></td><td>'+esc(birim||'—')+'</td><td>'+esc(e.tc||'—')+'</td>'
+      +'<td>'+izPill(h.durum)+(h.durum==='bekliyor'&&curStep(h)?'<div class="mini" style="margin-top:3px">'+esc(curStep(h).rol)+' onayında</div>':'')+'</td>'
+      +'<td><b>'+esc(tlYaz(h.tutar))+'</b><div class="mini">'+esc(h.tur||'')+'</div></td><td><span class="acik">'+esc(h.aciklama||'')+'</span></td>'
+      +'<td>'+esc(h.olusturma?isoTarihSaat(h.olusturma):trKisa(h.tarih))+'</td><td>'+(h.odendi?'<span class="pill onay">Ödendi</span>':'<span class="mini">—</span>')+'</td>'
+      +'<td class="izisl"><button class="kdots" data-hcmenu="'+esc(h.id)+'" title="İşlemler">⋮</button></td></tr>'; };
+  return bar+'<div class="tblw"><table class="tbl izl hctbl"><thead><tr><th>Ad Soyad</th><th>Birim</th><th>Kimlik Numarası</th><th>Durum</th><th>Toplam Tutar</th><th>Açıklama</th><th>Oluşturulma Tarihi</th><th>Ödendi</th><th></th></tr></thead><tbody>'
+    +(L.length?L.map(satir).join(''):'<tr><td colspan="9" class="empty">Harcama talebi bulunamadı</td></tr>')+'</tbody></table></div>'
+    +(L.length?'<div class="tfoot2"><span>Toplam '+L.length+'</span></div>':'');
+}
+function hcFis(){ return '<div class="card"><div class="empty">Fiş bulunamadı.<br><span class="mini">Harcama taleplerine eklenen fiş ve faturalar burada listelenir.</span></div></div>'; }
+function hcAyarlar(){
+  const a=ensureAyar();
+  return '<div class="kc2"><div class="kc2-h"><h3>Harcama Türleri</h3><span class="mini">'+a.harcamaTurleri.length+' tür</span></div><div class="kc2-b">'
+    +'<div class="chips" style="margin-bottom:12px">'+a.harcamaTurleri.map(t=>'<span class="badge" style="padding:5px 10px">'+esc(t)+' <button data-del="harcamaTurleri|'+esc(t)+'" title="Sil" style="background:none;border:none;color:var(--bad);cursor:pointer;font-weight:700">×</button></span>').join('')+'</div>'
+    +'<div style="display:flex;gap:8px;max-width:460px"><input class="kin" id="add_harcamaTurleri" placeholder="Yeni harcama türü…"><button class="btn sm" data-add="harcamaTurleri">Ekle</button></div></div></div>'
+    +'<div class="kc2" style="margin-top:16px"><div class="kc2-h"><h3>Onay Süreci</h3></div><div class="kc2-b"><div class="mini" style="font-size:11.5px;color:#3b4656">Harcama ve avans talepleri <b>Müdür → Direktör → İnsan Kaynakları</b> sırasıyla onaylanır. Onaylanan harcamalar listeden <b>Ödendi</b> olarak işaretlenir.</div></div></div>';
+}
+function hcSatirMenu(a,id){
+  const h=HARC.find(x=>x.id===id); if(!h) return; const it=[];
+  if(h.durum==='bekliyor'){ it.push(['onay','Onayla'],['red','Reddet']); }
+  if(h.durum==='onaylandi'&&!h.odendi) it.push(['ode','Ödendi İşaretle']);
+  it.push(['akis','Onay Akışı'],['sil','Sil']);
+  const el=popAc(a,it.map(x=>'<button data-hm2="'+x[0]+'"'+(x[0]==='sil'||x[0]==='red'?' class="dng"':'')+'>'+x[1]+'</button>').join(''),'alt');
+  el.querySelectorAll('[data-hm2]').forEach(b=>b.onclick=()=>{ popKapat(); const k=b.getAttribute('data-hm2'); if(k==='onay') genOnayla('harc',id); else if(k==='red') genReddet('harc',id); else if(k==='ode') hcOdendi(id); else if(k==='akis') akisGoster('harc',id); else hcSil(id); });
+}
+function hcYonetMenu(a){
+  const el=popAc(a,'<button data-hy="ekle"><svg viewBox="0 0 24 24">'+NIC.card+'</svg>Harcama Ekle</button><button data-hy="tur"><svg viewBox="0 0 24 24">'+NIC.gear+'</svg>Harcama Türleri</button>','alt');
+  el.querySelectorAll('[data-hy]').forEach(b=>b.onclick=()=>{ popKapat(); if(b.getAttribute('data-hy')==='ekle') openHarc(); else go('harcamalar/ayarlar'); });
+}
+function hcBirimMenu(a){
+  const say=k=>{ const m={}; AKTIF.forEach(p=>{ const v=p[k]; if(v) m[v]=(m[v]||0)+1; }); return Object.entries(m).sort((x,y)=>y[1]-x[1]||x[0].localeCompare(y[0],'tr')); };
+  const sat=(k,v,n,on)=>'<button data-hb="'+k+'" data-hv="'+esc(v)+'" data-ara="'+esc(araKey(v))+'" class="'+(on?'on':'')+'"><span style="flex:1">'+esc(v)+'</span><span class="mini">'+n+'</span></button>';
+  const el=popAc(a,'<div class="pop-q"><input placeholder="Birim ara" autocomplete="off"></div>'+((ST.hcDep||ST.hcBol)?'<button data-hb="temizle" class="dng">Filtreyi kaldır</button>':'')
+    +'<div class="pop-list"><div class="pop-sec">Bölüm</div>'+say('bolum').map(([v,n])=>sat('bol',v,n,ST.hcBol===v)).join('')+'<div class="pop-sec">Departman</div>'+say('departman').map(([v,n])=>sat('dep',v,n,ST.hcDep===v)).join('')+'</div>','alt',Math.max(240,a.offsetWidth));
+  const q=el.querySelector('.pop-q input'); q.oninput=()=>{ const s=araKey(q.value); el.querySelectorAll('[data-ara]').forEach(b=>{ b.style.display=(!s||b.getAttribute('data-ara').indexOf(s)>=0)?'':'none'; }); }; setTimeout(()=>q.focus(),30);
+  el.querySelectorAll('[data-hb]').forEach(b=>b.onclick=()=>{ const k=b.getAttribute('data-hb'), v=b.getAttribute('data-hv'); popKapat(); if(k==='temizle'){ ST.hcDep=''; ST.hcBol=''; } else if(k==='dep') ST.hcDep=(ST.hcDep===v?'':v); else ST.hcBol=(ST.hcBol===v?'':v); render(); });
+}
+function hcRaporIndir(){
+  const L=hcFiltreli();
+  const rows=L.map(h=>{ const e=empById(h.empId)||{}; return [adBuyuk(e.ad||h.empAd),e.departman||'',e.bolum||'',e.tc||'',h.tur||'',tlYaz(h.tutar),h.tarih||'',h.aciklama||'',(IZ_PILL[h.durum]||IZ_PILL.bekliyor)[1],onayOzet(h),h.olusturma?isoTarihSaat(h.olusturma):'',h.odendi?'Evet':'Hayır']; });
+  const fo=[]; if(ST.hcBas||ST.hcBit) fo.push('Tarih: '+(ST.hcBas?trFromISO(ST.hcBas):'…')+' – '+(ST.hcBit?trFromISO(ST.hcBit):'…')); if(ST.hcEmp){ const e=empById(ST.hcEmp); if(e) fo.push('Çalışan: '+adBuyuk(e.ad)); } if(ST.hcDep) fo.push('Departman: '+ST.hcDep); if(ST.hcBol) fo.push('Bölüm: '+ST.hcBol);
+  xlsIndir({baslik:'Harcama Raporu',cols:['Ad Soyad','Departman','Bölüm','Kimlik Numarası','Tür','Tutar','Harcama Tarihi','Açıklama','Durum','Onay Akışı','Oluşturulma Tarihi','Ödendi'],rows},fo);
 }
 
 /* ===== PUANTAJ ===== */
@@ -2296,12 +2359,17 @@ function afterRender(r){
       else { const [Y,M]=ay.split('-').map(Number); const f={birim:'',ay:M,yil:Y}; xlsIndir(raporData(k==='pz'?'puantaj':'giriscikis',f),rapFiltreOzet(f)); } }); };
   const sk=$('aSaatKaydet'); if(sk) sk.onclick=async()=>{const bas=$('aMesaiBas').value||'09:00';const bit=$('aMesaiBit').value||'18:00';const tol=Math.max(0,+$('aGecTol').value||0);const m=$('aSaatMsg');if(m)m.textContent='Kaydediliyor…';await kaydetAyar({mesaiBas:bas,mesaiBit:bit,gecTolerans:tol});if(m){m.textContent='✓ Kaydedildi';m.style.color='var(--ok)';}};
   if(r.page==='harcamalar'){
-    if($('btnHarc')) $('btnHarc').onclick=()=>openHarc();
-    document.querySelectorAll('[data-hconay]').forEach(b=>b.onclick=()=>genOnayla('harc',b.getAttribute('data-hconay')));
-    document.querySelectorAll('[data-hcred]').forEach(b=>b.onclick=()=>genReddet('harc',b.getAttribute('data-hcred')));
-    document.querySelectorAll('[data-hcakis]').forEach(b=>b.onclick=()=>akisGoster('harc',b.getAttribute('data-hcakis')));
-    document.querySelectorAll('[data-hcode]').forEach(b=>b.onclick=()=>hcOdendi(b.getAttribute('data-hcode')));
-    document.querySelectorAll('[data-hcsil]').forEach(b=>b.onclick=()=>hcSil(b.getAttribute('data-hcsil')));
+    document.querySelectorAll('[data-ktab]').forEach(b=>b.onclick=()=>go('harcamalar/'+b.getAttribute('data-ktab')));
+    const hb=$('hcBas'), ht=$('hcBit'); if(hb) hb.onchange=()=>{ST.hcBas=hb.value;render();}; if(ht) ht.onchange=()=>{ST.hcBit=ht.value;render();};
+    const hs=$('hcTarihSil'); if(hs) hs.onclick=()=>{ST.hcBas='';ST.hcBit='';render();};
+    const he=$('hcEmp'); if(he) he.onchange=()=>{ST.hcEmp=he.value;render();};
+    const hbr=$('hcBirim'); if(hbr) hbr.onclick=e=>{e.stopPropagation();hcBirimMenu(hbr);};
+    const hy=$('hcYonet'); if(hy) hy.onclick=e=>{e.stopPropagation();hcYonetMenu(hy);};
+    const hr=$('hcRapor'); if(hr) hr.onclick=()=>hcRaporIndir();
+    document.querySelectorAll('[data-hcmenu]').forEach(b=>b.onclick=e=>{e.stopPropagation();hcSatirMenu(b,b.getAttribute('data-hcmenu'));});
+    document.querySelectorAll('[data-hcpf]').forEach(el=>el.onclick=()=>{pfTab='odemeler';go('calisan/'+el.getAttribute('data-hcpf'));});
+    document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>ayarEkle(b.getAttribute('data-add')));
+    document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>ayarSil(b.getAttribute('data-del')));
   }
   if(r.page==='raporlar'){
     const selEl=$('rpSel'),biEl=$('rpBirim'),ayEl=$('rpAy'),yiEl=$('rpYil');
