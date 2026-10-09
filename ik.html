@@ -492,8 +492,23 @@ table.tbl tbody tr.clk{cursor:pointer}table.tbl tbody tr.clk:hover td{background
 .pgn button{border:none;background:none;min-width:30px;height:28px;border-radius:3px;font-size:11.5px;color:#3b4656}
 .pgn button.on{background:var(--seg);color:#fff}
 .pgn button:disabled{color:#c3cad4;cursor:default}
-.gate{max-width:460px;margin:90px auto;background:#fff;border:1px solid var(--line);border-radius:6px;padding:32px;text-align:center}
-.gate h2{color:#2b3445;font-weight:500;margin-bottom:8px}.gate p{color:var(--ink-2);font-size:13px;margin-bottom:16px}
+.gate{max-width:410px;margin:80px auto;background:#fff;border:1px solid var(--line);border-radius:6px;padding:30px 30px 22px;box-shadow:0 18px 40px -24px rgba(16,27,40,.35)}
+.gate .g-logo{width:150px;margin:0 auto;border:1px solid var(--line);border-radius:4px;padding:9px 8px 7px;text-align:center}
+.gate .g-logo .w1{font-size:14px;color:#151515;letter-spacing:-.3px;font-weight:800;line-height:1}.gate .g-logo .w1 span{font-weight:400}
+.gate .g-logo .w2{text-align:right;font-size:10.5px;font-weight:800;color:#1c4fc9;line-height:1;margin-top:1px;padding-right:4px}.gate .g-logo .w2 u{text-decoration:none;border-bottom:1.5px solid #1c4fc9}
+.gate h2{font-size:18px;color:#2b3445;font-weight:500;margin:20px 0 6px;text-align:center}
+.gate p{color:var(--ink-2);font-size:12px;margin-bottom:12px;text-align:center;line-height:1.5}
+.g-form label{display:block;font-size:11px;font-weight:500;color:#3b4656;margin:12px 0 5px}
+.g-form input{width:100%;background:var(--inbg);border:none;border-bottom:1px solid #b8c1cd;border-radius:4px 4px 0 0;padding:11px 12px;font-size:13px;font-family:var(--font);color:var(--ink);outline:none}
+.g-form input:focus{border-bottom:2px solid var(--blue);padding-bottom:10px}
+.g-pw{position:relative}.g-pw input{padding-right:42px}
+.g-pw button{position:absolute;right:4px;top:50%;transform:translateY(-50%);border:none;background:none;padding:8px;color:#5d6878;display:flex;border-radius:4px}
+.g-pw button:hover{background:#e7ebf1}.g-pw button.on{color:var(--blue)}
+.g-pw svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.9}
+.g-btn{width:100%;margin-top:18px;padding:11px;font-size:13px}
+.g-msg{min-height:18px;margin-top:10px;font-size:12px;color:var(--bad);text-align:center;line-height:1.5}
+.g-msg a,.g-alt a{color:var(--blue)}
+.g-alt{border-top:1px solid var(--line);margin-top:14px;padding-top:12px;font-size:11px;color:var(--ink-2);text-align:center;line-height:1.55}
 /* ---------- ANA SAYFA: Kolay İK 7 sütun yerleşimi ---------- */
 .khome{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:16px;align-items:start;column-width:auto}
 .kcol{display:flex;flex-direction:column;gap:16px;min-width:0}
@@ -528,7 +543,18 @@ table.tbl tbody tr.clk{cursor:pointer}table.tbl tbody tr.clk:hover td{background
 </head>
 <body>
 
-<div id="gate" class="gate hidden"><h2 id="gateH">Oturum bulunamadı</h2><p id="gateP">İK Sistemi'ne yalnızca İK ekibi, çalışan uygulamasına kendi e-postası ve kişisel şifresiyle giriş yaparak ulaşabilir.</p><a class="btn" href="calisan.html">Çalışan uygulamasına git →</a></div>
+<div id="gate" class="gate hidden">
+  <div class="g-logo"><div class="w1">İnciroğlu <span>Otomotiv</span></div><div class="w2"><u>40.</u></div></div>
+  <h2 id="gateH">İK Sistemi'ne Giriş</h2>
+  <p id="gateP">Yalnız İK ekibi, iş e-postası ve kendi belirlediği şifreyle giriş yapabilir.</p>
+  <div class="g-form">
+    <label for="gMail">İş E-postası</label><input id="gMail" type="email" inputmode="email" autocomplete="username" placeholder="ad.soyad@inciroglu.com.tr">
+    <label for="gPw">Şifre</label><div class="g-pw"><input id="gPw" type="password" autocomplete="current-password"><button type="button" id="gGoz" title="Şifreyi göster" aria-label="Şifreyi göster"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+    <button class="btn g-btn" id="gBtn">Giriş Yap</button>
+    <div class="g-msg" id="gMsg"></div>
+  </div>
+  <div class="g-alt">İlk kez mi giriyorsun? Önce <a href="calisan.html">Çalışan Uygulaması</a>'na ortak ilk şifreyle gir ve aktivasyon kodunla kendi şifreni belirle.</div>
+</div>
 
 <aside class="sb" id="sb">
   <div class="logo" id="sbLogo" title="Ana Sayfa"><div class="w1">İnciroğlu <span>Otomotiv</span></div><div class="w2"><u>40</u>.</div></div>
@@ -596,8 +622,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getFirestore, doc, onSnapshot, setDoc, getDoc, arrayUnion, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 /* ===== OTURUM (yalnız İK ekibi) =====
-   İK Sistemi YALNIZ çalışan uygulamasından (calisan.html) İK ekibi üyesinin KENDİ şifresiyle açtığı,
-   sekmeye bağlı (sessionStorage) ve 8 saatten taze oturumu kabul eder. Portal ik123 oturumu artık geçerli değildir. */
+   İK Sistemi YALNIZ İK ekibi üyesinin KENDİ şifresiyle açtığı (bu sayfanın giriş ekranından ya da calisan.html'deki
+   İK kapısından), sekmeye bağlı (sessionStorage) ve 8 saatten taze oturumu kabul eder. Portal ik123 oturumu geçerli değildir. */
 function trLower(s){return String(s||'').replace(/İ/g,'i').replace(/I/g,'ı').toLowerCase();}
 function trTitle(s){return trLower(s).split(/\s+/).map(w=>{if(!w)return w;const f=w.charAt(0);const up=(f==='i')?'İ':(f==='ı'?'I':f.toLocaleUpperCase('tr'));return up+w.slice(1);}).join(' ');}
 const IK_SES='inc_ik_ses', OTURUM_AZAMI=8*3600*1000;
@@ -609,7 +635,10 @@ if(!IS_IK){
   if(SES){ try{ sessionStorage.removeItem(IK_SES); }catch(e){} }
   const g=document.getElementById('gate'); g.classList.remove('hidden');
   document.getElementById('sb').style.display='none'; document.getElementById('appMain').style.display='none';
-  if(SES&&SES.ts&&(Date.now()-SES.ts)>=OTURUM_AZAMI){ document.getElementById('gateH').textContent='Oturumun süresi doldu'; }
+  const neden=(location.search.match(/[?&]cikis=([a-z]+)/)||[])[1];
+  if(SES&&SES.ts&&(Date.now()-SES.ts)>=OTURUM_AZAMI){ document.getElementById('gateH').textContent='Oturumun süresi doldu'; document.getElementById('gateP').textContent='Güvenlik için oturumlar 8 saatte kapanır. Tekrar giriş yap.'; }
+  else if(neden==='hareketsiz'){ document.getElementById('gateH').textContent='Oturum kapatıldı'; document.getElementById('gateP').textContent='Uzun süre işlem yapılmadığı için oturumun kapatıldı. Tekrar giriş yap.'; }
+  else if(neden==='cikis'){ document.getElementById('gateH').textContent='Çıkış yapıldı'; document.getElementById('gateP').textContent='Tekrar girmek için iş e-postan ve şifreni yaz.'; }
 }
 /* Açık sekme: oturum düşerse (süre doldu / çıkış yapıldı) sayfa kapıya döner */
 function oturumDenetle(){ if(IS_IK&&!oturumGecerli(oturumOku())) location.reload(); }
@@ -620,12 +649,52 @@ function oturumKapat(){ try{ sessionStorage.removeItem(IK_SES); }catch(e){} }
 /* Hareketsizlik: 30 dk işlem yapılmazsa İK oturumu kapanır (açık bırakılan bilgisayarda veriler görünmesin) */
 const HAREKETSIZ_DK=30; let SON_HAREKET=Date.now();
 ['click','keydown','mousemove','scroll','touchstart','wheel'].forEach(ev=>window.addEventListener(ev,()=>{SON_HAREKET=Date.now();},{passive:true}));
-setInterval(()=>{ if(IS_IK&&Date.now()-SON_HAREKET>HAREKETSIZ_DK*60000){ oturumKapat(); location.replace('calisan.html?oturum=bitti'); } },30000);
+setInterval(()=>{ if(IS_IK&&Date.now()-SON_HAREKET>HAREKETSIZ_DK*60000){ oturumKapat(); location.replace('ik.html?cikis=hareketsiz'); } },30000);
 
 /* ===== FIREBASE ===== */
 const firebaseConfig={apiKey:"AIzaSyCWlB0nU-ETZxuo9xa6gG4VMYVu09P3fnE",authDomain:"yetenek-havuzu.firebaseapp.com",projectId:"yetenek-havuzu",storageBucket:"yetenek-havuzu.firebasestorage.app",messagingSenderId:"714642441227",appId:"1:714642441227:web:bf49ac51367c6d9437b30e"};
 const app=initializeApp(firebaseConfig,"ik-sistemi");
 const db=getFirestore(app);
+
+/* ===== GİRİŞ EKRANI (oturum yokken) =====
+   calisan.html ile AYNI kurallar: e-posta İK listesinde + hesap aktif bir çalışana bağlı + o çalışan İK ekibinde +
+   KENDİ belirlediği PBKDF2 şifresi. Ortak ilk şifre, TC girişi ve eski 32-bit özetler İK açmaz.
+   İlk kişisel şifre yalnız calisan.html'de aktivasyon koduyla belirlenir. */
+const IK_GIRIS_MAIL=['alaaddin.caglikose@inciroglu.com.tr','sahin.tektas@inciroglu.com.tr','sena.bostanci@inciroglu.com.tr'];
+const IK_GIRIS_AD=['alaaddin çağlıköse','şahin tektaş','sena bostancı'];
+const ORTAK_SIFRE='inciroglu2026';
+function gB64(buf){ return btoa(String.fromCharCode(...new Uint8Array(buf))); }
+function gUnB64(s){ return Uint8Array.from(atob(s),c=>c.charCodeAt(0)); }
+async function gPbkdf2(pw,salt,it){ const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveBits']); return gB64(await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:it,hash:'SHA-256'},k,256)); }
+async function ikGiris(){
+  const m=document.getElementById('gMsg'), b=document.getElementById('gBtn'); m.textContent='';
+  const email=(document.getElementById('gMail').value||'').trim().replace(/İ/g,'i').toLowerCase(), pw=document.getElementById('gPw').value||'';
+  if(!email||!pw){ m.textContent='E-posta ve şifre girin.'; return; }
+  if(!IK_GIRIS_MAIL.includes(email)){ m.textContent='Bu e-posta İK Sistemi yetkisine sahip değil.'; return; }
+  b.disabled=true; b.textContent='Kontrol ediliyor…';
+  try{
+    const a=await getDoc(doc(db,"satisVeri","mrCalisanAuth")); const veri=(a.exists()&&a.data().veri)||{};
+    const rec=Object.prototype.hasOwnProperty.call(veri,email)?veri[email]:null;
+    if(!rec||!rec.tc){ m.textContent='Bu e-posta ile kayıt bulunamadı.'; return; }
+    const s=rec.sifre;
+    if(!s||typeof s==='string'||s.alg!=='pbkdf2'||!s.salt||!s.hash){ m.innerHTML='Henüz kendi şifreni belirlememişsin. Önce <a href="calisan.html">Çalışan Uygulaması</a>\'na ortak ilk şifreyle gir ve aktivasyon kodunla kendi şifreni belirle.'; return; }
+    if(pw===ORTAK_SIFRE||(await gPbkdf2(pw,gUnB64(s.salt),s.it||150000))!==s.hash){ m.textContent='Şifre hatalı.'; return; }
+    const p=await getDoc(doc(db,"satisVeri","mrPersonel")); const akt=(p.exists()&&p.data().aktif)||[];
+    const e=akt.find(x=>x.tc&&String(x.tc)===String(rec.tc));
+    if(!e){ m.textContent='Bu hesap aktif bir çalışan kaydına bağlı değil.'; return; }
+    if(!IK_GIRIS_AD.includes(trLower(e.ad||'').replace(/\s+/g,' ').trim())){ m.textContent='Bu hesap İK Sistemi yetkisine sahip değil.'; return; }
+    sessionStorage.setItem(IK_SES,JSON.stringify({ok:true,rol:'ik',kaynak:'calisan',sifreli:true,tc:e.tc,ad:trTitle(e.ad),ts:Date.now()}));
+    location.replace('ik.html#/');
+  }catch(err){ m.textContent='Bağlantı hatası: '+err.message; }
+  finally{ b.disabled=false; b.textContent='Giriş Yap'; }
+}
+if(!IS_IK){
+  document.getElementById('gBtn').onclick=ikGiris;
+  document.getElementById('gPw').addEventListener('keydown',e=>{ if(e.key==='Enter') ikGiris(); });
+  document.getElementById('gMail').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('gPw').focus(); });
+  const gz=document.getElementById('gGoz'); gz.onclick=()=>{ const i=document.getElementById('gPw'); const g=i.type==='password'; i.type=g?'text':'password'; gz.classList.toggle('on',g); gz.title=g?'Şifreyi gizle':'Şifreyi göster'; };
+  setTimeout(()=>document.getElementById('gMail').focus(),50);
+}
 const refPers=doc(db,"satisVeri","mrPersonel");
 const refIzin=doc(db,"satisVeri","ikIzin");
 const refHarc=doc(db,"satisVeri","ikHarcama");
@@ -845,7 +914,7 @@ function hesapMenu(a){
   const el=popAc(a,html,'ust');
   el.querySelectorAll('[data-hm]').forEach(b=>b.onclick=()=>{ const k=b.getAttribute('data-hm'); popKapat();
     if(k==='profil'){ pfTab='profil'; go('calisan/'+me.id); }
-    else if(k==='cikis'){ oturumKapat(); location.href='calisan.html'; } });
+    else if(k==='cikis'){ oturumKapat(); location.replace('ik.html?cikis=cikis'); } });
 }
 function destekAc(){
   genAc('Destek','<div style="font-size:12.5px;line-height:1.65;color:var(--ink)">Sistemle ilgili bir sorun, hata ya da öneri için <b>İnsan Kaynakları</b> ekibine ulaşabilirsiniz.<div style="margin-top:12px" class="mini">İK Sistemi · İnciroğlu Otomotiv · Kolay İK uyumlu görünüm</div></div>',[['Kapat','g',closeModals]]);

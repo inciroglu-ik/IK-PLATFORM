@@ -107,6 +107,9 @@ input:focus,select,textarea:focus{border-color:var(--navy)}
 .ik-uyari{background:#fff8e6;border:1px solid #f0d58f;border-radius:14px;padding:13px 15px;margin-bottom:16px;display:flex;flex-direction:column;gap:6px}
 .ik-uyari b{color:#7a5300;font-size:13.5px}.ik-uyari span{font-size:12px;color:#6b5a2e;line-height:1.5}.ik-uyari .btn{align-self:flex-start;margin-top:4px}
 .hesap-l{margin:-6px 0 14px;text-align:right}.hesap-l .link{margin-top:0;font-size:12px}
+.pwbox{position:relative}.pwbox input{padding-right:48px}
+.pwbox .goz{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:none;background:none;padding:8px;color:var(--muted);display:flex;border-radius:8px;cursor:pointer}
+.pwbox .goz.on{color:var(--navy)}.pwbox .goz svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.9}
 </style></head>
 <body>
 
@@ -119,7 +122,7 @@ input:focus,select,textarea:focus{border-color:var(--navy)}
       <div class="sub" id="lgSub">İş e-postan ve şifrenle giriş yap.</div>
       <div id="mailForm">
         <label>İş E-postası</label><input id="email" type="email" inputmode="email" placeholder="ad.soyad@inciroglu.com.tr" autocomplete="username">
-        <label>Şifre</label><input id="pw" type="password" placeholder="••••••••" autocomplete="current-password">
+        <label>Şifre</label><div class="pwbox"><input id="pw" type="password" placeholder="••••••••" autocomplete="current-password"><button type="button" class="goz" data-goz="pw" title="Şifreyi göster" aria-label="Şifreyi göster"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
         <button class="btn" id="loginBtn">Giriş Yap</button>
         <span class="link" id="tcLink">E-postam yok — TC ile giriş</span>
       </div>
@@ -190,8 +193,8 @@ input:focus,select,textarea:focus{border-color:var(--navy)}
   <h3 id="sifreTitle">Şifre Belirle</h3>
   <div class="sub" style="margin-bottom:6px" id="sifreSub">En az 8 karakter; en az bir büyük harf, bir küçük harf ve bir rakam içermeli.</div>
   <div id="sfKodW" class="hide"><label>İK Aktivasyon Kodu</label><input id="sfKod" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX" maxlength="20"></div>
-  <label>Yeni Şifre</label><input id="sfYeni" type="password" autocomplete="new-password">
-  <label>Yeni Şifre (tekrar)</label><input id="sfYeni2" type="password" autocomplete="new-password">
+  <label>Yeni Şifre</label><div class="pwbox"><input id="sfYeni" type="password" autocomplete="new-password"><button type="button" class="goz" data-goz="sfYeni" title="Şifreyi göster" aria-label="Şifreyi göster"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+  <label>Yeni Şifre (tekrar)</label><div class="pwbox"><input id="sfYeni2" type="password" autocomplete="new-password"><button type="button" class="goz" data-goz="sfYeni2" title="Şifreyi göster" aria-label="Şifreyi göster"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
   <button class="btn" id="sifreKaydet">Kaydet</button>
   <button class="btn g" id="sifreKapat" style="margin-top:8px">Vazgeç</button>
   <div class="msg" id="sifreMsg"></div>
@@ -289,6 +292,9 @@ async function verileriBaglat(){
 el('tcLink').onclick=()=>{el('mailForm').classList.add('hide');el('tcForm').classList.remove('hide');el('lgMsg').textContent='';};
 el('mailLink').onclick=()=>{el('tcForm').classList.add('hide');el('mailForm').classList.remove('hide');el('lgMsg').textContent='';};
 el('pw').addEventListener('keydown',e=>{if(e.key==='Enter')el('loginBtn').click();});
+/* Şifre kutularında göz düğmesi: yazılanı görmek için (yanlış/otomatik doldurulmuş şifreyi fark etmek kolaylaşır) */
+document.querySelectorAll('[data-goz]').forEach(b=>b.onclick=()=>{ const i=el(b.getAttribute('data-goz')); const g=i.type==='password'; i.type=g?'text':'password'; b.classList.toggle('on',g); b.title=g?'Şifreyi gizle':'Şifreyi göster'; });
+function gozKapat(){ document.querySelectorAll('[data-goz]').forEach(b=>{ const i=el(b.getAttribute('data-goz')); if(i) i.type='password'; b.classList.remove('on'); b.title='Şifreyi göster'; }); }
 el('loginBtn').onclick=async()=>{
   const email=(el('email').value||'').trim().replace(/İ/g,'i').toLowerCase(), pw=el('pw').value||''; const m=el('lgMsg'); m.className='msg bad'; m.textContent='';
   if(!email||!pw){m.textContent='E-posta ve şifre girin.';return;}
@@ -322,7 +328,7 @@ el('tcBtn').onclick=async()=>{
 function cikisYap(mesaj){
   EMP=null; GIRIS_MAIL=''; KISISEL=false; dinleyicileriKapat(); ikOturumKapat();
   KAYITLAR=[]; IZINLER=[]; TALEPLER=[]; PDKS_GUN={}; PDKS_ESKI=[]; gps=null;
-  ['email','pw','tc','sfKod','sfYeni','sfYeni2'].forEach(i=>{ if(el(i)) el(i).value=''; });
+  ['email','pw','tc','sfKod','sfYeni','sfYeni2'].forEach(i=>{ if(el(i)) el(i).value=''; }); gozKapat();
   el('ikDoor').classList.add('hide'); el('ikUyari').classList.add('hide'); el('hesapL').classList.add('hide');
   el('talepOvl').classList.remove('on'); el('sifreOvl').classList.remove('on');
   el('tcForm').classList.add('hide'); el('mailForm').classList.remove('hide');
@@ -358,7 +364,7 @@ function sifreAc(mod){
   el('sifreTitle').textContent=(mod==='ik'||kod)?'İK Sistemi için Şifre Belirle':'Şifremi Değiştir';
   el('sifreSub').textContent=(kod?'İK Sistemi yöneticisinden aldığın aktivasyon kodunu gir, sonra kendi şifreni belirle. ':'')+'Şifre en az 8 karakter olmalı; en az bir büyük harf, bir küçük harf ve bir rakam içermeli.';
   el('sfKodW').classList.toggle('hide',!kod); el('sfKod').value='';
-  el('sfYeni').value=''; el('sfYeni2').value=''; const m=el('sifreMsg'); m.className='msg'; m.textContent='';
+  el('sfYeni').value=''; el('sfYeni2').value=''; gozKapat(); const m=el('sifreMsg'); m.className='msg'; m.textContent='';
   el('sifreOvl').classList.add('on'); setTimeout(()=>el(kod?'sfKod':'sfYeni').focus(),60);
 }
 el('ikSifreBtn').onclick=()=>sifreAc('ik');
