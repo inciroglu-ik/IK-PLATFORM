@@ -146,7 +146,7 @@ input:focus,select,textarea:focus{border-color:var(--navy)}
     <div id="secTalep">
       <div class="who"><div class="av" id="whoAv">—</div><div><b id="whoAd">—</b><small id="whoDep">—</small></div></div>
       <a class="ik-door hide" id="ikDoor" href="ik.html#/"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="8" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="15" width="7" height="6" rx="1.5"/></svg><div><b>İK Sistemi</b><small>Çalışanlar, izinler, puantaj, raporlar — yönetim paneli</small></div><span>→</span></a>
-      <div class="ik-uyari hide" id="ikUyari"><b>İK Sistemi için kendi şifreni belirle</b><span>Güvenlik nedeniyle İK Sistemi ortak ilk şifreyle açılmaz. Kendine ait bir şifre belirlediğinde İK Sistemi kapısı burada görünür.</span><button class="btn sm" id="ikSifreBtn">Şifremi Belirle</button></div>
+      <div class="ik-uyari hide" id="ikUyari"><b>İK Sistemi için kendi şifreni belirle</b><span>Güvenlik nedeniyle İK Sistemi ortak ilk şifreyle açılmaz. Aktivasyon kodunla kendine ait bir şifre belirlediğinde İK Sistemi kapısı burada görünür.</span><button class="btn sm" id="ikSifreBtn">Şifremi Belirle</button></div>
       <div class="hesap-l hide" id="hesapL"><span class="link" id="sifreLink">Şifremi değiştir</span></div>
       <div class="sec-h">Taleplerim</div>
       <div class="mini-info">İzin, avans veya mesai talebini buradan oluştur. Talebin müdür → direktör → İnsan Kaynakları onayından geçer.</div>
@@ -189,6 +189,7 @@ input:focus,select,textarea:focus{border-color:var(--navy)}
 <div class="ovl" id="sifreOvl"><div class="sheet">
   <h3 id="sifreTitle">Şifre Belirle</h3>
   <div class="sub" style="margin-bottom:6px" id="sifreSub">En az 8 karakter; en az bir büyük harf, bir küçük harf ve bir rakam içermeli.</div>
+  <div id="sfKodW" class="hide"><label>İK Aktivasyon Kodu</label><input id="sfKod" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX" maxlength="20"></div>
   <label>Yeni Şifre</label><input id="sfYeni" type="password" autocomplete="new-password">
   <label>Yeni Şifre (tekrar)</label><input id="sfYeni2" type="password" autocomplete="new-password">
   <button class="btn" id="sifreKaydet">Kaydet</button>
@@ -233,6 +234,9 @@ const IK_EKIBI=['alaaddin çağlıköse','şahin tektaş','sena bostancı'];
 const IK_EKIBI_MAIL=['alaaddin.caglikose@inciroglu.com.tr','sahin.tektas@inciroglu.com.tr','sena.bostanci@inciroglu.com.tr'];
 const IK_SES='inc_ik_ses';      /* sessionStorage — sekme kapanınca biter */
 const HAREKETSIZ_DK=30;         /* bu süre işlem yapılmazsa oturum kapanır */
+/* İK üyelerinin İLK kişisel şifresi aktivasyon koduyla belirlenir (kodun kendisi kaynakta yok, yalnız PBKDF2 özeti).
+   Böylece ortak ilk şifreyi bilen başka biri İK e-postasıyla girse bile kendine İK yetkisi açamaz. */
+const IK_AKTIVASYON={salt:'WyAHALNOQuCM1zd5Fz4hGQ==',it:150000,hash:'2WORsqBY5G+aFWo0+Xx11zCaytAN7wPZpLqyoobJu5I='};
 
 function el(id){return document.getElementById(id);}
 function trLower(s){return String(s||'').toLocaleLowerCase('tr');}
@@ -256,7 +260,9 @@ function unb64(s){ return Uint8Array.from(atob(s),c=>c.charCodeAt(0)); }
 async function pbkdf2(pw,salt,it){ const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveBits']); return b64(await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:it,hash:'SHA-256'},k,256)); }
 async function sifreHashle(pw){ const salt=crypto.getRandomValues(new Uint8Array(16)); const it=150000; return {alg:'pbkdf2',it,salt:b64(salt),hash:await pbkdf2(pw,salt,it),ts:new Date().toISOString()}; }
 /* {ok, kisisel}: kisisel=true → kişinin kendi belirlediği şifre (İK yetkisi yalnız bununla açılır) */
-async function sifreDogrula(pw,rec){ const s=rec&&rec.sifre; if(!s) return {ok:pw===STANDARD,kisisel:false}; if(typeof s==='string') return {ok:hashPw(pw)===s,kisisel:true}; if(s.alg==='pbkdf2'&&s.salt&&s.hash){ const h=await pbkdf2(pw,unb64(s.salt),s.it||150000); return {ok:h===s.hash,kisisel:true}; } return {ok:false,kisisel:true}; }
+/* Eski (32-bit) özet biçimi kolay taklit edilebildiği için "kişisel" sayılmaz; İK yetkisi yalnız PBKDF2 + ortak olmayan şifreyle açılır */
+async function sifreDogrula(pw,rec){ const s=rec&&rec.sifre; if(!s) return {ok:pw===STANDARD,kisisel:false}; if(typeof s==='string') return {ok:hashPw(pw)===s,kisisel:false}; if(s.alg==='pbkdf2'&&s.salt&&s.hash){ const h=await pbkdf2(pw,unb64(s.salt),s.it||150000); return {ok:h===s.hash,kisisel:h===s.hash&&pw!==STANDARD}; } return {ok:false,kisisel:false}; }
+function kodNormal(k){ return String(k||'').toUpperCase().replace(/[^A-Z0-9]/g,''); }
 function sifreKurali(pw){ if(pw.length<8) return 'Şifre en az 8 karakter olmalı.'; if(!/[a-zçğıöşü]/.test(pw)) return 'Şifrede en az bir küçük harf olmalı.'; if(!/[A-ZÇĞİÖŞÜ]/.test(pw)) return 'Şifrede en az bir büyük harf olmalı.'; if(!/[0-9]/.test(pw)) return 'Şifrede en az bir rakam olmalı.'; if(pw===STANDARD) return 'Ortak ilk şifreyi kullanamazsın.'; return ''; }
 
 let AUTH=null, ROSTER=null, EMP=null, GIRIS_MAIL='', KISISEL=false;
@@ -316,7 +322,7 @@ el('tcBtn').onclick=async()=>{
 function cikisYap(mesaj){
   EMP=null; GIRIS_MAIL=''; KISISEL=false; dinleyicileriKapat(); ikOturumKapat();
   KAYITLAR=[]; IZINLER=[]; TALEPLER=[]; PDKS_GUN={}; PDKS_ESKI=[]; gps=null;
-  ['email','pw','tc','sfYeni','sfYeni2'].forEach(i=>{ if(el(i)) el(i).value=''; });
+  ['email','pw','tc','sfKod','sfYeni','sfYeni2'].forEach(i=>{ if(el(i)) el(i).value=''; });
   el('ikDoor').classList.add('hide'); el('ikUyari').classList.add('hide'); el('hesapL').classList.add('hide');
   el('talepOvl').classList.remove('on'); el('sifreOvl').classList.remove('on');
   el('tcForm').classList.add('hide'); el('mailForm').classList.remove('hide');
@@ -338,19 +344,37 @@ function ikOturumAyarla(){
 }
 /* Sayfa her açıldığında çalışan oturumu yoktur → çalışan kaynaklı İK oturumu da kapatılır */
 ikOturumKapat();
+/* İK Sistemi hareketsizlikten kapandıysa bilgi ver */
+if(/[?&]oturum=bitti/.test(location.search)){ const m=el('lgMsg'); m.className='msg'; m.textContent='Uzun süre işlem yapılmadığı için İK Sistemi oturumu kapatıldı. Tekrar giriş yap.'; try{ history.replaceState(null,'',location.pathname); }catch(e){} }
 /* Hareketsizlik: HAREKETSIZ_DK dakika işlem yoksa oturum kapanır (paylaşılan cihaz güvenliği) */
 let SON_HAREKET=Date.now();
 ['click','touchstart','keydown','scroll'].forEach(ev=>window.addEventListener(ev,()=>{SON_HAREKET=Date.now();},{passive:true}));
 setInterval(()=>{ if(EMP&&Date.now()-SON_HAREKET>HAREKETSIZ_DK*60000) cikisYap('Uzun süre işlem yapılmadığı için oturum kapatıldı. Tekrar giriş yapın.'); },30000);
 
 /* ---- ŞİFRE BELİRLE / DEĞİŞTİR ---- */
-function sifreAc(mod){ el('sifreTitle').textContent=mod==='ik'?'İK Sistemi için Şifre Belirle':'Şifremi Değiştir'; el('sfYeni').value=''; el('sfYeni2').value=''; const m=el('sifreMsg'); m.className='msg'; m.textContent=''; el('sifreOvl').classList.add('on'); setTimeout(()=>el('sfYeni').focus(),60); }
+function kodGerekli(){ return ikEkibiMi()&&!KISISEL; }   /* İK üyesi henüz kendi şifresini belirlememiş */
+function sifreAc(mod){
+  const kod=kodGerekli();
+  el('sifreTitle').textContent=(mod==='ik'||kod)?'İK Sistemi için Şifre Belirle':'Şifremi Değiştir';
+  el('sifreSub').textContent=(kod?'İK Sistemi yöneticisinden aldığın aktivasyon kodunu gir, sonra kendi şifreni belirle. ':'')+'Şifre en az 8 karakter olmalı; en az bir büyük harf, bir küçük harf ve bir rakam içermeli.';
+  el('sfKodW').classList.toggle('hide',!kod); el('sfKod').value='';
+  el('sfYeni').value=''; el('sfYeni2').value=''; const m=el('sifreMsg'); m.className='msg'; m.textContent='';
+  el('sifreOvl').classList.add('on'); setTimeout(()=>el(kod?'sfKod':'sfYeni').focus(),60);
+}
 el('ikSifreBtn').onclick=()=>sifreAc('ik');
 el('sifreLink').onclick=()=>sifreAc('degistir');
 el('sifreKapat').onclick=()=>el('sifreOvl').classList.remove('on');
 el('sifreKaydet').onclick=async()=>{
   const m=el('sifreMsg'); m.className='msg bad'; const p1=el('sfYeni').value||'', p2=el('sfYeni2').value||'';
   if(!EMP||!GIRIS_MAIL){ m.textContent='Şifre işlemleri için e-posta ile giriş yapmalısın.'; return; }
+  if(kodGerekli()){
+    const kod=kodNormal(el('sfKod').value);
+    if(!kod){ m.textContent='İK aktivasyon kodunu gir.'; return; }
+    el('sifreKaydet').disabled=true; m.className='msg'; m.textContent='Kod kontrol ediliyor…';
+    let dogru=false; try{ dogru=(await pbkdf2(kod,unb64(IK_AKTIVASYON.salt),IK_AKTIVASYON.it))===IK_AKTIVASYON.hash; }catch(e){}
+    el('sifreKaydet').disabled=false; m.className='msg bad';
+    if(!dogru){ m.textContent='Aktivasyon kodu hatalı.'; return; }
+  }
   const k=sifreKurali(p1); if(k){ m.textContent=k; return; }
   if(p1!==p2){ m.textContent='Girdiğin iki şifre aynı değil.'; return; }
   el('sifreKaydet').disabled=true; m.className='msg'; m.textContent='Kaydediliyor…';

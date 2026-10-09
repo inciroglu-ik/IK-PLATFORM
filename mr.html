@@ -172,12 +172,17 @@ function trLower(s){return String(s||'').replace(/İ/g,'i').replace(/I/g,'ı').t
 function trTitle(s){return trLower(s).split(/\s+/).map(w=>{if(!w)return w;const f=w.charAt(0);const up=(f==='i')?'İ':(f==='ı'?'I':f.toLocaleUpperCase('tr'));return up+w.slice(1);}).join(' ');}
 const ROL_ET={ik:'İK / Tam Yetki',direktor:'Direktör',satis_mudur:'Satış Müdürü',servis_mudur:'Servis Müdürü',idari_mudur:'İdari Müdür'};
 let SES=null; try{ SES=JSON.parse(localStorage.getItem('inc_portal_sso')||'null'); }catch(e){}
-const IS_ADMIN=!!(SES&&(SES.rol==='ik'||SES.u==='ik123'));
-if(!SES||!SES.ok){ document.getElementById('gate').classList.remove('hidden'); }
+/* DÜZENLEME (yeni personel / işten ayrıldı / geri al / sil) YALNIZ İK ekibinin kişisel şifreyle açtığı İK oturumuyla
+   (calisan.html → sessionStorage inc_ik_ses). Portal oturumu (ik123 dahil) yalnız GÖRÜNTÜLEME verir:
+   bu liste, çalışan uygulamasına kimin girebileceğini ve İK yetkisini belirler. */
+function ikOturumGecerli(){ try{ const s=JSON.parse(sessionStorage.getItem('inc_ik_ses')||'null'); return !!(s&&s.ok===true&&s.rol==='ik'&&s.kaynak==='calisan'&&s.sifreli===true&&s.ts&&(Date.now()-s.ts)<8*3600*1000); }catch(e){ return false; } }
+const IS_ADMIN=ikOturumGecerli();
+const GORUR=!!(SES&&SES.ok)||IS_ADMIN;
+if(!GORUR){ document.getElementById('gate').classList.remove('hidden'); }
 else{
   document.getElementById('app').classList.remove('hidden');
-  document.getElementById('whoAd').textContent=(SES.rol==='ik')?'İnsan Kaynakları':trTitle(SES.ad||'');
-  document.getElementById('whoRol').textContent=ROL_ET[SES.rol]||SES.rol;
+  document.getElementById('whoAd').textContent=(IS_ADMIN||SES.rol==='ik')?'İnsan Kaynakları':trTitle(SES.ad||'');
+  document.getElementById('whoRol').textContent=IS_ADMIN?'İK · Düzenleme Yetkili':(SES.rol==='ik'?'İK · Görüntüleme':(ROL_ET[SES.rol]||SES.rol));
 }
 
 /* ============ FIREBASE ============ */
@@ -191,7 +196,7 @@ const ref=doc(db,"satisVeri","mrPersonel");
 let AKTIF=[], AYRILAN=[];
 let ST={tab:'aktif', q:'', sortCol:'ad', sortDir:1};
 let openMenu=null;
-function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function nkey(s){return trLower(s).replace(/\s+/g,' ').trim();}
 function dkey(s){ const m=String(s||'').match(/(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})/); if(!m)return 0; return (+m[3])*10000+(+m[2])*100+(+m[1]); }
 function uid(){ return 'p'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36); }
@@ -212,6 +217,7 @@ function boot(){
 let ROSTER_OK=false;
 async function kaydet(){
   /* Liste sunucudan yüklenmeden kayıt yapılmaz (boş listeyle personeli ezmemek için) */
+  if(!IS_ADMIN){ alert('Personel listesinde değişiklik için İK Sistemi oturumu gerekir.'); return; }
   if(!ROSTER_OK){ alert('Personel listesi henüz yüklenmedi; kayıt yapılmadı. Sayfayı yenileyip tekrar deneyin.'); return; }
   try{ await setDoc(ref,{aktif:AKTIF,ayrilan:AYRILAN,guncelleme:new Date().toISOString()},{merge:true}); }
   catch(err){ alert('Kaydedilemedi: '+err.message); }
@@ -386,7 +392,7 @@ async function kaliciSil(id){
 }
 
 /* başlat */
-if(SES && SES.ok){ boot(); }
+if(GORUR){ boot(); }
 </script>
 </body>
 </html>
