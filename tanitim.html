@@ -737,8 +737,8 @@ footer a{color:#b9cde4}
     <div class="formwrap">
       <form id="form" novalidate aria-describedby="formNot">
         <div class="row2">
-          <div class="fld"><label for="ad">Ad Soyad</label><input id="ad" name="ad" autocomplete="name" required><div class="err" id="ad-e">Lütfen adınızı ve soyadınızı yazın.</div></div>
-          <div class="fld"><label for="eposta">Kurumsal e-posta</label><input id="eposta" name="eposta" type="email" autocomplete="email" inputmode="email" required><div class="err" id="eposta-e">Geçerli bir e-posta adresi yazın.</div></div>
+          <div class="fld"><label for="ad">Ad Soyad</label><input id="ad" name="ad" autocomplete="name" maxlength="80" required><div class="err" id="ad-e">Lütfen adınızı ve soyadınızı yazın.</div></div>
+          <div class="fld"><label for="eposta">Kurumsal e-posta</label><input id="eposta" name="eposta" type="email" autocomplete="email" inputmode="email" maxlength="120" required><div class="err" id="eposta-e">Geçerli bir e-posta adresi yazın.</div></div>
         </div>
         <div class="row2">
           <div class="fld"><label for="marka">Marka / departman</label>
@@ -758,7 +758,7 @@ footer a{color:#b9cde4}
         <label class="chk fld" id="kvkk-w"><input type="checkbox" id="kvkk" name="kvkk" required><span>Bu formdaki bilgilerimin, erişim talebimin değerlendirilmesi amacıyla İK ekibi tarafından işlenmesini kabul ediyorum.</span></label>
         <div class="err" id="kvkk-e" style="margin-top:-8px">Devam etmek için onay kutusunu işaretleyin.</div>
         <button class="btn btn-p" type="submit" data-ga="form_gonder">Erişim talebimi gönder</button>
-        <p class="note" id="formNot">Gönder'e bastığınızda e-posta uygulamanız, bilgileriniz yazılmış hazır bir mesajla açılır. TC kimlik numaranız bu formda istenmez; yalnızca ilk girişte, kendi cihazınızda kullanılır.</p>
+        <p class="note" id="formNot">Talebiniz doğrudan İK ekibinin paneline düşer. TC kimlik numaranız bu formda istenmez; yalnızca ilk girişte, kendi cihazınızda kullanılır.</p>
         <div class="ok-msg" id="okMsg" role="status">E-posta uygulamanız açıldı; talebinizi iletmek için <b>Gönder</b>'e basmanız yeterli. Uygulama açılmadıysa bilgilerinizi <a href="mailto:ik.inciroglu@gmail.com">ik.inciroglu@gmail.com</a> adresine iletebilirsiniz.</div>
       </form>
       <aside class="next rv">
@@ -852,8 +852,12 @@ footer a{color:#b9cde4}
   }
   var t = setInterval(say, 1000); say();
 
-  /* Form doğrulama + İK'ya hazır e-posta (mailto) */
+  /* Form doğrulama + gönderim.
+     Talep önce doğrudan İK paneline (Firestore erisimTalepleri → İşe Alım · Personel Talepleri) yazılır.
+     Yazılamazsa (bağlantı yok / kurallar henüz izin vermiyor) talep kaybolmasın diye hazır e-posta açılır. */
   var ERISIM_EPOSTA = 'ik.inciroglu@gmail.com';
+  var MESAJ_PANEL = 'Teşekkürler, talebiniz <b>İK ekibine iletildi</b>. Hesabınız açıldığında aktivasyon kodunuz size ulaştırılacak.';
+  var MESAJ_EPOSTA = 'E-posta uygulamanız açıldı; talebinizi iletmek için <b>Gönder</b>\'e basmanız yeterli. Uygulama açılmadıysa bilgilerinizi <a href="mailto:ik.inciroglu@gmail.com">ik.inciroglu@gmail.com</a> adresine iletebilirsiniz.';
   var form = document.getElementById('form'), ok = document.getElementById('okMsg');
   var EPOSTA = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   function hata(id, kotu){
@@ -876,27 +880,60 @@ footer a{color:#b9cde4}
   ['ad','eposta','marka','rol','kvkk'].forEach(function(id){
     document.getElementById(id).addEventListener('change', function(){ if (form.dataset.denendi) dogrula(); });
   });
+  var gonderiliyor = false;
   form.addEventListener('submit', function(e){
-    e.preventDefault(); form.dataset.denendi = '1'; ok.classList.remove('on');
+    e.preventDefault(); if (gonderiliyor) return;
+    form.dataset.denendi = '1'; ok.classList.remove('on');
     var kotu = dogrula();
     if (kotu.length) { document.getElementById(kotu[0]).focus(); track('form_hata', {alan: kotu[0]}); return; }
-    var deg = function(id){ return document.getElementById(id).value.trim(); };
-    var konu = 'İK Portalı erişim talebi – ' + deg('ad');
-    var govde = [
-      'Merhaba,', '', 'İK Portalı için erişim talep ediyorum.', '',
-      'Ad Soyad: ' + deg('ad'),
-      'Kurumsal e-posta: ' + deg('eposta'),
-      'Marka / departman: ' + deg('marka'),
-      'Rol: ' + deg('rol')
-    ];
-    if (deg('mesaj')) govde.push('', 'Not: ' + deg('mesaj'));
-    track('form_gonderildi', {rol: deg('rol')});
-    window.location.href = 'mailto:' + ERISIM_EPOSTA + '?subject=' + encodeURIComponent(konu) + '&body=' + encodeURIComponent(govde.join('\r\n'));
-    ok.classList.add('on'); form.reset(); delete form.dataset.denendi;
+    /* Kurallar HTML etiketi içeren alanı reddeder; < ve > karakterleri gönderilmeden ayıklanır */
+    var deg = function(id){ return document.getElementById(id).value.replace(/[<>]/g, '').replace(/\s+/g, ' ').trim(); };
+    var veri = { ad: deg('ad').slice(0, 80), eposta: deg('eposta').slice(0, 120), marka: deg('marka').slice(0, 60), rol: deg('rol').slice(0, 60), not: deg('mesaj').slice(0, 500) };
+    var btn = form.querySelector('button[type="submit"]'), btnMetin = btn.textContent;
+    gonderiliyor = true; btn.disabled = true; btn.textContent = 'Gönderiliyor…';
+    var bitir = function(kanal){
+      gonderiliyor = false; btn.disabled = false; btn.textContent = btnMetin;
+      track('form_gonderildi', {kanal: kanal, rol: veri.rol});
+      if (kanal === 'eposta') {
+        var konu = 'İK Portalı erişim talebi – ' + veri.ad;
+        var govde = ['Merhaba,', '', 'İK Portalı için erişim talep ediyorum.', '',
+          'Ad Soyad: ' + veri.ad, 'Kurumsal e-posta: ' + veri.eposta, 'Marka / departman: ' + veri.marka, 'Rol: ' + veri.rol];
+        if (veri.not) govde.push('', 'Not: ' + veri.not);
+        window.location.href = 'mailto:' + ERISIM_EPOSTA + '?subject=' + encodeURIComponent(konu) + '&body=' + encodeURIComponent(govde.join('\r\n'));
+      }
+      ok.innerHTML = kanal === 'panel' ? MESAJ_PANEL : MESAJ_EPOSTA;
+      ok.classList.add('on'); form.reset(); delete form.dataset.denendi;
+    };
+    if (typeof window.erisimTalebiKaydet !== 'function') { bitir('eposta'); return; }
+    window.erisimTalebiKaydet(veri).then(function(){ bitir('panel'); }, function(){ bitir('eposta'); });
   });
 
   document.getElementById('yil').textContent = new Date().getFullYear();
 })();
+</script>
+<script type="module">
+/* Erişim talebini İK paneline yazar (Firestore: erisimTalepleri). Bu sayfa giriş istemez; kurallar
+   (IK-PLATFORM/guvenlik/firestore.rules) yalnız alanları denetlenmiş YENİ kayıt oluşturmaya izin verir,
+   talepleri yalnız İK okur. Kurumsal güvenlik duvarları için long-polling; 12 sn'de yanıt yoksa
+   form e-postaya geçer. */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import { initializeFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+const app = initializeApp({
+  apiKey: "AIzaSyCWlB0nU-ETZxuo9xa6gG4VMYVu09P3fnE",
+  authDomain: "yetenek-havuzu.firebaseapp.com",
+  projectId: "yetenek-havuzu",
+  storageBucket: "yetenek-havuzu.firebasestorage.app",
+  messagingSenderId: "714642441227",
+  appId: "1:714642441227:web:bf49ac51367c6d9437b30e"
+}, "tanitim");
+const db = initializeFirestore(app, { experimentalForceLongPolling: true });
+window.erisimTalebiKaydet = (v) => Promise.race([
+  addDoc(collection(db, "erisimTalepleri"), {
+    ad: v.ad, eposta: v.eposta, marka: v.marka, rol: v.rol, not: v.not,
+    durum: "yeni", kaynak: "Tanıtım Sayfası", olusturma: serverTimestamp()
+  }),
+  new Promise((_, red) => setTimeout(() => red(new Error("zaman aşımı")), 12000))
+]);
 </script>
 </body>
 </html>
