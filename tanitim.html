@@ -857,7 +857,7 @@ footer a{color:#b9cde4}
      Yazılamazsa (bağlantı yok / kurallar henüz izin vermiyor) talep kaybolmasın diye hazır e-posta açılır. */
   var ERISIM_EPOSTA = 'ik.inciroglu@gmail.com';
   var MESAJ_PANEL = 'Teşekkürler, talebiniz <b>İK ekibine iletildi</b>. Hesabınız açıldığında aktivasyon kodunuz size ulaştırılacak.';
-  var MESAJ_EPOSTA = 'E-posta uygulamanız açıldı; talebinizi iletmek için <b>Gönder</b>\'e basmanız yeterli. Uygulama açılmadıysa bilgilerinizi <a href="mailto:ik.inciroglu@gmail.com">ik.inciroglu@gmail.com</a> adresine iletebilirsiniz.';
+  var MESAJ_EPOSTA = 'Talebinizi bu kez e-postayla iletmeniz gerekiyor. E-posta uygulamanız açıldıysa <b>Gönder</b>\'e basın; açılmadıysa aşağıdaki düğmeyi kullanın ya da bilgilerinizi <a href="mailto:ik.inciroglu@gmail.com">ik.inciroglu@gmail.com</a> adresine yazın. Bilgileriniz formda duruyor.';
   var form = document.getElementById('form'), ok = document.getElementById('okMsg');
   var EPOSTA = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   function hata(id, kotu){
@@ -888,24 +888,38 @@ footer a{color:#b9cde4}
     if (kotu.length) { document.getElementById(kotu[0]).focus(); track('form_hata', {alan: kotu[0]}); return; }
     /* Kurallar HTML etiketi içeren alanı reddeder; < ve > karakterleri gönderilmeden ayıklanır */
     var deg = function(id){ return document.getElementById(id).value.replace(/[<>]/g, '').replace(/\s+/g, ' ').trim(); };
-    var veri = { ad: deg('ad').slice(0, 80), eposta: deg('eposta').slice(0, 120), marka: deg('marka').slice(0, 60), rol: deg('rol').slice(0, 60), not: deg('mesaj').slice(0, 500) };
+    var veri = { ad: deg('ad').slice(0, 80), eposta: deg('eposta').slice(0, 120), marka: deg('marka').slice(0, 60), rol: deg('rol').slice(0, 60), not: deg('mesaj').slice(0, 500), onay: true };
     var btn = form.querySelector('button[type="submit"]'), btnMetin = btn.textContent;
     gonderiliyor = true; btn.disabled = true; btn.textContent = 'Gönderiliyor…';
-    var bitir = function(kanal){
+    var talepNoYaz = function(no){
+      if (!/^[A-Za-z0-9]{20}$/.test(no || '')) return;
+      var p = document.createElement('div'); p.style.marginTop = '6px'; p.style.fontSize = '12.5px';
+      p.textContent = 'Talep no: ' + no; ok.appendChild(p);
+    };
+    var bitir = function(kanal, talepNo){
       gonderiliyor = false; btn.disabled = false; btn.textContent = btnMetin;
       track('form_gonderildi', {kanal: kanal, rol: veri.rol});
-      if (kanal === 'eposta') {
-        var konu = 'İK Portalı erişim talebi – ' + veri.ad;
-        var govde = ['Merhaba,', '', 'İK Portalı için erişim talep ediyorum.', '',
-          'Ad Soyad: ' + veri.ad, 'Kurumsal e-posta: ' + veri.eposta, 'Marka / departman: ' + veri.marka, 'Rol: ' + veri.rol];
-        if (veri.not) govde.push('', 'Not: ' + veri.not);
-        window.location.href = 'mailto:' + ERISIM_EPOSTA + '?subject=' + encodeURIComponent(konu) + '&body=' + encodeURIComponent(govde.join('\r\n'));
+      if (kanal === 'panel') {
+        ok.innerHTML = MESAJ_PANEL; talepNoYaz(talepNo);
+        ok.classList.add('on'); form.reset(); delete form.dataset.denendi;
+        return;
       }
-      ok.innerHTML = kanal === 'panel' ? MESAJ_PANEL : MESAJ_EPOSTA;
-      ok.classList.add('on'); form.reset(); delete form.dataset.denendi;
+      /* Yedek: e-posta. Form silinmez; tıklanabilir düğme her durumda gösterilir (otomatik açılış engellenebilir).
+         Talep no, zaman aşımından sonra panele de düşen aynı talebi İK'nın eşleştirebilmesi içindir. */
+      var konu = 'İK Portalı erişim talebi – ' + veri.ad;
+      var govde = ['Merhaba,', '', 'İK Portalı için erişim talep ediyorum.', '',
+        'Ad Soyad: ' + veri.ad, 'Kurumsal e-posta: ' + veri.eposta, 'Marka / departman: ' + veri.marka, 'Rol: ' + veri.rol];
+      if (veri.not) govde.push('', 'Not: ' + veri.not);
+      if (/^[A-Za-z0-9]{20}$/.test(talepNo || '')) govde.push('', 'Talep no: ' + talepNo);
+      var href = 'mailto:' + ERISIM_EPOSTA + '?subject=' + encodeURIComponent(konu) + '&body=' + encodeURIComponent(govde.join('\r\n'));
+      ok.innerHTML = MESAJ_EPOSTA;
+      var a = document.createElement('a'); a.href = href; a.className = 'btn btn-p btn-sm'; a.style.marginTop = '10px'; a.textContent = 'E-postayla gönder';
+      a.setAttribute('data-ga', 'eposta_yedek'); ok.appendChild(document.createElement('br')); ok.appendChild(a);
+      ok.classList.add('on');
+      try { window.location.href = href; } catch (_) {}
     };
     if (typeof window.erisimTalebiKaydet !== 'function') { bitir('eposta'); return; }
-    window.erisimTalebiKaydet(veri).then(function(){ bitir('panel'); }, function(){ bitir('eposta'); });
+    window.erisimTalebiKaydet(veri).then(function(no){ bitir('panel', no); }, function(err){ bitir('eposta', err && err.talepNo); });
   });
 
   document.getElementById('yil').textContent = new Date().getFullYear();
@@ -917,7 +931,7 @@ footer a{color:#b9cde4}
    talepleri yalnız İK okur. Kurumsal güvenlik duvarları için long-polling; 12 sn'de yanıt yoksa
    form e-postaya geçer. */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-import { initializeFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { initializeFirestore, collection, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 const app = initializeApp({
   apiKey: "AIzaSyCWlB0nU-ETZxuo9xa6gG4VMYVu09P3fnE",
   authDomain: "yetenek-havuzu.firebaseapp.com",
@@ -927,13 +941,18 @@ const app = initializeApp({
   appId: "1:714642441227:web:bf49ac51367c6d9437b30e"
 }, "tanitim");
 const db = initializeFirestore(app, { experimentalForceLongPolling: true });
-window.erisimTalebiKaydet = (v) => Promise.race([
-  addDoc(collection(db, "erisimTalepleri"), {
-    ad: v.ad, eposta: v.eposta, marka: v.marka, rol: v.rol, not: v.not,
-    durum: "yeni", kaynak: "Tanıtım Sayfası", olusturma: serverTimestamp()
-  }),
-  new Promise((_, red) => setTimeout(() => red(new Error("zaman aşımı")), 12000))
-]);
+/* Belge kimliği önceden üretilir (20 harf/rakam) ve "Talep no" olarak gösterilir: zaman aşımından sonra
+   e-postayla da gönderilen bir talep panele geç düşerse İK ikisini aynı numarayla eşleştirir. */
+window.erisimTalebiKaydet = (v) => {
+  const ref = doc(collection(db, "erisimTalepleri"));
+  return Promise.race([
+    setDoc(ref, {
+      ad: v.ad, eposta: v.eposta, marka: v.marka, rol: v.rol, not: v.not, onay: v.onay === true,
+      durum: "yeni", kaynak: "Tanıtım Sayfası", olusturma: serverTimestamp()
+    }).then(() => ref.id),
+    new Promise((_, red) => setTimeout(() => red(new Error("zaman aşımı")), 12000))
+  ]).catch((e) => { const h = e instanceof Error ? e : new Error(String(e)); h.talepNo = ref.id; throw h; });
+};
 </script>
 </body>
 </html>
