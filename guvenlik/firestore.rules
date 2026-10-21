@@ -1,0 +1,379 @@
+rules_version = '2';
+
+// =============================================================================
+//  İnciroğlu Otomotiv · Cloud Firestore Güvenlik Kuralları
+//  Sürüm 2026-10-10 · TÜM uygulamalar ortak girişte; tüm koleksiyonlar rol bazlı kilitli
+// -----------------------------------------------------------------------------
+//  İLKE: VARSAYILAN RED. Aşağıda açıkça izin verilmeyen her okuma/yazma reddedilir.
+//  Kimlik  : Firebase Authentication (request.auth).
+//  Yetki   : hesaplar/{hid} (roller + kapsam; YALNIZ İK yazar)
+//            uidBag/{uid}   (Firebase oturumu ↔ hesap bağı; kişi yalnız geçerli
+//                            aktivasyon koduyla KENDİ bağını kurar)
+//  hid     : SHA-256("inciroglu-hesap|" + TC Kimlik No) — belge adlarında TC yoktur.
+//  Herkese açık yalnız üç uç vardır: iş başvurusu OLUŞTURMA ve portal erişim talebi
+//  OLUŞTURMA (ikisi de sıkı alan denetimiyle, okuma yok) ve tahmin edilemez anahtarla
+//  tek bir sınav kaydı (aday sınavı).
+//  Ayrıntılı açıklama ve değişiklik süreci: guvenlik/README.md
+//  Yayın   : Firebase Konsolu → Firestore Database → Kurallar (Rules) → Yayınla.
+// =============================================================================
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------------------------ yardımcılar
+    function oturum() { return request.auth != null; }
+    function yol(koleksiyon, kimlik) { return /databases/$(database)/documents/$(koleksiyon)/$(kimlik); }
+    function bagli() { return oturum() && exists(yol('uidBag', request.auth.uid)); }
+    function benimHid() { return get(yol('uidBag', request.auth.uid)).data.hid; }
+    function hesap() { return get(yol('hesaplar', benimHid())).data; }
+    // Geçerli hesap: oturum bir hesaba bağlı, hesap AKTİF ve hesabın GÜNCEL oturumu bu.
+    // (İK yeni kod üretince ya da hesabı kapatınca eski oturumlar anında yetkisiz kalır.)
+    function gecerli() { return bagli() && hesap().aktif == true && hesap().uid == request.auth.uid; }
+    function rolden(roller) { return gecerli() && hesap().roller.hasAny(roller); }
+    function rol(r) { return rolden([r]); }
+    function ik() { return rol('ik'); }
+    function yonetimRolleri() { return ['ik', 'direktor', 'satis_mudur', 'servis_mudur', 'idari_mudur', 'mudur']; }
+    function yonetim() { return rolden(yonetimRolleri()); }
+    function kapsam() { return hesap().kapsam; }
+    function tcOzeti(tc) { return hashing.sha256('inciroglu-hesap|' + tc).toHexString().lower(); }
+    // Metin alanı: tür + uzunluk sınırı + HTML etiketi yok (herkese açık formlardan betik enjeksiyonuna karşı)
+    function metin(v, enFazla) { return v is string && v.size() <= enFazla && !v.matches('(?s).*[<>].*'); }
+
+    // ====================================================== HESAP ALTYAPISI
+    function hesapAlanlari() {
+      return ['ad', 'tc', 'roller', 'kapsam', 'aktif', 'uid', 'kodHash', 'kodSon', 'kodDurum',
+              'olusturan', 'olusturma', 'guncelleyen', 'guncelleme', 'aktivasyon'];
+    }
+    function rollerGecerli(r) {
+      return r is list && r.size() >= 1 && r.size() <= 8
+        && r.hasOnly(['calisan', 'ik', 'direktor', 'satis_mudur', 'servis_mudur', 'idari_mudur', 'mudur']);
+    }
+    function hesapVerisiGecerli(h, y) {
+      return y.keys().hasOnly(hesapAlanlari())
+        && metin(y.ad, 120) && y.ad.size() > 0
+        && y.tc is string && y.tc.matches('[1-9][0-9]{10}')
+        && tcOzeti(y.tc) == h
+        && rollerGecerli(y.roller)
+        && y.kapsam is map
+        && y.aktif is bool;
+    }
+    // Kullanılmış bir aktivasyon kodu, eski bir kayıt üzerine yazılarak yeniden canlandırılamaz.
+    function kodCanlanmiyor() {
+      return resource == null
+        || !(resource.data.kodDurum == 'kullanildi'
+             && request.resource.data.kodDurum == 'bekliyor'
+             && request.resource.data.kodHash == resource.data.kodHash);
+    }
+    // İK: hesap açar, rol/kapsam verir, aktivasyon kodu (yalnız özeti) üretir, hesabı kapatır.
+    function ikHesapYazimi(h) { return ik() && hesapVerisiGecerli(h, request.resource.data) && kodCanlanmiyor(); }
+
+    // Aktivasyon: kişi, İK'nın verdiği süreli kodla KENDİ hesabını yeni oturumuna bağlar.
+    // Aynı toplu yazmada uidBag/{uid} de oluşturulur; kod özeti orada da aynı olmalıdır.
+    function aktivasyon(h) {
+      let once = resource.data;
+      let sonra = request.resource.data;
+      let bag = getAfter(yol('uidBag', request.auth.uid)).data;
+      return oturum()
+        && once.aktif == true
+        && once.kodDurum == 'bekliyor'
+        && once.kodSon is timestamp && once.kodSon > request.time
+        && bag.hid == h
+        && bag.kodHash == once.kodHash
+        && sonra.diff(once).affectedKeys().hasOnly(['uid', 'kodDurum', 'aktivasyon'])
+        && sonra.uid == request.auth.uid
+        && sonra.kodDurum == 'kullanildi'
+        && sonra.aktivasyon == request.time;
+    }
+
+    // TEK SEFERLİK KURULUM — ilk İK yöneticisinin hesabı. Kod kurala yalnız SHA-256 özeti olarak yazılıdır
+    // (100 bit rastgele; tersine çevrilemez). kurulum/tek belgesi yalnız BİR KEZ oluşturulabildiği için kod
+    // ikinci kez kullanılamaz; 24.10.2026'da da kendiliğinden kapanır. Kurulum bitince bu bölüm silinecektir.
+    function kurulumKodu(kod) {
+      return request.time < timestamp.date(2026, 10, 24)
+        && kod is string && kod.size() == 20
+        && hashing.sha256(kod).toHexString().lower() == 'ee77addb2ef20d04700a469ae611dda091b16faaab1b87c9b11f685685333e20';
+    }
+    function kurulumVar() {
+      return oturum()
+        && !exists(yol('kurulum', 'tek'))
+        && existsAfter(yol('kurulum', 'tek'))
+        && getAfter(yol('kurulum', 'tek')).data.uid == request.auth.uid
+        && kurulumKodu(getAfter(yol('kurulum', 'tek')).data.kod);
+    }
+    function kurulumHesabi(h) {
+      let y = request.resource.data;
+      return kurulumVar()
+        && hesapVerisiGecerli(h, y)
+        && y.roller == ['calisan', 'ik']
+        && y.kapsam.size() == 0
+        && y.aktif == true
+        && y.uid == request.auth.uid
+        && y.kodDurum == 'kullanildi'
+        && getAfter(yol('uidBag', request.auth.uid)).data.hid == h;
+    }
+
+    // hesaplar/{hid}: kişi başına bir kayıt (ad, tc, roller, kapsam, aktiflik, kod özeti).
+    match /hesaplar/{h} {
+      allow get: if ik() || (gecerli() && benimHid() == h);
+      allow list: if ik();
+      allow create: if ikHesapYazimi(h) || kurulumHesabi(h);
+      allow update: if ikHesapYazimi(h) || aktivasyon(h);
+      allow delete: if ik();
+    }
+
+    // uidBag/{uid}: Firebase oturumu ↔ hesap bağı. Yalnız oturum sahibi, yalnız geçerli kodla kurar.
+    function kodlaBag(b) {
+      return exists(yol('hesaplar', b.hid))
+        && get(yol('hesaplar', b.hid)).data.aktif == true
+        && get(yol('hesaplar', b.hid)).data.kodDurum == 'bekliyor'
+        && get(yol('hesaplar', b.hid)).data.kodHash == b.kodHash
+        && get(yol('hesaplar', b.hid)).data.kodSon is timestamp
+        && get(yol('hesaplar', b.hid)).data.kodSon > request.time;
+    }
+    match /uidBag/{u} {
+      allow get: if (oturum() && request.auth.uid == u) || ik();
+      allow list: if ik();
+      allow create: if oturum() && request.auth.uid == u
+        && request.resource.data.keys().hasOnly(['hid', 'kodHash', 'ts'])
+        && request.resource.data.hid is string
+        && request.resource.data.kodHash is string
+        && request.resource.data.ts == request.time
+        && existsAfter(yol('hesaplar', request.resource.data.hid))
+        && getAfter(yol('hesaplar', request.resource.data.hid)).data.uid == u
+        && (kodlaBag(request.resource.data) || kurulumVar());
+      allow update, delete: if ik();
+    }
+
+    // kurulum/tek: tek seferlik kurulum kaydı (yalnız süre içinde, doğru kodla, YALNIZ BİR KEZ oluşturulabilir).
+    match /kurulum/{id} {
+      allow create: if id == 'tek' && oturum()
+        && request.resource.data.keys().hasOnly(['kod', 'uid'])
+        && request.resource.data.uid == request.auth.uid
+        && kurulumKodu(request.resource.data.kod);
+      allow get, list: if ik();
+    }
+
+    // girisAdresi/{hid}: TC ile girişte kişinin Firebase hesabını bulmak için. Yalnız TEK belge
+    // okunabilir (listeleme yok); içinde kişisel veri yoktur (sisteme özel e-posta adresi).
+    match /girisAdresi/{h} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update: if oturum()
+        && request.resource.data.keys().hasOnly(['e'])
+        && request.resource.data.e == request.auth.token.email
+        && getAfter(yol('uidBag', request.auth.uid)).data.hid == h
+        && getAfter(yol('hesaplar', h)).data.uid == request.auth.uid;
+      allow delete: if ik();
+    }
+
+    // ============================================== İK + SATIŞ (satisVeri)
+    // satisVeri koleksiyonu tarihsel nedenle hem satış panosunun canlı verisini ('current') hem İK
+    // belgelerini (özlük, izin, harcama, puantaj, giriş-çıkış, ...) barındırır; kurallar BELGE bazında ayrıştırır.
+    match /satisVeri/{belge} {
+      // Satış panosu: İK (yönetici), direktör (görüntüleyici), satış müdürü okur.
+      allow get: if belge == 'current' && rolden(['ik', 'direktor', 'satis_mudur']);
+      // Satış müdürü yalnız elle girilen alanları değiştirebilir (eski çalışan, manuel danışman/fiili).
+      allow update: if belge == 'current' && rol('satis_mudur')
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['eskiCalisanlar', 'manuelDanismanlar', 'manuelFiili', 'updatedAt'])
+        && request.resource.data.updatedAt == request.time;
+      // Personel listesinin kişisel veri İÇERMEYEN özeti (ad, departman, bölüm, unvan, tarihler).
+      allow get: if belge == 'mrPersonelOzet' && yonetim();
+      // İK Analitik Panosu verisi.
+      allow get: if belge == 'ikPano' && rolden(['ik', 'direktor', 'idari_mudur']);
+      // Satış danışmanlarının giriş/çıkış tarihi ve ayrılış notu (kişisel veri): yalnız İK ve direktör.
+      allow get: if belge == 'danismanDetay' && rolden(['ik', 'direktor']);
+      // İK: tüm belgeler (satış verisi dahil; Excel köprüsü İK oturumunda çalışır).
+      allow read, write: if ik();
+    }
+    // Satış karneleri ve hedef tebliğleri. (Marka bazlı ayrım arayüzde yapılır; bkz. README.)
+    // Müdür yazımında kayıt kimliği belge kimliğiyle aynı ve yalnız harf/rakam, yıl/ay sayı olmalıdır.
+    function satisKaydiGecerli(id) {
+      let d = request.resource.data;
+      return id.matches('[A-Za-z0-9_-]{1,64}') && d.id == id && d.yil is number && d.ay is number;
+    }
+    match /satisKarneler/{id} {
+      allow read: if rolden(['ik', 'direktor', 'satis_mudur']);
+      allow create, update: if ik() || (rol('satis_mudur') && satisKaydiGecerli(id));
+      allow delete: if rolden(['ik', 'satis_mudur']);
+    }
+    match /satisTebligler/{id} {
+      allow read: if rolden(['ik', 'direktor', 'satis_mudur']);
+      allow create, update: if ik() || (rol('satis_mudur') && satisKaydiGecerli(id));
+      allow delete: if rolden(['ik', 'satis_mudur']);
+    }
+
+    // ============================================================== SERVİS
+    function servisMarkasi() { return kapsam().servisMarka; }
+    match /servisVeri/{belge} {
+      allow read: if rolden(['ik', 'direktor', 'servis_mudur']);
+      // Servis müdürü yalnız kadroya (elle danışman ekleme) dokunabilir; metrik ve marka tanımları İK'da.
+      allow update: if belge == 'current' && rol('servis_mudur')
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['kadro', 'updatedAt'])
+        && request.resource.data.updatedAt == request.time;
+      allow write: if ik();
+    }
+    match /servisTebligler/{id} {
+      allow read: if ik() || rol('direktor') || (rol('servis_mudur') && resource.data.marka == servisMarkasi());
+      allow create: if ik() || (rol('servis_mudur') && request.resource.data.marka == servisMarkasi());
+      allow update: if ik() || (rol('servis_mudur') && resource.data.marka == servisMarkasi() && request.resource.data.marka == servisMarkasi());
+      allow delete: if ik();
+    }
+    match /servisKarneler/{id} {
+      allow read: if ik() || rol('direktor') || (rol('servis_mudur') && resource.data.marka == servisMarkasi());
+      allow create: if ik() || (rol('servis_mudur') && request.resource.data.marka == servisMarkasi());
+      allow update: if ik() || (rol('servis_mudur') && resource.data.marka == servisMarkasi() && request.resource.data.marka == servisMarkasi());
+      allow delete: if ik();
+    }
+
+    // ====================================================== YETENEK HAVUZU
+    match /employees/{id} {
+      allow read: if yonetim();
+      allow write: if ik();
+    }
+    // Arşiv işareti yalnız İK'nındır; değerlendirici onu ekleyemez ya da değiştiremez.
+    function arsivDegismiyor() {
+      return resource == null
+        ? !('arsiv' in request.resource.data)
+        : !request.resource.data.diff(resource.data).affectedKeys().hasAny(['arsiv']);
+    }
+    // Değerlendirme, giren kişinin oturumu ve hesabındaki adıyla imzalanır; zaman sunucu saatidir
+    // (başkası adına ya da geçmiş tarihli kayıt bırakılamaz). Belge kimliği "dönem::personel" biçimindedir.
+    function degerlendirmeImzali(id) {
+      let d = request.resource.data;
+      return d.submittedByUid == request.auth.uid
+        && d.submittedByName == hesap().ad
+        && d.updatedAt == request.time
+        && id == d.donem + '::' + d.employeeId
+        && arsivDegismiyor();
+    }
+    // TAMAMLANMIŞ bir değerlendirmeyi yalnız onu tamamlayan kişi (ya da İK) değiştirebilir; taslak devam ettirilebilir.
+    function tamamlanmisDegil() {
+      return resource.data.get('status', '') != 'tamamlandi'
+        || resource.data.get('submittedByUid', '') == request.auth.uid;
+    }
+    match /evaluations/{id} {
+      allow read: if yonetim();
+      allow create: if ik() || (yonetim() && degerlendirmeImzali(id));
+      allow update: if ik() || (yonetim() && degerlendirmeImzali(id) && tamamlanmisDegil());
+      allow delete: if ik();
+    }
+    // Değerlendirici kapsam profilleri ve dönem ayarı
+    match /managers/{id} {
+      allow read: if yonetim();
+      allow write: if ik();
+    }
+
+    // ============================================================= İŞE ALIM
+    function isealimDep() { return kapsam().isealimDepartman; }
+    // Herkese açık iş başvurusu (basvuru.html): yalnız OLUŞTURMA; alanlar, türler, uzunluklar ve başlangıç
+    // durumu sıkı denetlenir; HTML etiketi kabul edilmez. Okuma/güncelleme/silme herkese KAPALI.
+    // CV yalnız PDF / Word olabilir (HTML, SVG vb. çalıştırılabilir içerik reddedilir); en fazla ~600 KB.
+    function cvTurleri() {
+      return ['application/pdf', 'application/msword',
+              'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    }
+    function cvGecerli(c) {
+      return c is map && c.keys().hasOnly(['ad', 'tip', 'boyut', 'veri'])
+        && metin(c.ad, 200) && c.tip in cvTurleri()
+        && c.boyut is int && c.boyut > 0 && c.boyut <= 650000
+        && c.veri is string && c.veri.size() <= 900000
+        && c.veri.matches('data:' + c.tip + ';base64,[A-Za-z0-9+/=]+');
+    }
+    function basvuruGecerli() {
+      let d = request.resource.data;
+      let p = d.basvurulanPozisyonlar;
+      let g = d.gecmis;
+      return d.keys().hasOnly(['ad', 'soyad', 'telefon', 'email', 'yas', 'yer', 'unvan', 'basvurulanPozisyonlar',
+                               'departman', 'deneyimYil', 'deneyim', 'notlar', 'durum', 'kaynak', 'basvuruTarihi',
+                               'evraklar', 'degerlendirmeler', 'etiketler', 'gecmis', 'olusturmaTarihi',
+                               'guncellemeTarihi', 'cv'])
+        && metin(d.ad, 60) && d.ad.size() > 0 && metin(d.soyad, 60) && d.soyad.size() > 0
+        && metin(d.telefon, 30) && metin(d.email, 120) && metin(d.yer, 80)
+        && (d.yas == null || (d.yas is int && d.yas >= 14 && d.yas <= 90))
+        && metin(d.unvan, 120) && metin(d.departman, 60) && metin(d.deneyimYil, 40)
+        && metin(d.deneyim, 4000) && metin(d.notlar, 4000) && metin(d.basvuruTarihi, 10)
+        && p is list && p.size() >= 1 && p.size() <= 3
+        && metin(p[0], 120) && (p.size() < 2 || metin(p[1], 120)) && (p.size() < 3 || metin(p[2], 120))
+        && d.durum == 'gorusme_bekliyor' && d.kaynak == 'Web Başvurusu'
+        && d.evraklar == [] && d.degerlendirmeler == [] && d.etiketler == []
+        && g is list && g.size() == 1 && g[0] is map
+        && g[0].keys().hasOnly(['tarih', 'eskiDurum', 'yeniDurum', 'kullanici', 'not'])
+        && metin(g[0].tarih, 10) && g[0].eskiDurum == null && g[0].yeniDurum == 'gorusme_bekliyor'
+        && g[0].kullanici == 'Web Başvurusu' && metin(g[0].not, 300)
+        && d.olusturmaTarihi == request.time && d.guncellemeTarihi == request.time
+        && (!('cv' in d) || cvGecerli(d.cv));
+    }
+    // Yeni kayıt kimliği yalnız Firestore'un otomatik ürettiği biçimde olabilir (20 harf/rakam): kimliğe
+    // HTML/kod gömülemez.
+    function otomatikKimlik(id) { return id.matches('[A-Za-z0-9]{20}'); }
+    match /iseAlimAday/{id} {
+      allow read: if ik() || (yonetim() && resource.data.departman == isealimDep());
+      allow create: if otomatikKimlik(id)
+        && (ik() || (yonetim() && request.resource.data.departman == isealimDep()) || basvuruGecerli());
+      allow update: if ik() || (yonetim() && resource.data.departman == isealimDep()
+                                && request.resource.data.departman == isealimDep());
+      allow delete: if ik();
+    }
+    match /personelTalepleri/{id} {
+      allow read: if ik() || (yonetim() && resource.data.departman == isealimDep());
+      allow create: if otomatikKimlik(id)
+        && (ik() || (yonetim() && request.resource.data.departman == isealimDep()));
+      allow update: if ik() || (yonetim() && resource.data.departman == isealimDep()
+                                && request.resource.data.departman == isealimDep());
+      allow delete: if ik();
+    }
+    // Portal erişim talebi (IK-PLATFORM/tanitim.html formu): herkes YALNIZ yeni kayıt oluşturur; okuma,
+    // durum güncelleme ve silme yalnız İK (İşe Alım → Personel Talepleri → Portal Erişim Talepleri).
+    // Talep hiçbir yetki vermez; hesap yine İK tarafından hesaplar/ altında açılır.
+    function erisimTalebiGecerli() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['ad', 'eposta', 'marka', 'rol', 'not', 'onay', 'durum', 'kaynak', 'olusturma'])
+        && d.keys().hasAll(['ad', 'eposta', 'marka', 'rol', 'not', 'onay', 'durum', 'kaynak', 'olusturma'])
+        && d.onay == true
+        && metin(d.ad, 80) && d.ad.size() >= 3
+        && metin(d.eposta, 120) && d.eposta.matches('[^@ ]+@[^@ ]+[.][^@ ]+')
+        && metin(d.marka, 60) && d.marka.size() > 0
+        && metin(d.rol, 60) && d.rol.size() > 0
+        && metin(d.not, 500)
+        && d.durum == 'yeni' && d.kaynak == 'Tanıtım Sayfası'
+        && d.olusturma == request.time;
+    }
+    match /erisimTalepleri/{id} {
+      allow read, update, delete: if ik();
+      allow create: if otomatikKimlik(id) && erisimTalebiGecerli();
+    }
+    // Aday sınavı: aday yalnız bağlantıdaki tahmin edilemez anahtarla (128 bit) TEK kaydı okur ve BİR KEZ
+    // tamamlar; aday dosyasına ve İK notlarına erişemez. Tamamlanan sınavın sonuçları bağlantıyla OKUNAMAZ
+    // (yalnız İK / ilgili departman). Listeleme yalnız İK / ilgili departman.
+    function sinavPersoneli() {
+      return ik() || (yonetim() && resource.data.adayDepartman == isealimDep());
+    }
+    function sinavAlanlari() {
+      return ['adayId', 'adayDepartman', 'adayAd', 'pozisyon', 'pozisyonAd', 'durum', 'olusturma'];
+    }
+    function sinavTamamlama() {
+      let once = resource.data;
+      let sonra = request.resource.data;
+      return once.durum == 'bekliyor'
+        && sonra.durum == 'tamamlandi'
+        && sonra.diff(once).affectedKeys().hasOnly(['durum', 'tamamlanmaTarihi', 'boyutlar', 'uygunluk', 'gecerlik', 'cevaplar', 'tamamlanma'])
+        && sonra.tamamlanma == request.time
+        && metin(sonra.tamamlanmaTarihi, 10)
+        && sonra.boyutlar is map && sonra.gecerlik is map && sonra.cevaplar is map
+        && (sonra.uygunluk == null || sonra.uygunluk is number);
+    }
+    match /sinavlar/{t} {
+      allow get: if t.size() >= 16 && (resource.data.durum == 'bekliyor' || sinavPersoneli());
+      allow list: if sinavPersoneli();
+      // Anahtar biçimi: yeni "s_" + 32 onaltılık (128 bit); eski sürümün bekleyen bağlantıları "as_…".
+      allow create: if t.matches('(s_[0-9a-f]{32}|as_[a-z0-9]{8,24})')
+        && (ik() || (yonetim() && request.resource.data.adayDepartman == isealimDep()))
+        && request.resource.data.keys().hasOnly(sinavAlanlari())
+        && request.resource.data.durum == 'bekliyor'
+        && request.resource.data.olusturma == request.time
+        && metin(request.resource.data.adayAd, 60);
+      allow update: if ik() || sinavTamamlama();
+      allow delete: if ik();
+    }
+  }
+}

@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MR · Personel Listesi · İnciroğlu Otomotiv</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#132a44; --navy-2:#1c3d5f; --navy-900:#0c1c2e;
+  --brass:#c9a227; --brass-2:#e0be4f;
+  --page:#eef1f4; --surface:#ffffff; --ink:#0e1b28; --ink-2:#52606b; --muted:#8a929b;
+  --line:#d5dbe1; --ok:#1b8a4b; --bad:#c0392b; --warn:#b26a00; --warn-bg:#fff4e0;
+  --font:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --serif:"Source Serif 4",Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--page);color:var(--ink);line-height:1.5}
+.hidden{display:none!important}
+button{font-family:var(--font);cursor:pointer}
+.topbar{background:linear-gradient(100deg,var(--navy-900),var(--navy) 60%,#1c3d5f);color:#fff;display:flex;align-items:center;padding:0 24px;height:62px;gap:14px;box-shadow:0 4px 18px -8px rgba(3,15,30,.6)}
+.topbar .mk{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,var(--brass),var(--brass-2));display:flex;align-items:center;justify-content:center;color:var(--navy);font-weight:800;font-size:15px;font-family:var(--serif)}
+.topbar .tt{font-family:var(--serif);font-size:16px;font-weight:700;line-height:1.15}
+.topbar .tt small{display:block;font-weight:400;font-size:10.5px;color:#9fbdd8;margin-top:1px}
+.topbar .sp{flex:1}
+.topbar .who{text-align:right;font-size:12px;color:#cfe0ee}
+.topbar .who b{display:block;color:#fff;font-weight:600;font-size:13px}
+.topbar .pill{display:inline-block;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;background:rgba(201,162,39,.2);border:1px solid rgba(201,162,39,.4);color:#f0dca0;border-radius:20px;padding:2px 9px;margin-top:3px}
+.wrap{max-width:1180px;margin:0 auto;padding:22px 24px 70px}
+.head h1{font-family:var(--serif);font-size:25px;font-weight:700;color:var(--navy);letter-spacing:-.01em}
+.head p{font-size:13.5px;color:var(--ink-2);margin-top:6px;max-width:94ch}
+/* tabs */
+.tabs{display:flex;gap:4px;margin:18px 0 0;border-bottom:1px solid var(--line)}
+.tab{border:none;background:none;padding:11px 18px;font-size:14px;font-weight:600;color:var(--ink-2);border-bottom:2.5px solid transparent;margin-bottom:-1px;display:flex;align-items:center;gap:8px}
+.tab.on{color:var(--navy);border-bottom-color:var(--brass)}
+.tab .cnt{font-size:11.5px;font-weight:700;background:#eef1f4;color:var(--ink-2);border-radius:20px;padding:1px 9px}
+.tab.on .cnt{background:var(--navy);color:#fff}
+/* toolbar */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-top:none;border-radius:0 0 12px 12px;padding:12px 14px;margin-bottom:16px}
+.search{flex:1;min-width:220px;position:relative}
+.search input{width:100%;padding:10px 12px 10px 36px;border:1px solid var(--line);border-radius:9px;font-size:14px;font-family:var(--font);outline:none}
+.search input:focus{border-color:var(--navy-2);box-shadow:0 0 0 3px rgba(28,61,95,.12)}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;stroke:var(--muted);fill:none;stroke-width:2}
+.btn{border:none;border-radius:9px;padding:10px 15px;font-size:13.5px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--navy),var(--navy-2));box-shadow:0 8px 20px -12px rgba(19,42,68,.8)}
+.btn:hover{filter:brightness(1.1)}
+.btn.g{background:#fff;color:var(--navy);border:1px solid var(--line);box-shadow:none}
+/* table */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:visible}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+thead th{background:#f5f7f9;text-align:left;padding:11px 13px;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2);border-bottom:1px solid var(--line);white-space:nowrap;user-select:none}
+thead th.sortable{cursor:pointer}
+thead th.sortable:hover{color:var(--navy)}
+thead th .ar{opacity:.5;font-size:10px;margin-left:3px}
+thead th.act{width:40px}
+tbody td{padding:10px 13px;border-bottom:1px solid #eceff2;vertical-align:middle}
+tbody tr:hover{background:#f8fafc}
+.nm{font-weight:600;color:var(--navy)}
+.mini{font-size:11.5px;color:var(--muted)}
+.badge{display:inline-block;font-size:11.5px;font-weight:600;border-radius:20px;padding:2px 10px;white-space:nowrap;background:#eef2f6;color:var(--navy-2);border:1px solid #dce6f0}
+.b-bol{background:#eef7f0;color:#1b6b3a;border:1px solid #cfe8d6}
+.kebab{width:28px;height:28px;border-radius:7px;border:1px solid transparent;background:none;color:var(--muted);font-size:17px;line-height:1;display:flex;align-items:center;justify-content:center}
+.kebab:hover{background:#eef1f4;color:var(--navy);border-color:var(--line)}
+.empty{padding:44px;text-align:center;color:var(--muted);font-size:14px}
+.rowmenu{position:absolute;z-index:60;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 14px 36px -12px rgba(0,0,0,.35);padding:5px;min-width:210px}
+.rowmenu button{display:block;width:100%;text-align:left;border:none;background:none;padding:9px 11px;font-size:13px;color:var(--ink);border-radius:7px}
+.rowmenu button:hover{background:#f1f4f8}
+.rowmenu button.dng{color:var(--bad)}
+.rowmenu button.dng:hover{background:#fbeceb}
+/* modal */
+.ovl{position:fixed;inset:0;background:rgba(12,28,46,.55);display:none;align-items:center;justify-content:center;z-index:70;padding:20px}
+.ovl.on{display:flex}
+.modal{background:#fff;border-radius:14px;width:min(500px,100%);max-height:92vh;overflow:auto;box-shadow:0 30px 80px -20px rgba(0,0,0,.5)}
+.modal .mh{padding:17px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+.modal .mh h3{font-family:var(--serif);font-size:19px;color:var(--navy)}
+.modal .mx{background:none;border:none;font-size:22px;color:var(--muted);line-height:1}
+.modal .mb{padding:18px 22px}
+.modal .mf{padding:14px 22px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end}
+.f{margin-bottom:13px}
+.f.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f label{display:block;font-size:11px;font-weight:700;color:var(--ink-2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+.f input,.f select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-size:14px;font-family:var(--font);outline:none}
+.f input:focus,.f select:focus{border-color:var(--navy-2);box-shadow:0 0 0 3px rgba(28,61,95,.12)}
+.gate{max-width:440px;margin:80px auto;background:#fff;border:1px solid var(--line);border-radius:14px;padding:30px;text-align:center}
+.gate h2{font-family:var(--serif);color:var(--navy);margin-bottom:8px}
+.gate p{color:var(--ink-2);font-size:14px;margin-bottom:16px}
+.foot-note{margin-top:22px;font-size:12px;color:var(--ink-2);background:linear-gradient(180deg,var(--surface),#f7f9fb);border:1px solid var(--line);border-left:3px solid var(--brass);border-radius:10px;padding:14px 16px;line-height:1.6}
+.foot-note b{color:var(--navy)}
+@media(max-width:620px){ .f.two{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="mk">İH</div>
+  <div class="tt">MR — Personel Listesi<small>İnciroğlu Otomotiv · İnsan Kaynakları</small></div>
+  <div class="sp"></div>
+  <div class="who"><b id="whoAd">—</b><span class="pill" id="whoRol">—</span><button class="btn g" id="cikisBtn" type="button" style="margin-left:10px;padding:6px 12px">Çıkış</button></div>
+</div>
+
+<div id="app" class="wrap hidden">
+  <div class="head">
+    <h1>MR — Personel Listesi</h1>
+    <p>Aktif çalışan listesi ile işten ayrılan personel listesi. İsimle arayın, sütun başlıklarına tıklayarak departman / bölüm / unvana göre sıralayın. Bir personeli işten ayrıldı olarak işaretlediğinizde, tüm bilgisiyle <b>İşten Ayrılan Personel</b> listesine düşer.</p>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-tab="aktif">Aktif Personel Listesi <span class="cnt" id="cAktif">0</span></button>
+    <button class="tab" data-tab="ayrilan">İşten Ayrılan Personel <span class="cnt" id="cAyrilan">0</span></button>
+  </div>
+
+  <div class="toolbar">
+    <div class="search">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="q" type="text" placeholder="İsimle ara…">
+    </div>
+    <button class="btn" id="btnAdd">+ Yeni Personel</button>
+  </div>
+
+  <div id="content"></div>
+
+  <div class="foot-note" id="footNote"></div>
+</div>
+
+<!-- YENİ PERSONEL / DÜZENLE -->
+<div class="ovl" id="addOvl">
+  <div class="modal">
+    <div class="mh"><h3 id="addTitle">Yeni Personel</h3><button class="mx" data-close>×</button></div>
+    <div class="mb">
+      <div class="f"><label>Ad Soyad</label><input id="aAd" placeholder="Ad Soyad" autocomplete="off"></div>
+      <div class="f two">
+        <div><label>Departman</label><input id="aDep" list="depList" placeholder="örn. FIAT" autocomplete="off"></div>
+        <div><label>Bölüm</label><input id="aBol" list="bolList" placeholder="örn. Servis" autocomplete="off"></div>
+      </div>
+      <div class="f two">
+        <div><label>Unvan</label><input id="aUnvan" placeholder="örn. Servis Danışmanı" autocomplete="off"></div>
+        <div><label>İşe Giriş Tarihi</label><input id="aGiris" type="date"></div>
+      </div>
+      <datalist id="depList"></datalist>
+      <datalist id="bolList"></datalist>
+    </div>
+    <div class="mf"><button class="btn g" data-close>Vazgeç</button><button class="btn" id="aSave">Kaydet</button></div>
+  </div>
+</div>
+
+<!-- İŞTEN AYRILDI -->
+<div class="ovl" id="delOvl">
+  <div class="modal">
+    <div class="mh"><h3>İşten Ayrıldı Olarak İşaretle</h3><button class="mx" data-close>×</button></div>
+    <div class="mb">
+      <p style="font-size:14px;margin-bottom:14px" id="delWho"></p>
+      <div class="f"><label>İşten Çıkış Tarihi</label><input id="delCikis" type="date"></div>
+      <p class="mini">Onayladığınızda bu kişi aktif listeden çıkar ve <b>İşten Ayrılan Personel</b> listesine düşer.</p>
+    </div>
+    <div class="mf"><button class="btn g" data-close>Vazgeç</button><button class="btn" id="delGo" style="background:linear-gradient(135deg,#b26a00,#946100)">İşten Ayrıldı İşaretle</button></div>
+  </div>
+</div>
+
+<script type="module">
+import { doc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { db, kimlikBaslat, cikisYap, sha256hex } from "./ortak/kimlik.js";
+
+/* ============ OTURUM ============
+   Giriş ortak kimlik modülüyle (ortak/kimlik.js). Yöneticiler (direktör / müdür) listenin KİŞİSEL VERİ İÇERMEYEN
+   özetini (mrPersonelOzet: ad, departman, bölüm, unvan, tarihler) GÖRÜR; tam listeyi okuma ve DÜZENLEME yalnız İK.
+   Bu ayrım Firestore güvenlik kurallarıyla sunucuda zorlanır. */
+function trLower(s){return String(s||'').replace(/İ/g,'i').replace(/I/g,'ı').toLowerCase();}
+function trTitle(s){return trLower(s).split(/\s+/).map(w=>{if(!w)return w;const f=w.charAt(0);const up=(f==='i')?'İ':(f==='ı'?'I':f.toLocaleUpperCase('tr'));return up+w.slice(1);}).join(' ');}
+const ROL_ET={ik:'İK · Düzenleme Yetkili',direktor:'Direktör',satis_mudur:'Satış Müdürü',servis_mudur:'Servis Müdürü',idari_mudur:'İdari Müdür',mudur:'Departman Müdürü'};
+const OTURUM=await kimlikBaslat({uygulama:'MR · Personel Listesi',roller:['ik','direktor','satis_mudur','servis_mudur','idari_mudur','mudur']});
+const ROLLERIM=OTURUM.hesap.roller||[];
+const IS_ADMIN=ROLLERIM.indexOf('ik')>=0;
+document.getElementById('app').classList.remove('hidden');
+document.getElementById('whoAd').textContent=trTitle(OTURUM.hesap.ad||'');
+document.getElementById('whoRol').textContent=ROL_ET[IS_ADMIN?'ik':(ROLLERIM.find(r=>ROL_ET[r])||'')]||'Yönetici';
+document.getElementById('cikisBtn').onclick=()=>cikisYap('cikis');
+
+/* ============ FIREBASE ============ */
+const ref=doc(db,"satisVeri","mrPersonel");
+const refOzet=doc(db,"satisVeri","mrPersonelOzet");
+
+/* ============ DURUM ============ */
+/* (Kişisel veri içeren mr_data.js tohum dosyası güvenlik nedeniyle kaldırıldı — veri yalnız Firestore'da) */
+let AKTIF=[], AYRILAN=[];
+let ST={tab:'aktif', q:'', sortCol:'ad', sortDir:1};
+let openMenu=null;
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function nkey(s){return trLower(s).replace(/\s+/g,' ').trim();}
+function dkey(s){ const m=String(s||'').match(/(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})/); if(!m)return 0; return (+m[3])*10000+(+m[2])*100+(+m[1]); }
+function uid(){ return 'p'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36); }
+
+/* ============ BOOT ============ */
+function boot(){
+  bindUI();
+  /* İK tam listeyi (düzenleme için), yöneticiler kişisel veri içermeyen özeti okur */
+  onSnapshot(IS_ADMIN?ref:refOzet,(snap)=>{
+    if(snap.exists() && (Array.isArray(snap.data().aktif)||Array.isArray(snap.data().ayrilan))){
+      AKTIF=snap.data().aktif||[]; AYRILAN=snap.data().ayrilan||[]; ROSTER_OK=true;
+    }else{
+      /* Doküman yok/bozuk: ASLA üzerine yazma — personel listesi korunur */
+      AKTIF=[]; AYRILAN=[]; ROSTER_OK=false; console.warn('Personel listesi okunamadı');
+    }
+    render();
+  },(err)=>{ console.error('MR veri hatası',err); AKTIF=[]; AYRILAN=[]; ROSTER_OK=false; render(); });
+}
+let ROSTER_OK=false;
+async function kaydet(){
+  /* Liste sunucudan yüklenmeden kayıt yapılmaz (boş listeyle personeli ezmemek için) */
+  if(!IS_ADMIN){ alert('Personel listesinde değişiklik yalnız İnsan Kaynakları tarafından yapılabilir.'); return; }
+  if(!ROSTER_OK){ alert('Personel listesi henüz yüklenmedi; kayıt yapılmadı. Sayfayı yenileyip tekrar deneyin.'); return; }
+  try{ await setDoc(ref,{aktif:AKTIF,ayrilan:AYRILAN,guncelleme:new Date().toISOString()},{merge:true}); await ozetYaz(); }
+  catch(err){ alert('Kaydedilemedi: '+err.message); }
+}
+/* Yöneticilerin gördüğü KİŞİSEL VERİ İÇERMEYEN özet (ik.html'deki persOzetYaz ile aynı biçim) */
+async function ozetYaz(){
+  if(!IS_ADMIN||!ROSTER_OK||AKTIF.length<50) return;
+  /* id alanı YAZILMAZ: personel kimlikleri TC'den türetildiği için ('e'+TC) özette TC sızdırırdı */
+  const yalin=p=>({ad:String(p.ad||''),departman:String(p.departman||''),bolum:String(p.bolum||''),unvan:String(p.unvan||''),giris:String(p.giris||'')});
+  const veri={aktif:AKTIF.map(yalin),ayrilan:AYRILAN.map(p=>Object.assign(yalin(p),{cikis:String(p.cikis||'')}))};
+  try{ const imza=await sha256hex(JSON.stringify(veri)); const s=await getDoc(refOzet); if(s.exists()&&s.data().imza===imza) return; await setDoc(refOzet,Object.assign(veri,{imza,guncelleme:new Date().toISOString()})); }
+  catch(e){ console.warn('Personel özeti yazılamadı',e); }
+}
+
+/* ============ RENDER ============ */
+function liste(){ return ST.tab==='aktif'?AKTIF:AYRILAN; }
+function filtreliSirali(){
+  const q=nkey(ST.q);
+  let list=liste().filter(p=>!q || nkey(p.ad).indexOf(q)>=0);
+  const c=ST.sortCol, d=ST.sortDir;
+  list=list.slice().sort((a,b)=>{
+    let r;
+    if(c==='giris'||c==='cikis') r=dkey(a[c])-dkey(b[c]);
+    else r=String(a[c]||'').localeCompare(String(b[c]||''),'tr');
+    return r*d;
+  });
+  return list;
+}
+function th(col,label){
+  const on=ST.sortCol===col; const ar=on?(ST.sortDir>0?'▲':'▼'):'';
+  return '<th class="sortable" data-sort="'+col+'">'+label+'<span class="ar">'+ar+'</span></th>';
+}
+function render(){
+  closeMenu();
+  document.getElementById('cAktif').textContent=AKTIF.length;
+  document.getElementById('cAyrilan').textContent=AYRILAN.length;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.getAttribute('data-tab')===ST.tab));
+  document.getElementById('btnAdd').style.display=(IS_ADMIN&&ST.tab==='aktif')?'':'none';
+  // datalists
+  const deps=[...new Set(AKTIF.concat(AYRILAN).map(p=>p.departman).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr'));
+  const bols=[...new Set(AKTIF.concat(AYRILAN).map(p=>p.bolum).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr'));
+  document.getElementById('depList').innerHTML=deps.map(x=>'<option value="'+esc(x)+'">').join('');
+  document.getElementById('bolList').innerHTML=bols.map(x=>'<option value="'+esc(x)+'">').join('');
+
+  const list=filtreliSirali();
+  const ayr=ST.tab==='ayrilan';
+  let html='<div class="card"><table><thead><tr>';
+  if(IS_ADMIN) html+='<th class="act"></th>';
+  html+=th('ad','Ad Soyad')+th('departman','Departman')+th('bolum','Bölüm')+th('unvan','Unvan')+th('giris','İşe Giriş');
+  if(ayr) html+=th('cikis','İşten Çıkış');
+  html+='</tr></thead><tbody>';
+  if(!list.length){ html+='</tbody></table><div class="empty">'+(ST.q?'Aramaya uyan personel yok.':'Liste boş.')+'</div></div>'; }
+  else{
+    html+=list.map(p=>{
+      let r='<tr>';
+      if(IS_ADMIN) r+='<td><button class="kebab" data-id="'+esc(p.id)+'" title="İşlemler">⋮</button></td>';
+      r+='<td><span class="nm">'+esc(trTitle(p.ad))+'</span></td>'+
+        '<td><span class="badge">'+esc(p.departman||'—')+'</span></td>'+
+        '<td><span class="badge b-bol">'+esc(p.bolum||'—')+'</span></td>'+
+        '<td>'+esc(p.unvan||'—')+'</td>'+
+        '<td class="mini">'+esc(p.giris||'')+'</td>';
+      if(ayr) r+='<td class="mini" style="color:var(--bad)">'+esc(p.cikis||'')+'</td>';
+      return r+'</tr>';
+    }).join('');
+    html+='</tbody></table></div>';
+  }
+  document.getElementById('content').innerHTML=html;
+  // bindings
+  document.querySelectorAll('thead th.sortable').forEach(h=>h.onclick=()=>{
+    const col=h.getAttribute('data-sort');
+    if(ST.sortCol===col) ST.sortDir*=-1; else { ST.sortCol=col; ST.sortDir=1; }
+    render();
+  });
+  document.querySelectorAll('.kebab').forEach(b=>b.onclick=(e)=>{ e.stopPropagation(); rowMenu(b); });
+
+  document.getElementById('footNote').innerHTML = ST.tab==='aktif'
+    ? '<b>Aktif Personel:</b> Şirketimizde çalışan güncel personel. Yeni işe giren olduğunda <b>+ Yeni Personel</b> ile ekleyin. İşten ayrılan olduğunda ismin solundaki <b>⋮</b> → <b>İşten ayrıldı olarak işaretle</b> deyin; kişi otomatik olarak İşten Ayrılan listesine geçer.'
+    : '<b>İşten Ayrılan Personel:</b> Buradaki kişiler artık şirketimizde değildir. Müdür ve direktörler bu listeye bakıp ilgili kişileri <b>Tofaş Akademi (MR)</b> sisteminden kendileri çıkarır. (Sistem Tofaş üzerinde bir işlem yapmaz.)';
+}
+
+/* ============ ⋮ MENÜ ============ */
+function closeMenu(){ if(openMenu){ openMenu.remove(); openMenu=null; } }
+function rowMenu(btn){
+  const id=btn.getAttribute('data-id');
+  let items;
+  if(ST.tab==='aktif'){
+    items=[{label:'🔚 İşten ayrıldı olarak işaretle', fn:()=>openDel(id)}];
+  }else{
+    items=[{label:'↩ Aktif listeye geri al', fn:()=>geriAl(id)},
+           {label:'🗑 Kalıcı olarak sil', danger:true, fn:()=>kaliciSil(id)}];
+  }
+  closeMenu();
+  const m=document.createElement('div'); m.className='rowmenu';
+  m.innerHTML=items.map((it,i)=>'<button data-i="'+i+'"'+(it.danger?' class="dng"':'')+'>'+it.label+'</button>').join('');
+  document.body.appendChild(m);
+  const r=btn.getBoundingClientRect();
+  m.style.top=(r.bottom+4+window.scrollY)+'px'; m.style.left=(r.left+window.scrollX)+'px';
+  const vw=document.documentElement.clientWidth; const mr=m.getBoundingClientRect();
+  if(mr.right>vw-8) m.style.left=(r.right+window.scrollX-mr.width)+'px';
+  m.querySelectorAll('button').forEach((b,i)=>b.onclick=()=>{ closeMenu(); items[i].fn(); });
+  openMenu=m;
+}
+document.addEventListener('click',(e)=>{ if(openMenu && !openMenu.contains(e.target) && !(e.target.closest&&e.target.closest('.kebab'))) closeMenu(); });
+window.addEventListener('resize',closeMenu); window.addEventListener('scroll',closeMenu,true);
+
+/* ============ UI ============ */
+function bindUI(){
+  document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{ ST.tab=t.getAttribute('data-tab'); ST.q=''; document.getElementById('q').value=''; render(); });
+  document.getElementById('q').addEventListener('input',e=>{ST.q=e.target.value;render();});
+  document.getElementById('btnAdd').onclick=()=>openAdd();
+  document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeModals);
+  document.getElementById('aSave').onclick=saveAdd;
+  document.getElementById('delGo').onclick=doDel;
+  window.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeModals(); closeMenu(); } });
+}
+function closeModals(){ document.getElementById('addOvl').classList.remove('on'); document.getElementById('delOvl').classList.remove('on'); delId=null; }
+
+/* ============ EKLE ============ */
+let editId=null;
+function openAdd(){
+  if(!IS_ADMIN) return;
+  editId=null;
+  document.getElementById('addTitle').textContent='Yeni Personel';
+  document.getElementById('aAd').value='';
+  document.getElementById('aDep').value='';
+  document.getElementById('aBol').value='';
+  document.getElementById('aUnvan').value='';
+  document.getElementById('aGiris').value=new Date().toISOString().slice(0,10);
+  document.getElementById('addOvl').classList.add('on');
+  setTimeout(()=>document.getElementById('aAd').focus(),50);
+}
+function isoToTR(iso){ try{const[y,m,d]=iso.split('-');return d+'.'+m+'.'+y;}catch(e){return iso;} }
+async function saveAdd(){
+  if(!IS_ADMIN) return;
+  const ad=document.getElementById('aAd').value.trim();
+  if(!ad){ alert('Lütfen ad soyad girin.'); return; }
+  const g=document.getElementById('aGiris').value;
+  const p={ id:uid(), ad:ad.toLocaleUpperCase('tr'),
+    departman:document.getElementById('aDep').value.trim(),
+    bolum:document.getElementById('aBol').value.trim(),
+    unvan:document.getElementById('aUnvan').value.trim(),
+    giris: g?isoToTR(g):'' };
+  AKTIF=AKTIF.concat([p]);
+  await kaydet(); closeModals();
+}
+
+/* ============ İŞTEN AYRILDI ============ */
+let delId=null;
+function openDel(id){
+  if(!IS_ADMIN) return;
+  const p=AKTIF.find(x=>x.id===id); if(!p) return;
+  delId=id;
+  document.getElementById('delWho').innerHTML='<b>'+esc(trTitle(p.ad))+'</b> — '+esc(p.departman||'')+' · '+esc(p.bolum||'')+(p.unvan?' · '+esc(p.unvan):'');
+  document.getElementById('delCikis').value=new Date().toISOString().slice(0,10);
+  document.getElementById('delOvl').classList.add('on');
+}
+async function doDel(){
+  if(!IS_ADMIN||!delId) return;
+  const p=AKTIF.find(x=>x.id===delId); if(!p) return;
+  const c=document.getElementById('delCikis').value;
+  const ayrilan=Object.assign({},p,{cikis: c?isoToTR(c):new Date().toLocaleDateString('tr-TR')});
+  AKTIF=AKTIF.filter(x=>x.id!==delId);
+  AYRILAN=[ayrilan].concat(AYRILAN);
+  await kaydet(); closeModals();
+}
+async function geriAl(id){
+  if(!IS_ADMIN) return;
+  const p=AYRILAN.find(x=>x.id===id); if(!p) return;
+  if(!confirm(trTitle(p.ad)+' aktif personel listesine geri alınsın mı?')) return;
+  const yeni=Object.assign({},p); delete yeni.cikis;
+  AYRILAN=AYRILAN.filter(x=>x.id!==id);
+  AKTIF=AKTIF.concat([yeni]);
+  await kaydet();
+}
+async function kaliciSil(id){
+  if(!IS_ADMIN) return;
+  const p=AYRILAN.find(x=>x.id===id); if(!p) return;
+  if(!confirm(trTitle(p.ad)+' kalıcı olarak silinsin mi? Bu işlem geri alınamaz.')) return;
+  AYRILAN=AYRILAN.filter(x=>x.id!==id);
+  await kaydet();
+}
+
+/* başlat */
+boot();
+</script>
+</body>
+</html>
