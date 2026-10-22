@@ -595,7 +595,7 @@ var CURRENT_WEEK_SHORT='';
       <div><div class="ct" style="font-size:14px">⏱️ Kişi Bazlı Mesai Detayı</div><div class="cs" style="margin-top:2px" id="mes-ti">— kayıt</div></div>
       <input class="sinp" id="mes-s" placeholder="🔎 İsim ara..." oninput="mesFilter()" style="width:200px">
     </div>
-    <div class="tbw"><table><thead><tr><th>#</th><th>Ad Soyad</th><th>Departman</th><th>Bölüm</th><th>Unvan</th><th>Ocak</th><th>Şubat</th><th>Mart</th><th>Nisan</th><th>Mayıs</th><th>Haziran</th><th>Temmuz</th><th>Ağustos</th><th>Toplam (BRÜT)</th><th>Pay%</th></tr></thead><tbody id="mes-tb"></tbody></table></div>
+    <div class="tbw"><table><thead id="mes-thead"><tr><th>#</th><th>Ad Soyad</th><th>Departman</th><th>Bölüm</th><th>Unvan</th><th>Ocak</th><th>Şubat</th><th>Mart</th><th>Nisan</th><th>Mayıs</th><th>Haziran</th><th>Temmuz</th><th>Ağustos</th><th>Toplam (BRÜT)</th><th>Pay%</th></tr></thead><tbody id="mes-tb"></tbody></table></div>
     <div class="pag"><span class="pagi" id="mes-pi"></span><div class="pgb"><button class="pb" id="mes-prv" onclick="mesPrv()">← Önceki</button><button class="pb" id="mes-nxt" onclick="mesNxt()">Sonraki →</button></div></div>
   </div>
 </div>
@@ -1442,6 +1442,10 @@ function izNxt(){if(_izP<Math.ceil(_izD.length/12)){_izP++;izTbl();}}
 
 // -- MESAİ --------------------------------------------------
 var _mesP=1,_mesD=[];
+/* Mesai ayları VERİDEN okunur (D.mesai_aylik) — yeni ay eklendiğinde kod değişikliği gerekmez */
+var MES_AY_KEY={'Ocak':'ocak','Şubat':'subat','Mart':'mart','Nisan':'nisan','Mayıs':'mayis','Haziran':'haziran','Temmuz':'temmuz','Ağustos':'agustos','Eylül':'eylul','Ekim':'ekim','Kasım':'kasim','Aralık':'aralik'};
+function mesAylar(){return (D.mesai_aylik||[]).map(function(x){return {ad:x.ay,key:MES_AY_KEY[x.ay]||String(x.ay||'').toLowerCase()};});}
+function mesBaslik(){var th=document.getElementById('mes-thead');if(!th)return;th.innerHTML='<tr><th>#</th><th>Ad Soyad</th><th>Departman</th><th>Bölüm</th><th>Unvan</th>'+mesAylar().map(function(a){return '<th>'+a.ad+'</th>';}).join('')+'<th>Toplam (BRÜT)</th><th>Pay%</th></tr>';}
 function mesFilter(){var q=(document.getElementById('mes-s').value||'').toLowerCase();_mesD=D.mesai_kisi.filter(function(d){return !q||(d.ad+d.dept+d.unvan).toLowerCase().includes(q);});_mesP=1;mesTbl();}
 function renderMES(){
   var mk=D.mesai_kisi||[],ma=D.mesai_aylik||[],md=D.mesai_dept||[];
@@ -1462,7 +1466,7 @@ function renderMES(){
   var mdS=[...md].sort(function(a,b){return b.toplam-a.toplam;});var mdMx=mdS[0]?mdS[0].toplam:1;
   document.getElementById('mes-dept-bars').innerHTML=mdS.map(function(x,i){return '<div class="drow"><div class="dn" title="'+x.dept+'" style="width:100px">'+x.dept+'</div><div class="dt"><div class="df" style="width:'+(x.toplam/mdMx*100)+'%;background:linear-gradient(90deg,'+PAL[i%PAL.length]+'66,'+PAL[i%PAL.length]+')"></div></div><div class="dc" style="width:80px;font-size:10px;text-align:right">'+(x.toplam/1000).toFixed(0)+'K  TL</div></div>';}).join('');
   // Bölüm grafikleri
-  var AY_LBL=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos'];
+  var AY_LBL=mesAylar().map(function(a){return a.ad;});
   var mb=D.mes_bolum||{servis:{},satis:{},idari:{}};
   function makeBChart(cid,bData,detay){
     var el=document.getElementById(cid);if(!el)return;
@@ -1476,13 +1480,15 @@ function renderMES(){
   makeBChart('mes-servis-chart',mb.servis,true);
   makeBChart('mes-satis-chart',mb.satis,false);
   makeBChart('mes-idari-chart',mb.idari,true);
+  mesBaslik();
   _mesD=[...mk];_mesP=1;mesTbl();
 }
 function mesTbl(){
   var PS=12,d=_mesD,tp=Math.ceil(d.length/PS)||1;
   document.getElementById('mes-ti').textContent=d.length+' kayıt';
   var sl=d.slice((_mesP-1)*PS,_mesP*PS);
-  document.getElementById('mes-tb').innerHTML=sl.length?sl.map(function(r,i){return '<tr><td style="color:var(--t4);font-size:10.5px">'+(_mesP-1)*PS+(i+1)+'</td><td><strong>'+r.ad+'</strong></td><td style="color:var(--t2);font-size:12px">'+r.dept+'</td><td style="color:var(--t3);font-size:12px">'+r.bolum+'</td><td style="color:var(--t4);font-size:11px">'+r.unvan+'</td><td style="font-size:11px;color:var(--t3)">'+(r.ocak?r.ocak.toLocaleString('tr-TR')+'   TL':'—')+'</td><td style="font-size:11px;color:var(--t3)">'+(r.subat?r.subat.toLocaleString('tr-TR')+'  TL':'—')+'</td><td style="font-size:11px;color:var(--t3)">'+(r.mart?r.mart.toLocaleString('tr-TR')+'  TL':'—')+'</td><td style="font-size:11px;color:var(--t3)">'+(r.nisan?r.nisan.toLocaleString('tr-TR')+'  TL':'—')+'</td><td style="font-size:11px;color:var(--t3)">'+(r.mayis?r.mayis.toLocaleString('tr-TR')+'  TL':'—')+'</td><td style="font-size:11px;color:var(--t3)">'+(r.haziran?r.haziran.toLocaleString('tr-TR')+'  TL':'—')+'</td><td style="font-size:11px;color:var(--t3)">'+(r.temmuz?r.temmuz.toLocaleString('tr-TR')+'  TL':'—')+'</td><td style="font-size:11px;color:var(--t3)">'+(r.agustos?r.agustos.toLocaleString('tr-TR')+'  TL':'—')+'</td><td><strong style="color:#B45309">'+r.toplam.toLocaleString('tr-TR')+'  TL</strong></td><td><span style="color:#2563EB;font-weight:700">'+r.pct+'%</span></td></tr>';}).join(''):'<tr><td colspan="14" class="nod">Kayıt bulunamadı</td></tr>';
+  var _ay=mesAylar(),_tdS='font-size:11px;color:var(--t3)';
+  document.getElementById('mes-tb').innerHTML=sl.length?sl.map(function(r,i){return '<tr><td style="color:var(--t4);font-size:10.5px">'+((_mesP-1)*PS+(i+1))+'</td><td><strong>'+r.ad+'</strong></td><td style="color:var(--t2);font-size:12px">'+r.dept+'</td><td style="color:var(--t3);font-size:12px">'+r.bolum+'</td><td style="color:var(--t4);font-size:11px">'+r.unvan+'</td>'+_ay.map(function(a){var v=r[a.key];return '<td style="'+_tdS+'">'+(v?v.toLocaleString('tr-TR')+'  TL':'—')+'</td>';}).join('')+'<td><strong style="color:#B45309">'+r.toplam.toLocaleString('tr-TR')+'  TL</strong></td><td><span style="color:#2563EB;font-weight:700">'+r.pct+'%</span></td></tr>';}).join(''):'<tr><td colspan="'+(7+_ay.length)+'" class="nod">Kayıt bulunamadı</td></tr>';
   document.getElementById('mes-pi').textContent='Sayfa '+_mesP+'/'+tp;
   document.getElementById('mes-prv').disabled=_mesP===1;
   document.getElementById('mes-nxt').disabled=_mesP===tp||tp===0;
@@ -1498,7 +1504,7 @@ function arbFilter(){
   var q=(document.getElementById('arb-s').value||'').toLowerCase();
   _arbD=D.arabuluculuk.filter(function(d){
     if(_arbDur&&d.arabulucu!==_arbDur)return false;
-    if(dept&&d.dept!==dept)return false;
+    if(dept&&String(d.bolum||'').toLocaleLowerCase('tr')!==String(dept).toLocaleLowerCase('tr'))return false; /* seçenekler BÖLÜM (Servis/Satış/İdari); önceden departmanla kıyaslanıp hep 0 kayıt dönüyordu */
     if(q&&!d.ad.toLowerCase().includes(q))return false;
     return true;
   });
@@ -2412,7 +2418,8 @@ function exportReport(type) {
   }
 
   function mesaiSheet() {
-    var headers = ['Ad Soyad','Departman','Bölüm','Unvan','Ocak','Şubat','Mart','Nisan','Mayıs','Toplam','%'];
+    var _ayX = mesAylar();
+    var headers = ['Ad Soyad','Departman','Bölüm','Unvan'].concat(_ayX.map(function(a){return a.ad;}),['Toplam','%']);
     var rows = [
       ['MESAİ RAPORU (BRÜT)'],
       ['V.İ. hariç  ·  '+tarihGosterim],
@@ -2421,7 +2428,7 @@ function exportReport(type) {
     ];
     var rowClasses = {0:'title',1:'subtitle',3:'header'};
     mesaiF.forEach(function(m){
-      rows.push([m.ad,m.dept,m.bolum,m.unvan,m.ocak||0,m.subat||0,m.mart||0,m.nisan||0,m.mayis||0,m.toplam||0,m.pct||0]);
+      rows.push([m.ad,m.dept,m.bolum,m.unvan].concat(_ayX.map(function(a){return m[a.key]||0;}),[m.toplam||0,m.pct||0]));
     });
     return {name:'Mesai', rows:rows, rowClasses:rowClasses, zebraStart:4};
   }
