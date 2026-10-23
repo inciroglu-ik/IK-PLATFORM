@@ -110,3 +110,15 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "...\test\ik\harness_olustur
 # Tarayıcıda: http://localhost:<port>/calisan/pano2.html?rol=ik|direktor|idari_mudur&hosgeldin=0[&veri=bos|hata][#ay]
 ```
 Hazır işareti: kabuk her çizimden sonra `window.__TEST_HAZIR = true` yapar. Sekme düğmeleri `#t-<id>` (A10 `__TEST.sekme(id)` çalışır). Konsol hatası 0 olmalı. Eksik modülün 404 kaydı tek beklenen istisnadır.
+
+## 7. Ana adres, sürüm ve kabuk pencereleri (23.10.2026)
+- Yeni pano **ana adreste**: `index.html` (eski adı `pano.html` artık yalnız `./`'e yönlendirir). Eski pano `klasik.html`
+  (Dışa Aktar menüsü → "Klasik panoda aç"). İkisi aynı veriyi (`satisVeri/ikPano`) okur.
+- **Sürüm kontrolü:** `index.html` başındaki `<meta name="version">` ile hemen altındaki betikteki `v` değeri BİRLİKTE
+  artırılır (telefonlarda önbellekte kalan eski kopya, oturum başına bir kez sunucudaki sürümle kıyaslanıp yenilenir).
+- **Çalışan ara** (üst bant "Ara" düğmesi / Ctrl+K): klasik panodaki 6 liste (normal, stajyer, gecici, vi, ayrilanlar,
+  isealim), Türkçe katlamalı eşleşme, en fazla 15 sonuç; başı eşleşenler üstte. Sonuca tıklayınca profil kartı açılır.
+- **Profil kartı** (`profilAc(ad)`): çalışan bilgileri · ayrılış · arabuluculuk · işe alım · izin (renk: <0 kırmızı, 30+ amber,
+  diğer yeşil — klasik kural) · mesai. Tablolarda `td.ad-hucre` hücresindeki kişi adları otomatik tıklanabilir olur
+  (MutationObserver; içinde düğme olan hücreler — ör. İşten Ayrılanlar — kendi kişi kartını kullanır).
+- **🔔 Uyarılar**: `O.uyarilar(D)` (klasik getAlerts ile aynı kurallar); zil üstündeki sayı = uyarı adedi.

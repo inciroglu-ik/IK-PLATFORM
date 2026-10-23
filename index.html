@@ -15,8 +15,15 @@
 <link rel="stylesheet" href="pano/pano.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
-<script>/* Eski PWA service worker kayıtlarını temizle (klasik panodaki satırla aynı) */
-if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister();});}).catch(function(){});}</script>
+<meta name="version" content="202610231500">
+<script>/* Eski PWA service worker kayıtlarını ve önbellekleri temizle (klasik panodaki satırlarla aynı) */
+if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister();});}).catch(function(){});}
+if('caches' in window){caches.keys().then(function(k){k.forEach(function(c){caches.delete(c);});}).catch(function(){});}
+/* Güncel sürüm kontrolü (klasik panodaki mekanizma): telefon önbellekten eski bir kopya gösteriyorsa sunucudaki dosyanın
+   sürümü (meta version) farklı çıkar ve sayfa önbelleğe takılmayan bir adresle yeniden yüklenir. Oturum başına bir kez.
+   Yeni sürüm yayınlarken yukarıdaki meta version ile buradaki değeri BİRLİKTE artırın. */
+(function(){var v='202610231500';try{if(sessionStorage.getItem('ikv2_kontrol'))return;sessionStorage.setItem('ikv2_kontrol','1');
+fetch(location.pathname+'?_taze='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=t.match(/name="version"\s+content="(\d+)"/);if(m&&m[1]&&m[1]!==v){location.replace(location.pathname+'?_cb='+Date.now()+location.hash);}}).catch(function(){});}catch(e){}})();</script>
 </head>
 <!--
   İK DASHBOARD 2.0 · KABUK (index.html — 23.10.2026'dan beri ana adres; önizleme adı pano.html buraya yönlenir)
@@ -208,6 +215,7 @@ function baslat(p) {
   etiketUygula(etiket);
   menuKur();
   ustBantKur();
+  isimBaglantiKur();
   filtreKur();
   window.addEventListener('hashchange', () => git(hashId()));
   if (location.hash !== '#' + hashId()) history.replaceState(null, '', '#' + hashId());
@@ -242,6 +250,13 @@ function acilirBagla(dugme, menu) {
 
 function ustBantKur() {
   const sag = $('ustSag');
+  /* Çalışan ara (Ctrl+K) + 🔔 uyarılar — klasik panodaki isim araması ve uyarı düğmesinin karşılığı */
+  const araB = O.el('button', { type: 'button', class: 'btn btn-koyu', id: 'genelAraDugme', title: 'Çalışan ara (Ctrl+K)', 'aria-label': 'Çalışan ara', html: O.ikon('ara') + '<span class="etk">Ara</span>' });
+  araB.addEventListener('click', () => aramaAc());
+  const uy = O.uyarilar(B.D);
+  const zilB = O.el('button', { type: 'button', class: 'btn btn-koyu zil-dugme', id: 'uyariDugme', title: 'Uyarılar', 'aria-label': 'Uyarılar' + (uy.length ? ' (' + uy.length + ')' : ''), html: O.ikon('zil') + (uy.length ? '<span class="zil-sayi">' + uy.length + '</span>' : '') });
+  zilB.addEventListener('click', () => uyarilarAc());
+  sag.append(araB, zilB);
   /* Dışa Aktar menüsü (index.html'deki 7 rapor + klasik panoya geçiş) */
   const mk = O.el('div', { class: 'menu-kap' });
   const dd = O.el('button', { type: 'button', class: 'btn btn-koyu', id: 'disaAktarDugme', title: 'Dışa Aktar', html: O.ikon('indir') + '<span class="etk">Dışa Aktar</span>' + O.ikon('asagi', 'ok-asagi') });
@@ -275,6 +290,200 @@ function ustBantKur() {
   const ck = O.el('button', { type: 'button', class: 'btn btn-hayalet', title: 'Çıkış', html: O.ikon('cikis') + '<span class="etk">Çıkış</span>' });
   ck.addEventListener('click', () => cikisYap('cikis'));
   sag.append(sd, ck);
+}
+
+/* ==========================================================================
+   ÇALIŞAN ARA · UYARILAR · PROFİL KARTI
+   Klasik panodaki doGlobalSearch / getAlerts+openAlerts / openProfile karşılığı. Aynı listeler, aynı kurallar;
+   arama Türkçe harf katlamalı (ö=o, ı=i…). Tablolardaki kişi adları (td.ad-hucre) tıklanınca profil kartı açılır.
+   ========================================================================== */
+let acikPencere = null;
+function pencereKapat(hemen) {
+  if (!acikPencere) return;
+  const p = acikPencere;
+  acikPencere = null;
+  document.removeEventListener('keydown', p.tus, true);
+  document.body.classList.remove('pk-modal-acik');
+  p.ort.classList.remove('acik');
+  if (hemen || O.azHareket()) p.ort.remove(); else setTimeout(() => p.ort.remove(), 260);
+  if (!hemen && p.onceki && document.contains(p.onceki) && typeof p.onceki.focus === 'function') p.onceki.focus({ preventScroll: true });
+}
+/** Ortak pencere: Esc kapatır · Tab pencere içinde döner · dışına tıklayınca kapanır · kapanınca odak açan düğmeye döner */
+function pencereAc(sinif, etiket, icerik, ilkOdak) {
+  const onceki = acikPencere ? acikPencere.onceki : document.activeElement;
+  pencereKapat(true);
+  const pen = O.el('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': etiket }, ...icerik);
+  const ort = O.el('div', { class: 'modal-ort ' + sinif }, pen);
+  const tus = (e) => {
+    if (e.key === 'Escape') { e.preventDefault(); pencereKapat(false); return; }
+    if (e.key !== 'Tab') return;
+    const od = [...pen.querySelectorAll('button, [href], input, select, [tabindex]:not([tabindex="-1"])')].filter((x) => !x.disabled && x.offsetParent !== null);
+    if (!od.length) return;
+    const ilk = od[0], son = od[od.length - 1];
+    if (e.shiftKey && document.activeElement === ilk) { e.preventDefault(); son.focus(); }
+    else if (!e.shiftKey && document.activeElement === son) { e.preventDefault(); ilk.focus(); }
+  };
+  ort.addEventListener('click', (e) => { if (e.target === ort) pencereKapat(false); });
+  document.addEventListener('keydown', tus, true);
+  document.body.append(ort);
+  document.body.classList.add('pk-modal-acik');
+  acikPencere = { ort, onceki, tus };
+  requestAnimationFrame(() => { ort.classList.add('acik'); const o = ilkOdak ? ilkOdak() : pen.querySelector('.modal-alt .btn'); if (o) o.focus({ preventScroll: true }); });
+  return pen;
+}
+function kapatX() { const b = O.el('button', { class: 'btn btn-hayalet pk-kapat-x', type: 'button', 'aria-label': 'Kapat', html: O.ikon('carpi') }); b.addEventListener('click', () => pencereKapat(false)); return b; }
+function kapatAlt() { const b = O.el('button', { class: 'btn btn-lacivert', type: 'button', text: 'Kapat' }); b.addEventListener('click', () => pencereKapat(false)); return O.el('div', { class: 'modal-alt' }, b); }
+const basHarf = (ad) => O.trBuyuk(String(ad || '').trim().split(/\s+/).map((w) => w.charAt(0)).slice(0, 2).join('')) || '?';
+const bosDegil = (x) => !O.bosMu(x) && String(x).trim() !== '-';
+
+/* Arama: klasik panodaki 6 liste, aynı sıra; en fazla 15 sonuç */
+const ARA_LISTELER = [['normal', 'Aktif Personel', 'cip-bilgi'], ['stajyer', 'Stajyer', 'cip-pirinc'], ['gecici', 'Analist Öğrenci', 'cip-uy'], ['vi', 'V.İ.', 'cip-ey'], ['ayrilanlar', 'İşten Ayrılan', 'cip-ht'], ['isealim', 'İşe Alınan', 'cip-ok']];
+let araIndeks = null, araIndeksD = null;
+function aramaIndeksi() {
+  if (araIndeks && araIndeksD === B.D) return araIndeks;
+  const D = B.D || {};
+  araIndeks = [];
+  ARA_LISTELER.forEach(([k, kat, cip]) => (D[k] || []).forEach((p) => { if (p && p.ad) araIndeks.push({ ad: p.ad, anahtar: O.aramaAnahtari(p.ad), dept: p.dept, bolum: p.bolum, unvan: p.unvan, kat, cip }); }));
+  araIndeksD = B.D;
+  return araIndeks;
+}
+function aramaAc() {
+  const girdi = O.el('input', { class: 'girdi', type: 'search', placeholder: 'Ad soyad yazın…', 'aria-label': 'Çalışan ara', autocomplete: 'off', spellcheck: 'false' });
+  const sonuc = O.el('div', { class: 'ara-sonuclar', role: 'listbox', 'aria-label': 'Arama sonuçları' });
+  const ust = O.el('div', { class: 'ara-ust' }, O.el('span', { class: 'ara-ust-ikon', html: O.ikon('ara') }), girdi, O.el('kbd', { text: 'Esc' }));
+  const dip = O.el('div', { class: 'ara-dip', text: 'Aktif personel, stajyer, analist öğrenci, V.İ., işten ayrılanlar ve işe alınanlarda arar · ↑ ↓ ile gezin, Enter ile profili açın' });
+  const pen = pencereAc('ara-ort', 'Çalışan ara', [ust, sonuc, dip], () => girdi);
+  const yaz = () => {
+    const q = O.aramaAnahtari(girdi.value);
+    sonuc.textContent = '';
+    if (q.length < 2) { sonuc.append(O.el('div', { class: 'ara-bos', text: 'Aramak için en az 2 harf yazın.' })); return; }
+    /* Sıra: adı aranan harflerle başlayanlar → bir kelimesi onunla başlayanlar → içinde geçenler (liste sırası korunur) */
+    const bulunan = aramaIndeksi().filter((x) => x.anahtar.includes(q))
+      .map((x, i) => ({ x, i, p: x.anahtar.startsWith(q) ? 0 : x.anahtar.includes(' ' + q) ? 1 : 2 }))
+      .sort((a, b) => a.p - b.p || a.i - b.i).map((o) => o.x);
+    if (!bulunan.length) { sonuc.append(O.el('div', { class: 'ara-bos', text: 'Sonuç bulunamadı.' })); return; }
+    bulunan.slice(0, 15).forEach((r) => {
+      const b = O.el('button', { type: 'button', class: 'ara-sonuc', role: 'option' },
+        O.el('span', { class: 'pk-avatar kucuk', 'aria-hidden': 'true', text: basHarf(r.ad) }),
+        O.el('span', { class: 'ara-sonuc-ic' }, O.el('b', { text: r.ad }), O.el('small', { text: [r.dept, r.bolum, r.unvan].filter(bosDegil).join(' · ') || '—' })),
+        O.el('span', { class: 'cip ' + r.cip, text: r.kat }));
+      b.addEventListener('click', () => profilAc(r.ad));
+      sonuc.append(b);
+    });
+    if (bulunan.length > 15) sonuc.append(O.el('div', { class: 'ara-fazla', text: '+' + O.sayi(bulunan.length - 15) + ' sonuç daha · aramayı daraltın' }));
+  };
+  let zaman = null;
+  girdi.addEventListener('input', () => { clearTimeout(zaman); zaman = setTimeout(yaz, 90); });
+  pen.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    const s = [...sonuc.querySelectorAll('.ara-sonuc')];
+    if (!s.length) return;
+    e.preventDefault();
+    const i = s.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown') (i < 0 ? s[0] : s[Math.min(s.length - 1, i + 1)]).focus();
+    else if (i <= 0) girdi.focus(); else s[i - 1].focus();
+  });
+  yaz();
+}
+
+/* Profil kartı: personel / ayrılış / arabuluculuk / işe alım / izin / mesai — eşleşme ad ile (klasik openProfile gibi) */
+function profilAc(ad) {
+  const D = B.D || {};
+  const bul = (k) => { const a = D[k] || []; for (let i = 0; i < a.length; i++) if (a[i] && a[i].ad === ad) return a[i]; return null; };
+  const normal = bul('normal'), stajyer = bul('stajyer'), gecici = bul('gecici'), vi = bul('vi');
+  const personel = normal || stajyer || gecici || vi;
+  const ayrilan = bul('ayrilanlar'), isealim = bul('isealim'), izin = bul('izin'), mesai = bul('mesai_kisi'), arb = bul('arabuluculuk');
+  const info = personel || ayrilan || isealim || arb || izin || mesai || {};
+  const cipler = O.el('div', { class: 'pk-cipler' });
+  const cip = (s, m) => cipler.append(O.el('span', { class: 'cip ' + s, text: m }));
+  if (ayrilan) { cip('cip-ht', 'İşten ayrıldı'); const ist = O.istenenMi(ayrilan); cip(ist ? 'cip-ey' : 'cip-pirinc', ist ? 'İstenen ayrılış' : 'İstenmeyen ayrılış'); }
+  else if (normal) cip('cip-bilgi', 'Aktif personel');
+  else if (stajyer) cip('cip-pirinc', 'Stajyer');
+  else if (gecici) cip('cip-uy', 'Analist öğrenci');
+  else if (vi) cip('cip-ey', 'V.İ.');
+  if (isealim && !ayrilan) cip('cip-ok', 'Yeni işe alım');
+  const ust = O.el('div', { class: 'modal-ust pk-ust' },
+    O.el('div', { class: 'pk-avatar', 'aria-hidden': 'true', text: basHarf(ad) }),
+    O.el('div', { class: 'pk-bas' }, O.el('h3', { text: ad || '—' }), O.el('p', { text: [info.unvan, info.dept, info.bolum].filter(bosDegil).join(' · ') || '—' }), cipler),
+    kapatX());
+  const govde = O.el('div', { class: 'modal-govde' });
+  const bolum = (baslik, satirlar) => {
+    const s = O.el('section', { class: 'pk-bolum' }, O.el('h4', { text: baslik }));
+    satirlar.forEach(([et, deger]) => {
+      const b = O.el('b');
+      if (deger instanceof Node) b.append(deger); else b.textContent = bosDegil(deger) ? String(deger) : '—';
+      s.append(O.el('div', { class: 'pk-satir' }, O.el('span', { text: et }), b));
+    });
+    govde.append(s);
+  };
+  bolum('Çalışan bilgileri', [['Departman', info.dept], ['Bölüm', info.bolum], ['Unvan', info.unvan], ['Çalışma şekli', personel ? personel.cs : null]]);
+  if (ayrilan) bolum('Ayrılış', [['Ayrılış tarihi', O.tarih(ayrilan.tarih)], ['Neden', ayrilan.neden], ['Çalışma süresi', ayrilan.sure], ['İstenen', O.istenenMi(ayrilan) ? 'Evet' : 'Hayır']]);
+  if (arb) bolum('Arabuluculuk', [['Durum', arb.arabulucu], ['Not', arb.not_], ['Risk', arb.risk ? O.trBaslik(arb.risk) : null]]);
+  if (isealim) bolum('İşe alım', [['Başlama', O.tarih(isealim.tarih)]]);
+  if (izin) {
+    const bk = izin.bakiye;
+    /* Renk klasik panodaki kuralla aynı: negatif kırmızı · 30+ gün amber · diğerleri yeşil */
+    const ton = O.bosMu(bk) ? '' : (bk < 0 ? 'pk-ht' : bk >= 30 ? 'pk-uy' : 'pk-ok');
+    bolum('İzin', [['Bakiye', O.bosMu(bk) ? null : O.el('span', { class: ton, text: O.sayi(bk, 'oto') + ' gün' })], ['Kullanılan', O.bosMu(izin.kullanilan) ? null : O.sayi(izin.kullanilan, 'oto') + ' gün']]);
+  }
+  if (mesai) bolum('Mesai (brüt)', [['Toplam', O.para(mesai.toplam)], ['Şirket payı', O.yuzde(mesai.pct)]]);
+  pencereAc('pk-modal', (ad || 'Kişi') + ' · profil kartı', [ust, govde, kapatAlt()]);
+}
+
+/* Uyarılar: ortak.js uyarilar() = klasik getAlerts (aynı kurallar) */
+function uyarilarAc() {
+  const uy = O.uyarilar(B.D);
+  const TUR = { danger: ['ht', 'Kritik'], warning: ['uy', 'Dikkat'], info: ['bilgi', 'Bilgi'] };
+  const ust = O.el('div', { class: 'modal-ust' },
+    O.el('div', { class: 'modal-ikon pk-zil-ikon', html: O.ikon('zil') }),
+    O.el('div', { class: 'pk-bas' }, O.el('h3', { text: 'Uyarılar' }), O.el('p', { text: uy.length ? uy.length + ' uyarı · haftalık paketten otomatik üretilir' : 'Şu an uyarı yok' })),
+    kapatX());
+  const govde = O.el('div', { class: 'modal-govde' });
+  if (!uy.length) govde.append(O.el('div', { class: 'ara-bos', text: 'Uyarı bulunmuyor.' }));
+  uy.forEach((a) => {
+    const t = TUR[a.type] || TUR.info;
+    govde.append(O.el('div', { class: 'uyari-oge uyari-' + t[0] }, O.el('span', { class: 'cip cip-' + t[0], text: t[1] }), O.el('b', { text: a.title }), O.el('p', { text: a.msg })));
+  });
+  govde.append(O.el('p', { class: 'uyari-dip', text: 'Kurallar klasik panoyla aynıdır: YTD turnover %15 üzerinde · negatif izin bakiyesi · bir departmanda yıl içinde 5 ve üzeri çıkış · 30 gün ve üzeri birikmiş izin.' }));
+  pencereAc('uyari-modal', 'Uyarılar', [ust, govde, kapatAlt()]);
+}
+
+/* Tablolardaki kişi adları → profil kartı (klasik isimTiklamaKur karşılığı; kendi kişi kartı olan satırlar hariç) */
+let adKumesi = null, adKumesiD = null;
+function adlar() {
+  if (adKumesi && adKumesiD === B.D) return adKumesi;
+  const D = B.D || {};
+  adKumesi = new Set();
+  ['normal', 'stajyer', 'gecici', 'vi', 'ayrilanlar', 'isealim'].forEach((k) => (D[k] || []).forEach((p) => { if (p && p.ad) adKumesi.add(String(p.ad).trim()); }));
+  adKumesiD = B.D;
+  return adKumesi;
+}
+function isimBagla(kok) {
+  if (!B || !kok || !kok.querySelectorAll) return;
+  const s = adlar();
+  kok.querySelectorAll('td.ad-hucre:not([data-pk])').forEach((td) => {
+    td.dataset.pk = '1';
+    if (td.querySelector('button, a, input')) return;
+    if (!s.has(td.textContent.trim())) return;
+    td.classList.add('kisi-link');
+    td.tabIndex = 0;
+    td.setAttribute('role', 'button');
+    td.title = 'Profili aç';
+  });
+}
+function isimBaglantiKur() {
+  const icerik = $('icerik');
+  new MutationObserver((m) => m.forEach((x) => x.addedNodes.forEach((n) => { if (n.nodeType === 1) isimBagla(n.matches('td') ? n.parentNode : n); }))).observe(icerik, { childList: true, subtree: true });
+  isimBagla(icerik);
+  const ac = (e) => { const td = e.target.closest && e.target.closest('td.kisi-link'); if (!td) return false; e.stopPropagation(); profilAc(td.textContent.trim()); return true; };
+  icerik.addEventListener('click', ac);
+  icerik.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('td.kisi-link')) { e.preventDefault(); ac(e); } });
+  /* Ctrl+K → çalışan ara (başka bir pencere açıkken çalışmaz) */
+  document.addEventListener('keydown', (e) => {
+    if (!(e.ctrlKey || e.metaKey) || (e.key !== 'k' && e.key !== 'K')) return;
+    e.preventDefault();
+    if (!document.querySelector('.modal-ort')) aramaAc();
+  });
 }
 
 /* ==========================================================================
