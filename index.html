@@ -15,14 +15,14 @@
 <link rel="stylesheet" href="pano/pano.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
-<meta name="version" content="202610231500">
+<meta name="version" content="202610241600">
 <script>/* Eski PWA service worker kayıtlarını ve önbellekleri temizle (klasik panodaki satırlarla aynı) */
 if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister();});}).catch(function(){});}
 if('caches' in window){caches.keys().then(function(k){k.forEach(function(c){caches.delete(c);});}).catch(function(){});}
 /* Güncel sürüm kontrolü (klasik panodaki mekanizma): telefon önbellekten eski bir kopya gösteriyorsa sunucudaki dosyanın
    sürümü (meta version) farklı çıkar ve sayfa önbelleğe takılmayan bir adresle yeniden yüklenir. Oturum başına bir kez.
    Yeni sürüm yayınlarken yukarıdaki meta version ile buradaki değeri BİRLİKTE artırın. */
-(function(){var v='202610231500';try{if(sessionStorage.getItem('ikv2_kontrol'))return;sessionStorage.setItem('ikv2_kontrol','1');
+(function(){var v='202610241600';try{if(sessionStorage.getItem('ikv2_kontrol'))return;sessionStorage.setItem('ikv2_kontrol','1');
 fetch(location.pathname+'?_taze='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=t.match(/name="version"\s+content="(\d+)"/);if(m&&m[1]&&m[1]!==v){location.replace(location.pathname+'?_cb='+Date.now()+location.hash);}}).catch(function(){});}catch(e){}})();</script>
 </head>
 <!--
