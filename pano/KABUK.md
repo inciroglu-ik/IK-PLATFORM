@@ -122,3 +122,21 @@ Hazır işareti: kabuk her çizimden sonra `window.__TEST_HAZIR = true` yapar. S
   diğer yeşil — klasik kural) · mesai. Tablolarda `td.ad-hucre` hücresindeki kişi adları otomatik tıklanabilir olur
   (MutationObserver; içinde düğme olan hücreler — ör. İşten Ayrılanlar — kendi kişi kartını kullanır).
 - **🔔 Uyarılar**: `O.uyarilar(D)` (klasik getAlerts ile aynı kurallar); zil üstündeki sayı = uyarı adedi.
+
+## 8. Personel hareketi — işe giriş / işten çıkış (24.10.2026)
+Motor `pano/hareket.js` (saf; Firebase yok), arayüz kabukta (`hareketAc`, `cikisFormu`, `girisFormu`, `gunlukCiz`).
+- **Yetki:** yalnız kurulum koduyla açılan İK hesabı (`OTURUM.hesap.olusturan === 'kurulum'`, kullanıcı kararı "yalnız ben").
+  Diğer roller sonucu görür; üst bantta "+N canlı hareket" çipi herkese görünür. Firestore kuralı değişmedi (İK yazar).
+- **Saklama:** `satisVeri/ikPano` belgesinin `hareketler` dizisi (runTransaction ile). Haftalık yükleme `setDoc(..., {merge:true})`
+  ile bu alanı korur (yeni pano + klasik.html).
+- **Excel resmî kaynak:** paket TABAN; hareket yokken paket aynen gösterilir. Haftalık paket gelince Excel'e işlenmiş hareket
+  kendiliğinden "pakette" sayılır (çıkış: kişi paketin aktif listelerinde yok · giriş: aktif listelerde ya da giriş tarihinden
+  sonra ayrılanlarda var) → iki kez sayılmaz. Eşleşme ad soyad (Türkçe katlamalı) ile; TC tutulmaz.
+- **Formüller (Excel TURNOVER R):** YTD = (çıkış − V.İ. çıkışı) ÷ ((Ocak personeli `MONTHLY_HC.y2026[0]` + güncel personel) ÷ 2);
+  taban pay Excel'in oranından geri çözülür (`round(ytd/100 × eski ortalama)`), hareketler eklenir. Simülasyon = YTD ÷ hafta × 52
+  (hafta = max(bugünün ISO haftası, paket haftası)). İstenen/istenmeyen aynı yöntem. Kıdem ortalaması ve ort. çıkış/ay delta ile.
+- **Kapsam:** turnover/ayrılanlar/işe alım yalnız tam zamanlı (`normal`); stajyer/analist/V.İ. kendi sayısından düşer
+  (V.İ. çıkışı turnover satırının `cikis`ına girer, `cikis_asil`ına girmez). Çıkışta izin kaydı silinir, kalan bakiye hareket
+  kaydında (`kalanIzin`). Girişte izin 0 gün. Kapanmış ayların ay sonu kadrosu değişmez; içinde bulunulan ayınki güncel personele eşitlenir.
+- **Test:** `tasarim-2026\test\ik\hk_test.ps1` (+ `hk_test.js`): motor (bağımsız formülle) + arayüz (yetki, çıkış, giriş,
+  kalıcılık `kalici=1`, geri al, direktör, mobil). Mock: `?kurucu=0` kurulum dışı İK hesabı.

@@ -399,6 +399,55 @@ body.pk-modal-acik { overflow: hidden; }
 .uyari-oge b { font-size: 14px; font-weight: 600; color: var(--metin-1); }
 .uyari-oge p { font-size: 12.5px; color: var(--metin-2); line-height: 1.5; overflow-wrap: anywhere; }
 .uyari-dip { font-size: 11.5px; color: var(--metin-3); line-height: 1.5; }
+/* Personel hareketi penceresi (işe giriş / işten çıkış) */
+.zil-sayi.bilgi { background: var(--uy-700); }
+.hareket-cip { display: inline-flex; align-items: center; height: 18px; padding: 0 7px; margin-left: 8px; border-radius: 9px; background: rgba(207, 167, 90, .18); color: var(--pir-300); font-size: 10.5px; font-weight: 600; letter-spacing: .02em; white-space: nowrap; }
+.hk-modal .modal { width: min(780px, 100%); }
+.hk-modal .modal-ust { align-items: flex-start; }
+.hk-sekmeler { margin-top: 10px; }
+.hk-govde { gap: 16px; }
+.hk-izgara { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
+.hk-alan.genis { grid-column: 1 / -1; }
+.hk-alan[hidden], .hk-kisi[hidden], .hk-sonuclar[hidden] { display: none !important; }
+.hk-alan .secim, .hk-alan .girdi { width: 100%; }
+.hk-alan .cip { align-self: flex-start; margin-top: 4px; }
+.hk-ipucu { font-size: 11.5px; color: var(--metin-3); line-height: 1.45; }
+.hk-metin { min-height: 58px; resize: vertical; padding-top: 8px; font: inherit; }
+.hk-ara-kap .ara-kutu { flex: 0 0 auto; max-width: none; }
+.hk-sonuclar { border-radius: 12px; box-shadow: inset 0 0 0 1px var(--cizgi-2); background: var(--yuzey-kart); padding: 4px; max-height: 260px; overflow: auto; }
+.hk-kisi { display: grid; gap: 8px; padding: 12px 14px; border-radius: 12px; background: var(--n-25); box-shadow: inset 0 0 0 1px var(--cizgi-1); }
+.hk-kisi-bas { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.hk-kisi-bas b { display: block; font-weight: 600; color: var(--metin-1); }
+.hk-kisi-bas small { font-size: 12px; color: var(--metin-3); }
+.hk-kisi-bilgi { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 12.5px; color: var(--metin-2); }
+.hk-uyari { flex-basis: 100%; color: var(--uy-700); }
+.hk-oniz { padding: 14px 16px; border-radius: 12px; background: var(--lac-50); box-shadow: inset 0 0 0 1px var(--lac-100); }
+.hk-oniz-bos { font-size: 12.5px; color: var(--metin-3); }
+.hk-oniz-baslik { font-size: var(--fs-2xs); font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--lac-700); margin-bottom: 6px; }
+.hk-oniz-tablo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
+.hk-oniz-satir { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--lac-100); font-size: 12.5px; }
+.hk-oniz-satir span { color: var(--metin-2); }
+.hk-oniz-satir b { font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.hk-oniz-satir s { color: var(--metin-3); text-decoration: none; font-weight: 500; }
+.hk-oniz-satir em { font-style: normal; color: var(--lac-800); }
+.hk-ekler { margin: 8px 0 0; padding-left: 18px; font-size: 12px; color: var(--metin-2); line-height: 1.55; }
+.hk-alt { display: flex; align-items: center; justify-content: flex-end; gap: 12px; flex-wrap: wrap; }
+.hk-mesaj { flex: 1; font-size: 12.5px; color: var(--metin-2); }
+.hk-mesaj.hata { color: var(--ht-700); }
+.hk-oniz > .hk-mesaj.hata { display: block; }
+.hk-not { font-size: 12.5px; color: var(--metin-2); line-height: 1.5; padding: 10px 12px; border-radius: 10px; background: var(--n-25); box-shadow: inset 0 0 0 1px var(--cizgi-1); }
+.hk-gunluk { display: grid; gap: 8px; }
+.hk-satir { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--cizgi-1); }
+.hk-satir-ic { display: grid; gap: 1px; min-width: 0; }
+.hk-satir-ic b { font-weight: 600; font-size: 13.5px; color: var(--metin-1); overflow-wrap: anywhere; }
+.hk-satir-ic small { font-size: 12px; color: var(--metin-3); }
+.hk-kim { font-size: 11px !important; }
+.hk-geri { height: 30px; padding: 0 10px; font-size: 12px; }
+@media (max-width: 640px) {
+  .hk-izgara, .hk-oniz-tablo { grid-template-columns: minmax(0, 1fr); }
+  .hk-satir { grid-template-columns: auto minmax(0, 1fr); }
+  .hk-satir > .cip:last-of-type, .hk-geri { grid-column: 2; justify-self: start; }
+}
 /* Tablolarda tıklanabilir kişi adı */
 td.kisi-link { cursor: pointer; }
 td.kisi-link:hover { color: var(--birincil); text-decoration: underline; text-decoration-color: var(--pir-400); text-underline-offset: 3px; }

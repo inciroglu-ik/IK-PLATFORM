@@ -91,9 +91,10 @@ fetch(location.pathname+'?_taze='+Date.now(),{cache:'no-store'}).then(function(r
 </div>
 
 <script type="module">
-import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { doc, getDoc, setDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { db, kimlikBaslat, cikisYap, sifreDegistir, adBasliklari } from "./ortak/kimlik.js";
 import * as O from "./pano/ortak.js";
+import * as H from "./pano/hareket.js";
 
 /* ==========================================================================
    SAYFA KAYDI — TEK YER. Sıra = menü sırası. Modül dosyası yoksa ya da hata verirse
@@ -127,6 +128,9 @@ const AD = adBasliklari(OTURUM.hesap.ad || '');
 const refPano = doc(db, 'satisVeri', 'ikPano');
 const ROL = ['ik', 'direktor', 'idari_mudur'].find((r) => OTURUM.hesap.roller.indexOf(r) >= 0) || '';
 const ROL_AD = { ik: 'İnsan Kaynakları', direktor: 'Direktör', idari_mudur: 'İdari Müdür' };
+/* Personel hareketi (işe giriş / işten çıkış) girişi YALNIZ kurulum koduyla açılan İK hesabında (kullanıcı kararı 24.10.2026:
+   "yalnız ben"). Diğer roller hareketlerin sonucunu görür; Firestore kuralı İK'ya yazma izni verir, kısıt arayüzdedir. */
+const HAREKET_YETKI = IK && OTURUM.hesap.olusturan === 'kurulum';
 const BAS_HARF = (() => { const b = AD.split(/\s+/).filter(Boolean); return ((b[0] || '?')[0] + ((b[b.length - 1] || ' ')[0] || '')).toLocaleUpperCase('tr'); })();
 acilisMetni('Pano verisi yükleniyor…');
 
@@ -149,7 +153,9 @@ async function veriDosyasiYukle(f) {
   if (!confirm(et + ' verisi yüklenecek. Panoyu açan tüm yetkililer bu veriyi görecek. Devam edilsin mi?')) return;
   try {
     const json = JSON.stringify(o);
-    await setDoc(refPano, { json, guncelleme: new Date().toISOString() });
+    /* merge: belgedeki `hareketler` (panodan girilen personel hareketleri) korunur; Excel'e işlenenler yüklemeden sonra
+       otomatik "Excel'e işlendi" sayılır (pano/hareket.js) */
+    await setDoc(refPano, { json, guncelleme: new Date().toISOString() }, { merge: true });
     alert('Veri yüklendi: ' + et + '. Pano yenileniyor.');
     location.reload();
   } catch (e) {
@@ -231,6 +237,9 @@ function etiketUygula(e) {
   const h = $('haftaEtiket');
   h.innerHTML = O.ikon('takvim') + '<span>Son güncelleme:</span>';
   h.append(O.el('b', { text: e.label || e.hafta || '—' }));
+  /* Haftalık veriye ek olarak panodan girilen ve henüz Excel'e işlenmemiş hareketler — herkes görür (şeffaflık) */
+  const n = HSONUC ? HSONUC.uygulanan : 0;
+  if (n) h.append(O.el('span', { class: 'hareket-cip', title: 'Haftalık veriye ek olarak panodan girilen ' + n + ' personel hareketi (işe giriş/işten çıkış) uygulandı; Excel’e işlenince kendiliğinden düşer.', text: '+' + n + ' canlı hareket' }));
   $('yanDonem').textContent = e.foot || e.hafta || '—';
 }
 
@@ -253,10 +262,17 @@ function ustBantKur() {
   /* Çalışan ara (Ctrl+K) + 🔔 uyarılar — klasik panodaki isim araması ve uyarı düğmesinin karşılığı */
   const araB = O.el('button', { type: 'button', class: 'btn btn-koyu', id: 'genelAraDugme', title: 'Çalışan ara (Ctrl+K)', 'aria-label': 'Çalışan ara', html: O.ikon('ara') + '<span class="etk">Ara</span>' });
   araB.addEventListener('click', () => aramaAc());
-  const uy = O.uyarilar(B.D);
-  const zilB = O.el('button', { type: 'button', class: 'btn btn-koyu zil-dugme', id: 'uyariDugme', title: 'Uyarılar', 'aria-label': 'Uyarılar' + (uy.length ? ' (' + uy.length + ')' : ''), html: O.ikon('zil') + (uy.length ? '<span class="zil-sayi">' + uy.length + '</span>' : '') });
+  const zilB = O.el('button', { type: 'button', class: 'btn btn-koyu zil-dugme', id: 'uyariDugme', title: 'Uyarılar' });
   zilB.addEventListener('click', () => uyarilarAc());
   sag.append(araB, zilB);
+  zilGuncelle();
+  /* Personel hareketi (yalnız kurulum İK hesabı) */
+  if (HAREKET_YETKI) {
+    const hb = O.el('button', { type: 'button', class: 'btn btn-koyu zil-dugme', id: 'hareketDugme', title: 'Personel hareketi: işe giriş / işten çıkış', html: O.ikon('kisiler') + '<span class="etk">Hareket</span>' });
+    hb.addEventListener('click', () => hareketAc('cikis'));
+    sag.append(hb);
+    hareketDugmeGuncelle();
+  }
   /* Dışa Aktar menüsü (index.html'deki 7 rapor + klasik panoya geçiş) */
   const mk = O.el('div', { class: 'menu-kap' });
   const dd = O.el('button', { type: 'button', class: 'btn btn-koyu', id: 'disaAktarDugme', title: 'Dışa Aktar', html: O.ikon('indir') + '<span class="etk">Dışa Aktar</span>' + O.ikon('asagi', 'ok-asagi') });
@@ -487,6 +503,339 @@ function isimBaglantiKur() {
 }
 
 /* ==========================================================================
+   PERSONEL HAREKETİ — işe giriş / işten çıkış (yalnız kurulum İK hesabı girer; herkes sonucu görür)
+   Motor ve kurallar: pano/hareket.js · KABUK.md §8. Kayıtlar satisVeri/ikPano belgesinin `hareketler` alanında;
+   haftalık paket yüklemesi bu alanı korur (merge). Excel resmî kaynaktır: Excel'e işlenen hareket otomatik düşer.
+   ========================================================================== */
+let PAKET = null, HAREKETLER = [], HSONUC = null;
+function hareketliPaket() {
+  HSONUC = H.uygula(PAKET, HAREKETLER);
+  return Object.assign({}, PAKET, { D: HSONUC.D, MONTHLY_HC: HSONUC.MONTHLY_HC || PAKET.MONTHLY_HC });
+}
+function hareketYenile() {
+  const p = hareketliPaket();
+  B.D = p.D;
+  B.MONTHLY_HC = p.MONTHLY_HC && Array.isArray(p.MONTHLY_HC.y2026) ? p.MONTHLY_HC : null;
+  etiketUygula(B.etiket); zilGuncelle(); hareketDugmeGuncelle();
+  filtreDegisti();   /* filtreli veri + departman sayıları + aktif sayfa yeniden çizilir */
+}
+function zilGuncelle() {
+  const b = $('uyariDugme'); if (!b) return;
+  const n = O.uyarilar(B.D).length;
+  b.innerHTML = O.ikon('zil') + (n ? '<span class="zil-sayi">' + n + '</span>' : '');
+  b.setAttribute('aria-label', 'Uyarılar' + (n ? ' (' + n + ')' : ''));
+}
+function hareketDugmeGuncelle() {
+  const b = $('hareketDugme'); if (!b) return;
+  const n = HSONUC ? HSONUC.uygulanan : 0, s = HSONUC ? HSONUC.sorunlu : 0;
+  b.innerHTML = O.ikon('kisiler') + '<span class="etk">Hareket</span>' + ((n + s) ? '<span class="zil-sayi' + (s ? '' : ' bilgi') + '">' + (n + s) + '</span>' : '');
+  b.title = 'Personel hareketi: işe giriş / işten çıkış' + (n ? ' · ' + n + ' hareket Excel’e henüz işlenmedi' : '') + (s ? ' · ' + s + ' hareket uygulanamadı' : '');
+}
+/** hareketler alanını işlem (transaction) içinde değiştirir; aynı anda açık iki sekme birbirinin kaydını ezmez */
+async function hareketYaz(degistir) {
+  const yeni = await runTransaction(db, async (tx) => {
+    const s = await tx.get(refPano);
+    if (!s.exists()) throw new Error('Pano verisi bulunamadı');
+    const mevcut = Array.isArray(s.data().hareketler) ? s.data().hareketler : [];
+    const sonuc = degistir(mevcut.slice());
+    tx.update(refPano, { hareketler: sonuc, hareketGuncelleme: new Date().toISOString() });
+    return sonuc;
+  });
+  HAREKETLER = yeni;
+  hareketYenile();
+}
+const hkBugun = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); };
+const hkISO = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const hkTarihOku = (v) => { const m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; };
+const hkZaman = (iso) => { const d = iso ? new Date(iso) : null; return d && !isNaN(d) ? d.toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'; };
+const hkKimlik = () => ({ ad: AD || '', hid: OTURUM.hid || '', zaman: new Date().toISOString() });
+const hkId = () => 'h' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+function hkAlan(etiket, el, ipucu, genis) {
+  const a = O.el('label', { class: 'alan hk-alan' + (genis ? ' genis' : '') }, O.el('span', { class: 'alan-etiket', text: etiket }), el);
+  if (ipucu) a.append(O.el('small', { class: 'hk-ipucu', text: ipucu }));
+  return a;
+}
+function hkSecim(secenekler, deger) {
+  const s = O.el('select', { class: 'secim' });
+  secenekler.forEach((o) => { const v = typeof o === 'string' ? o : o.v; const op = O.el('option', { value: v, text: typeof o === 'string' ? o : o.ad }); if (v === deger) op.selected = true; s.append(op); });
+  return s;
+}
+/** Önizleme: kaydın panoya etkisi (önce → sonra). Taban da aynı haftayla hesaplanır ki fark yalnız bu kaydın etkisi olsun. */
+function hkOnizleme(kap, ev, ekler) {
+  kap.textContent = '';
+  if (!ev) { kap.append(O.el('div', { class: 'hk-oniz-bos', text: 'Bilgileri doldurdukça kaydın panoya etkisi burada görünür.' })); return false; }
+  const once = H.uygula(PAKET, HAREKETLER, { zorla: true }), sonra = H.uygula(PAKET, HAREKETLER.concat([ev]), { zorla: true });
+  const d = sonra.durum[ev.id];
+  if (!d || d.durum !== 'uygulandi') {
+    kap.append(O.el('div', { class: 'hk-mesaj hata', text: 'Bu kayıt uygulanamaz: ' + ((d && d.not) || (d && d.durum === 'pakette' ? 'kişi haftalık veride zaten bu durumda.' : 'bilgileri kontrol edin.')) }));
+    return false;
+  }
+  const a = H.gostergeler(once.D), b = H.gostergeler(sonra.D);
+  const yz = (v) => (v === undefined || v === null ? '—' : O.yuzde(v, 2)), sy = (v) => (v === undefined || v === null ? '—' : O.sayi(v)), on = (v) => (v === undefined || v === null ? '—' : O.sayi(v, 2));
+  const SATIR = [['Aktif personel', 'personel', sy], ['Stajyer', 'stajyer', sy], ['Analist öğrenci', 'analist', sy], ['V.İ.', 'vi', sy], ['2026 işten ayrılan', 'cikis', sy], ['2026 işe alım', 'giris', sy],
+    ['YTD turnover', 'turnover', yz], ['Yıl sonu simülasyonu', 'simule', yz], ['İstenen turnover (YTD)', 'istenen', yz], ['İstenmeyen turnover (YTD)', 'istenmeyen', yz],
+    ['Yıllık izin bakiyesi (gün)', 'izin', sy], ['Şirket ortalama kıdemi (yıl)', 'kidem', on]];
+  const tablo = O.el('div', { class: 'hk-oniz-tablo' });
+  SATIR.forEach(([ad, k, f]) => { if (a[k] === b[k]) return; tablo.append(O.el('div', { class: 'hk-oniz-satir' }, O.el('span', { text: ad }), O.el('b', {}, O.el('s', { text: f(a[k]) }), document.createTextNode(' → '), O.el('em', { text: f(b[k]) })))); });
+  kap.append(O.el('div', { class: 'hk-oniz-baslik', text: 'Kaydedince değişecekler' }), tablo);
+  const ul = O.el('ul', { class: 'hk-ekler' });
+  (ekler || []).forEach((t) => ul.append(O.el('li', { text: t })));
+  if (once.D.ozet.hesap_haftasi) ul.append(O.el('li', { text: 'Oranlar Excel’deki formülle, ' + once.D.ozet.hesap_haftasi + '. hafta esas alınarak hesaplanır.' }));
+  kap.append(ul);
+  return true;
+}
+
+function hareketAc(sekme) {
+  let aktifSekme = sekme || 'cikis';
+  const govde = O.el('div', { class: 'modal-govde hk-govde' });
+  const sekmeKap = O.el('div', { class: 'hk-sekmeler' });
+  const ust = O.el('div', { class: 'modal-ust' },
+    O.el('div', { class: 'modal-ikon pk-zil-ikon', html: O.ikon('kisiler') }),
+    O.el('div', { class: 'pk-bas' }, O.el('h3', { text: 'Personel hareketi' }),
+      O.el('p', { text: 'Kaydettiğin işe giriş ve işten çıkışlar bütün sekmelere anında yansır; direktörler ve müdürler aynı anda görür.' }), sekmeKap),
+    kapatX());
+  const ciz = () => {
+    govde.textContent = '';
+    if (aktifSekme === 'cikis') cikisFormu(govde); else if (aktifSekme === 'giris') girisFormu(govde); else gunlukCiz(govde, ciz);
+  };
+  O.bolumlu(sekmeKap, {
+    secenekler: [{ v: 'cikis', ad: 'İşten çıkış' }, { v: 'giris', ad: 'İşe giriş' }, { v: 'gunluk', ad: 'Günlük (' + HAREKETLER.length + ')' }],
+    deger: aktifSekme, kucuk: true, etiket: 'Hareket türü', degisince: (v) => { aktifSekme = v; ciz(); const g = govde.querySelector('input, select'); if (g) g.focus({ preventScroll: true }); }
+  });
+  ciz();
+  pencereAc('hk-modal', 'Personel hareketi', [ust, govde], () => govde.querySelector('input, select') || govde.querySelector('button'));
+}
+
+/* ---- İŞTEN ÇIKIŞ ---- */
+function cikisFormu(kap) {
+  let secili = null;   /* { liste, kayit, giris: Date|null, izin } */
+  const bugun = hkBugun(), yilBasi = new Date(bugun.getFullYear(), 0, 1);
+  const ara = O.el('input', { class: 'girdi', type: 'search', placeholder: 'Ad soyad yazın…', autocomplete: 'off', spellcheck: 'false', 'aria-label': 'Çıkışı girilecek kişiyi ara' });
+  const sonuc = O.el('div', { class: 'hk-sonuclar', role: 'listbox', hidden: true });
+  const kisi = O.el('div', { class: 'hk-kisi', hidden: true });
+  const tarihG = O.el('input', { class: 'girdi', type: 'date', value: hkISO(bugun), min: hkISO(yilBasi), max: hkISO(bugun) });
+  const nedenS = hkSecim(H.RESMI_NEDENLER, 'İstifa');
+  const istCip = O.el('span', { class: 'cip' });
+  const rawG = O.el('input', { class: 'girdi', type: 'text', maxlength: '200', placeholder: 'İsteğe bağlı · ör. 03 - Belirsiz süreli sözleşmenin işçi tarafından feshi' });
+  const acikG = O.el('textarea', { class: 'girdi hk-metin', rows: '2', maxlength: '500', placeholder: 'ör. Daha yüksek ücretli bir teklif aldı' });
+  const arbS = hkSecim([{ v: '', ad: 'Girilmeyecek' }, { v: 'YAPILDI', ad: 'Yapıldı' }, { v: 'YAPILMADI', ad: 'Yapılmadı' }], '');
+  const arbNedenS = hkSecim(H.ARB_NEDENLER.map((x) => ({ v: x, ad: O.trBaslik(x) })), '6 AY ALTI KIDEM');
+  const riskS = hkSecim([{ v: 'Risk Yok', ad: 'Risk yok' }, { v: 'Riskli', ad: 'Riskli' }], 'Risk Yok');
+  const arbNedenA = hkAlan('Yapılmama nedeni', arbNedenS), riskA = hkAlan('Risk', riskS);
+  const oniz = O.el('div', { class: 'hk-oniz' });
+  const mesaj = O.el('div', { class: 'hk-mesaj', role: 'status' });
+  const kaydetB = O.el('button', { type: 'button', class: 'btn btn-pirinc', html: O.ikon('onay') + '<span>Çıkışı kaydet</span>' });
+
+  const havuz = () => ['normal', 'stajyer', 'gecici', 'vi'].flatMap((l) => (B.D[l] || []).filter(Boolean).map((k) => ({ l, k, a: H.anahtar(k.ad) })));
+  const listele = () => {
+    sonuc.textContent = '';
+    const q = O.aramaAnahtari(ara.value);
+    if (secili && ara.value === secili.kayit.ad) { sonuc.hidden = true; return; }
+    if (secili) { secili = null; kisi.hidden = true; guncelle(); }
+    if (q.length < 2) { sonuc.hidden = true; return; }
+    const bul = havuz().filter((x) => x.a.includes(q)).slice(0, 8);
+    sonuc.hidden = false;
+    if (!bul.length) { sonuc.append(O.el('div', { class: 'ara-bos', text: 'Aktif listelerde bulunamadı.' })); return; }
+    bul.forEach((x) => {
+      const s = O.el('button', { type: 'button', class: 'ara-sonuc', role: 'option' },
+        O.el('span', { class: 'pk-avatar kucuk', 'aria-hidden': 'true', text: basHarf(x.k.ad) }),
+        O.el('span', { class: 'ara-sonuc-ic' }, O.el('b', { text: x.k.ad }), O.el('small', { text: [x.k.dept, x.k.bolum, x.k.unvan].filter(bosDegil).join(' · ') || '—' })),
+        O.el('span', { class: 'cip ' + (x.l === 'normal' ? 'cip-bilgi' : 'cip-pirinc'), text: H.LISTE_AD[x.l] }));
+      s.addEventListener('click', () => sec(x));
+      sonuc.append(s);
+    });
+  };
+  const sec = (x) => {
+    const girisHareketi = HAREKETLER.filter((h) => h && !h.iptal && h.tur === 'giris' && H.anahtar(h.ad) === x.a).pop();
+    const giris = girisHareketi ? O.tarihCoz(girisHareketi.tarih) : H.iseGirisTahmini(x.k, PAKET.etiket);
+    const izin = (B.D.izin || []).find((z) => z && H.anahtar(z.ad) === x.a) || null;
+    secili = { liste: x.l, kayit: x.k, giris, izin };
+    ara.value = x.k.ad; sonuc.hidden = true; sonuc.textContent = '';
+    kisi.textContent = '';
+    kisi.append(O.el('div', { class: 'hk-kisi-bas' }, O.el('span', { class: 'pk-avatar', 'aria-hidden': 'true', text: basHarf(x.k.ad) }),
+      O.el('div', {}, O.el('b', { text: x.k.ad }), O.el('small', { text: [x.k.unvan, x.k.dept, x.k.bolum].filter(bosDegil).join(' · ') || '—' })),
+      O.el('span', { class: 'cip ' + (x.l === 'normal' ? 'cip-bilgi' : 'cip-pirinc'), text: H.LISTE_AD[x.l] })));
+    const bilgi = O.el('div', { class: 'hk-kisi-bilgi' });
+    bilgi.append(O.el('span', { text: 'İşe giriş: ' + (giris ? O.tarih(giris) + (girisHareketi ? '' : ' (çalışma süresinden)') : 'bilinmiyor') }),
+      O.el('span', { text: 'İzin bakiyesi: ' + (izin && !O.bosMu(izin.bakiye) ? O.sayi(izin.bakiye, 'oto') + ' gün' : '—') }));
+    if (x.l !== 'normal') bilgi.append(O.el('span', { class: 'hk-uyari', text: H.LISTE_AD[x.l] + ' çıkışı turnover’a ve işten ayrılanlar listesine girmez (Excel’deki gibi).' }));
+    kisi.append(bilgi);
+    kisi.hidden = false;
+    guncelle();
+  };
+  const olay = () => {
+    if (!secili) return null;
+    const t = hkTarihOku(tarihG.value); if (!t) return null;
+    const fark = secili.giris && secili.giris <= t ? H.takvimFarki(secili.giris, t) : null;
+    const arb = arbS.value;
+    return {
+      id: 'onizleme', tur: 'cikis', tarih: H.tarihMetni(t), ad: secili.kayit.ad, liste: secili.liste,
+      dept: secili.kayit.dept || '', bolum: secili.kayit.bolum || '', unvan: secili.kayit.unvan || '',
+      neden: nedenS.value, neden_raw: rawG.value.trim(), aciklama: acikG.value.trim(),
+      sure: fark ? H.sureMetni(fark) : '', iseGiris: secili.giris ? H.tarihMetni(secili.giris) : '', kidemAraligi: fark ? H.kidemAraligi(fark) : '',
+      kalanIzin: secili.izin && !O.bosMu(secili.izin.bakiye) ? +secili.izin.bakiye : null,
+      kullanilanIzin: secili.izin && !O.bosMu(secili.izin.kullanilan) ? +secili.izin.kullanilan : null,
+      arabulucu: arb, not_: arb === 'YAPILMADI' ? arbNedenS.value : (arb === 'YAPILDI' ? 'YAPILDI' : ''), risk: arb ? riskS.value : ''
+    };
+  };
+  let oneriYapildi = false;
+  const guncelle = () => {
+    const ist = H.istenenMi(nedenS.value);
+    istCip.className = 'cip ' + (ist ? 'cip-ey' : 'cip-pirinc'); istCip.textContent = ist ? 'İstenen ayrılış' : 'İstenmeyen ayrılış';
+    arbNedenA.hidden = arbS.value !== 'YAPILMADI'; riskA.hidden = !arbS.value;
+    const ev = olay();
+    /* 6 aydan kısa kıdemde yapılmama nedeni olarak "6 ay altı kıdem" önerilir (bir kez) */
+    if (ev && ev.kidemAraligi && !oneriYapildi && ['0-2 AY', '2-6 AY'].indexOf(ev.kidemAraligi) >= 0) { arbNedenS.value = '6 AY ALTI KIDEM'; oneriYapildi = true; }
+    const ekler = [];
+    if (ev) {
+      if (secili.liste === 'normal') ekler.push('İşten Ayrılanlar listesine eklenir; ' + O.MN[+ev.tarih.slice(3, 5)] + ' ayının çıkış sayısı +1.');
+      if (ev.sure) ekler.push('Çalışma süresi: ' + ev.sure.split(' / ')[0] + ' (' + O.sayi(+ev.sure.split(' / ')[1].replace(/\D/g, '')) + ' gün)' + (ev.kidemAraligi ? ' · kıdem aralığı ' + ev.kidemAraligi : '') + '.');
+      if (ev.kalanIzin !== null) ekler.push('İzin listesinden çıkar; kalan ' + O.sayi(ev.kalanIzin, 'oto') + ' gün bakiye hareket kaydında saklanır (izin ücreti için).');
+      if (ev.arabulucu) ekler.push('Arabuluculuk kaydı eklenir (' + (ev.arabulucu === 'YAPILDI' ? 'yapıldı' : 'yapılmadı · ' + O.trBaslik(ev.not_)) + ').');
+    }
+    kaydetB.disabled = !hkOnizleme(oniz, ev, ekler);
+  };
+  ara.addEventListener('input', listele);
+  [tarihG, nedenS, arbS, arbNedenS, riskS].forEach((e) => e.addEventListener('change', guncelle));
+  [rawG, acikG].forEach((e) => e.addEventListener('input', () => { if (secili) mesaj.textContent = ''; }));
+  kaydetB.addEventListener('click', async () => {
+    const ev = olay();
+    mesaj.className = 'hk-mesaj'; mesaj.textContent = '';
+    if (!ev) { mesaj.classList.add('hata'); mesaj.textContent = 'Önce kişiyi seçin ve çıkış tarihini girin.'; return; }
+    const t = hkTarihOku(tarihG.value);
+    if (t > bugun || t < yilBasi) { mesaj.classList.add('hata'); mesaj.textContent = 'Çıkış tarihi bu yıl içinde ve bugünden ileri olmamalı.'; return; }
+    if (!confirm(ev.ad + ' için ' + O.tarih(ev.tarih) + ' tarihli işten çıkış kaydedilecek. Panoyu açan herkes güncel rakamları görecek. Devam edilsin mi?')) return;
+    ev.id = hkId(); ev.kayit = hkKimlik(); ev.iptal = null;
+    kaydetB.disabled = true; mesaj.textContent = 'Kaydediliyor…';
+    try {
+      await hareketYaz((m) => m.concat([ev]));
+      pencereKapat(false);
+      O.bildirim(ev.ad + ' — işten çıkış kaydedildi; pano güncellendi.');
+    } catch (e) {
+      console.error('Hareket kaydedilemedi', e);
+      kaydetB.disabled = false; mesaj.classList.add('hata');
+      mesaj.textContent = 'Kaydedilemedi: ' + (e && e.code === 'permission-denied' ? 'bu işlem için yetkiniz yok.' : (e && e.message) || 'bilinmeyen hata');
+    }
+  });
+
+  const kisiAlan = O.el('div', { class: 'alan hk-alan genis hk-ara-kap' }, O.el('span', { class: 'alan-etiket', text: 'Çıkan kişi' }),
+    O.el('label', { class: 'ara-kutu', html: O.ikon('ara') }, ara), sonuc, kisi);
+  const nedenAlan = O.el('label', { class: 'alan hk-alan' }, O.el('span', { class: 'alan-etiket', text: 'Resmî (SGK) ayrılış nedeni' }), nedenS, istCip);
+  const izgara = O.el('div', { class: 'hk-izgara' },
+    kisiAlan,
+    hkAlan('Çıkış tarihi', tarihG),
+    nedenAlan,
+    hkAlan('SGK çıkış metni', rawG, null, true),
+    hkAlan('Gerçek ayrılma nedeni', acikG, 'İşten Ayrılanlar’daki “Gerçek ayrılma nedeni” dağılımına girer.', true),
+    hkAlan('Arabuluculuk', arbS), arbNedenA, riskA);
+  kap.append(izgara, oniz, O.el('div', { class: 'hk-alt' }, mesaj, kaydetB));
+  guncelle();
+}
+
+/* ---- İŞE GİRİŞ ---- */
+function girisFormu(kap) {
+  const bugun = hkBugun(), yilBasi = new Date(bugun.getFullYear(), 0, 1);
+  const normal = (B.D.normal || []).filter(Boolean);
+  const deptler = [...new Set(normal.map((x) => x.dept).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'tr'));
+  const unvanlar = [...new Set(normal.map((x) => x.unvan).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'tr'));
+  const adG = O.el('input', { class: 'girdi', type: 'text', maxlength: '80', autocomplete: 'off', spellcheck: 'false', placeholder: 'AD SOYAD' });
+  const csS = hkSecim([{ v: 'normal', ad: 'Tam zamanlı' }, { v: 'stajyer', ad: 'Stajyer' }, { v: 'gecici', ad: 'Analist öğrenci' }, { v: 'vi', ad: 'V.İ.' }], 'normal');
+  const deptS = hkSecim([{ v: '', ad: 'Seçin…' }].concat(deptler.map((x) => ({ v: x, ad: x }))), '');
+  const bolumS = hkSecim(['Satış', 'Servis', 'İdari'], 'Servis');
+  const dlId = 'hkUnvanlar';
+  const unvanG = O.el('input', { class: 'girdi', type: 'text', maxlength: '80', autocomplete: 'off', list: dlId, placeholder: 'ör. SATIŞ DANIŞMANI' });
+  const dl = O.el('datalist', { id: dlId }); unvanlar.forEach((u) => dl.append(O.el('option', { value: u })));
+  const tarihG = O.el('input', { class: 'girdi', type: 'date', value: hkISO(bugun), min: hkISO(yilBasi), max: hkISO(bugun) });
+  const oniz = O.el('div', { class: 'hk-oniz' });
+  const mesaj = O.el('div', { class: 'hk-mesaj', role: 'status' });
+  const kaydetB = O.el('button', { type: 'button', class: 'btn btn-pirinc', html: O.ikon('onay') + '<span>Girişi kaydet</span>' });
+  const adNorm = () => O.trBuyuk(adG.value.trim().replace(/\s+/g, ' '));
+  const deptAlan = hkAlan('Departman', deptS);
+
+  const olay = () => {
+    const ad = adNorm(), t = hkTarihOku(tarihG.value), vi = csS.value === 'vi';
+    if (ad.split(' ').length < 2 || !t || (!vi && !deptS.value) || !unvanG.value.trim()) return null;
+    return { id: 'onizleme', tur: 'giris', tarih: H.tarihMetni(t), ad, liste: csS.value, dept: vi ? 'V.İ.' : deptS.value, bolum: bolumS.value, unvan: O.trBuyuk(unvanG.value.trim().replace(/\s+/g, ' ')) };
+  };
+  const guncelle = () => {
+    deptAlan.hidden = csS.value === 'vi';
+    const ev = olay();
+    const ekler = [];
+    if (ev) {
+      if (ev.liste === 'normal') ekler.push('İşe Alım listesine eklenir; ' + O.MN[+ev.tarih.slice(3, 5)] + ' ayının giriş sayısı +1.', 'İzin listesine 0 gün bakiye ile eklenir (1 yılı dolmadan yıllık izin hakkı yok).');
+      else ekler.push(H.LISTE_AD[ev.liste] + ' girişi işe alım ve turnover hesabına girmez (Excel’deki gibi).');
+    }
+    kaydetB.disabled = !hkOnizleme(oniz, ev, ekler);
+  };
+  /* Departman seçilince o departmandaki en yaygın bölüm önerilir */
+  deptS.addEventListener('change', () => {
+    const say = {}; normal.filter((x) => x.dept === deptS.value).forEach((x) => { say[x.bolum] = (say[x.bolum] || 0) + 1; });
+    const en = Object.entries(say).sort((a, b) => b[1] - a[1])[0]; if (en && ['Satış', 'Servis', 'İdari'].indexOf(en[0]) >= 0) bolumS.value = en[0];
+    guncelle();
+  });
+  [csS, bolumS, tarihG].forEach((e) => e.addEventListener('change', guncelle));
+  [adG, unvanG].forEach((e) => e.addEventListener('input', () => { mesaj.textContent = ''; guncelle(); }));
+  kaydetB.addEventListener('click', async () => {
+    const ev = olay();
+    mesaj.className = 'hk-mesaj'; mesaj.textContent = '';
+    if (!ev) { mesaj.classList.add('hata'); mesaj.textContent = 'Ad soyad (en az iki kelime), departman, unvan ve tarih gerekli.'; return; }
+    const t = hkTarihOku(tarihG.value);
+    if (t > bugun || t < yilBasi) { mesaj.classList.add('hata'); mesaj.textContent = 'İşe başlama tarihi bu yıl içinde ve bugünden ileri olmamalı.'; return; }
+    if (H.aktifBul(B.D, ev.ad)) { mesaj.classList.add('hata'); mesaj.textContent = 'Bu adla aktif bir çalışan zaten var.'; return; }
+    if (!confirm(ev.ad + ' için ' + O.tarih(ev.tarih) + ' tarihli işe giriş kaydedilecek. Panoyu açan herkes güncel rakamları görecek. Devam edilsin mi?')) return;
+    ev.id = hkId(); ev.kayit = hkKimlik(); ev.iptal = null;
+    kaydetB.disabled = true; mesaj.textContent = 'Kaydediliyor…';
+    try {
+      await hareketYaz((m) => m.concat([ev]));
+      pencereKapat(false);
+      O.bildirim(ev.ad + ' — işe giriş kaydedildi; pano güncellendi.');
+    } catch (e) {
+      console.error('Hareket kaydedilemedi', e);
+      kaydetB.disabled = false; mesaj.classList.add('hata');
+      mesaj.textContent = 'Kaydedilemedi: ' + (e && e.code === 'permission-denied' ? 'bu işlem için yetkiniz yok.' : (e && e.message) || 'bilinmeyen hata');
+    }
+  });
+  const izgara = O.el('div', { class: 'hk-izgara' },
+    hkAlan('Ad soyad', adG, 'Excel’deki yazımla aynı olmalı; haftalık veri yüklenince bu adla eşleştirilir.', true),
+    hkAlan('Çalışma şekli', csS), hkAlan('İşe başlama tarihi', tarihG), deptAlan, hkAlan('Bölüm', bolumS), hkAlan('Unvan', unvanG, null, true));
+  kap.append(izgara, dl, oniz, O.el('div', { class: 'hk-alt' }, mesaj, kaydetB));
+  guncelle();
+}
+
+/* ---- GÜNLÜK ---- */
+function gunlukCiz(kap, yenile) {
+  kap.append(O.el('p', { class: 'hk-not', text: 'Excel resmî kaynaktır. Haftalık veriyi yüklediğinde Excel’e işlenmiş hareketler kendiliğinden “Excel’e işlendi” olur ve iki kez sayılmaz; işlenmemiş olanlar panoda uygulanmaya devam eder.' }));
+  if (!HAREKETLER.length) { kap.append(O.el('div', { class: 'ara-bos', text: 'Henüz hareket girilmedi.' })); return; }
+  const DUR = { uygulandi: ['cip-uy', 'Panoda · Excel’e işlenmedi'], pakette: ['cip-ok', 'Excel’e işlendi'], iptal: ['cip-ey', 'Geri alındı'], sorunlu: ['cip-ht', 'Uygulanamadı'] };
+  const liste = O.el('div', { class: 'hk-gunluk' });
+  HAREKETLER.slice().sort((a, b) => String((b.kayit && b.kayit.zaman) || '').localeCompare(String((a.kayit && a.kayit.zaman) || ''))).forEach((h) => {
+    const d = (HSONUC && HSONUC.durum[h.id]) || { durum: 'sorunlu' };
+    const t = DUR[d.durum] || DUR.sorunlu;
+    const ayrinti = [O.tarih(h.tarih), h.dept, h.tur === 'cikis' ? h.neden : H.LISTE_AD[h.liste]].filter(bosDegil).join(' · ');
+    const kim = 'Kaydeden: ' + ((h.kayit && h.kayit.ad) || '—') + ' · ' + hkZaman(h.kayit && h.kayit.zaman) + (h.iptal ? ' · Geri alan: ' + (h.iptal.ad || '—') + ' · ' + hkZaman(h.iptal.zaman) : '') + (d.not ? ' · ' + d.not : '');
+    const satir = O.el('div', { class: 'hk-satir' },
+      O.el('span', { class: 'cip ' + (h.tur === 'cikis' ? 'cip-ht' : 'cip-ok'), text: h.tur === 'cikis' ? 'Çıkış' : 'Giriş' }),
+      O.el('div', { class: 'hk-satir-ic' }, O.el('b', { text: h.ad || '—' }), O.el('small', { text: ayrinti }), O.el('small', { class: 'hk-kim', text: kim })),
+      O.el('span', { class: 'cip ' + t[0], text: t[1] }));
+    if (d.durum === 'uygulandi' || d.durum === 'sorunlu') {
+      const gb = O.el('button', { type: 'button', class: 'btn btn-hayalet hk-geri', html: O.ikon('sifirla') + '<span>Geri al</span>' });
+      gb.addEventListener('click', async () => {
+        if (!confirm(h.ad + ' — ' + (h.tur === 'cikis' ? 'işten çıkış' : 'işe giriş') + ' hareketi geri alınacak; pano bu hareket hiç girilmemiş gibi hesaplanır. Devam edilsin mi?')) return;
+        gb.disabled = true;
+        try {
+          await hareketYaz((m) => m.map((x) => (x && x.id === h.id ? Object.assign({}, x, { iptal: hkKimlik() }) : x)));
+          O.bildirim(h.ad + ' — hareket geri alındı; pano güncellendi.');
+          kap.textContent = ''; yenile();
+        } catch (e) { gb.disabled = false; console.error('Geri alınamadı', e); O.bildirim('Geri alınamadı: ' + ((e && e.message) || 'bilinmeyen hata')); }
+      });
+      satir.append(gb);
+    }
+    liste.append(satir);
+  });
+  kap.append(liste);
+}
+
+/* ==========================================================================
    SOL MENÜ + MOBİL SEKMELER
    ========================================================================== */
 function menuAc() { document.body.classList.add('menu-acik'); }
@@ -655,8 +1004,11 @@ function hosgeldinGoster(ad, e) {
 /* ==========================================================================
    VERİYİ OKU (satisVeri/ikPano → json) ve başlat — tüm tanımlardan SONRA çalışır
    ========================================================================== */
-let paket = null, okumaHatasi = null;
-try { const s = await getDoc(refPano); if (s.exists() && s.data().json) paket = JSON.parse(s.data().json); }
+let paket = null, okumaHatasi = null, hareketKayitlari = [];
+try {
+  const s = await getDoc(refPano);
+  if (s.exists() && s.data().json) { paket = JSON.parse(s.data().json); hareketKayitlari = Array.isArray(s.data().hareketler) ? s.data().hareketler : []; }
+}
 catch (e) { okumaHatasi = e; console.warn('Pano verisi okunamadı', e); }
 if (okumaHatasi) {
   const yetki = okumaHatasi.code === 'permission-denied';
@@ -664,7 +1016,8 @@ if (okumaHatasi) {
 } else if (!paketGecerli(paket)) {
   durumEkrani('Pano verisi henüz yüklenmedi', IK ? 'Haftalık pano veri dosyasını (.json) yükleyin; yüklendiği anda tüm yetkililer görür.' : 'İnsan Kaynakları haftalık veriyi yüklediğinde pano burada görünecek.');
 } else {
-  baslat(paket);
+  PAKET = paket; HAREKETLER = hareketKayitlari;
+  baslat(hareketliPaket());
 }
 </script>
 </body>

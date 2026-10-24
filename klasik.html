@@ -2677,7 +2677,7 @@ async function veriDosyasiYukle(f) {
   if (!confirm(et + ' verisi yüklenecek. Panoyu açan tüm yetkililer bu veriyi görecek. Devam edilsin mi?')) return;
   try {
     const json = JSON.stringify(o);
-    await setDoc(refPano, { json, guncelleme: new Date().toISOString() });
+    await setDoc(refPano, { json, guncelleme: new Date().toISOString() }, { merge: true });   /* merge: yeni panodan girilen personel hareketleri (hareketler) korunur */
     alert('Veri yüklendi: ' + et + '. Pano yenileniyor.');
     location.reload();
   } catch (e) {
