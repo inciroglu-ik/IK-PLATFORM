@@ -1252,7 +1252,7 @@ const IZ_DURUM={'onaylandı':'onaylandi','onaylandi':'onaylandi','onaylı':'onay
 function izinTum(){
   const L=[];
   IZIN.forEach(z=>{ const e=empById(z.empId); L.push({emp:e||null,ad:(e&&e.ad)||z.empAd,tur:z.tur,gun:z.gun,bas:z.baslangic,bit:z.bitis,durum:z.durum,kaynak:'sistem',id:z.id,acik:z.aciklama,z}); });
-  allEmp().forEach(p=>(p.izinler||[]).forEach((z,i)=>{ L.push({emp:p,ad:p.ad,tur:z.tur,gun:z.gun,bas:z.bas,bit:z.bit,durum:IZ_DURUM[trLower(z.durum||'').trim()]||'bekliyor',kaynak:'kolay',id:'k'+p.tc+'_'+i,imza:z.imza,acik:z.acik,z}); }));
+  allEmp().forEach(p=>(p.izinler||[]).forEach(z=>{ L.push({emp:p,ad:p.ad,tur:z.tur,gun:z.gun,bas:z.bas,bit:z.bit,durum:IZ_DURUM[trLower(z.durum||'').trim()]||'bekliyor',kaynak:'kolay',id:izKolayRef(p,z),imza:z.imza,acik:z.acik,z}); }));
   return L;
 }
 /* Devam eden veya yaklaşan onaylı izinler (Kolay İK "Yaklaşan İzinler" mantığı) */
@@ -1562,7 +1562,7 @@ function izBakiyeKart(p){
 }
 function pfIzinKayitlari(p){
   const sistem=IZIN.filter(z=>z.empId===p.id).map(z=>({k:'s',id:z.id,bas:z.baslangic,bit:z.bitis,gun:z.gun,tur:z.tur,acik:z.aciklama,olus:z.olusturma?isoTarihSaat(z.olusturma):'',durum:z.durum,imza:'',z}));
-  const kolay=(p.izinler||[]).map(z=>({k:'k',bas:z.bas,bit:z.bit,gun:z.gun,tur:z.tur,acik:z.acik,olus:'',durum:IZ_DURUM[trLower(z.durum||'').trim()]||'bekliyor',imza:z.imza}));
+  const kolay=(p.izinler||[]).map(z=>({k:'k',ref:izKolayRef(p,z),bas:z.bas,bit:z.bit,gun:z.gun,tur:z.tur,acik:z.acik,olus:z.ikDuzen&&z.ikDuzen.tarih?isoTarihSaat(z.ikDuzen.tarih):'',durum:izDurumKod(z,true),imza:z.imza,z}));
   return sistem.concat(kolay).sort((a,b)=>(dtObj(b.bas)||0)-(dtObj(a.bas)||0));
 }
 function pfIzinler(p){
@@ -1574,20 +1574,35 @@ function pfIzinler(p){
     +'<select class="sel pf-f" id="izDurF"><option value="">Tümü</option>'+Object.entries(IZ_PILL).map(([k,v])=>'<option value="'+k+'"'+(ST.izDur===k?' selected':'')+'>'+v[1]+'</option>').join('')+'</select></div>';
   if(ST.izTur) L=L.filter(x=>x.tur===ST.izTur);
   if(ST.izDur) L=L.filter(x=>x.durum===ST.izDur);
-  const imzaH=x=>{ const v=String(x.imza||'').trim(); const ok=v&&!/^(-|hayır|hayir|yok|false|0|no|imzalanmadı|imzalanmadi)$/i.test(v); return ok?'<svg class="iz-imza ok" viewBox="0 0 24 24"><title>İmzalandı</title>'+PIC.chk+'</svg>':''; };
-  const tablo=arr=>ptbl(['Başlangıç','Bitiş','Süre','İzin Türü','Açıklama','Oluşturulma Tarihi','Durum','İmzalandı',''],arr.map(x=>[esc(trTarihSaat(x.bas)),esc(trTarihSaat(x.bit)),gunYaz(x.gun),esc(x.tur),'<span class="acik">'+esc(x.acik||'')+'</span>',esc(x.olus),izPill(x.durum)+(x.k==='s'&&x.durum==='bekliyor'&&curStep(x.z)?'<div class="mini" style="margin-top:3px">'+esc(curStep(x.z).rol)+' onayında</div>':''),imzaH(x),x.k==='s'?'<button class="kdots" data-izmenu="'+esc(x.id)+'" title="İşlemler">⋮</button>':'&nbsp;']),'iztbl');
+  const imzaH=x=>{ const v=trLower(String(x.imza||'').trim()); const ok=v&&!/^(-|hayır|hayir|yok|false|0|no|imzalanmadı|imzalanmadi)$/.test(v); return ok?'<svg class="iz-imza ok" viewBox="0 0 24 24"><title>İmzalandı</title>'+PIC.chk+'</svg>':''; };
+  const tablo=arr=>ptbl(['Başlangıç','Bitiş','Süre','İzin Türü','Açıklama','Oluşturulma Tarihi','Durum','İmzalandı',''],arr.map(x=>[esc(trTarihSaat(x.bas)),esc(trTarihSaat(x.bit)),gunYaz(x.gun),esc(x.tur),'<span class="acik">'+esc(x.acik||'')+'</span>',esc(x.olus),izPill(x.durum)+(x.k==='s'&&x.durum==='bekliyor'&&curStep(x.z)?'<div class="mini" style="margin-top:3px">'+esc(curStep(x.z).rol)+' onayında</div>':'')+(x.k==='k'&&x.z.ikOnay&&!x.z.ikOnay.red?'<div class="mini" style="margin-top:3px">İK onayı</div>':''),imzaH(x),'<button class="kdots" data-izmenu="'+esc(x.k==='s'?x.id:x.ref)+'" title="İşlemler">⋮</button>']),'iztbl');
   let g;
   if(alt==='ozet'){ const now=new Date(); const yak=L.filter(x=>x.durum==='onaylandi'&&dtObj(x.bit,true)&&dtObj(x.bit,true)>=now).sort((a,b)=>(dtObj(a.bas)||0)-(dtObj(b.bas)||0)); g=izBakiyeKart(p)+'<div class="sec-h" style="margin-top:4px"><h2>Devam Eden ve Yaklaşan İzinler</h2></div>'+tablo(yak); }
   else if(alt==='ekstra'){ g=tablo(L.filter(x=>!/yıl/i.test(x.tur||''))); }
   else g=izBakiyeKart(p)+tablo(L);
   return ust+g;
 }
+/* Kolay İK'dan aktarılan izin kaydının başvurusu: "k~<çalışan id>~<izin anahtarı>" (anahtar: başlangıç|saat|bitiş|tür) */
+function izKolayRef(p,z){ return 'k~'+p.id+'~'+kikIzinKey(z); }
+function izKolayBul(ref){ const s=String(ref||''); if(s.indexOf('k~')!==0) return null; const i=s.indexOf('~',2); if(i<0) return null; const p=empById(s.slice(2,i)), key=s.slice(i+1); if(!p) return null; const z=(p.izinler||[]).find(x=>kikIzinKey(x)===key); return z?{p,z}:null; }
+function izDurumKod(z,kolay){ return kolay?(IZ_DURUM[trLower(z.durum||'').trim()]||'bekliyor'):z.durum; }
+/* İzin satırı menüsü (Kolay İK düzeni): Düzenle · Onayla/Reddet · Onay Akışı · Önizleme · İndir (MS Word) · İndir (PDF) · Sil */
 function izSatirMenu(a,id){
-  const z=IZIN.find(x=>x.id===id); if(!z) return; const it=[];
-  if(z.durum==='bekliyor'){ it.push(['onay','Onayla']); it.push(['red','Reddet']); }
-  it.push(['akis','Onay Akışı'],['form','İzin Formu'],['sil','Sil']);
+  const kolay=String(id).indexOf('k~')===0, K=kolay?izKolayBul(id):null;
+  const z=kolay?(K&&K.z):IZIN.find(x=>x.id===id); if(!z) return;
+  const d=izDurumKod(z,kolay), it=[['duzenle','Düzenle']];
+  if(d==='bekliyor'){ it.push(['onay',kolay?'Onayla (İK)':'Onayla']); it.push(['red','Reddet']); }
+  it.push(['akis','Onay Akışı']);
+  if(d!=='reddedildi'&&d!=='iptal') it.push(['onizle','Önizleme'],['word','İndir (MS Word)'],['pdf','İndir (PDF)']);
+  if(!kolay) it.push(['sil','Sil']);
   const el=popAc(a,it.map(x=>'<button data-izm="'+x[0]+'"'+(x[0]==='sil'||x[0]==='red'?' class="dng"':'')+'>'+x[1]+'</button>').join(''),'alt');
-  el.querySelectorAll('[data-izm]').forEach(b=>b.onclick=()=>{ popKapat(); const k=b.getAttribute('data-izm'); if(k==='onay') izinOnayla(id); else if(k==='red') izinReddet(id); else if(k==='akis') akisGoster('izin',id); else if(k==='form') izinFormu(id); else izSil(id); });
+  el.querySelectorAll('[data-izm]').forEach(b=>b.onclick=()=>{ popKapat(); const k=b.getAttribute('data-izm');
+    if(k==='duzenle') izDuzenle(id);
+    else if(k==='onay'){ if(kolay) izDuzenle(id,true); else izinOnayla(id); }
+    else if(k==='red'){ if(kolay) izKolayReddet(id); else izinReddet(id); }
+    else if(k==='akis'){ if(kolay) izKolayAkis(id); else akisGoster('izin',id); }
+    else if(k==='onizle'||k==='word'||k==='pdf') izinBelge(id,k);
+    else izSil(id); });
 }
 /* --- Ödemeler --- */
 function pfOdemeler(p){
@@ -2554,11 +2569,12 @@ function kikAyni(k,a,b){
 }
 const kikIzinKey=z=>[dkey(z.bas),(String(z.bas||'').match(/\d{1,2}:\d{2}/)||[''])[0],dkey(z.bit),araKey(z.tur||'')].join('|');
 const kikKanon=(L,alanlar)=>(L||[]).map(z=>alanlar.map(a=>String(z&&z[a]!=null?z[a]:'')).join('|')).sort().join('\n');
-/* Aktif çalışanda raporun yılına ait eski kayıtlar rapordakiyle değiştirilir; diğer yıllar korunur. Ayrılanda yalnız eklenir/güncellenir. */
+/* Aktif çalışanda raporun yılına ait eski kayıtlar rapordakiyle değiştirilir; diğer yıllar korunur. Ayrılanda yalnız eklenir/güncellenir.
+   İK Sistemi'nde düzenlenen/onaylanan/reddedilen kayıtlar (ikDuzen/ikOnay) korunur; raporda aynı iznin Kolay İK hâli (kaynakAnahtar) tekrar eklenmez. */
 function kikIzinBirlestir(eski,yeni,yil,aktif){
-  const m=new Map();
-  (eski||[]).forEach(z=>{ if(aktif&&Math.floor(dkey(z.bas)/10000)===yil) return; m.set(kikIzinKey(z),z); });
-  (yeni||[]).forEach(z=>m.set(kikIzinKey(z),z));
+  const m=new Map(), ikKaynak=new Set();
+  (eski||[]).forEach(z=>{ const ik=!!(z.ikOnay||z.ikDuzen); if(ik) ikKaynak.add(z.kaynakAnahtar||kikIzinKey(z)); if(aktif&&!ik&&Math.floor(dkey(z.bas)/10000)===yil) return; m.set(kikIzinKey(z),z); });
+  (yeni||[]).forEach(z=>{ const k=kikIzinKey(z); if(ikKaynak.has(k)) return; m.set(k,z); });
   return [...m.values()].sort((a,b)=>(dtObj(b.bas)||0)-(dtObj(a.bas)||0));
 }
 function kikFarklar(O){
@@ -2839,6 +2855,7 @@ function izListe(){
     const kim='<span class="izad"'+(x.emp?' data-izpf="'+esc(x.emp.id)+'"':'')+'>'+kav(ad,22)+'<span>'+esc(adBuyuk(ad))+'</span></span>';
     let isl='';
     if(sis){ if(x.durum==='bekliyor') isl+='<button class="btn sm" data-izonay="'+esc(x.id)+'">Onayla</button><button class="btn ob sm" data-izred="'+esc(x.id)+'">Reddet</button>'; isl+='<button class="kdots" data-izmenu="'+esc(x.id)+'" title="İşlemler">⋮</button>'; }
+    else { if(x.durum==='bekliyor') isl+='<button class="btn sm" data-izonayk="'+esc(x.id)+'">Onayla</button>'; isl+='<button class="kdots" data-izmenu="'+esc(x.id)+'" title="İşlemler">⋮</button>'; }
     const asama=bek?'<td>'+(sis&&curStep(x.z)?'<span class="mini">'+esc(curStep(x.z).rol)+' onayında</span>':'<span class="mini">Kolay İK</span>')+'</td>':'';
     return '<tr><td>'+kim+'</td><td>'+esc(x.tur)+'</td><td>'+esc(gunSay(x.gun))+'</td><td>'+esc(trUzunSaat(x.bas))+'</td><td>'+esc(trUzunSaat(x.bit))+'</td>'+asama+'<td class="izisl">'+isl+'</td></tr>';
   };
@@ -4230,14 +4247,14 @@ function tatilGunleri(){ const s=new Set(); RESMI_TATIL.forEach(t=>{ const d=dOb
 /* Varsayılan "Toplam": pazar ve resmi tatiller hariç gün sayısı (İK değiştirebilir) */
 function izGunHesap(basIso,bitIso){ const b=new Date(basIso+'T00:00'), e=new Date(bitIso+'T00:00'); if(isNaN(b)||isNaN(e)||e<b) return null; const tt=tatilGunleri(); let n=0; for(const d=new Date(b);d<=e;d.setDate(d.getDate()+1)){ if(d.getDay()!==0&&!tt.has(isoYerel(d))) n++; } return n; }
 function sonrakiIsGunu(bitIso){ const tt=tatilGunleri(); const d=new Date(bitIso+'T00:00'); if(isNaN(d)) return ''; do{ d.setDate(d.getDate()+1); }while(d.getDay()===0||tt.has(isoYerel(d))); return isoYerel(d); }
-function openIzin(empId){
-  izEmpFix=empId||null; const a=ensureAyar(); const me=benKim();
+function openIzin(empId,duz){
+  izEmpFix=empId||null; IZ_DUZ=duz||null; IZ_TASLAK=null; const a=ensureAyar(); const me=benKim();
   const emps=AKTIF.slice().sort((x,y)=>String(x.ad).localeCompare(String(y.ad),'tr'));
   const sec=empId||(!me._sentetik?me.id:'');
   const opt=s=>emps.map(e=>'<option value="'+esc(e.id)+'"'+(s===e.id?' selected':'')+'>'+esc(adBuyuk(e.ad))+'</option>').join('');
   const p=empId?empById(empId):null; const bugun=isoYerel(new Date());
-  document.querySelector('#izinOvl .mh h3').innerHTML='<svg viewBox="0 0 24 24">'+NIC.plane+'</svg>İzin Talep Et';
-  document.getElementById('izinBody').innerHTML=
+  document.querySelector('#izinOvl .mh h3').innerHTML='<svg viewBox="0 0 24 24">'+NIC.plane+'</svg>'+(duz?'İzni Düzenle':'İzin Talep Et');
+  document.getElementById('izinBody').innerHTML='<div id="izForm">'+
     (p?'<div class="iz-kim">'+kav(p.ad,26)+'<div><b>'+esc(adBuyuk(p.ad))+'</b><br><small>'+esc(p.bolum||'')+(p.departman?' · '+esc(p.departman):'')+'</small></div></div>'
       :'<div class="f"><label>Çalışan</label><select id="izEmp"><option value=""></option>'+opt(sec)+'</select></div>')
     +'<div class="iz-g2"><div class="f"><label>İzin Türü</label><div class="iz-tur"><select id="izTur">'+a.izinTurleri.map(t=>'<option'+(/yıllık/i.test(t)?' selected':'')+'>'+esc(t)+'</option>').join('')+'</select><span class="iz-kalan" id="izKalan"></span></div></div>'
@@ -4248,55 +4265,177 @@ function openIzin(empId){
     +'<div class="iz-g2"><div class="f"><label>Yerine Bakacak Kişi <span class="ops">opsiyonel</span></label><select id="izYerine"><option value=""></option>'+opt('')+'</select></div>'
     +'<div class="f"><label>Dönüş Tarihi</label><div class="iz-dt"><input id="izDon" type="date" value="'+sonrakiIsGunu(bugun)+'"><input id="izDonS" type="time" value="08:30"></div></div></div>'
     +'<div class="f" style="margin-bottom:0"><label class="chk"><input type="checkbox" id="izOnayli"> Onay sürecini atla ve onayla</label></div>'
-    +'<div class="mini" style="margin-top:6px">İşaretlenmezse izin Müdür → Direktör → İnsan Kaynakları onayına gider.</div>';
+    +'<div class="mini" style="margin-top:6px">İşaretlenmezse izin Müdür → Direktör → İnsan Kaynakları onayına gider.</div></div><div id="izOzet" style="display:none"></div>';
   document.getElementById('izinOvl').classList.add('on');
+  izAltBar(false);
   const $i=id=>document.getElementById(id);
   const kalanGoster=()=>{ const e=empById(izEmpFix||($i('izEmp')&&$i('izEmp').value)); const k=$i('izKalan'); if(!k) return; if(e&&/yıllık/i.test($i('izTur').value)){ const b=izinBakiye(e); k.textContent=b.bilinmiyor||b.kalan==null?'':'Kalan: '+b.kalan+' Gün'; } else k.textContent=''; };
   const hesap=()=>{ const n=izGunHesap($i('izBas').value,$i('izBit').value); if(n!=null) $i('izGun').value=n||1; if($i('izBit').value) $i('izDon').value=sonrakiIsGunu($i('izBit').value); };
   $i('izBas').onchange=()=>{ if($i('izBit').value<$i('izBas').value) $i('izBit').value=$i('izBas').value; hesap(); };
   $i('izBit').onchange=hesap; $i('izTur').onchange=kalanGoster; if($i('izEmp')) $i('izEmp').onchange=kalanGoster;
   $i('izAcik').oninput=()=>{ $i('izSay').textContent=(1000-$i('izAcik').value.length)+' / 1000 karakter kaldı'; };
+  /* Düzenleme: mevcut iznin bilgileriyle doldur */
+  if(duz){ const F=duz.f, saat=(s,d)=>{ const m=String(s||'').match(/(\d{1,2}):(\d{2})/); return m?m[1].padStart(2,'0')+':'+m[2]:d; };
+    const ts=$i('izTur'); if(F.tur&&![...ts.options].some(o=>o.value===F.tur)){ const o=document.createElement('option'); o.textContent=F.tur; ts.appendChild(o); } if(F.tur) ts.value=F.tur;
+    $i('izGun').value=gunNum(F.gun)||1;
+    if(isoFromTR(F.bas||'')){ $i('izBas').value=isoFromTR(F.bas); $i('izBasS').value=saat(F.bas,'08:30'); }
+    if(isoFromTR(F.bit||'')){ $i('izBit').value=isoFromTR(F.bit); $i('izBitS').value=saat(F.bit,'17:30'); }
+    $i('izAcik').value=String(F.acik||'').slice(0,1000); $i('izSay').textContent=(1000-$i('izAcik').value.length)+' / 1000 karakter kaldı';
+    if(F.yerine){ const e=AKTIF.find(x=>nkey(x.ad)===nkey(F.yerine)); if(e) $i('izYerine').value=e.id; }
+    if(isoFromTR(F.donus||'')){ $i('izDon').value=isoFromTR(F.donus); $i('izDonS').value=saat(F.donus,'08:30'); } else if($i('izBit').value) $i('izDon').value=sonrakiIsGunu($i('izBit').value);
+    if(F.onayli){ const c=$i('izOnayli'); c.checked=true; c.disabled=true; c.parentElement.lastChild.textContent=' Onaylı izin'; } }
   kalanGoster();
 }
+/* İzin penceresinin alt düğmeleri: 1. adım İptal / Devam · 2. adım (özet) Geri / Gönder */
+function izAltBar(ozet){
+  const mf=document.querySelector('#izinOvl .mf');
+  mf.innerHTML=ozet?'<button class="btn o" id="izGeri">Geri</button><button class="btn" id="izGonder">Gönder</button>':'<button class="btn o" id="izIptal">İptal</button><button class="btn" id="izSave">Devam</button>';
+  if(ozet){ document.getElementById('izGeri').onclick=()=>{ document.getElementById('izOzet').style.display='none'; document.getElementById('izForm').style.display=''; izAltBar(false); }; document.getElementById('izGonder').onclick=izGonder; }
+  else { document.getElementById('izIptal').onclick=()=>closeModals(); document.getElementById('izSave').onclick=saveIzin; }
+}
+let IZ_DUZ=null, IZ_TASLAK=null, IZ_MESGUL=false;
+/* 1. adım "Devam": bilgileri denetler ve Kolay İK'daki gibi son kontrol ekranını açar (kayıt "Gönder" ile yapılır) */
 async function saveIzin(){
   const empId=izEmpFix||v('izEmp'); if(!empId){alert('Çalışan seçin.');return;}
   const emp=empById(empId); const bas=v('izBas'),bit=v('izBit');
   if(!bas||!bit){alert('Başlangıç ve bitiş tarihini girin.');return;}
   if(bit<bas){alert('Bitiş tarihi başlangıçtan önce olamaz.');return;}
   const gun=parseFloat(String(v('izGun')).replace(',','.')); if(!(gun>0)){alert('Toplam gün sayısını girin.');return;}
-  const onayli=document.getElementById('izOnayli').checked;
-  const akis=onayZinciri(emp);
-  if(onayli) akis.forEach(s=>{s.durum='onaylandi';s.tarih=new Date().toISOString();s.kaydeden=(SES&&SES.ad)||'İK';});
+  const c=document.getElementById('izOnayli'); const onayli=!!(c&&c.checked&&!c.disabled);
   const saatli=(d,s)=>trFromISO(d)+(s?' '+s:'');
   const yer=v('izYerine'); const yerE=yer?empById(yer):null; const don=v('izDon');
-  const rec={id:uid('z'),empId,empAd:emp?emp.ad:'',tur:v('izTur'),gun,baslangic:saatli(bas,v('izBasS')),bitis:saatli(bit,v('izBitS')),donus:don?saatli(don,v('izDonS')):'',aciklama:v('izAcik').slice(0,1000),yerine:yerE?yerE.ad:'',durum:onayli?'onaylandi':'bekliyor',onayAkis:akis,olusturma:new Date().toISOString()};
-  await diziEkle('izin',rec); closeModals();
+  IZ_TASLAK={empId,emp,tur:v('izTur'),gun,baslangic:saatli(bas,v('izBasS')),bitis:saatli(bit,v('izBitS')),donus:don?saatli(don,v('izDonS')):'',aciklama:v('izAcik').slice(0,1000),yerine:yerE?yerE.ad:'',onayli,zatenOnayli:!!(c&&c.disabled),duz:IZ_DUZ};
+  izOzetGoster();
+}
+function izOzetGoster(){
+  const T=IZ_TASLAK; if(!T) return; const e=T.emp||{}; const ben=(SES&&SES.ad)||'İnsan Kaynakları';
+  const uzun=s=>{ const d=dtObj(s); if(!d) return s||'—'; return d.getDate()+' '+AYU[d.getMonth()]+' '+d.getFullYear()+(/\d:\d\d/.test(String(s))?' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'):''); };
+  const GUN=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'], simdi=new Date();
+  const olusAn=T.duz&&T.duz.olus?new Date(T.duz.olus):simdi;
+  const olus=olusAn.getDate()+' '+AYU[olusAn.getMonth()]+' '+olusAn.getFullYear()+' '+String(olusAn.getHours()).padStart(2,'0')+':'+String(olusAn.getMinutes()).padStart(2,'0');
+  const satir=(k,v)=>'<div style="display:flex;justify-content:space-between;gap:16px;padding:9px 0;border-bottom:1px solid #eef1f5"><span style="color:#5b6573">'+esc(k)+'</span><b style="font-weight:500;text-align:right">'+esc(v)+'</b></div>';
+  const mevcut=T.duz&&!T.duz.kolay?(IZIN.find(x=>x.id===T.duz.id)||{}).onayAkis:null;
+  const zincir=(mevcut&&mevcut.length?mevcut:onayZinciri(e));
+  const adim=(no,ad,alt,not,renk)=>'<div style="display:flex;gap:12px;align-items:flex-start;position:relative;padding:0 0 18px">'
+    +'<div style="position:relative">'+kav(ad,32)+(no?'<span style="position:absolute;top:-6px;left:-6px;background:#fff;border:1px solid #cfd6de;border-radius:50%;width:16px;height:16px;font-size:10px;display:flex;align-items:center;justify-content:center">'+no+'</span>':'')+'</div>'
+    +'<div><b style="font-size:12.5px">'+esc(adBuyuk(ad))+'</b><div class="mini">'+esc(alt||'')+'</div>'+(not?'<div class="mini" style="color:'+(renk||'var(--ok)')+'">'+esc(not)+'</div>':'')+'</div></div>';
+  const kim=T.duz?' için '+esc(gunSay(T.gun))+' günlük izni güncelleniyor.':' için '+esc(gunSay(T.gun))+' gün izin talep ediyor.';
+  let surec=adim(0,e.ad||'',e.bolum||'',T.duz?'Kayıt düzenleniyor · '+ben:(GUN[olusAn.getDay()]?olus+', '+GUN[olusAn.getDay()]+' tarihinde oluşturuldu.':''),'#5b6573');
+  zincir.forEach((s,i)=>{ let not='', renk='';
+    if(T.onayli&&s.durum!=='onaylandi'){ not='Onay süreci atlandı · İK onayı: '+trTitle(ben); }
+    else if(s.durum==='onaylandi'){ not='Onaylandı'+(s.kaydeden?' · '+trTitle(s.kaydeden):''); }
+    else if(T.zatenOnayli){ not='Onaylandı'; }
+    else if(s.durum==='reddedildi'){ not='Reddedildi'; renk='var(--bad)'; }
+    surec+=adim(i+1,s.ad&&s.ad!=='İnsan Kaynakları'?s.ad:'İnsan Kaynakları',s.rol,not,renk); });
+  const yillik=/yıllık/i.test(T.tur||'');
+  const h='<div style="background:#eef3fb;color:#3d4a5c;font-size:12.5px;padding:9px 12px;border-radius:6px;margin-bottom:16px">'+(T.duz?'İzin aşağıdaki bilgilerle güncellenecek, son kez gözden geçirebilirsiniz.':'Talep aşağıdaki bilgilerle oluşturulacak, son kez gözden geçirebilirsiniz.')+'</div>'
+    +'<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:14px">'+kav(e.ad||'',34)+'<div style="background:#f1f3f7;border-radius:10px;padding:10px 14px"><b>'+esc(adBuyuk(e.ad||''))+'</b>, <b>'+esc(T.tur)+'</b>'+kim+(T.aciklama?'<div class="mini" style="margin-top:4px">'+esc(T.aciklama)+'</div>':'')+'</div></div>'
+    +satir('İzin Türü',T.tur)+satir('Toplam İzin',gunSay(T.gun))+satir('Başlangıç Tarihi',uzun(T.baslangic))+satir('Bitiş Tarihi',uzun(T.bitis))+(T.donus?satir('Mesai Başlangıç',uzun(T.donus)):'')+(T.yerine?satir('Yerine Bakacak Kişi',trTitle(T.yerine)):'')+satir(T.duz?'Düzenleme Tarihi':'Oluşturulma Tarihi',olus)
+    +'<div style="background:#f6f7f9;border-radius:8px;padding:14px 16px;margin-top:16px"><div style="font-weight:600;margin-bottom:12px">Onay süreci</div>'+surec+'</div>'
+    +(T.onayli&&yillik?'<div class="mini" style="margin-top:10px">İzin bakiyesi Kolay İK raporundan gelir; bu onay bakiyeye bir sonraki Kolay İK güncellemesinde yansır.</div>':'');
+  document.getElementById('izForm').style.display='none';
+  const oz=document.getElementById('izOzet'); oz.innerHTML=h; oz.style.display='';
+  izAltBar(true);
+}
+/* 2. adım "Gönder": yeni talep ekler ya da mevcut izni (sistem ya da Kolay İK kaydı) günceller; "onay sürecini atla" seçiliyse onaylar */
+async function izGonder(){
+  const T=IZ_TASLAK; if(!T||IZ_MESGUL) return; IZ_MESGUL=true;
+  const ben=(SES&&SES.ad)||'İK', simdi=new Date().toISOString(), d=T.duz;
+  const btn=document.getElementById('izGonder'); if(btn) btn.disabled=true;
+  try{
+    if(!d){
+      const akis=onayZinciri(T.emp); if(T.onayli) akis.forEach(s=>{ s.durum='onaylandi'; s.tarih=simdi; s.kaydeden=ben; s.atlandi=true; });
+      await diziEkle('izin',{id:uid('z'),empId:T.empId,empAd:T.emp?T.emp.ad:'',tur:T.tur,gun:T.gun,baslangic:T.baslangic,bitis:T.bitis,donus:T.donus,aciklama:T.aciklama,yerine:T.yerine,durum:T.onayli?'onaylandi':'bekliyor',onayAkis:akis,olusturma:simdi});
+    } else if(!d.kolay){
+      await diziGuncelle('izin',d.id,z=>{ Object.assign(z,{tur:T.tur,gun:T.gun,baslangic:T.baslangic,bitis:T.bitis,donus:T.donus,aciklama:T.aciklama,yerine:T.yerine,duzenleyen:ben,duzenleme:simdi});
+        if(T.onayli&&z.durum!=='onaylandi'){ (z.onayAkis||[]).forEach(s=>{ if(s.durum==='bekliyor'){ s.durum='onaylandi'; s.tarih=simdi; s.kaydeden=ben; s.atlandi=true; } }); z.durum='onaylandi'; }
+        return z; });
+    } else {
+      const ok=await izKolayYaz(d.id,z=>{ const o={tur:T.tur,gun:String(T.gun),bas:T.baslangic,bit:T.bitis,acik:T.aciklama,kaynakAnahtar:z.kaynakAnahtar||kikIzinKey(z),ikDuzen:{ad:ben,tarih:simdi}};
+        if(T.donus) o.donus=T.donus; if(T.yerine) o.yerine=T.yerine;
+        if(T.onayli&&izDurumKod(z,true)!=='onaylandi'){ o.durum='Onaylandı'; o.ikOnay={ad:ben,tarih:simdi,atlandi:true}; }
+        return o; });
+      if(!ok) return;
+    }
+    closeModals(); toast(T.onayli?'İzin onaylandı':(d?'İzin güncellendi':'İzin talebi oluşturuldu')); IZ_TASLAK=null; if(ready) render();
+  } finally { IZ_MESGUL=false; if(btn) btn.disabled=false; }
+}
+/* Menüden "Düzenle" (dogrudanOnay: "Onayla" → son kontrol ekranı, onay süreci atlanmış olarak) */
+function izDuzenle(id,dogrudanOnay){
+  const kolay=String(id).indexOf('k~')===0; let p,z;
+  if(kolay){ const K=izKolayBul(id); if(!K){ alert('İzin kaydı bulunamadı; sayfayı yenileyip tekrar deneyin.'); return; } p=K.p; z=K.z; }
+  else { z=IZIN.find(x=>x.id===id); if(!z) return; p=empById(z.empId); if(!p){ alert('Bu iznin çalışan kaydı bulunamadı.'); return; } }
+  const f={tur:z.tur,gun:z.gun,bas:kolay?z.bas:z.baslangic,bit:kolay?z.bit:z.bitis,acik:kolay?z.acik:z.aciklama,yerine:z.yerine||'',donus:z.donus||'',onayli:izDurumKod(z,kolay)==='onaylandi'};
+  openIzin(p.id,{id,kolay,f,olus:kolay?'':z.olusturma});
+  if(dogrudanOnay){ const c=document.getElementById('izOnayli'); if(c&&!c.disabled) c.checked=true; saveIzin(); }
+}
+/* Kolay İK'dan aktarılan izin kaydını günceller: yalnız o çalışanın listesi yazılır (satisVeri/mrIzinGecmis, merge) */
+async function izKolayYaz(ref,degistir){
+  const K=izKolayBul(ref); if(!K){ alert('İzin kaydı bulunamadı; sayfayı yenileyip tekrar deneyin.'); return false; }
+  if(!EK_OK.mrIzinGecmis){ alert('İzin kayıtları sunucudan henüz yüklenmedi. Birkaç saniye sonra tekrar deneyin.'); return false; }
+  const tc=String(K.p.tc), anahtar=kikIzinKey(K.z);
+  const liste=JSON.parse(JSON.stringify((K.p.izinler||[]).map(z=>kikIzinKey(z)===anahtar?Object.assign({},z,degistir(z)):z)));
+  try{ await setDoc(refEk('mrIzinGecmis'),{veri:{[tc]:liste},guncelleme:new Date().toISOString()},{merge:true}); }
+  catch(e){ alert('Kaydedilemedi: '+e.message); return false; }
+  EKV.mrIzinGecmis=Object.assign({},EKV.mrIzinGecmis||{},{[tc]:liste}); mergeEk(); return true;
+}
+async function izKolayReddet(ref){
+  if(!confirm('İzin reddedilsin mi?')) return;
+  const ben=(SES&&SES.ad)||'İK', simdi=new Date().toISOString();
+  if(await izKolayYaz(ref,z=>({durum:'Reddedildi',kaynakAnahtar:z.kaynakAnahtar||kikIzinKey(z),ikOnay:{ad:ben,tarih:simdi,red:true}}))){ toast('İzin reddedildi'); render(); }
+}
+/* Kolay İK kaydı için onay sırası (izin onay sürecinden) ve İK onayı bilgisi */
+function izKolayAkis(ref){
+  const K=izKolayBul(ref); if(!K) return; const p=K.p, z=K.z, d=izDurumKod(z,true), ik=z.ikOnay;
+  const t=ik&&ik.tarih?new Date(ik.tarih).toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+  const rows=onayZinciri(p).map((s,i)=>{ let dur,col,ic;
+    if(d==='onaylandi'){ dur=ik?'Onay süreci atlandı · İK onayı':'Onaylandı (Kolay İK)'; col='var(--ok)'; ic='✓'; }
+    else if(d==='reddedildi'){ dur=ik?'İK tarafından reddedildi':'Reddedildi (Kolay İK)'; col='var(--bad)'; ic='✕'; }
+    else { dur=i===0?'Onay bekliyor':'Sırada'; col=i===0?'var(--warn)':'var(--muted)'; ic=i===0?'●':'○'; }
+    return '<div style="display:flex;gap:13px;padding:11px 0;border-bottom:1px solid #f0f2f5"><div style="width:26px;height:26px;border-radius:50%;background:'+col+';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:none">'+ic+'</div>'
+      +'<div style="flex:1"><div><b style="color:var(--navy)">'+(i+1)+'. '+esc(s.rol)+'</b>'+(s.ad&&s.ad!=='İnsan Kaynakları'?' · '+esc(trTitle(s.ad)):'')+'</div><div class="mini">'+esc(dur)+'</div></div></div>'; }).join('');
+  document.getElementById('akisBody').innerHTML='<div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--line)"><b style="color:var(--navy);font-size:15px">'+esc(trTitle(p.ad))+'</b> '+tipBadge('İzin')+'<div class="mini" style="margin-top:3px">'+esc(z.tur)+' · '+esc(gunSay(z.gun))+' gün · '+esc(z.bas)+' → '+esc(z.bit)+'</div></div>'
+    +'<div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Onay Sırası</div>'+rows
+    +'<div class="mini" style="margin-top:14px">'+(ik?(ik.red?'Reddeden':'Onaylayan')+' (İK): <b>'+esc(trTitle(ik.ad))+'</b>'+(t?' · '+t:''):'Bu izin Kolay İK’dan aktarıldı.')+'</div>';
+  document.getElementById('akisOvl').classList.add('on');
 }
 function bindIzinActions(){
   document.querySelectorAll('[data-izonay]').forEach(b=>b.onclick=()=>izinOnayla(b.getAttribute('data-izonay')));
   document.querySelectorAll('[data-izred]').forEach(b=>b.onclick=()=>izinReddet(b.getAttribute('data-izred')));
   document.querySelectorAll('[data-izsil]').forEach(b=>b.onclick=()=>izSil(b.getAttribute('data-izsil')));
   document.querySelectorAll('[data-izform]').forEach(b=>b.onclick=()=>izinFormu(b.getAttribute('data-izform')));
+  document.querySelectorAll('[data-izonayk]').forEach(b=>b.onclick=()=>izDuzenle(b.getAttribute('data-izonayk'),true));
   document.querySelectorAll('[data-izakis]').forEach(b=>b.onclick=()=>akisGoster('izin',b.getAttribute('data-izakis')));
 }
 async function izSil(id){if(!confirm('İzin kaydı silinsin mi?'))return;await diziGuncelle('izin',id,()=>null);}
-function izinFormu(id){
-  const z=IZIN.find(x=>x.id===id);if(!z)return;const e=empById(z.empId)||{};const b=izinBakiye(e);
-  const w=window.open('','_blank');if(!w){alert('Açılır pencere engellendi.');return;}
-  w.document.write('<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>İzin Formu</title><style>body{font-family:Arial,sans-serif;color:#1c2530;padding:40px;max-width:800px;margin:auto;font-size:13px}h1{font-family:Georgia,serif;color:#132a44;font-size:20px}.row{display:flex;border-bottom:1px solid #e5e5e5;padding:7px 0}.k{width:190px;color:#667;font-weight:bold}.v{flex:1}.sec{font-weight:bold;margin:22px 0 6px;color:#132a44}.sign{display:flex;gap:40px;margin-top:50px}.sign div{flex:1;border-top:1px solid #333;padding-top:6px;font-size:12px}@media print{.noprint{display:none}}</style></head><body>'
-    +'<div style="display:flex;justify-content:space-between;align-items:center"><h1>İnciroğlu Otomotiv</h1><div>'+new Date().toLocaleDateString('tr-TR')+'</div></div><hr>'
-    +'<div class="sec">Çalışan Bilgileri</div>'
-    +row('Adı Soyadı',trTitle(e.ad||z.empAd))+row('TC Kimlik No',e.tc||'')+row('Departman / Bölüm',(e.departman||'')+' / '+(e.bolum||''))+row('Unvan',e.unvan||'')+row('İşe Başlama Tarihi',e.giris||'')+row('Telefon',e.telIs||e.telKisisel||e.telefonIs||e.telefonKisisel||'')+row('Yerine Bakacak Kişi',z.yerine||'')
-    +'<div class="sec">İzin Detayları</div>'
-    +row('İzin Türü',z.tur)+row('Kullanılan Gün Sayısı',z.gun)+row('Başlangıç Tarihi',z.baslangic)+row('Bitiş Tarihi',z.bitis)+row('Toplam Kalan İzin',b.kalan!=null?b.kalan+' gün':'—')+row('Açıklama',z.aciklama||'')
+/* İzin formu (Önizleme · İndir (PDF) · İndir (MS Word)). Satırlar tablo: tarayıcıda ve Word'de aynı görünür.
+   Tüm alanlar KAÇIŞLI yazılır: çalışan uygulamasından gelen serbest metin (ör. Açıklama) kod çalıştıramaz. */
+function izinFormuHtml(z,e,word){
+  const b=izinBakiye(e), ad=trTitle(e.ad||z.empAd||'');
+  const row=(k,v)=>'<tr><td class="k">'+esc(k)+'</td><td>'+esc(v==null||v===''?'—':v)+'</td></tr>';
+  return '<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>İzin Formu - '+esc(ad)+'</title><style>body{font-family:Arial,sans-serif;color:#1c2530;padding:36px;max-width:800px;margin:auto;font-size:13px}h1{font-family:Georgia,serif;color:#132a44;font-size:20px;margin:0}table.t{width:100%;border-collapse:collapse}table.t td{border-bottom:1px solid #e5e5e5;padding:7px 4px;vertical-align:top}td.k{width:200px;color:#667;font-weight:bold}.sec{font-weight:bold;margin:22px 0 6px;color:#132a44}table.s{width:100%;margin-top:50px;border-collapse:separate;border-spacing:24px 0}table.s td{border-top:1px solid #333;padding-top:6px;font-size:12px;width:33%;vertical-align:top}@media print{.noprint{display:none}}</style></head><body>'
+    +'<table style="width:100%"><tr><td><h1>İnciroğlu Otomotiv</h1><div style="color:#667">İzin Formu</div></td><td style="text-align:right">'+new Date().toLocaleDateString('tr-TR')+'</td></tr></table><hr>'
+    +'<div class="sec">Çalışan Bilgileri</div><table class="t">'
+    +row('Adı Soyadı',ad)+row('TC Kimlik No',e.tc||'')+row('Departman / Bölüm',(e.departman||'')+' / '+(e.bolum||''))+row('Unvan',e.unvan||'')+row('İşe Başlama Tarihi',e.giris||'')+row('Telefon',e.telIs||e.telKisisel||e.telefonIs||e.telefonKisisel||'')+row('Yerine Bakacak Kişi',z.yerine?trTitle(z.yerine):'')+'</table>'
+    +'<div class="sec">İzin Detayları</div><table class="t">'
+    +row('İzin Türü',z.tur)+row('Kullanılan Gün Sayısı',gunSay(z.gun))+row('Başlangıç Tarihi',z.baslangic)+row('Bitiş Tarihi',z.bitis)+(z.donus?row('İşe Dönüş Tarihi',z.donus):'')+row('Toplam Kalan İzin',b.kalan!=null?b.kalan+' gün':'')+row('Açıklama',z.aciklama||'')+row('Onay Durumu',z.durumYazi||'')+'</table>'
     +'<p style="margin-top:24px">Yukarıda belirttiğim tarihler arasında izin hakkımı kullanacağımı beyan ederim.</p>'
-    +'<div class="sign"><div>Çalışan<br>'+esc(trTitle(e.ad||z.empAd))+'<br>İmza</div><div>Yönetici Onayı<br>'+esc(e.yonetici||e.mudurluk||'')+'</div><div>İnsan Kaynakları Onayı</div></div>'
-    +'<div class="noprint" style="margin-top:30px;text-align:center"><button onclick="window.print()" style="padding:10px 22px;font-size:14px;cursor:pointer">Yazdır / PDF</button></div>'
-    +'</body></html>');
-  w.document.close();
-  /* Tüm alanlar KAÇIŞLI yazılır: çalışan uygulamasından gelen serbest metin (ör. Açıklama) kod çalıştıramaz */
-  function row(k,v){return '<div class="row"><div class="k">'+esc(k)+'</div><div class="v">'+esc(v==null?'':v)+'</div></div>';}
+    +'<table class="s"><tr><td>Çalışan<br>'+esc(ad)+'<br>İmza</td><td>Yönetici Onayı<br>'+esc(trTitle(e.yonetici||e.mudurluk||''))+'</td><td>İnsan Kaynakları Onayı</td></tr></table>'
+    +(word?'':'<div class="noprint" style="margin-top:30px;text-align:center"><button onclick="window.print()" style="padding:10px 22px;font-size:14px;cursor:pointer">Yazdır / PDF</button></div>')
+    +'</body></html>';
 }
+/* mod: 'onizle' (yeni pencere) · 'pdf' (yazdırma penceresi → "PDF olarak kaydet") · 'word' (.doc indir) */
+function izinBelge(id,mod){
+  let z,e;
+  if(String(id).indexOf('k~')===0){ const K=izKolayBul(id); if(!K) return; e=K.p; const k=K.z, d=izDurumKod(k,true);
+    z={tur:k.tur,gun:k.gun,baslangic:k.bas,bitis:k.bit,donus:k.donus||'',aciklama:k.acik||'',yerine:k.yerine||'',empAd:e.ad,durumYazi:d==='onaylandi'?'Onaylandı'+(k.ikOnay?' · İK onayı: '+trTitle(k.ikOnay.ad):''):(d==='bekliyor'?'Onay bekliyor':String(k.durum||''))}; }
+  else { const s=IZIN.find(x=>x.id===id); if(!s) return; e=empById(s.empId)||{}; z=Object.assign({},s,{durumYazi:onayAsama(s)}); }
+  const html=izinFormuHtml(z,e,mod==='word');
+  if(mod==='word'){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['﻿',html],{type:'application/msword'})); a.download='İzin Formu - '+trTitle(e.ad||z.empAd||'')+' - '+String(z.baslangic||'').slice(0,10)+'.doc'; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500); return; }
+  const w=window.open('','_blank'); if(!w){ alert('Açılır pencere engellendi. Adres çubuğundaki uyarıdan bu siteye izin verip tekrar deneyin.'); return; }
+  w.document.write(html); w.document.close(); if(mod==='pdf') setTimeout(()=>{ try{ w.focus(); w.print(); }catch(_){} },500);
+}
+function izinFormu(id){ izinBelge(id,'onizle'); }
 
 /* ===== HARCAMA ===== */
 function openHarc(empId){
