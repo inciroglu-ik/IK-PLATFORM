@@ -147,7 +147,7 @@ function ozetCiz(kok, B, M) {
    ========================================================================== */
 function sutun(label, data, renk) {
   return { label, data, backgroundColor: renk, hoverBackgroundColor: renk, borderRadius: 4, borderSkipped: 'start', maxBarThickness: 22,
-    categoryPercentage: 0.66, barPercentage: 0.9, datalabels: O.etiket.ust() };
+    datalabels: O.etiket.ust({ secim: 'hepsi', boyut: 9 }), categoryPercentage: 0.9, barPercentage: 0.84 };
 }
 
 function trendCiz(kok, B, M) {

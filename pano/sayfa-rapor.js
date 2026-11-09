@@ -89,7 +89,7 @@ function stilEkle(kok) {
     + '.rp-hap[aria-pressed="true"] .ikon{color:var(--lac-600)}'
     + '.rp-birak{min-height:128px;border:2px dashed var(--cizgi-3);border-radius:12px;padding:12px;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;'
     + 'background:var(--n-25,#fafbfc);transition:border-color .15s,background .15s}'
-    + '.rp-birak.uzerinde{border-color:var(--pir-500);background:var(--pir-50,#fbf7ee)}'
+    + '.rp-birak.uzerinde{border-color:var(--pir-500);background:var(--pir-50,#f2f7fd)}'
     + '.rp-bos{width:100%;align-self:center;text-align:center;color:var(--metin-3);font-size:12.5px;padding:28px 8px}'
     + '.rp-secili{display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 4px 0 12px;border-radius:999px;background:var(--lac-800);color:#fff;font-size:12.5px;font-weight:500}'
     + '.rp-secili button{appearance:none;border:0;background:transparent;color:var(--lac-200);width:24px;height:24px;border-radius:999px;display:grid;place-items:center;cursor:pointer;padding:0}'

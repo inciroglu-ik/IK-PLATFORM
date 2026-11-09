@@ -39,6 +39,7 @@ function stilEkle(kok) {
     '.mes-arac{display:flex;gap:8px;flex-wrap:wrap;align-items:center}'
     + '.tablo td.mes-toplam{font-weight:600;color:var(--pir-700)}'
     + '.tablo td.mes-pay{color:var(--lac-600);font-weight:600}'
+    + '.tablo tr.mes-ilk5 td{background:#fdeeee}.tablo tr.mes-ilk5:hover td{background:#fbe3e3}.tablo tr.mes-ilk5 td.ad-hucre{box-shadow:inset 3px 0 0 #d9534f}'
     + '@media (max-width:760px){.mes-arac .alan{width:100%!important}}' }));
 }
 
@@ -320,7 +321,9 @@ function listeCiz(kok, B, M) {
   toplamSatir.toplam = M.kapsamTL;
   toplamSatir.pct = Math.round(M.mk.reduce((sum, r) => sum + (sayiMi(r.pct) ? +r.pct : 0), 0) * 10) / 10;
 
-  const { govde } = O.kart(kok, { baslik: 'Kişi bazlı mesai detayı', aciklama: O.sayi(M.mk.length) + ' kişi' + (M.fa ? ' · seçili kapsam' : '') + ' · tutarlar brüt TL · Pay: kişinin şirket toplamındaki payı', sinif: 'kart-liste' });
+  /* En yüksek toplam mesaiye sahip ilk 5 kişi hafif kırmızı (kullanıcı isteği 09.11) */
+  const ilk5 = new Set(M.mk.filter((r) => sayiMi(r.toplam) && +r.toplam > 0).slice().sort((p, q) => +q.toplam - +p.toplam).slice(0, 5));
+  const { govde } = O.kart(kok, { baslik: 'Kişi bazlı mesai detayı', aciklama: O.sayi(M.mk.length) + ' kişi' + (M.fa ? ' · seçili kapsam' : '') + ' · tutarlar brüt TL · Pay: kişinin şirket toplamındaki payı · kırmızı satırlar: en yüksek mesaili 5 kişi', sinif: 'kart-liste' });
   const t = O.tablo(govde, {
     sutunlar: [
       { k: 'ad', ad: 'Ad Soyad', sinif: 'ad-hucre' },
@@ -332,6 +335,7 @@ function listeCiz(kok, B, M) {
       { k: 'pct', ad: 'Pay', tip: 'sayi', sag: true, bicim: (v) => O.yuzde(v), hucreSinif: () => 'mes-pay' }
     ]),
     satirlar: suz(),
+    satirSinif: (r) => (ilk5.has(r) ? 'mes-ilk5' : ''),
     sayfaBoyu: 12,
     siraNo: true,
     araYer: 'Ad, departman, unvan ara…',

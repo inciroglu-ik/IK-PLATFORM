@@ -226,14 +226,15 @@ function kirilimCiz(kok, B, M) {
   kidemKarti(iz2, M);
 }
 
-/* Departman bazında izin bakiyesi (index iz-dept: pozitif bakiye toplamı, ilk 10, "N gün") */
+/* Departman bazında izin bakiyesi (pozitif bakiye toplamı, TÜM departmanlar — kullanıcı isteği 09.11; 12'den fazlaysa iki sütun) */
 function departmanKarti(iz, M) {
-  const ilk10 = M.deptBakiye.slice(0, 10);
-  const { govde } = O.kart(iz, { baslik: 'Departman bazında izin bakiyesi', aciklama: 'Toplam birikmiş izin günleri · en yüksek 10 departman', sinif: 's7' });
-  O.cubukListe(govde, ilk10.map(([ad, v]) => ({ ad: ad || '—', deger: Math.round(v) })), { bicim: (v) => O.sayi(v) + ' gün', adGenislik: '38%', bos: 'Pozitif bakiye kaydı yok' });
-  if (ilk10.length) {
-    const top10 = ilk10.reduce((s, x) => s + x[1], 0);
-    govde.append(O.el('div', { class: 'kart-alt-cubuk', html: '<span>İlk ' + ilk10.length + ' departmanın birikmiş izindeki payı: ' + b(O.yuzde(M.birikmis ? Math.round(top10 / M.birikmis * 100) : null, 0)) + '</span><span>' + b(O.sayi(M.deptBakiye.length)) + ' departmanda birikmiş izin var</span>' }));
+  const hepsi = M.deptBakiye;
+  const { govde } = O.kart(iz, { baslik: 'Departman bazında izin bakiyesi', aciklama: 'Toplam birikmiş izin günleri · tüm departmanlar (' + O.sayi(hepsi.length) + ')', sinif: 's7' });
+  const liste = O.cubukListe(govde, hepsi.map(([ad, v]) => ({ ad: ad || '—', deger: Math.round(v) })), { bicim: (v) => O.sayi(v) + ' gün', adGenislik: '44%', bos: 'Pozitif bakiye kaydı yok' });
+  if (hepsi.length > 12) { liste.classList.add('iki-sutun'); liste.style.setProperty('--satir', String(Math.ceil(hepsi.length / 2))); }
+  if (hepsi.length) {
+    const top = hepsi.reduce((s, x) => s + x[1], 0), ilk3 = hepsi.slice(0, 3).reduce((s, x) => s + x[1], 0);
+    govde.append(O.el('div', { class: 'kart-alt-cubuk', html: '<span>Toplam birikmiş izin: ' + b(O.sayi(Math.round(top)) + ' gün') + '</span><span>İlk 3 departmanın payı: ' + b(O.yuzde(top ? Math.round(ilk3 / top * 100) : null, 0)) + '</span>' }));
   }
 }
 

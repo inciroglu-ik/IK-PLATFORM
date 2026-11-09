@@ -1,8 +1,10 @@
 /* ==========================================================================
-   İNCİROĞLU OTOMOTİV · TASARIM DİLİ 2026 · KONSEPT 1 — "LACİVERT KOKPİT"
+   İNCİROĞLU OTOMOTİV · TASARIM DİLİ 2026 · KONSEPT 2 — "GRAFİT KURUMSAL" (09.11.2026)
    --------------------------------------------------------------------------
    Premium dijital gösterge panellerinden esinli kurumsal tasarım sistemi.
-   Derin lacivert "kokpit" yüzeyleri + açık içerik alanları + pirinç vurgular.
+   Grafit "kokpit" yüzeyleri + açık içerik alanları + lacivert ana ton + çelik mavisi vurgu.
+   Kullanıcı isteği (09.11): her yer lacivert-pirinç olmasın, sarı ve yeşil yok, daha kurumsal.
+   Değişken ADLARI korunur (--lac-*, --pir-*); --pir-* artık pirinç değil ÇELİK MAVİSİ vurgu skalasıdır.
    Fontlar: Inter (arayüz, sayılar) · Source Serif 4 (başlık, karşılama).
    Build yok: bu dosya doğrudan <link rel="stylesheet" href="tokens.css"> ile
    bağlanır. Tüm değerler CSS değişkeni; bileşenler değişken üzerinden yazılır.
@@ -14,10 +16,10 @@
   /* ---------- 1. RENK SKALALARI ---------- */
 
   /* Lacivert (marka ana tonu; kokpit yüzeyleri, başlıklar, birincil metin) */
-  --lac-975: #040b16;
-  --lac-950: #071222;
-  --lac-900: #0a182c;
-  --lac-850: #0e1f37;
+  --lac-975: #090c11;   /* koyu yüzeyler (975–850) grafit; 800–50 lacivert */
+  --lac-950: #0e1218;
+  --lac-900: #141a22;
+  --lac-850: #19212b;
   --lac-800: #132a46;   /* referans: Excel rapor başlık bandı (19,42,68) */
   --lac-700: #1b3a5e;
   --lac-600: #25507e;
@@ -28,17 +30,17 @@
   --lac-100: #e2e9f3;
   --lac-50:  #f1f5fa;
 
-  /* Pirinç / brass (vurgu; aktif durum, ibre, hedef çentiği, birincil eylem) */
-  --pir-900: #3f2e10;
-  --pir-800: #5e4518;
-  --pir-700: #7d5c1f;   /* açık zeminde pirinç METİN (5,2:1) */
-  --pir-600: #9c7428;
-  --pir-500: #b98b37;   /* ana pirinç — buton, ibre, aktif çizgi */
-  --pir-400: #cfa75a;   /* koyu zeminde pirinç metin/ibre (lacivert üstünde 6,6:1) */
-  --pir-300: #e0c38a;
-  --pir-200: #eddcb6;
-  --pir-100: #f6eedb;
-  --pir-50:  #fbf7ee;
+  /* Vurgu — ÇELİK MAVİSİ (eski pirinç skalasının yerine; aktif durum, ibre, birincil eylem) */
+  --pir-900: #0f2a4d;
+  --pir-800: #163d6d;
+  --pir-700: #1d4f8c;   /* açık zeminde vurgu METNİ (7,6:1) */
+  --pir-600: #2563ab;
+  --pir-500: #2f74c8;   /* ana vurgu — buton, ibre, aktif çizgi */
+  --pir-400: #5b97e0;   /* koyu (grafit) zeminde vurgu metni/ibre */
+  --pir-300: #8cb7ee;
+  --pir-200: #c3d9f6;
+  --pir-100: #e2edfb;
+  --pir-50:  #f2f7fd;
 
   /* Nötr (soğuk arduvaz; lacivertle akraba gri) */
   --n-0:   #ffffff;
@@ -58,7 +60,8 @@
   /* Durum — Excel rapor kurallarıyla birebir: Yeşil=Başarılı, Kırmızı=Yetersiz,
      Amber=Sınırda, Gri=Etkisi Yok. Durum renkleri ASLA seri rengi olarak kullanılmaz
      ve her zaman ikon + etiketle birlikte gelir. */
-  --ok-700: #136b45;  --ok-600: #1a7f53;  --ok-500: #23955f;  --ok-200: #b9e3cb; --ok-100: #dcf1e5;  --ok-50: #eef8f2;
+  /* "olumlu" durum yeşil DEĞİL mavi (kullanıcı: yeşil istemiyorum) */
+  --ok-700: #1b4a85;  --ok-600: #2259a0;  --ok-500: #2a6bbd;  --ok-200: #c3d7f1; --ok-100: #e0eaf8;  --ok-50: #f0f5fc;
   --uy-700: #8a560d;  --uy-600: #a86a12;  --uy-500: #c9831c;  --uy-200: #f3d7a1; --uy-100: #fbedd2;  --uy-50: #fdf6e8;
   --ht-700: #9d2b2b;  --ht-600: #b63434;  --ht-500: #cc4444;  --ht-200: #f1bfbb; --ht-100: #f9dfdd;  --ht-50: #fcf0ef;
   --ey-600: #5f6878;  --ey-400: #8b93a0;  --ey-200: #d3d7de;  --ey-100: #e6e8ec;
@@ -67,17 +70,17 @@
   /* Grafik paleti — 8 kategorik renk, SABİT SIRA (döngü yok, 9. renk yok → "Diğer").
      Sıra validate_palette ile doğrulandı (beyaz zemin): bitişik CVD ΔE ≥ 12,4,
      normal görüş ΔE ≥ 20,4, tümü ≥ 3:1 kontrast. İlk 3 renk tüm-çift testini de geçer. */
-  --g1: #2f6db5;  /* kokpit mavisi */
-  --g2: #c08a2e;  /* pirinç */
-  --g3: #b4446c;  /* yakut */
-  --g4: #3a93c6;  /* gök */
-  --g5: #5f8f2e;  /* zeytin */
-  --g6: #6c5fd0;  /* menekşe */
-  --g7: #1f9e89;  /* camgöbeği */
-  --g8: #d9682f;  /* bakır */
-  /* Aynı tonlar lacivert kokpit zemini (#0e1f37) için adımlanmış — ayrı doğrulandı */
-  --gk1: #4f86cc; --gk2: #b88d3f; --gk3: #c45a82; --gk4: #3c9bd0;
-  --gk5: #5f9a2e; --gk6: #8579e0; --gk7: #1f9a88; --gk8: #d0703a;
+  --g1: #2a64ad;  /* kurumsal mavi */
+  --g2: #9c3b62;  /* mürdüm */
+  --g3: #d27b2c;  /* kehribar-turuncu */
+  --g4: #5aa0d8;  /* gök */
+  --g5: #6a5acd;  /* menekşe */
+  --g6: #7d8794;  /* arduvaz gri */
+  --g7: #34476b;  /* koyu lacivert-arduvaz */
+  --g8: #b8553f;  /* tuğla */
+  /* Aynı tonlar grafit kokpit zemini (#19212b) için açılmış */
+  --gk1: #5b8fd6; --gk2: #c46a8e; --gk3: #e09550; --gk4: #78b6e6;
+  --gk5: #8f81e6; --gk6: #a3acb8; --gk7: #8e9cbf; --gk8: #d9785f;
 
   /* ---------- 2. ANLAMSAL ROLLER ---------- */
   --yuzey-sayfa:   var(--n-50);
@@ -85,9 +88,9 @@
   --yuzey-kart-2:  var(--n-25);
   --yuzey-gomulu:  var(--n-100);     /* iz/ray, pasif alan */
   --yuzey-kokpit:  var(--lac-850);
-  --yuzey-kokpit-2:var(--lac-800);
+  --yuzey-kokpit-2:#202a36;
   --yuzey-kokpit-3:var(--lac-900);
-  --kokpit-gradyan: radial-gradient(120% 140% at 85% 0%, #1d3d63 0%, var(--lac-850) 42%, var(--lac-900) 100%);
+  --kokpit-gradyan: radial-gradient(120% 140% at 85% 0%, #273850 0%, var(--lac-850) 46%, var(--lac-900) 100%);
   --kokpit-dokusu: repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0 1px, transparent 1px 72px);
 
   --metin-1: var(--n-900);
@@ -110,7 +113,7 @@
   --vurgu-hover: var(--pir-600);
   --birincil: var(--lac-800);
   --birincil-hover: var(--lac-700);
-  --odak-halkasi: 0 0 0 3px rgba(185, 139, 55, .38);
+  --odak-halkasi: 0 0 0 3px rgba(47, 116, 200, .38);
 
   /* ---------- 3. TİPOGRAFİ ---------- */
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -163,7 +166,7 @@
   --gol-yuzen: 0 10px 30px -10px rgba(7, 18, 34, .35), 0 0 0 1px rgba(10, 24, 44, .08);
   --gol-kokpit: inset 0 1px 0 rgba(255, 255, 255, .07), inset 0 -1px 0 rgba(0, 0, 0, .25), 0 24px 48px -24px rgba(4, 11, 22, .55);
   --gol-ic: inset 0 1px 2px rgba(10, 24, 44, .07);
-  --parlama-pirinc: 0 0 0 1px rgba(207, 167, 90, .45), 0 0 18px -2px rgba(207, 167, 90, .45);
+  --parlama-pirinc: 0 0 0 1px rgba(91, 151, 224, .45), 0 0 18px -2px rgba(91, 151, 224, .45);
 
   /* ---------- 7. HAREKET ---------- */
   --sure-anlik: 90ms;     /* basma geri bildirimi */
@@ -251,11 +254,12 @@ button, input, select { font: inherit; color: inherit; }
 .btn:active { transform: translateY(1px); }
 .btn svg { width: 16px; height: 16px; flex: none; }
 .btn-pirinc {
-  background: linear-gradient(180deg, #c69a4a 0%, var(--pir-500) 55%, #a97d2f 100%);
-  border-color: #9c7428; color: #1d1405;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 1px 2px rgba(63,46,16,.25);
+  /* birincil vurgu düğmesi — adı tarihsel (pirinç), rengi çelik mavisi (09.11.2026) */
+  background: linear-gradient(180deg, #4285d6 0%, var(--pir-500) 55%, #2563ab 100%);
+  border-color: #1f5aa0; color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 1px 2px rgba(15,42,77,.25);
 }
-.btn-pirinc:hover { box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 6px 16px -6px rgba(125,92,31,.6); border-color: #8a6522; }
+.btn-pirinc:hover { box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 6px 16px -6px rgba(29,79,140,.6); border-color: #1b4f8f; }
 .btn-lacivert { background: var(--birincil); border-color: var(--birincil); color: #fff; }
 .btn-lacivert:hover { background: var(--birincil-hover); }
 .btn-hayalet { background: transparent; border-color: transparent; color: var(--metin-2); }
@@ -306,7 +310,7 @@ button, input, select { font: inherit; color: inherit; }
 .gosterge { position: relative; display: grid; place-items: center; }
 .gosterge svg { display: block; overflow: visible; }
 .gosterge .g-iz { stroke: rgba(191, 205, 226, .14); }
-.gosterge .g-dolu { stroke: var(--pir-400); stroke-linecap: round; filter: drop-shadow(0 0 6px rgba(207,167,90,.35)); }
+.gosterge .g-dolu { stroke: var(--pir-400); stroke-linecap: round; filter: drop-shadow(0 0 6px rgba(91,151,224,.35)); }
 .gosterge .g-cizgi { stroke: rgba(191, 205, 226, .28); }
 .gosterge .g-cizgi.ana { stroke: rgba(191, 205, 226, .5); }
 .gosterge .g-cizgi.yanik { stroke: var(--pir-300); }
@@ -401,9 +405,9 @@ button, input, select { font: inherit; color: inherit; }
 .adim-durum { font-size: var(--fs-xs); color: var(--metin-ters-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .adim-ray { position: absolute; left: 14px; right: 14px; bottom: 6px; height: 2px; border-radius: 2px; background: rgba(191,205,226,.10); overflow: hidden; }
 .adim-ray > i { display: block; height: 100%; width: calc(var(--o, 0) * 100%); background: var(--pir-400); border-radius: 2px; animation: olcek-dol var(--sure-gosterge) var(--egri-ibre) both; transform-origin: left; }
-.adim.tamam .adim-no { background: rgba(207,167,90,.14); box-shadow: inset 0 0 0 1.5px var(--pir-400); color: var(--pir-300); }
-.adim.etkin { background: rgba(207,167,90,.08); box-shadow: inset 0 0 0 1px rgba(207,167,90,.45); }
-.adim.etkin .adim-no { background: var(--pir-500); color: #1d1405; box-shadow: var(--parlama-pirinc); }
+.adim.tamam .adim-no { background: rgba(91,151,224,.14); box-shadow: inset 0 0 0 1.5px var(--pir-400); color: var(--pir-300); }
+.adim.etkin { background: rgba(91,151,224,.08); box-shadow: inset 0 0 0 1px rgba(91,151,224,.45); }
+.adim.etkin .adim-no { background: var(--pir-500); color: #fff; box-shadow: var(--parlama-pirinc); }
 
 /* Filtre çipi — etkin filtreyi gösterir, × ile kaldırılır; .sabit = değiştirilemez (müdürün markası) */
 .filtre-cip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 6px 0 10px; border-radius: var(--r-tam); border: 1px solid var(--lac-200);
@@ -415,7 +419,7 @@ button, input, select { font: inherit; color: inherit; }
 /* Rozet — rol etiketi / sayı */
 .rozet { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 6px; font-size: var(--fs-2xs); font-weight: var(--fw-kalin); letter-spacing: .06em; text-transform: uppercase;
   background: var(--lac-100); color: var(--lac-700); white-space: nowrap; }
-.rozet-pirinc { background: rgba(207,167,90,.16); color: var(--pir-300); box-shadow: inset 0 0 0 1px rgba(207,167,90,.35); }
+.rozet-pirinc { background: rgba(91,151,224,.16); color: var(--pir-300); box-shadow: inset 0 0 0 1px rgba(91,151,224,.35); }
 .rozet-sayi { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; justify-content: center; background: var(--ht-600); color: #fff; letter-spacing: 0; font-size: 10.5px; }
 
 /* Tablo — yapışkan başlık, sıralanabilir sütun, sayısal sütun sağa */

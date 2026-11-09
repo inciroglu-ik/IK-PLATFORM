@@ -136,7 +136,7 @@ function ozetCiz(kok, B, M) {
    ========================================================================== */
 function sutun(label, data, renk) {
   return { label, data, backgroundColor: renk, hoverBackgroundColor: renk, borderRadius: 4, borderSkipped: 'start', maxBarThickness: 22,
-    categoryPercentage: 0.66, barPercentage: 0.9, datalabels: O.etiket.ust() };
+    datalabels: O.etiket.ust({ secim: 'hepsi', boyut: 9 }), categoryPercentage: 0.9, barPercentage: 0.84 };
 }
 /* Yığılmış sütun: yalnız en üstteki dolu dilimin üst köşeleri yuvarlak; toplam etiketi en üst veri kümesinde */
 function ustDilimMi(ctx) {
@@ -219,7 +219,7 @@ function trendCiz(kok, B, M) {
     }
   });
   const topG = M.trendGiris.reduce((s, v) => s + v, 0), topC = M.trendCikis.reduce((s, v) => s + v, 0);
-  O.kartNot(g2.govde, 'Dönem toplamı: ' + O.sayi(topG) + ' giriş, ' + O.sayi(topC) + ' çıkış (net ' + O.isaretli(topG - topC) + '). Yer darsa yalnız en yüksek ve son değer yazılır; tüm değerler Tablo görünümünde.');
+  O.kartNot(g2.govde, 'Dönem toplamı: ' + O.sayi(topG) + ' giriş, ' + O.sayi(topC) + ' çıkış (net ' + O.isaretli(topG - topC) + '). Sütun üstündeki sayılar o ayın kişi sayısıdır.');
 }
 
 /* ==========================================================================

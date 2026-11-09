@@ -112,14 +112,14 @@ export const MES_AY_KEY = { 'Ocak': 'ocak', 'Şubat': 'subat', 'Mart': 'mart', '
 /** Renkler — kokpit.css tokenlerinin JS karşılığı (Chart.js CSS değişkeni okuyamaz).
     g1..g8: açık zeminde kategorik sıra (SABİT, döngü yok) · gk1..gk8: lacivert kokpit zemininde. */
 export const RENK = {
-  g1: '#2f6db5', g2: '#c08a2e', g3: '#b4446c', g4: '#3a93c6', g5: '#5f8f2e', g6: '#6c5fd0', g7: '#1f9e89', g8: '#d9682f',
-  gk1: '#4f86cc', gk2: '#b88d3f', gk3: '#c45a82', gk4: '#3c9bd0', gk5: '#5f9a2e', gk6: '#8579e0', gk7: '#1f9a88', gk8: '#d0703a',
-  lac900: '#0a182c', lac850: '#0e1f37', lac800: '#132a46', lac700: '#1b3a5e', lac600: '#25507e', lac500: '#33649a', lac400: '#5a83b5', lac300: '#8ea8cc', lac200: '#bfcde2', lac100: '#e2e9f3', lac50: '#f1f5fa',
-  pir700: '#7d5c1f', pir600: '#9c7428', pir500: '#b98b37', pir400: '#cfa75a', pir300: '#e0c38a', pir200: '#eddcb6', pir100: '#f6eedb',
+  g1: '#2a64ad', g2: '#9c3b62', g3: '#d27b2c', g4: '#5aa0d8', g5: '#6a5acd', g6: '#7d8794', g7: '#34476b', g8: '#b8553f',
+  gk1: '#5b8fd6', gk2: '#c46a8e', gk3: '#e09550', gk4: '#78b6e6', gk5: '#8f81e6', gk6: '#a3acb8', gk7: '#8e9cbf', gk8: '#d9785f',
+  lac900: '#141a22', lac850: '#19212b', lac800: '#132a46', lac700: '#1b3a5e', lac600: '#25507e', lac500: '#33649a', lac400: '#5a83b5', lac300: '#8ea8cc', lac200: '#bfcde2', lac100: '#e2e9f3', lac50: '#f1f5fa',
+  pir700: '#1d4f8c', pir600: '#2563ab', pir500: '#2f74c8', pir400: '#5b97e0', pir300: '#8cb7ee', pir200: '#c3d9f6', pir100: '#e2edfb',
   n50: '#f5f7fa', n100: '#edf0f4', n150: '#e4e8ee', n200: '#d8dde5', n300: '#bcc4cf', n400: '#929cab', n500: '#66707f', n600: '#4f5868', n700: '#384150', n800: '#252c38', n900: '#151a23',
-  ok: '#23955f', uy: '#c9831c', ht: '#cc4444',
+  ok: '#2a6bbd', uy: '#c9831c', ht: '#cc4444',
   /* anlamsal seri renkleri (tüm sayfalarda aynı anlam) */
-  giris: '#2f6db5', cikis: '#b4446c', y2025: '#929cab', y2026: '#132a46', diger: '#929cab', istenen: '#6c5fd0', istenmeyen: '#c08a2e'
+  giris: '#2a64ad', cikis: '#b14a5f', y2025: '#929cab', y2026: '#1d3f6e', diger: '#a3acb8', istenen: '#6a5acd', istenmeyen: '#d27b2c'
 };
 /** Ayrılma nedeni → sabit renk (her sayfada aynı neden aynı renk) */
 export const NEDEN_RENK = {
@@ -889,7 +889,7 @@ export function grafikVarsayilan() {
   C.defaults.animation.easing = 'easeOutQuart';
   /* Okunur ipucu (B10): koyu zemin + açık başlık/gövde */
   Object.assign(C.defaults.plugins.tooltip, {
-    backgroundColor: '#0a182c', titleColor: '#bfcde2', bodyColor: '#f3f6fb', footerColor: '#bfcde2',
+    backgroundColor: '#141a22', titleColor: '#bfcde2', bodyColor: '#f3f6fb', footerColor: '#bfcde2',
     borderColor: 'rgba(191,205,226,.16)', borderWidth: 1, padding: 10, cornerRadius: 10, caretSize: 5,
     boxWidth: 10, boxHeight: 10, boxPadding: 4, usePointStyle: false, displayColors: true,
     titleFont: { weight: '500', size: 11 }, bodyFont: { weight: '600', size: 12 }, footerFont: { weight: '500', size: 11 }
@@ -1013,7 +1013,8 @@ export function basitTablo(kap, { sutunlar = [], satirlar = [] } = {}) {
       sutunlar: [{ k, ad, tip:'metin'|'sayi'|'tarih', sag, bicim:(v,r)=>metin|Node, html:true (bicim HTML döndürürse),
                    sinif:'ad-hucre', hucreSinif:(v,r)=>'', siralanamaz, ilkYon:'artan'|'azalan', siralamaDegeri:(r)=>… }],
       satirlar: [{…}], sayfaBoyu:12, siraNo:true, ara:true, araYer:'Ara…', araAlanlari:['ad','dept'],
-      varsayilanSira:{ k, y:'artan'|'azalan' }, altMetin:(n, toplam)=>'', bos:{ baslik, metin }, toplamSatir:{ k:değer… }, aracEk:Node
+      varsayilanSira:{ k, y:'artan'|'azalan' }, altMetin:(n, toplam)=>'', bos:{ baslik, metin }, toplamSatir:{ k:değer… }, aracEk:Node,
+      satirSinif:(r)=>'' (satıra ek sınıf, ör. vurgu)
     }) → { kok, guncelle(satirlar), ciz(), durum }
     Sıralama döngüsü: ilk tık (sayı → azalan, metin → artan; ilkYon ile değişir) → ters → orijinal sıra.
     null/boş değerler sayısal sıralamada en küçük sayılır (index.html izin sıralamasıyla aynı). */
@@ -1113,6 +1114,8 @@ export function tablo(kap, o = {}) {
         const tr = el('tr');
         if (o.siraNo) tr.append(el('td', { class: 'sira', text: String((S.s - 1) * PS + i + 1) }));
         sut.forEach((c) => tr.append(hucre(c, r)));
+        const ekSinif = o.satirSinif ? o.satirSinif(r) : '';
+        if (ekSinif) tr.classList.add(...String(ekSinif).split(/\s+/).filter(Boolean));
         if (o.satirTikla) { tr.classList.add('tiklanir'); tr.addEventListener('click', () => o.satirTikla(r)); }
         tb.append(tr);
       });

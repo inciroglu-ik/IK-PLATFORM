@@ -47,13 +47,15 @@ function hesapla(B) {
     aktifKisi = (F.normal || []).length;
     const f = O.turnoverFiltreli(ayr, F.normal || [], F.isealim || [], oz0, { simAy: aySayisi });
     oz = f.ozet;
-    /* index.html filtreliyken her aya giriş = 0 yazıyordu; seçili kapsamın işe alımları sayılır */
-    const girisAy = O.aySay(F.isealim || [], f.turnover.map((t) => O.donemAyi(t.donem)));
-    tv = f.turnover.map((t, i) => Object.assign({}, t, { giris: girisAy[i] }));
+    tv = f.turnover;
     /* seçili kapsamın aylık ortalama çıkışı (paket değeri şirket geneline ait) */
     oz.ort_cikis_ay = Math.round((oz.ytd_cikis || 0) / aySayisi * 10) / 10;
     hesapYok = !aktifKisi; /* aktif personel yoksa oran anlamsız (payda 1'e düşer) */
   }
+  /* Aylık giriş her zaman İşe Alım listesinden sayılır (V.İ./stajyer hariç) — İşe Alım sayfası ve "2026 toplam giriş"
+     ile aynı kaynak. Excel TURNOVER R "İşe Başlayan" Kolay İK raporundan gelir, stajyerleri içerir ve son aylarda boştu. */
+  const girisAy = O.aySay((fa ? F.isealim : D.isealim) || [], tv.map((t) => O.donemAyi(t.donem)));
+  tv = tv.map((t, i) => Object.assign({}, t, { giris: girisAy[i] }));
   const oranAl = (k) => (hesapYok ? null : deger(oz[k]));
   const satirlar = tv.map((t) => {
     const ay = O.donemAyi(t.donem);
@@ -238,8 +240,8 @@ function trendCiz(kok, M) {
     O.grafik(g2.canvas, {
       type: 'bar',
       data: { labels: etiketler, datasets: [
-        sutun('Giriş', S.map((r) => r.giris), O.RENK.giris, { datalabels: O.etiket.ust() }),
-        sutun('Çıkış (V.İ. hariç)', S.map((r) => r.cikis), O.RENK.cikis, { datalabels: O.etiket.ust() })
+        sutun('Giriş', S.map((r) => r.giris), O.RENK.giris, { datalabels: O.etiket.ust({ secim: 'hepsi', boyut: 9 }), categoryPercentage: 0.9, barPercentage: 0.84 }),
+        sutun('Çıkış (V.İ. hariç)', S.map((r) => r.cikis), O.RENK.cikis, { datalabels: O.etiket.ust({ secim: 'hepsi', boyut: 9 }), categoryPercentage: 0.9, barPercentage: 0.84 })
       ] },
       options: {
         interaction: { mode: 'index', intersect: false },
@@ -252,7 +254,8 @@ function trendCiz(kok, M) {
         } } }
       }
     });
-    if (M.fa) O.kartNot(g2.govde, 'Seçili kapsam: giriş işe alım listesinden, çıkış işten ayrılanlar listesinden sayılır.');
+    O.kartNot(g2.govde, M.fa ? 'Seçili kapsam: giriş işe alım listesinden, çıkış işten ayrılanlar listesinden sayılır.'
+      : 'Giriş işe alım listesinden sayılır (V.İ. ve stajyer hariç; İşe Alım sayfasıyla aynı). Çıkış V.İ. hariç, paketten gelir.');
   }
 }
 

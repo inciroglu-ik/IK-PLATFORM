@@ -5,9 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
-<meta name="theme-color" content="#0a182c">
+<meta name="theme-color" content="#141a22">
 <title>İK Analitik Panosu · İnciroğlu Otomotiv</title>
-<link rel="icon" href="icon-192.png">
+<link rel="icon" href="pano/amblem.svg" type="image/svg+xml">
+<link rel="icon" href="pano/amblem-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="pano/amblem-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
@@ -15,14 +17,14 @@
 <link rel="stylesheet" href="pano/pano.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
-<meta name="version" content="202610241600">
+<meta name="version" content="202611091200">
 <script>/* Eski PWA service worker kayıtlarını ve önbellekleri temizle (klasik panodaki satırlarla aynı) */
 if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister();});}).catch(function(){});}
 if('caches' in window){caches.keys().then(function(k){k.forEach(function(c){caches.delete(c);});}).catch(function(){});}
 /* Güncel sürüm kontrolü (klasik panodaki mekanizma): telefon önbellekten eski bir kopya gösteriyorsa sunucudaki dosyanın
    sürümü (meta version) farklı çıkar ve sayfa önbelleğe takılmayan bir adresle yeniden yüklenir. Oturum başına bir kez.
    Yeni sürüm yayınlarken yukarıdaki meta version ile buradaki değeri BİRLİKTE artırın. */
-(function(){var v='202610241600';try{if(sessionStorage.getItem('ikv2_kontrol'))return;sessionStorage.setItem('ikv2_kontrol','1');
+(function(){var v='202611091200';try{if(sessionStorage.getItem('ikv2_kontrol'))return;sessionStorage.setItem('ikv2_kontrol','1');
 fetch(location.pathname+'?_taze='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=t.match(/name="version"\s+content="(\d+)"/);if(m&&m[1]&&m[1]!==v){location.replace(location.pathname+'?_cb='+Date.now()+location.hash);}}).catch(function(){});}catch(e){}})();</script>
 </head>
 <!--
@@ -36,7 +38,7 @@ fetch(location.pathname+'?_taze='+Date.now(),{cache:'no-store'}).then(function(r
 
 <div class="acilis" id="acilis" role="status" aria-live="polite">
   <div class="acilis-ic">
-    <span class="amblem buyuk">İ</span>
+    <span class="amblem buyuk" role="img" aria-label="İnciroğlu Otomotiv İK amblemi"></span>
     <div class="acilis-baslik">İK Analitik Panosu</div>
     <div class="acilis-metin" id="acilisMetin">Oturum denetleniyor…</div>
     <div class="acilis-cubuk"><i></i></div>
@@ -46,7 +48,7 @@ fetch(location.pathname+'?_taze='+Date.now(),{cache:'no-store'}).then(function(r
 <aside class="yan" id="yan" aria-label="Gezinme ve departman filtresi">
   <div class="yan-ic">
     <div class="yan-marka">
-      <span class="amblem">İ</span>
+      <span class="amblem" role="img" aria-label="İnciroğlu Otomotiv İK amblemi"></span>
       <div class="marka-ad">İnciroğlu Otomotiv<small>İK Analitik · 2026</small></div>
       <button class="yan-kapat" id="yanKapat" type="button" aria-label="Menüyü kapat"></button>
     </div>
@@ -67,7 +69,7 @@ fetch(location.pathname+'?_taze='+Date.now(),{cache:'no-store'}).then(function(r
     <header class="ust-bant">
       <div class="ic ust-ic">
         <button class="menu-dugme" id="menuDugme" type="button" aria-label="Menü ve departman filtresi" aria-controls="yan"></button>
-        <div class="ust-marka"><span class="amblem">İ</span></div>
+        <div class="ust-marka"><span class="amblem" role="img" aria-label="İnciroğlu Otomotiv İK amblemi"></span></div>
         <div class="uyg-ad"><span>İK Analitik Panosu</span><small id="haftaEtiket"></small></div>
         <div class="ust-sag" id="ustSag"></div>
       </div>
@@ -80,7 +82,7 @@ fetch(location.pathname+'?_taze='+Date.now(),{cache:'no-store'}).then(function(r
 
 <div id="welcome" aria-hidden="true">
   <div class="hg-ic">
-    <span class="amblem">İ</span>
+    <span class="amblem" role="img" aria-label="İnciroğlu Otomotiv İK amblemi"></span>
     <div class="hg-ust">İnciroğlu Otomotiv · İnsan Kaynakları</div>
     <h1 class="hg-baslik"><span>İnsan Kaynakları Detaylı Dashboard'umuza hoş geldiniz,</span><em id="hgAd"></em></h1>
     <p class="hg-alt">Detaylı İK Dashboard'una erişiminiz hazır.</p>
@@ -178,7 +180,7 @@ function yuklemeDugmesi() {
 function durumEkrani(baslik, metin, { hata = false, yenile = false } = {}) {
   acilisGizle();
   const kart = O.el('div', { class: 'durum-kart', role: hata ? 'alert' : 'status' },
-    O.el('span', { class: 'amblem' }, 'İ'),
+    O.el('span', { class: 'amblem', role: 'img', 'aria-label': 'İnciroğlu Otomotiv İK amblemi' }),
     O.el('div', { class: 'ust-etiket', text: 'İnciroğlu Otomotiv · İK Analitik Panosu' }),
     O.el('div', { class: 'durum-ikon' + (hata ? ' hata' : ''), html: O.ikon(hata ? 'uyari' : 'dosya') }),
     O.el('h2', { text: baslik }),

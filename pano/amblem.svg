@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="İnciroğlu Otomotiv İK amblemi">
+  <!-- A · Ş · S monogramı (Alaaddin · Şahin · Sena): A ana gövde; S, A'nın içinden örülerek geçer
+       (sol bacağın üstünden, sağ bacağın altından); S'in altındaki çengel Ş'yi tamamlar. Lacivert rozet + gümüş. -->
+  <defs>
+    <linearGradient id="zemin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#21497d"/><stop offset="1" stop-color="#0d1f3c"/></linearGradient>
+    <linearGradient id="gumus" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#c2cbd7"/></linearGradient>
+    <path id="a" d="M8.5 43 L24 5.5 L39.5 43"/>
+    <path id="s" d="M31.4 15.4 C30.2 12.6 27.4 11.2 24.5 11.2 C20.6 11.2 17.8 14.4 17.8 17.6 C17.8 19.8 20.8 21.6 24 24 C27.2 26.4 30.2 28.2 30.2 30.4 C30.2 33.6 27.4 36.8 23.5 36.8 C20.6 36.8 17.8 35.4 16.6 32.6"/>
+    <clipPath id="ust"><rect x="25" y="8" width="10" height="16"/></clipPath>
+    <mask id="mA" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48">
+      <rect width="48" height="48" fill="#fff"/>
+      <use href="#s" fill="none" stroke="#000" stroke-width="6.4" stroke-linecap="round"/>
+      <g clip-path="url(#ust)"><use href="#a" fill="none" stroke="#fff" stroke-width="6"/></g>
+    </mask>
+    <mask id="mS" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48">
+      <rect width="48" height="48" fill="#fff"/>
+      <g clip-path="url(#ust)"><use href="#a" fill="none" stroke="#000" stroke-width="8.4"/></g>
+    </mask>
+  </defs>
+  <circle cx="24" cy="24" r="23.5" fill="url(#zemin)"/>
+  <circle cx="24" cy="24" r="22.1" fill="none" stroke="url(#gumus)" stroke-width="1.1" opacity=".8"/>
+  <g transform="translate(6.6 4.9) scale(.725)">
+    <use href="#a" fill="none" stroke="url(#gumus)" stroke-width="5.2" stroke-linejoin="miter" stroke-miterlimit="10" mask="url(#mA)"/>
+    <use href="#s" fill="none" stroke="url(#gumus)" stroke-width="3.3" stroke-linecap="round" mask="url(#mS)"/>
+    <path d="M23.8 38.9 v2.1 q3 .3 2.6 2.5 q-.5 1.7 -3.3 1.4" fill="none" stroke="url(#gumus)" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
