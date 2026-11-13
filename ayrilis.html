@@ -70,6 +70,18 @@ body.ayrilis .ust-marka { display: flex; }
 .ay-soru.genis { grid-column: 1 / -1; }
 .ay-soru span { display: block; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--metin-3); margin-bottom: 3px; }
 .ay-soru p { margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--metin-1); white-space: pre-wrap; overflow-wrap: anywhere; }
+.ay-ozet-tablo { margin-top: 12px; }
+.ay-ozet-tablo tfoot td { font-weight: 700; border-top: 1px solid var(--lac-300); }
+.ay-renkli { display: inline-flex; align-items: center; gap: 8px; }
+.ay-renkli i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.ay-uc { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+.ay-sayi-kutu { border: 1px solid var(--cizgi-1); border-radius: 12px; padding: 10px 12px; background: var(--n-50); min-width: 0; }
+.ay-sayi-kutu span { display: block; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--metin-3); }
+.ay-sayi-kutu b { display: block; font-size: 26px; font-weight: 700; letter-spacing: -.02em; color: var(--metin-marka); font-variant-numeric: tabular-nums; margin-top: 2px; }
+.ay-sayi-kutu small { display: block; font-size: 12.5px; font-weight: 600; color: var(--metin-3); }
+.ay-sayi-kutu.iyi b, .ay-sayi-kutu.iyi small { color: var(--pir-700); }
+.ay-sayi-kutu.kotu b, .ay-sayi-kutu.kotu small { color: var(--ht-700); }
+.ay-alt-baslik { font-size: 13px; font-weight: 600; color: var(--metin-1); margin: 16px 0 6px; }
 .ay-bolum-baslik { font-family: var(--font-serif); font-size: 16px; font-weight: 600; color: var(--metin-marka); margin: 4px 0 0; }
 @media (max-width: 640px) {
   .ay-form, .ay-soru-izgara { grid-template-columns: minmax(0, 1fr); }
@@ -209,6 +221,38 @@ function nedenIstatistik(liste) {
     const etkili = v.filter((x) => x >= A.ETKILI_ESIK).length;
     return { k: f.k, ad: f.ad, n: v.length, etkili, oran: v.length ? (etkili / v.length) * 100 : 0, ort: v.length ? v.reduce((s, x) => s + x, 0) / v.length : null };
   }).sort((a, b) => b.oran - a.oran || (b.ort || 0) - (a.ort || 0));
+}
+/* Çıkış nedeni grupları (İK pano paketindeki `neden` kategorisinden; renkler İK Dashboard ile aynı) */
+const CIK_GRUPLARI = [
+  { ad: 'İstifa', renk: O.NEDEN_RENK['İstifa'] },
+  { ad: 'İşveren feshi', renk: O.NEDEN_RENK['İşveren Feshi'] },
+  { ad: 'Deneme süresinde işveren feshi', renk: O.NEDEN_RENK['Deneme (İşveren)'] },
+  { ad: 'Askerlik', renk: O.NEDEN_RENK['Askerlik'] },
+  { ad: '25. madde (haklı fesih)', renk: O.NEDEN_RENK['25. Madde'] },
+  { ad: 'Diğer', renk: O.NEDEN_RENK['Diğer'] }
+];
+function cikisGrubu(a) {
+  if (istifaMi(a)) return 'İstifa';                              /* deneme süresinde işçinin feshi de istifadır */
+  return { 'İşveren Feshi': 'İşveren feshi', 'Deneme (İşveren)': 'Deneme süresinde işveren feshi', 'Askerlik': 'Askerlik', '25. Madde': '25. madde (haklı fesih)' }[a.neden] || 'Diğer';
+}
+/* Çıkış görüşmesi yapılmama nedeni: haftalık rapordaki "Açıklama" (gerçek ayrılış nedeni) metninden */
+function yapilmamaNedeni(a) {
+  const n = O.katla(a.aciklama || '');
+  if (/ihtar/.test(n)) return 'İhtar çekerek ayrıldı';
+  if (/25\s*\/\s*2|arabul|arabuc|isveren feshi olacak|disiplin/.test(n)) return 'Anlaşmalı çıkış (25/2 · arabulucu · disiplin)';
+  if (/devamsiz/.test(n)) return 'Devamsızlık';
+  if (/performans/.test(n)) return 'Performans nedeniyle çıkış';
+  if (/kaza|istifa ettiril/.test(n)) return 'İstifa ettirildi';
+  return 'Henüz yapılmadı';
+}
+/* Küçük özet tablosu: başlıklar, satırlar ([hücre…], ilk sütun metin/düğüm, diğerleri sağa yaslı), toplam satırı */
+function ozetTablo(kap, basliklar, satirlar, toplam) {
+  const hucre = (etiket, v, i) => O.el(etiket, { class: i ? 'sag' : null }, v instanceof Node ? v : String(v));
+  const t = O.el('table', { class: 'tablo ay-ozet-tablo' },
+    O.el('thead', null, O.el('tr', null, ...basliklar.map((b, i) => hucre('th', b, i)))),
+    O.el('tbody', null, ...satirlar.map((r) => O.el('tr', null, ...r.map((v, i) => hucre('td', v, i))))),
+    toplam ? O.el('tfoot', null, O.el('tr', null, ...toplam.map((v, i) => hucre('td', v, i)))) : null);
+  kap.append(O.el('div', { class: 'tablo-kap' }, t));
 }
 function sayim(liste, fn, sira) {
   const m = new Map(); liste.forEach((k) => { [].concat(fn(k)).forEach((v) => { if (v) m.set(v, (m.get(v) || 0) + 1); }); });
@@ -456,6 +500,53 @@ function ciz() {
   let no = 0;
   const akis = (baslik, aciklama) => O.akisBaslik(kok, { no: String(++no).padStart(2, '0'), baslik, aciklama });
 
+  /* ---- ÇIKIŞLAR VE ÇIKIŞ GÖRÜŞMESİ (haftalık İK pano verisi + anketler) */
+  const CIK = AYRILANLAR.filter((a) => yilOf(a.tarih) === YIL);
+  if (CIK.length) {
+    akis('Çıkışlar ve çıkış görüşmesi', YIL + ' · tüm çıkışlar ve istifa edenlerle yapılan çıkış görüşmesi (V.İ. ve stajyer hariç)');
+    const izC = O.izgara(kok);
+    /* (a) Çıkış nedenleri: sayı + yüzde */
+    const grupSay = new Map(CIK_GRUPLARI.map((g) => [g.ad, 0]));
+    CIK.forEach((a) => { const g = cikisGrubu(a); grupSay.set(g, (grupSay.get(g) || 0) + 1); });
+    const nedenler = CIK_GRUPLARI.map((g) => ({ ad: g.ad, deger: grupSay.get(g.ad) || 0, renk: g.renk })).filter((x) => x.deger > 0).sort((a, b) => b.deger - a.deger);
+    const kN = O.kart(izC, { baslik: 'Çıkış nedenleri', aciklama: YIL + ' · kişi sayısı ve toplam çıkış içindeki payı', sinif: 's5' });
+    kN.govde.append(O.el('div', { class: 'ay-buyuk' }, O.el('b', { text: O.sayi(CIK.length) }), O.el('span', { text: 'toplam çıkış' })));
+    O.dagilimSeridi(kN.govde, nedenler);
+    ozetTablo(kN.govde, ['Neden', 'Kişi', 'Oran'],
+      nedenler.map((x) => [O.el('span', { class: 'ay-renkli' }, O.el('i', { style: 'background:' + x.renk }), x.ad), O.sayi(x.deger), '%' + yuzdeTam(x.deger, CIK.length)]),
+      ['Toplam çıkış', O.sayi(CIK.length), '%100']);
+    /* (b) Çıkış görüşmesi: tabi olan = toplam istifa; yapılan / yapılmayan + yapılmama nedenleri */
+    const yapilmayanlar = IST.filter((a) => !T.some((k) => eslesir(k, a)));
+    const yapilan = IST.length - yapilmayanlar.length;
+    const kG = O.kart(izC, { baslik: 'Çıkış görüşmesi (ayrılış anketi)', aciklama: 'Çıkış görüşmesine tabi olanlar = toplam istifa (deneme süresinde istifa dahil)', sinif: 's7' });
+    const kutu = (et, deger, alt, sinif) => O.el('div', { class: 'ay-sayi-kutu ' + (sinif || '') }, O.el('span', { text: et }), O.el('b', { text: O.sayi(deger) }), O.el('small', { text: alt }));
+    kG.govde.append(O.el('div', { class: 'ay-uc' },
+      kutu('Görüşmeye tabi', IST.length, 'toplam istifa', ''),
+      kutu('Yapılan', yapilan, '%' + yuzdeTam(yapilan, IST.length), 'iyi'),
+      kutu('Yapılmayan', yapilmayanlar.length, '%' + yuzdeTam(yapilmayanlar.length, IST.length), 'kotu')));
+    O.dagilimSeridi(kG.govde, [{ ad: 'Yapılan', deger: yapilan, renk: O.RENK.g1 }, { ad: 'Yapılmayan', deger: yapilmayanlar.length, renk: O.RENK.g8 }]);
+    const ynSay = new Map(); yapilmayanlar.forEach((a) => { const n = yapilmamaNedeni(a); ynSay.set(n, (ynSay.get(n) || 0) + 1); });
+    const yn = [...ynSay.entries()].map(([ad, deger]) => ({ ad, deger })).sort((a, b) => b.deger - a.deger || O.trKarsilastir(a.ad, b.ad));
+    kG.govde.append(O.el('h4', { class: 'ay-alt-baslik', text: 'Yapılmama nedenleri (' + O.sayi(yapilmayanlar.length) + ' kişi)' }));
+    O.cubukListe(kG.govde, yn, { renk: O.RENK.g8, bicim: (v) => O.sayi(v) + ' · %' + yuzdeTam(v, yapilmayanlar.length), bos: 'Yapılmayan görüşme yok' });
+    kG.govde.append(O.el('p', { class: 'ay-bilgi', style: 'margin-top:10px', text: 'Yapılmama nedeni, haftalık rapordaki “Açıklama” (gerçek ayrılış nedeni) sütunundan okunur. “Henüz yapılmadı” olanlara bağlantı gönderilebilir.' }));
+    /* (c) Departmanlara göre: yapılması gereken / yapılan / yapılmayan */
+    const dep = new Map();
+    IST.forEach((a) => { const d = a.dept || 'Belirtilmemiş'; const r = dep.get(d) || { dept: d, gereken: 0, yapilan: 0, yapilmayan: 0 }; r.gereken++; if (T.some((k) => eslesir(k, a))) r.yapilan++; else r.yapilmayan++; dep.set(d, r); });
+    const depSatir = [...dep.values()].sort((a, b) => b.gereken - a.gereken || O.trKarsilastir(a.dept, b.dept));
+    const kDep = O.kart(izC, { baslik: 'Departmanlara göre çıkış görüşmesi', aciklama: YIL + ' · istifa edenler üzerinden', sinif: 's12' });
+    O.tablo(kDep.govde, {
+      sutunlar: [
+        { k: 'dept', ad: 'Departman' },
+        { k: 'gereken', ad: 'Yapılması gereken', tip: 'sayi', sag: true },
+        { k: 'yapilan', ad: 'Yapılan', tip: 'sayi', sag: true },
+        { k: 'yapilmayan', ad: 'Yapılmayan', tip: 'sayi', sag: true, hucreSinif: (v) => (v > 0 ? 'negatif' : '') }
+      ],
+      satirlar: depSatir, ara: false, sayfaBoyu: 60,
+      toplamSatir: { dept: 'Toplam', gereken: IST.length, yapilan, yapilmayan: yapilmayanlar.length }
+    });
+  }
+
   /* ---- 2) BAĞLANTILAR (yalnız İK) */
   if (IK) {
     akis('Anket bağlantıları', 'İstifayla ayrılan kişiye tek kullanımlık bağlantı gönderin; kişi anketi gönderdiği anda sonuç bu sayfaya düşer.');
@@ -616,6 +707,13 @@ try {
   }
 } catch (e) { PANO_HATA = e; console.warn('İK pano verisi okunamadı', e); }
 
+/* Art arda gelen canlı güncellemeler (ör. aktarımın 8'erli parçaları) tek çizimde birleştirilir; açık pencere varken
+   çizim pencere kapanana kadar ertelenir */
+let cizZaman = null;
+function cizPlanla() {
+  clearTimeout(cizZaman);
+  cizZaman = setTimeout(() => { cizZaman = null; if (acik) { BEKLEYEN_CIZIM = true; return; } ciz(); acilisGizle(); }, ILK ? 0 : 250);
+}
 /* Direktör yalnız tamamlanmış yanıtları okur (kural da sorgunun bu süzgeçle yapılmasını ister); bekleyen bağlantıların
    kimliği gizli anahtardır, yalnız İK görür. */
 onSnapshot(IK ? KOL : query(KOL, where('durum', '==', 'tamamlandi')), (snap) => {
@@ -623,9 +721,7 @@ onSnapshot(IK ? KOL : query(KOL, where('durum', '==', 'tamamlandi')), (snap) => 
   const tam = KAYITLAR.filter((k) => k.durum === 'tamamlandi');
   if (!ILK) tam.filter((k) => !GORULEN.has(k.id) && k.kaynak === 'link').forEach((k) => O.bildirim('Yeni anket geldi: ' + O.trBaslik(k.ad)));
   tam.forEach((k) => GORULEN.add(k.id));
-  if (acik) { BEKLEYEN_CIZIM = true; return; }
-  ciz();
-  acilisGizle();
+  cizPlanla();
 }, (e) => {
   console.warn('Anketler okunamadı', e);
   durumEkrani('Anketler okunamadı', e && e.code === 'permission-denied'
