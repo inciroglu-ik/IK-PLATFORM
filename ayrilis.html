@@ -608,7 +608,8 @@ function ciz() {
       scales: { x: O.eksenY({ max: 100, ticks: { callback: (v) => '%' + v } }), y: O.eksenX({ ticks: { autoSkip: false, font: { size: 11.5 }, color: O.RENK.n700 } }) },
       plugins: { tooltip: { callbacks: { title: (c) => ilk10[c[0].dataIndex].ad, label: (c) => ' %' + c.parsed.x + ' · ' + ilk10[c.dataIndex].etkili + ' / ' + ilk10[c.dataIndex].n + ' kişi' } } } }
   });
-  const k3 = O.kart(iz2, { baslik: 'Bağlılık ve deneyim', aciklama: 'Evet / Hayır yanıtlarına göre', sinif: 's4' });
+  const RET_NOT = RET ? ' · kişisel veri onayı vermeyen ' + RET + ' yanıt hariç' : '';
+  const k3 = O.kart(iz2, { baslik: 'Bağlılık ve deneyim', aciklama: 'Evet / Hayır yanıtlarına göre' + RET_NOT, sinif: 's4' });
   const serit = (baslik, d, renkE, aciklama) => {
     const h = d.n - d.evet;
     return O.el('div', { class: 'ay-oran-blok' },
@@ -625,20 +626,24 @@ function ciz() {
   /* ---- 4) KARAR VE İLETİŞİM */
   akis('Karar ve iletişim', 'İstifa kararının zamanı ve ilk kime açıldığı');
   const iz3 = O.izgara(kok);
-  const kK = O.kart(iz3, { baslik: 'İstifa kararı ne zaman verildi?', aciklama: 'Kişi sayısı', sinif: 's6' });
+  const kK = O.kart(iz3, { baslik: 'İstifa kararı ne zaman verildi?', aciklama: 'Kişi sayısı (' + O.sayi(S.length) + ' yanıt' + RET_NOT + ')', sinif: 's6' });
   O.cubukListe(kK.govde, sayim(S, (k) => k.cevaplar && k.cevaplar.karar, A.KARARLAR), { renk: O.RENK.g4 });
-  const kM = O.kart(iz3, { baslik: 'Fikrini işyerinde önce kime açtı?', aciklama: 'Kişi sayısı (birden fazla seçilebilir)', sinif: 's6' });
+  const kM = O.kart(iz3, { baslik: 'Fikrini işyerinde önce kime açtı?', aciklama: 'Kişi sayısı, birden fazla seçilebilir (' + O.sayi(S.length) + ' yanıt' + RET_NOT + ')', sinif: 's6' });
   O.cubukListe(kM.govde, sayim(S, (k) => (k.cevaplar && k.cevaplar.kime) || [], A.KIME), { renk: O.RENK.g5 });
 
   /* ---- 5) KIRILIM */
   akis('Kırılım', 'Departman ve çıkış ayına göre anket sayısı');
   const iz4 = O.izgara(kok);
-  const kD = O.kart(iz4, { baslik: 'Departmanlara göre anket', aciklama: 'Anket sayısı', sinif: 's6' });
-  O.cubukListe(kD.govde, sayim(S, (k) => k.departman || 'Belirtilmemiş'), { renk: O.RENK.g6, kaydir: 330 });
+  /* SAYIM kartları TÜM yanıtları sayar (kaç kişinin anketi var); KVKK istisnası yalnız cevap içeriğinden üretilen
+     istatistiklere uygulanır. Departman, "Departmanlara göre çıkış görüşmesi" tablosuyla AYNI eşleştirmeden alınır
+     (istifa listesindeki departman) → iki yerde aynı departmanın sayısı her zaman aynıdır. */
+  const kayitDept = (k) => { const a = IST.find((x) => eslesir(k, x)); return (a && a.dept) || k.departman || 'Belirtilmemiş'; };
+  const kD = O.kart(iz4, { baslik: 'Departmanlara göre anket', aciklama: 'Anket sayısı (tüm yanıtlar · ' + O.sayi(T.length) + ')', sinif: 's6' });
+  O.cubukListe(kD.govde, sayim(T, kayitDept), { renk: O.RENK.g6, kaydir: 330 });
   const aylar = Array.from({ length: 12 }, (_, i) => i + 1);
-  const aySay = aylar.map((m) => S.filter((k) => { const d = tarihCoz(k.cikis) || tarihCoz(k.tamamlanma); return d && d.getMonth() + 1 === m; }).length);
+  const aySay = aylar.map((m) => T.filter((k) => { const d = tarihCoz(k.cikis) || tarihCoz(k.tamamlanma); return d && d.getMonth() + 1 === m; }).length);
   const sonAy = Math.max(...aylar.filter((m, i) => aySay[i] > 0), (YIL === simdi.getFullYear() ? simdi.getMonth() + 1 : 12));
-  const gA = O.grafikKarti(iz4, { baslik: 'Aylara göre anket', aciklama: 'Çıkış ayına göre anket sayısı', sinif: 's6', yukseklik: 300,
+  const gA = O.grafikKarti(iz4, { baslik: 'Aylara göre anket', aciklama: 'Çıkış ayına göre anket sayısı (tüm yanıtlar · ' + O.sayi(T.length) + ')', sinif: 's6', yukseklik: 300,
     tablo: () => ({ sutunlar: [{ ad: 'Ay' }, { ad: 'Anket', sag: true }], satirlar: aylar.slice(0, sonAy).map((m, i) => [O.ayAdi(m), O.sayi(aySay[i])]) }) });
   O.grafik(gA.canvas, { type: 'bar', data: { labels: aylar.slice(0, sonAy).map(O.ayKisa), datasets: [{ label: 'Anket', data: aySay.slice(0, sonAy), backgroundColor: O.RENK.g1, maxBarThickness: 22, datalabels: O.etiket.ust({ secim: 'hepsi' }) }] },
     options: { scales: { x: O.eksenX(), y: O.eksenY({ grace: '15%' }) } } });
