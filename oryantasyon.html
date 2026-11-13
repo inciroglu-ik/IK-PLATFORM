@@ -35,6 +35,10 @@ body.oryantasyon .ust-marka { display: flex; }
 .oy-cubuk .oy-ozet { font-size: 13px; color: var(--metin-2); font-weight: 600; margin-right: auto; min-width: 0; }
 .oy-cubuk .oy-ozet small { display: block; font-weight: 500; color: var(--metin-3); font-size: 11.5px; }
 .oy-cubuk .btn { height: 36px; }
+.oy-indir { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.oy-indir .btn svg { width: 15px; height: 15px; }
+.oy-isaret-sec { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--metin-2); cursor: pointer; padding: 0 4px; }
+.oy-isaret-sec input { width: 15px; height: 15px; accent-color: var(--pir-500); margin: 0; }
 .oy-kirli { color: var(--uy-700); }
 .oy-bilgi { background: var(--lac-50); border: 1px solid var(--lac-100); border-radius: 12px; padding: 12px 14px; font-size: 13px; color: var(--metin-2); line-height: 1.6; }
 .oy-bilgi.uyari { background: var(--uy-50); border-color: var(--uy-200); color: var(--uy-700); }
@@ -121,7 +125,7 @@ body.oryantasyon .ust-marka { display: flex; }
   .oy-ust-alan .oy-girdi { width: 150px; }
 }
 @media print {
-  .ust-alan, .oy-cubuk, .oy-mudurler-kart, .oy-araclar, .btn, .acilis { display: none !important; }
+  .ust-alan, .oy-cubuk, .oy-mudurler-kart, .oy-araclar, .btn, .acilis, .oy-indir { display: none !important; }
   .oy-inceleme { grid-template-columns: minmax(0, 1fr) 240px; }
   body { background: #fff; }
 }
@@ -162,6 +166,7 @@ import { doc, setDoc, updateDoc, writeBatch, collection, query, where, onSnapsho
 import { db, kimlikBaslat, cikisYap, adBasliklari } from "./ortak/kimlik.js";
 import * as O from "./pano/ortak.js";
 import * as F from "./ortak/oryantasyon-fark.js";
+import * as C from "./ortak/oryantasyon-cikti.js";
 
 const $ = (id) => document.getElementById(id);
 const acilisMetni = (t) => { const e = $('acilisMetin'); if (e) e.textContent = t; };
@@ -173,6 +178,7 @@ const IK_EKLE = SVG('<path d="M12 5v14M5 12h14"/>');
 const IK_SIL = SVG('<path d="M4.5 7h15M9.5 7V5h5v2M6.5 7l1 12.5h9l1-12.5"/>');
 const IK_KAYDET = SVG('<path d="M5 4.5h11l3 3V19.5H5z"/><path d="M8 4.5v5h7v-5M8 19.5v-6h8v6"/>');
 const IK_GERI = SVG('<path d="M15 6l-6 6 6 6"/>');
+const IK_INDIR = SVG('<path d="M12 4.5v10M7.5 10.5 12 15l4.5-4.5"/><path d="M5 17.5v2h14v-2"/>');
 const IK_YAZDIR = SVG('<path d="M7 9V4.5h10V9"/><rect x="4" y="9" width="16" height="7.5" rx="1.5"/><path d="M7 14h10v5.5H7z"/>');
 
 /* ============================================================== OTURUM */
@@ -635,7 +641,44 @@ function cubukCiz() {
     O.el('small', { class: ED.kirli ? 'oy-kirli' : '', text: durumMetni })));
   if (ED.mod === 'mudur' && !s.toplam) c.append(O.el('button', { class: 'btn', type: 'button', html: O.ikon('onay') + 'Değişiklik önerim yok', title: 'Formu olduğu gibi uygun bulduğunuzu İnsan Kaynakları’na bildirir', on: { click: () => kaydet(true) } }));
   if (s.toplam) c.append(O.el('button', { class: 'btn btn-hayalet', type: 'button', text: ED.mod === 'ana' ? 'Değişiklikleri geri al' : 'Ana forma döndür', on: { click: anaFormaDon } }));
+  c.append(O.el('div', { class: 'oy-indir', role: 'group', 'aria-label': 'Formu indir' },
+    O.el('button', { class: 'btn', type: 'button', 'data-indir': 'xlsx', title: 'Formu Excel (.xlsx) olarak indir', html: IK_INDIR + 'Excel', on: { click: (e) => ciktiAl('xlsx', duzenleyiciCiktisi, e.currentTarget) } }),
+    O.el('button', { class: 'btn', type: 'button', 'data-indir': 'pdf', title: 'Formu PDF olarak indir', html: IK_INDIR + 'PDF', on: { click: (e) => ciktiAl('pdf', duzenleyiciCiktisi, e.currentTarget) } })));
   c.append(O.el('button', { class: 'btn btn-pirinc', type: 'button', id: 'oyKaydet', html: IK_KAYDET + 'Kaydet', on: { click: () => kaydet(false) } }));
+}
+/* ---------------------------------------------------- EXCEL / PDF ÇIKTISI */
+const bugunSaat = () => { const d = new Date(); return d.toLocaleDateString('tr-TR') + ' ' + d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }); };
+/* Düzenleyicideki hâl (boş yeni maddeler hariç — kaydedilecek hâl) */
+function duzenleyiciCiktisi() {
+  const ed = ED; if (!ed) return null;
+  const unvan = unvanAdi(ed.kod);
+  const form = F.formuDuzenle(bosYenileriAt(ed.calisma, ed.taban));
+  const kaydedilmemis = ed.kirli ? ' · kaydedilmemiş değişiklikler dahil' : '';
+  if (ed.mod === 'ana') {
+    const ana = ANA.get(ed.kod);
+    return { unvan, form, meta: 'Ana form (İnsan Kaynakları) · ' + (ana ? 'sürüm ' + ed.tabanSurum : 'yeni form') + kaydedilmemis + ' · indirildi ' + bugunSaat(),
+      dosya: 'Oryantasyon Formu - ' + unvan + ' - Ana form' + (ana ? ' v' + ed.tabanSurum : '') };
+  }
+  const ad = adBasliklari(HESAP.ad || '');
+  return { unvan, form, meta: ad + ' · ' + ROL_AD + ' düzenlemesi · ana formun ' + ed.tabanSurum + '. sürümü üzerinden' + kaydedilmemis + ' · indirildi ' + bugunSaat(),
+    dosya: 'Oryantasyon Formu - ' + unvan + ' - ' + ad };
+}
+let CIKTI_SURUYOR = false;
+async function ciktiAl(tur, hazirla, dugme) {
+  if (CIKTI_SURUYOR) return;
+  const g = hazirla(); if (!g) return;
+  const eskiHtml = dugme ? dugme.innerHTML : '';
+  try {
+    CIKTI_SURUYOR = true;
+    if (dugme) { dugme.disabled = true; dugme.innerHTML = IK_INDIR + (tur === 'pdf' ? 'PDF hazırlanıyor…' : 'Excel hazırlanıyor…'); }
+    if (tur === 'pdf') await C.pdfIndir(g); else await C.excelIndir(g);
+    O.bildirim((tur === 'pdf' ? 'PDF' : 'Excel') + ' indirildi · tarayıcının “İndirilenler” klasöründe');
+  } catch (e) {
+    alert((tur === 'pdf' ? 'PDF' : 'Excel') + ' hazırlanamadı: ' + ((e && e.message) || 'bilinmeyen hata'));
+  } finally {
+    CIKTI_SURUYOR = false;
+    if (dugme && dugme.isConnected) { dugme.disabled = false; dugme.innerHTML = eskiHtml; }
+  }
 }
 function anaFormaDon() {
   if (!ED) return;
@@ -733,6 +776,7 @@ async function kaydet(degisiklikYok) {
 }
 
 /* ---------------------------------------------------- 3) İNCELEME (İK) */
+let CIKTI_ISARETLI = true;          /* inceleme çıktısı: değişiklikler işaretli mi (oturum boyunca hatırlanır) */
 function incelemeCiz(kok, kod, hid) {
   ED = null;
   const ana = ANA.get(kod);
@@ -746,10 +790,26 @@ function incelemeCiz(kok, kod, hid) {
       : 'Henüz bu formu kaydeden müdür ya da direktör yok.',
     meta: ana ? [{ ikon: 'dosya', html: 'Ana form: <b>' + F.maddeSayisi(ana.form) + ' madde</b> · sürüm ' + ana.surum + ' · ' + gunSaat(ana.guncelleme) }] : []
   });
-  kok.append(O.el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' },
+  /* seçili kişinin formu: Excel / PDF (değişiklikler işaretli ya da temiz) */
+  const isaretKutu = O.el('input', { type: 'checkbox', id: 'oyIsaretli' }); isaretKutu.checked = CIKTI_ISARETLI;
+  isaretKutu.addEventListener('change', () => { CIKTI_ISARETLI = isaretKutu.checked; });
+  const incelemeCiktisi = () => {
+    if (!sec) return null;
+    const kd = sec._kd, isaretli = CIKTI_ISARETLI && kd.duzenlendi;
+    const ad = adBasliklari(sec.ad);
+    return { unvan: unvanAdi(kod), form: kd.form, fark: isaretli ? kd.fark : null,
+      meta: ad + ' · ' + (sec.rol || '') + ' · son kayıt ' + gunSaat(sec.guncelleme) + ' · ana formun ' + (Number(sec.tabanSurum) || 0) + '. sürümü üzerinden' + (kd.duzenlendi ? '' : ' · değişiklik önermedi'),
+      dosya: 'Oryantasyon Formu - ' + unvanAdi(kod) + ' - ' + ad + (isaretli ? ' (işaretli)' : '') };
+  };
+  kok.append(O.el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;align-items:center' },
     O.el('a', { class: 'btn btn-hayalet', href: '#/', html: IK_GERI + 'Unvanlara dön' }),
     O.el('a', { class: 'btn', href: '#/ana/' + kod, html: O.ikon('dosya') + 'Ana formu düzenle' }),
-    sec ? O.el('button', { class: 'btn', type: 'button', html: IK_YAZDIR + 'Yazdır', on: { click: () => window.print() } }) : null));
+    sec ? O.el('button', { class: 'btn', type: 'button', html: IK_YAZDIR + 'Yazdır', on: { click: () => window.print() } }) : null,
+    sec ? O.el('div', { class: 'oy-indir', role: 'group', 'aria-label': 'Seçili kişinin formunu indir' },
+      O.el('button', { class: 'btn', type: 'button', 'data-indir': 'xlsx', title: 'Seçili kişinin formunu Excel olarak indir', html: IK_INDIR + 'Excel', on: { click: (e) => ciktiAl('xlsx', incelemeCiktisi, e.currentTarget) } }),
+      O.el('button', { class: 'btn', type: 'button', 'data-indir': 'pdf', title: 'Seçili kişinin formunu PDF olarak indir', html: IK_INDIR + 'PDF', on: { click: (e) => ciktiAl('pdf', incelemeCiktisi, e.currentTarget) } }),
+      O.el('label', { class: 'oy-isaret-sec', title: 'İşaretliyken değişen hücreler sarı (önceki hâliyle), eklenenler yeşil, silinenler üstü çizili gelir; ayrıca değişiklik notları eklenir' },
+        isaretKutu, O.el('span', { text: 'Değişiklikler işaretli' }))) : null));
   if (!dz.length) { const k = O.kart(kok, { baslik: 'Düzenleme yok' }); O.bosDurum(k.govde, { ikon: 'kisiler', baslik: 'Henüz düzenleme yapan olmadı', metin: 'Müdürler formu kaydettiğinde burada isimleriyle listelenir.' }); return; }
   const iz = O.el('div', { class: 'oy-inceleme' });
   /* sol: müdür listesi */
