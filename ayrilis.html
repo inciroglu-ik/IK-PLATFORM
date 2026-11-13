@@ -340,19 +340,28 @@ function aktarimSec() {
     if (!kayitlar.length) { alert('Dosyada aktarılabilecek geçerli yanıt bulunamadı.'); return; }
     const kisi = kayitlar.filter((r) => r.veri.kaynak === 'google_form').length;
     if (!confirm(kayitlar.length + ' yanıt aktarılacak (' + kisi + ' Google Form, ' + (kayitlar.length - kisi) + ' İK doldurdu)' + (atlanan.length ? '; ' + atlanan.length + ' bozuk kayıt atlanacak' : '') + '. Daha önce aktarılmış aynı yanıtlar güncellenir, mükerrer kayıt oluşmaz. Devam edilsin mi?')) return;
-    /* Güvenlik kuralı her yazımda yetkiyi okur; toplu yazma okuma sınırına takılmasın diye 8'erli parçalar hâlinde */
+    /* Güvenlik kuralı her yazımda yetkiyi okur; toplu yazma okuma sınırına takılmasın diye 8'erli parçalar hâlinde.
+       Bir parça reddedilirse o parçanın kayıtları TEK TEK yeniden denenir; yine yazılamayanlar adıyla ve hata koduyla bildirilir. */
     let yazilan = 0;
-    try {
-      for (let i = 0; i < kayitlar.length; i += 8) {
+    const hatali = [];
+    for (let i = 0; i < kayitlar.length; i += 8) {
+      const parca = kayitlar.slice(i, i + 8);
+      try {
         const b = writeBatch(db);
-        kayitlar.slice(i, i + 8).forEach((r) => b.set(doc(KOL, r.id), r.veri));
+        parca.forEach((r) => b.set(doc(KOL, r.id), r.veri));
         await b.commit();
-        yazilan = Math.min(kayitlar.length, i + 8);
+        yazilan += parca.length;
+      } catch (e) {
+        console.warn('Aktarım parçası reddedildi, kayıtlar tek tek deneniyor', e);
+        for (const r of parca) {
+          try { await setDoc(doc(KOL, r.id), r.veri); yazilan++; }
+          catch (e2) { hatali.push(O.trBaslik(r.veri.ad) + ' (' + ((e2 && e2.code) || (e2 && e2.message) || 'hata') + ')'); }
+        }
       }
-      O.bildirim(yazilan + ' yanıt aktarıldı' + (atlanan.length ? ' · ' + atlanan.length + ' kayıt atlandı' : ''));
-    } catch (e) {
-      alert('Aktarım tamamlanamadı (' + yazilan + ' / ' + kayitlar.length + ' yazıldı; tekrar aktarabilirsiniz, mükerrer olmaz): ' + (e && e.code === 'permission-denied' ? 'bu işlem için yetkiniz yok ya da güvenlik kuralı yayınlanmamış olabilir.' : (e && e.message) || 'bilinmeyen hata'));
     }
+    if (!hatali.length) O.bildirim(yazilan + ' yanıt aktarıldı' + (atlanan.length ? ' · ' + atlanan.length + ' kayıt atlandı' : ''));
+    else alert('Aktarım: ' + yazilan + ' / ' + kayitlar.length + ' yanıt yazıldı. Yazılamayanlar (' + hatali.length + '):\n' + hatali.join('\n') +
+      '\n\nTekrar aktarabilirsiniz, mükerrer kayıt oluşmaz. “permission-denied” görünüyorsa güvenlik kuralı yayınlanmamış ya da yetkiniz yok demektir.');
   });
   document.body.append(inp);
   inp.click();
@@ -374,13 +383,13 @@ function ayrintiAc(k) {
     soru('Fikrini önce kime açtı', Array.isArray(c.kime) ? c.kime.join(', ') : c.kime), soru('Tekrar çalışmayı düşünür mü', c.tekrar),
     soru('Ayrılmasına sebep olan olumsuz olay', olay, true),
     soru('Diğer sebepler', c.diger, true), soru('Hangi koşullarda devam ederdi', c.kosul, true), soru('Önerileri / düşünceleri', c.dusunce, true),
-    soru('Kişisel veri onayı', c.kvkk ? String(c.kvkk).replace(/\.$/, '') : (k.kaynak === 'ik' ? 'İK doldurdu (kişiden alınmadı)' : '—')),
+    soru('Kişisel veri onayı', c.kvkk ? String(c.kvkk).replace(/\.$/, '') : (IK && k.kaynak === 'ik' ? 'İK doldurdu (kişiden alınmadı)' : '—')),
     IK && k.ikKodu ? soru('İK kodu', k.ikKodu) : null);
   const alt = O.el('div', null,
     O.el('div', { class: 'ay-ozet-satir' },
       O.el('span', { html: 'Departman: <b>' + O.esc(k.departman || '—') + '</b>' }), O.el('span', { html: 'Pozisyon: <b>' + O.esc(k.pozisyon || '—') + '</b>' }),
       O.el('span', { html: 'Çıkış: <b>' + gunYaz(tarihCoz(k.cikis)) + '</b>' }), O.el('span', { html: 'Yanıt: <b>' + gunYaz(tarihCoz(k.tamamlanma)) + '</b>' })),
-    O.el('div', { style: 'margin-top:8px' }, kaynakCip(k.kaynak)));
+    IK ? O.el('div', { style: 'margin-top:8px' }, kaynakCip(k.kaynak)) : null);
   const altBar = O.el('div', { class: 'modal-alt' });
   if (IK) altBar.append(O.el('button', { class: 'btn btn-hayalet', type: 'button', html: IK_SIL + '<span>Kaydı sil</span>', on: { click: async () => {
     if (!confirm(O.trBaslik(k.ad) + ' kişisinin anket yanıtı kalıcı olarak silinecek. Devam edilsin mi?')) return;
@@ -558,13 +567,14 @@ function ciz() {
   });
   O.tablo(kY.govde, {
     sutunlar: [
-      { k: 'ad', ad: 'Ad Soyad', sinif: 'ad-hucre', bicim: (v) => O.trBaslik(v) },
+      { k: 'ad', ad: 'Ad Soyad', sinif: 'ad-hucre', bicim: (v, r) => (IK && onayYok(r)
+        ? O.el('div', { class: 'ay-cipler' }, O.el('span', { text: O.trBaslik(v) }), O.el('span', { class: 'cip cip-uy', title: 'Kişi, yanıtlarının anonim veri olarak kullanılmasını onaylamadı; istatistiklere dahil edilmez.', text: 'KVKK onayı yok' }))
+        : O.trBaslik(v)) },
       { k: 'departman', ad: 'Departman' },
       { k: 'pozisyon', ad: 'Pozisyon', bicim: (v) => (v ? O.trBaslik(v) : '—') },
       { k: '_t', ad: 'Çıkış', tip: 'tarih', bicim: (v) => gunYaz(v), siralamaDegeri: (r) => (r._t ? r._t.getTime() : 0) },
       { k: '_ust', ad: 'En etkili nedenler', siralanamaz: true, bicim: (v) => (v && v.length ? O.el('div', { class: 'ay-cipler' }, ...v.map((x) => O.el('span', { class: 'cip cip-bilgi', text: x.ad }))) : '—') },
-      { k: '_tekrar', ad: 'Tekrar çalışır' },
-      { k: 'kaynak', ad: 'Kaynak', bicim: (v, r) => (onayYok(r) ? O.el('div', { class: 'ay-cipler' }, kaynakCip(v), O.el('span', { class: 'cip cip-uy', title: 'Kişi, yanıtlarının anonim veri olarak kullanılmasını onaylamadı; istatistiklere dahil edilmez.', text: 'KVKK onayı yok' })) : kaynakCip(v)), siralamaDegeri: (r) => A.KAYNAK_AD[r.kaynak] || '' }
+      { k: '_tekrar', ad: 'Tekrar çalışır' }
     ],
     satirlar, sayfaBoyu: 12, siraNo: true, varsayilanSira: { k: '_t', y: 'azalan' }, araYer: 'Ad, departman, pozisyon ara…', araAlanlari: ['ad', 'departman', 'pozisyon'],
     satirTikla: (r) => ayrintiAc(KAYITLAR.find((x) => x.id === r.id) || r)
@@ -573,7 +583,6 @@ function ciz() {
     'Kaynak: ayrılış anketi yanıtları (canlı) · istifa listesi ve anket oranı: haftalık İK pano verisi' + (PANO_ETIKET ? ' (' + PANO_ETIKET + ')' : '') + '.',
     'Anket oranı: istifayla ayrılanlar (V.İ. ve stajyer hariç; deneme süresinde işçi feshi dahil) içinde anketi olanlar. Eşleştirme ad soyad ve çıkış tarihiyle yapılır.',
     '“Etkili” payı: 6’lı ölçekte “Etkili” ya da “Çok etkili” işaretleyenlerin, o soruyu yanıtlayanlara oranı.',
-    'Kaynak sütunu: Bağlantı = kişi bu sistemden doldurdu · Google Form = kişi eski formdan doldurdu · İK doldurdu = kişi doldurmadığı için İK’nın çıkış görüşmesindeki gerçek nedene göre girdiği yanıt.',
     KVKK_RET_HARIC ? 'Kişisel veri onayı: yanıtlarının anonim veri olarak kullanılmasını onaylamayan kişilerin yanıtları anket oranında sayılır, grafik ve istatistiklere dahil edilmez; ayrıntısını yalnız İK görür.' : null
   ].filter(Boolean));
   bitir(kok, kaydirma);
