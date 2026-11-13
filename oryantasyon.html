@@ -199,6 +199,14 @@ const DUZ = new Map();          /* belge kimliği → müdür düzenlemesi (İK:
 let ED = null;                  /* açık düzenleyici: { mod:'mudur'|'ana', kod, calisma, taban, tabanSurum, kayit, kirli, cop, taslak } */
 let ILK_ANA = false, ILK_DUZ = false;
 const unvanAdi = (kod) => (F.UNVANLAR.find((u) => u.kod === kod) || {}).ad || (ANA.get(kod) || {}).unvan || kod;
+/* Rol bazlı görünürlük (13.11.2026): satış müdürü → satış danışmanı + satış müdürü formları; servis müdürü → servis
+   danışmanı + servis müdürü; direktör ve İK → hepsi; idari müdür / departman müdürü → hepsi (değiştirilmedi).
+   Birden çok rolü olan kişi rollerinin birleşimini görür. Güvenlik kuralı (oryUnvanIzinli) kopya kaydını aynı eşlemeyle sınırlar. */
+const ROL_UNVAN = { satis_mudur: ['satis-danismani', 'satis-muduru'], servis_mudur: ['servis-danismani', 'servis-muduru'] };
+const HEPSINI_GOREN = ['ik', 'direktor', 'idari_mudur', 'mudur'];
+const GORUNUR = HESAP.roller.some((r) => HEPSINI_GOREN.includes(r)) ? null : new Set(HESAP.roller.flatMap((r) => ROL_UNVAN[r] || []));
+const gorebilir = (kod) => !GORUNUR || GORUNUR.has(kod);
+const gorunurUnvanlar = () => F.UNVANLAR.filter((u) => gorebilir(u.kod));
 const tarihCoz = (t) => (t && typeof t.toDate === 'function' ? t.toDate() : t instanceof Date ? t : (t && typeof t.seconds === 'number' ? new Date(t.seconds * 1000) : null));
 const gunSaat = (t) => { const d = tarihCoz(t); return d ? d.toLocaleDateString('tr-TR') + ' ' + d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '—'; };
 const benimKayit = (kod) => DUZ.get(kod + '__' + HID) || null;
@@ -254,30 +262,39 @@ function ciz() {
   const kok = O.el('section', { class: 'pg on', id: 'p-oryantasyon' });
   $('icerik').replaceChildren(kok);
   /* İK kendi kopyasını oluşturmaz (sayıma karışmasın); İK ana formu düzenler */
-  if (r.sayfa === 'form' && ANA.get(r.kod) && !IK) duzenleyiciAc(kok, 'mudur', r.kod);
+  if (r.sayfa === 'form' && ANA.get(r.kod) && !IK && gorebilir(r.kod)) duzenleyiciAc(kok, 'mudur', r.kod);
   else if (r.sayfa === 'ana' && IK) duzenleyiciAc(kok, 'ana', r.kod);
   else if (r.sayfa === 'inceleme' && IK) incelemeCiz(kok, r.kod, r.hid);
-  else listeCiz(kok);
+  else {
+    /* yetkisiz / geçersiz adres: liste gösterilir, adres çubuğu da listeye döner */
+    if (r.sayfa !== 'liste') { history.replaceState(null, '', '#/'); SON_HASH = '#/'; }
+    listeCiz(kok);
+  }
   window.__TEST_HAZIR = true;
 }
 
 /* ---------------------------------------------------- 1) LİSTE */
 function listeCiz(kok) {
   ED = null;
-  const hazir = F.UNVANLAR.filter((u) => ANA.get(u.kod)).length;
+  const liste = gorunurUnvanlar();
+  const hazir = liste.filter((u) => ANA.get(u.kod)).length;
   O.kaput(kok, {
     ustEtiket: 'İnsan Kaynakları · Oryantasyon', baslik: 'Oryantasyon Formları',
     ozetHtml: IK
       ? 'Her unvanın <b>ana formunu</b> siz hazırlarsınız; müdür ve direktörler kendi kopyalarında düzenler. Düzenleyenleri ve yaptıkları değişiklikleri buradan izleyebilirsiniz.'
       : 'İnsan Kaynakları’nın hazırladığı oryantasyon formlarını inceleyin; gerekli gördüğünüz yerleri <b>düzenleyin, ekleyin ya da çıkarın</b> ve kaydedin. Düzenlemenizi yalnız siz ve İnsan Kaynakları görür.',
-    meta: [{ ikon: 'kisiler', html: '2026’da en çok alım yapılan <b>5 unvan</b> + <b>satış ve servis müdürü</b>' }, { ikon: 'dosya', html: '<b>' + hazir + '</b> / ' + F.UNVANLAR.length + ' unvanın formu hazır' }]
+    meta: [GORUNUR
+      ? { ikon: 'kisiler', html: 'Sizinle ilgili <b>' + liste.length + ' unvan</b>' }
+      : { ikon: 'kisiler', html: '2026’da en çok alım yapılan <b>5 unvan</b> + <b>satış ve servis müdürü</b>' },
+    { ikon: 'dosya', html: '<b>' + hazir + '</b> / ' + liste.length + ' unvanın formu hazır' }]
   });
   O.akisBaslik(kok, { no: '01', baslik: 'Unvanlar', aciklama: IK ? 'Karta tıklayarak müdür düzenlemelerini inceleyin ya da ana formu düzenleyin' : 'Formu açıp düzenleyin; değişiklikler kaydedene kadar saklanmaz' });
   const g = O.el('div', { class: 'oy-izgara-kart' });
-  F.UNVANLAR.forEach((u, i) => g.append(IK ? unvanKartiIK(u, i) : unvanKartiMudur(u, i)));
+  liste.forEach((u, i) => g.append(IK ? unvanKartiIK(u, i) : unvanKartiMudur(u, i)));
   kok.append(g);
   O.notlar(kok, IK
-    ? ['Müdürler birbirinin düzenlemesini göremez; düzenlemeleri yalnız İnsan Kaynakları görür.',
+    ? ['Kim hangi formu görür: satış müdürleri satış danışmanı ve satış müdürü formlarını, servis müdürleri servis danışmanı ve servis müdürü formlarını görür; direktörler, idari müdür ve departman müdürleri tüm formları görür.',
+       'Müdürler birbirinin düzenlemesini göremez; düzenlemeleri yalnız İnsan Kaynakları görür.',
        'Ana formu değiştirdiğinizde müdürlerin daha önce kaydettiği düzenlemeler değişmez; karşılaştırma her müdürün başladığı ana form sürümüne göre yapılır.',
        '“Değişiklik önerim yok” diyen müdürler de listede görünür.']
     : ['Kaydetmediğiniz değişiklikler saklanmaz.', 'Hiçbir değişiklik gerekmiyorsa formu açıp “Değişiklik önerim yok” diyebilirsiniz; İnsan Kaynakları formu incelediğinizi görür.']);

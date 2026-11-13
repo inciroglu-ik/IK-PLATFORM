@@ -39,7 +39,7 @@ yeniden denetlenir; arayüzün gösterdiği ya da gizlediği hiçbir şey yetki 
 | Aday sınavı | `/ise-alim-sureci/sinav.html?t=…` | bağlantıyı alan aday (128 bit tek kullanımlık anahtar) |
 | İşten ayrılış anketleri (sonuçlar + bağlantı üretme) | `/IK-PLATFORM/ayrilis.html` (portalda kutucuk) | `ik`, `direktor` (bağlantıyı yalnız `ik` üretir) |
 | İşten ayrılış anketi (çalışanın doldurduğu sayfa) | `/IK-PLATFORM/anket.html#a_…` | bağlantıyı alan, istifayla ayrılan çalışan (128 bit tek kullanımlık anahtar) |
-| Oryantasyon formları | `/IK-PLATFORM/oryantasyon.html` (portalda kutucuk) | tüm yönetim rolleri; her müdür/direktör yalnız kendi düzenlemesini görür; `ik` ana formu yönetir ve tüm düzenlemeleri inceler |
+| Oryantasyon formları | `/IK-PLATFORM/oryantasyon.html` (portalda kutucuk) | tüm yönetim rolleri; satış müdürü yalnız satış danışmanı + satış müdürü, servis müdürü yalnız servis danışmanı + servis müdürü formlarını görür, direktör / idari müdür / departman müdürü hepsini; her kişi yalnız kendi düzenlemesini görür; `ik` ana formu yönetir ve tüm düzenlemeleri inceler |
 
 > **Firebase API anahtarı neden kodda?** Firebase web yapılandırmasındaki `apiKey` gizli bir anahtar
 > değil, projeyi tanıtan herkese açık bir tanımlayıcıdır (Google Firebase belgeleri). Veriye erişimi
@@ -116,7 +116,7 @@ hesaba bağlı olmadığı için hiçbir veriye erişemez.
 | Aday sınavı (`sinavlar/{anahtar}`) | Anahtarı bilen aday **yalnız sınav tamamlanana kadar**; İK ve ilgili departman | İK, ilgili departman oluşturur; aday yalnız bir kez ve yalnız sonuç alanlarını tamamlar |
 | Oryantasyon ana formları (`oryantasyonFormlari/{unvanKodu}`) | Yönetim rolleri | İK (alan listesi, form yapısı, sürüm her kayıtta tam 1 artar, zaman sunucu saati; aynı toplu yazımda sürüm geçmişi kaydı şart) |
 | Oryantasyon sürüm geçmişi (`oryantasyonFormlari/{unvanKodu}/surumler/{sürüm}`) | Yönetim rolleri | İK, yalnız ana formla aynı toplu yazımda ve ana formun yeni hâliyle birebir aynı içerikle |
-| Oryantasyon form düzenlemeleri (`oryantasyonDuzenlemeleri/{unvanKodu}__{hid}`) | Yalnız sahibi; İK | Yalnız sahibi (kimlik, ad ve rol adı hesaptan; taban = sürüm geçmişindeki ana form birebir; "değişiklik yok" yalnız form tabanla aynıysa; oluşturma zamanı değişmez; zaman sunucu saati); İK değiştiremez, yalnız silebilir |
+| Oryantasyon form düzenlemeleri (`oryantasyonDuzenlemeleri/{unvanKodu}__{hid}`) | Yalnız sahibi; İK | Yalnız sahibi (kimlik, ad ve rol adı hesaptan; unvan rolün görebildiği unvanlardan; taban = sürüm geçmişindeki ana form birebir; "değişiklik yok" yalnız form tabanla aynıysa; oluşturma zamanı değişmez; zaman sunucu saati); İK değiştiremez, yalnız silebilir |
 | İşten ayrılış anketi (`ayrilisAnketleri/{anahtar}`) | Anahtarı bilen çalışan **yalnız anket tamamlanana kadar** (yalnız kendi kaydı); İK; direktör **yalnız tamamlanmış** yanıtları (bekleyen kaydın kimliği gizli anahtardır) | İK bağlantı oluşturur / iptal eder / eski yanıtları aktarır; çalışan yalnız bir kez ve yalnız cevap alanlarını, alan alan denetlenmiş değerlerle tamamlar |
 | Hesaplar (rol, kapsam, aktiflik, kod özeti) | İK; kişi yalnız kendi kaydını | İK; kişi yalnız aktivasyon alanlarını |
 | Oturum bağı (`uidBag`) | Kişinin kendisi, İK | Kişi yalnız geçerli kodla, bir kez |

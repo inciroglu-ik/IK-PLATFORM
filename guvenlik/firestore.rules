@@ -497,6 +497,15 @@ service cloud.firestore {
     function oryRolGecerli(r) {
       return r is string && r in oryRolKodu() && hesap().roller.hasAny([oryRolKodu()[r]]) && !hesap().roller.hasAny(['ik']);
     }
+    // Hangi rol hangi unvanın formunu düzenleyebilir (oryantasyon.html ROL_UNVAN ile birebir, 13.11.2026):
+    // satış müdürü → satış danışmanı + satış müdürü; servis müdürü → servis danışmanı + servis müdürü;
+    // direktör, idari müdür, departman müdürü → hepsi
+    function oryUnvanIzinli(kod) {
+      let r = hesap().roller;
+      return r.hasAny(['direktor', 'idari_mudur', 'mudur'])
+        || (r.hasAny(['satis_mudur']) && kod in ['satis-danismani', 'satis-muduru'])
+        || (r.hasAny(['servis_mudur']) && kod in ['servis-danismani', 'servis-muduru']);
+    }
     function oryOzetAlanlari() {
       return ['degisen', 'eklenen', 'silinen', 'sira', 'bolumDegisen', 'bolumEklenen', 'bolumSilinen', 'bolumMaddeSilinen',
               'alanDegisen', 'alanEklenen', 'alanSilinen', 'toplam'];
@@ -510,6 +519,7 @@ service cloud.firestore {
         && id == d.kod + '__' + d.hid
         && d.ad == hesap().ad
         && oryRolGecerli(d.rol)
+        && oryUnvanIzinli(d.kod)
         && d.durum in ['duzenlendi', 'onaylandi']
         && oryFormSekli(d.form) && oryFormSekli(d.taban)
         && d.ozet is map && d.ozet.keys().hasOnly(oryOzetAlanlari())
