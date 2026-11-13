@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>İşten Ayrılış Anketi · İnciroğlu Otomotiv</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0f1b2d">
+<link rel="icon" href="icon-192.png" sizes="192x192">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="pano/kokpit.css">
+<style>
+/* İşten Ayrılış Anketi — çalışanın bağlantıyla açtığı tek sayfa (giriş gerektirmez).
+   Renk ve yazı tokenları pano/kokpit.css'ten gelir; burada yalnız sayfa yerleşimi var. */
+html { background: var(--yuzey-sayfa); }
+body { margin: 0; min-height: 100vh; color: var(--metin-1); font-family: var(--font-sans); -webkit-text-size-adjust: 100%; }
+.bant { background: var(--kokpit-dokusu), var(--kokpit-gradyan); color: var(--metin-ters-1); padding: 22px 16px 64px; }
+.bant-ic, .govde { max-width: 760px; margin: 0 auto; }
+.marka { display: flex; align-items: center; gap: 12px; }
+.marka-isaret { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 1px rgba(191,205,226,.22); font-family: var(--font-serif); font-weight: 600; font-size: 17px; color: #fff; flex: none; }
+.marka b { display: block; font-size: 14px; font-weight: 600; letter-spacing: .01em; }
+.marka small { display: block; font-size: 12px; color: var(--metin-ters-3); margin-top: 1px; }
+.bant h1 { font-family: var(--font-serif); font-weight: 600; font-size: clamp(24px, 5.4vw, 32px); line-height: 1.2; margin: 26px 0 8px; color: #fff; }
+.bant p { margin: 0; color: var(--metin-ters-2); font-size: 15px; line-height: 1.6; max-width: 620px; }
+.govde { padding: 0 16px 48px; margin-top: -40px; position: relative; }
+.kart { background: var(--yuzey-kart); border-radius: 18px; box-shadow: var(--gol-2); border: 1px solid var(--cizgi-1); padding: 22px 20px; margin-bottom: 16px; }
+.kart h2 { font-family: var(--font-serif); font-size: 19px; font-weight: 600; color: var(--metin-marka); margin: 0 0 4px; }
+.kart .alt { font-size: 13.5px; color: var(--metin-3); margin: 0 0 14px; line-height: 1.55; }
+.bilgi-izgara { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px; }
+.bilgi-izgara div { min-width: 0; }
+.bilgi-izgara span { display: block; font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--metin-3); }
+.bilgi-izgara b { display: block; font-size: 15px; font-weight: 600; margin-top: 3px; overflow-wrap: anywhere; }
+.soru { padding: 16px 0; border-top: 1px solid var(--cizgi-1); }
+.soru:first-of-type { border-top: 0; padding-top: 4px; }
+.soru-baslik { font-size: 15px; font-weight: 600; line-height: 1.45; margin: 0 0 10px; }
+.soru-baslik .zorunlu { color: var(--ht-600); margin-left: 2px; }
+.soru-baslik .ops { font-weight: 500; color: var(--metin-3); font-size: 13px; }
+.soru.eksik .soru-baslik { color: var(--ht-700); }
+.soru.eksik .uyari-metni { display: block; }
+.uyari-metni { display: none; font-size: 12.5px; color: var(--ht-700); margin-top: 8px; font-weight: 500; }
+textarea, input[type=text] { width: 100%; box-sizing: border-box; font: inherit; font-size: 15px; color: var(--metin-1); border: 1px solid var(--cizgi-2); border-radius: 12px; padding: 11px 13px; background: var(--yuzey-kart); }
+textarea { min-height: 92px; resize: vertical; line-height: 1.5; }
+textarea:focus, input[type=text]:focus { outline: none; border-color: var(--pir-500); box-shadow: var(--odak-halkasi); }
+.sayac { font-size: 11.5px; color: var(--metin-3); text-align: right; margin-top: 4px; }
+.secenekler { display: grid; gap: 8px; }
+.secenekler.yan { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.secenek { position: relative; display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 10px 14px; border: 1px solid var(--cizgi-2); border-radius: 12px; cursor: pointer; font-size: 15px; background: var(--yuzey-kart); transition: border-color .15s, background .15s; }
+.secenek input { position: absolute; opacity: 0; pointer-events: none; }
+.secenek .isaret { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--cizgi-3); flex: none; display: grid; place-items: center; }
+.secenek.kutu .isaret { border-radius: 6px; }
+.secenek input:checked + .isaret { border-color: var(--pir-600); background: var(--pir-600); box-shadow: inset 0 0 0 3px #fff; }
+.secenek.kutu input:checked + .isaret { box-shadow: none; }
+.secenek.kutu input:checked + .isaret::after { content: ''; width: 9px; height: 5px; border: 2px solid #fff; border-top: 0; border-right: 0; transform: rotate(-45deg) translate(1px, -1px); }
+.secenek:has(input:checked) { border-color: var(--pir-500); background: var(--pir-50); }
+.secenek input:focus-visible + .isaret { box-shadow: var(--odak-halkasi); }
+.olcek-aciklama { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; margin: 4px 0 6px; }
+.olcek-aciklama span { font-size: 10.5px; text-align: center; color: var(--metin-3); font-weight: 600; letter-spacing: .02em; }
+.faktor { padding: 14px 0; border-top: 1px solid var(--cizgi-1); }
+.faktor:first-of-type { border-top: 0; }
+.faktor-ad { display: flex; gap: 8px; align-items: baseline; font-size: 14.5px; font-weight: 600; margin-bottom: 9px; line-height: 1.4; }
+.faktor-ad i { font-style: normal; color: var(--metin-3); font-size: 12px; font-weight: 600; min-width: 22px; }
+.faktor.eksik .faktor-ad { color: var(--ht-700); }
+.puanlar { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; }
+.puan { position: relative; display: grid; place-items: center; min-height: 46px; padding: 4px 2px; border: 1px solid var(--cizgi-2); border-radius: 10px; cursor: pointer; text-align: center; font-size: 11.5px; line-height: 1.2; font-weight: 600; color: var(--metin-2); background: var(--yuzey-kart); transition: background .15s, border-color .15s, color .15s; }
+.puan input { position: absolute; opacity: 0; pointer-events: none; }
+.puan:hover { border-color: var(--pir-300); }
+.puan:has(input:checked) { background: var(--pir-600); border-color: var(--pir-600); color: #fff; }
+.puan:has(input:focus-visible) { box-shadow: var(--odak-halkasi); }
+.ilerleme { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.94); backdrop-filter: blur(6px); border-bottom: 1px solid var(--cizgi-1); padding: 10px 16px; display: none; }
+.ilerleme.acik { display: block; }
+.ilerleme-ic { max-width: 760px; margin: 0 auto; display: flex; align-items: center; gap: 12px; font-size: 12.5px; color: var(--metin-2); font-weight: 600; }
+.ilerleme-cubuk { flex: 1; height: 6px; border-radius: 6px; background: var(--n-150); overflow: hidden; }
+.ilerleme-cubuk i { display: block; height: 100%; width: 0; background: var(--pir-600); border-radius: 6px; transition: width .25s; }
+.kvkk-metni { font-size: 14px; line-height: 1.6; color: var(--metin-2); margin: 0 0 12px; background: var(--n-50); border-radius: 12px; padding: 12px 14px; }
+.gonder-alan { display: grid; gap: 10px; }
+.btn-gonder { height: 52px; font-size: 16px; font-weight: 600; border-radius: 14px; justify-content: center; width: 100%; }
+.btn-gonder[disabled] { opacity: .6; cursor: progress; }
+.hata-kutu { display: none; background: var(--ht-50); color: var(--ht-700); border: 1px solid var(--ht-200); border-radius: 12px; padding: 12px 14px; font-size: 14px; line-height: 1.5; }
+.hata-kutu.acik { display: block; }
+.dipnot { font-size: 12.5px; color: var(--metin-3); line-height: 1.6; text-align: center; margin-top: 18px; }
+.durum { text-align: center; padding: 34px 22px; }
+.durum-ikon { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 14px; background: var(--ok-50); color: var(--ok-700); box-shadow: inset 0 0 0 1px var(--ok-200); }
+.durum-ikon.hata { background: var(--uy-50); color: var(--uy-700); box-shadow: inset 0 0 0 1px var(--uy-200); }
+.durum-ikon svg { width: 30px; height: 30px; }
+.durum h2 { font-size: 22px; margin-bottom: 8px; }
+.durum p { color: var(--metin-2); font-size: 15px; line-height: 1.65; margin: 0 auto; max-width: 480px; }
+.yukleniyor { text-align: center; padding: 40px 20px; color: var(--metin-3); font-size: 14px; }
+.yukleniyor i { display: block; width: 34px; height: 34px; margin: 0 auto 12px; border-radius: 50%; border: 3px solid var(--n-150); border-top-color: var(--pir-600); animation: don 0.9s linear infinite; }
+@keyframes don { to { transform: rotate(360deg); } }
+[hidden] { display: none !important; }
+@media (max-width: 520px) {
+  .kart { padding: 18px 15px; border-radius: 16px; }
+  .secenekler.yan { grid-template-columns: minmax(0, 1fr); }
+  .puan { font-size: 10.5px; min-height: 48px; }
+  .olcek-aciklama span { font-size: 9.5px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="ilerleme" id="ilerleme" aria-hidden="true"><div class="ilerleme-ic"><span id="ilerlemeMetin">0 / 23</span><div class="ilerleme-cubuk"><i id="ilerlemeCubuk"></i></div></div></div>
+<header class="bant">
+  <div class="bant-ic">
+    <div class="marka"><span class="marka-isaret" aria-hidden="true">İ</span><div><b>İnciroğlu Otomotiv</b><small>İnsan Kaynakları</small></div></div>
+    <h1 id="baslik">İşten Ayrılış Anketi</h1>
+    <p id="giris">Bağlantınız denetleniyor…</p>
+  </div>
+</header>
+<main class="govde" id="govde">
+  <div class="kart yukleniyor" id="yukleniyor"><i></i>Anket yükleniyor…</div>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import { initializeFirestore, doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { OLCEK, OLCEK_KISA, FAKTORLER, KARARLAR, KIME, EVET_HAYIR, KVKK, KVKK_METNI, SINIR, anahtarGecerli, metinTemizle } from "./ortak/ayrilis-sorular.js";
+
+/* Bağlantı: anket.html#a_<32 onaltılık>. Anahtar adres çubuğunun # bölümünde durur (sunucuya ve başka sitelere gönderilmez).
+   Güvenlik kuralı (guvenlik/firestore.rules → ayrilisAnketleri): bu anahtarla yalnız BEKLEYEN kayıt okunur ve BİR KEZ
+   tamamlanır; tamamlanan anket bağlantıyla yeniden açılamaz, sonuçları yalnız İK ve direktörler görür. */
+const app = initializeApp({
+  apiKey: "AIzaSyCWlB0nU-ETZxuo9xa6gG4VMYVu09P3fnE",
+  authDomain: "yetenek-havuzu.firebaseapp.com",
+  projectId: "yetenek-havuzu",
+  storageBucket: "yetenek-havuzu.firebasestorage.app",
+  messagingSenderId: "714642441227",
+  appId: "1:714642441227:web:bf49ac51367c6d9437b30e"
+}, "ayrilis-anket");
+const db = initializeFirestore(app, { experimentalForceLongPolling: true });
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const trKucuk = (s) => String(s || '').replace(/İ/g, 'i').replace(/I/g, 'ı').toLocaleLowerCase('tr');
+const baslikYap = (s) => trKucuk(s).split(/\s+/).filter(Boolean).map((w) => w.charAt(0).toLocaleUpperCase('tr') + w.slice(1)).join(' ');
+const tarihYaz = (s) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || '')); return m ? m[3] + '.' + m[2] + '.' + m[1] : (s || '—'); };
+const IKON_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
+const IKON_UYARI = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12.5"/><circle cx="12" cy="16" r=".6" fill="currentColor"/></svg>';
+
+/* Anahtar YALNIZ adresin # bölümünden okunur (sunucu kayıtlarına / tarayıcı geçmişindeki sorguya düşmesin) */
+const anahtar = (location.hash || '').replace(/^#/, '').trim();
+const TASLAK = 'ayrilis-taslak-' + anahtar;
+const taslakSil = () => { try { localStorage.removeItem(TASLAK); } catch (e) {} };
+
+function durumGoster(tur, baslik, metin, eylem) {
+  $('ilerleme').classList.remove('acik');
+  $('giris').textContent = tur === 'ok' ? 'Katkınız için teşekkür ederiz.' : 'İnciroğlu Otomotiv · İnsan Kaynakları';
+  const k = document.createElement('section');
+  k.className = 'kart durum';
+  k.setAttribute('role', tur === 'ok' ? 'status' : 'alert');
+  k.innerHTML = '<div class="durum-ikon' + (tur === 'ok' ? '' : ' hata') + '">' + (tur === 'ok' ? IKON_OK : IKON_UYARI) + '</div><h2>' + esc(baslik) + '</h2><p>' + esc(metin) + '</p>';
+  if (eylem) { const b = document.createElement('button'); b.className = 'btn btn-pirinc'; b.style.marginTop = '18px'; b.type = 'button'; b.textContent = eylem.metin; b.onclick = eylem.fn; k.append(b); }
+  $('govde').replaceChildren(k);
+  window.scrollTo({ top: 0 });
+  window.__ANKET_DURUM = tur;
+}
+const GECERSIZ = ['Bağlantı geçersiz ya da kullanılmış', 'Bu anket bağlantısı geçersiz veya anket daha önce tamamlanmış. Bir sorun olduğunu düşünüyorsanız İnsan Kaynakları ile iletişime geçebilirsiniz.'];
+
+/* ---------------------------------------------------------------- yükle */
+async function yukle() {
+  if (!anahtarGecerli(anahtar)) { durumGoster('hata', GECERSIZ[0], GECERSIZ[1]); return; }
+  let snap;
+  try {
+    snap = await Promise.race([getDoc(doc(db, 'ayrilisAnketleri', anahtar)), new Promise((_, r) => setTimeout(() => r(Object.assign(new Error('zaman aşımı'), { code: 'zaman' })), 20000))]);
+  } catch (e) {
+    if (e && e.code === 'permission-denied') { taslakSil(); durumGoster('hata', GECERSIZ[0], GECERSIZ[1]); return; }
+    durumGoster('hata', 'Bağlantı kurulamadı', 'İnternet bağlantınızı kontrol edip tekrar deneyin.', { metin: 'Tekrar dene', fn: () => location.reload() });
+    return;
+  }
+  if (!snap.exists() || snap.data().durum !== 'bekliyor') { taslakSil(); durumGoster('hata', GECERSIZ[0], GECERSIZ[1]); return; }
+  formuKur(snap.data());
+}
+
+/* ---------------------------------------------------------------- form */
+function secenekHtml(ad, deger, metin, tur) {
+  return '<label class="secenek' + (tur === 'checkbox' ? ' kutu' : '') + '"><input type="' + tur + '" name="' + ad + '" value="' + esc(deger) + '"><span class="isaret"></span><span>' + esc(metin) + '</span></label>';
+}
+function formuKur(k) {
+  const adGoster = baslikYap(k.ad || '');
+  $('baslik').textContent = 'Sayın ' + adGoster;
+  $('giris').textContent = 'İnciroğlu Otomotiv’de birlikte çalıştığımız süre için teşekkür ederiz. Ayrılış nedenlerinizi anlamak, çalışma koşullarımızı iyileştirmemize yardımcı olacak. Anket yaklaşık 5 dakika sürer.';
+  const satir = (et, d) => '<div><span>' + et + '</span><b>' + esc(d || '—') + '</b></div>';
+  const olcekBaslik = '<div class="olcek-aciklama" aria-hidden="true">' + OLCEK_KISA.map((o) => '<span>' + esc(o) + '</span>').join('') + '</div>';
+  const faktorHtml = FAKTORLER.map((f, i) =>
+    '<div class="faktor" data-faktor="' + f.k + '" role="radiogroup" aria-label="' + esc(f.ad) + '">' +
+      '<div class="faktor-ad"><i>' + (i + 1) + '.</i><span>' + esc(f.ad) + '</span></div>' +
+      '<div class="puanlar">' + OLCEK.map((o, p) => '<label class="puan" title="' + esc(o) + '"><input type="radio" name="f_' + f.k + '" value="' + p + '" aria-label="' + esc(o) + '">' + esc(OLCEK_KISA[p]) + '</label>').join('') + '</div>' +
+    '</div>').join('');
+  $('govde').innerHTML =
+    '<section class="kart" aria-labelledby="b1"><h2 id="b1">Çalışma bilgileriniz</h2><p class="alt">İnsan Kaynakları kayıtlarından alınmıştır.</p>' +
+      '<div class="bilgi-izgara">' + satir('Departman', k.departman) + satir('Pozisyon', k.pozisyon) + satir('İşe giriş', tarihYaz(k.giris)) + satir('İşten çıkış', tarihYaz(k.cikis)) + '</div>' +
+      '<div class="soru" data-soru="yonetici" style="margin-top:16px;border-top:1px solid var(--cizgi-1);padding-top:16px"><label class="soru-baslik" for="yonetici">İlk yöneticiniz kimdir?<span class="zorunlu">*</span></label>' +
+        '<input type="text" id="yonetici" maxlength="' + SINIR.yonetici + '" autocomplete="off"><span class="uyari-metni">Lütfen ilk yöneticinizin adını yazın.</span></div>' +
+    '</section>' +
+    '<section class="kart" aria-labelledby="b2"><h2 id="b2">Aşağıdaki nedenler işten ayrılmanızda ne kadar etkili oldu?</h2>' +
+      '<p class="alt">Her satırda size en uygun seçeneği işaretleyin. Ölçek: <b>Etkisi yok</b> → <b>Çok etkili</b>.</p>' + olcekBaslik + faktorHtml +
+      '<div class="soru" style="border-top:1px solid var(--cizgi-1);margin-top:6px"><label class="soru-baslik" for="diger">Diğer sebepler <span class="ops">(açıklamak isterseniz, zorunlu değil)</span></label><textarea id="diger" maxlength="' + SINIR.uzun + '"></textarea></div>' +
+    '</section>' +
+    '<section class="kart" aria-labelledby="b3"><h2 id="b3">Ayrılık kararınız</h2>' +
+      '<div class="soru" data-soru="karar"><div class="soru-baslik">İstifa etmeye ne zaman karar verdiniz?<span class="zorunlu">*</span></div><div class="secenekler">' + KARARLAR.map((x) => secenekHtml('karar', x, x, 'radio')).join('') + '</div><span class="uyari-metni">Lütfen bir seçenek işaretleyin.</span></div>' +
+      '<div class="soru" data-soru="kime"><div class="soru-baslik">Bu fikrinizden işyerimizde önce kime söz ettiniz?<span class="zorunlu">*</span> <span class="ops">(birden fazla seçebilirsiniz)</span></div><div class="secenekler yan">' + KIME.map((x) => secenekHtml('kime', x, x, 'checkbox')).join('') + '</div><span class="uyari-metni">Lütfen en az bir seçenek işaretleyin.</span></div>' +
+      '<div class="soru" data-soru="tekrar"><div class="soru-baslik">Gelecekte tekrar İnciroğlu’nda çalışmayı düşünür müsünüz?<span class="zorunlu">*</span></div><div class="secenekler yan">' + EVET_HAYIR.map((x) => secenekHtml('tekrar', x, x, 'radio')).join('') + '</div><span class="uyari-metni">Lütfen bir seçenek işaretleyin.</span></div>' +
+      '<div class="soru" data-soru="olay"><div class="soru-baslik">Şirketimizden ayrılmanıza sebep olan olumsuz bir olay yaşadınız mı?<span class="zorunlu">*</span></div><div class="secenekler yan">' + EVET_HAYIR.map((x) => secenekHtml('olay', x, x, 'radio')).join('') + '</div><span class="uyari-metni">Lütfen bir seçenek işaretleyin.</span>' +
+        '<div id="olayKap" hidden style="margin-top:12px"><label class="soru-baslik" for="olayAciklama" style="font-weight:500">Paylaşmak isterseniz kısaca anlatır mısınız? <span class="ops">(zorunlu değil)</span></label><textarea id="olayAciklama" maxlength="' + SINIR.uzun + '"></textarea></div></div>' +
+      '<div class="soru"><label class="soru-baslik" for="kosul">Hangi koşulların sağlanması halinde işyerimizde çalışmaya devam etmeyi düşünürdünüz?</label><textarea id="kosul" maxlength="' + SINIR.uzun + '"></textarea></div>' +
+      '<div class="soru"><label class="soru-baslik" for="dusunce">Şirket süreçleri hakkında önerileriniz, düşünceleriniz var mı?</label><textarea id="dusunce" maxlength="' + SINIR.uzun + '"></textarea></div>' +
+    '</section>' +
+    '<section class="kart" aria-labelledby="b4"><h2 id="b4">Kişisel verilerin kullanımı</h2>' +
+      '<div class="soru" data-soru="kvkk"><p class="kvkk-metni">' + esc(KVKK_METNI) + ';</p><div class="secenekler yan">' + KVKK.map((x) => secenekHtml('kvkk', x, x.replace(/\.$/, ''), 'radio')).join('') + '</div><span class="uyari-metni">Lütfen bir seçenek işaretleyin.</span></div>' +
+    '</section>' +
+    '<section class="gonder-alan"><div class="hata-kutu" id="hataKutu" role="alert"></div><button class="btn btn-pirinc btn-gonder" id="gonder" type="button">Anketi gönder</button>' +
+      '<p class="dipnot">Yanıtlarınız yalnız İnsan Kaynakları ve şirket yöneticileri tarafından görülür. Gönderdikten sonra değiştirilemez; bağlantı tek kullanımlıktır.</p></section>';
+  $('ilerleme').classList.add('acik');
+  const form = $('govde');
+  form.addEventListener('change', (e) => { degisti(e); });
+  form.addEventListener('input', (e) => { if (e.target.matches('textarea, input[type=text]')) taslakKaydet(); });
+  $('gonder').addEventListener('click', gonder);
+  taslakYukle();
+  ilerlemeGuncelle();
+  window.__ANKET_DURUM = 'form';
+}
+function degisti(e) {
+  const t = e.target;
+  if (t.name === 'olay') $('olayKap').hidden = t.value !== 'Evet';
+  const f = t.closest('.faktor, .soru'); if (f) f.classList.remove('eksik');
+  ilerlemeGuncelle();
+  taslakKaydet();
+}
+function secili(ad) { const x = document.querySelector('input[name="' + ad + '"]:checked'); return x ? x.value : ''; }
+function ilerlemeGuncelle() {
+  const n = FAKTORLER.filter((f) => secili('f_' + f.k) !== '').length;
+  $('ilerlemeMetin').textContent = n + ' / ' + FAKTORLER.length + ' neden';
+  $('ilerlemeCubuk').style.width = Math.round((n / FAKTORLER.length) * 100) + '%';
+}
+
+/* ---------------------------------------------------------------- taslak (bu cihazda; gönderince silinir) */
+function cevaplariTopla() {
+  const puan = {}; FAKTORLER.forEach((f) => { const v = secili('f_' + f.k); if (v !== '') puan[f.k] = +v; });
+  return {
+    puan,
+    yonetici: metinTemizle($('yonetici').value, SINIR.yonetici),
+    diger: metinTemizle($('diger').value),
+    karar: secili('karar'),
+    kime: [...document.querySelectorAll('input[name="kime"]:checked')].map((x) => x.value),
+    tekrar: secili('tekrar'),
+    olay: secili('olay'),
+    olayAciklama: secili('olay') === 'Evet' ? metinTemizle($('olayAciklama').value) : '',
+    kosul: metinTemizle($('kosul').value),
+    dusunce: metinTemizle($('dusunce').value),
+    kvkk: secili('kvkk')
+  };
+}
+function taslakKaydet() { try { localStorage.setItem(TASLAK, JSON.stringify(cevaplariTopla())); } catch (e) {} }
+function taslakYukle() {
+  let t = null; try { t = JSON.parse(localStorage.getItem(TASLAK) || 'null'); } catch (e) { t = null; }
+  if (!t || typeof t !== 'object') return;
+  const isaretle = (ad, v) => { const x = document.querySelector('input[name="' + ad + '"][value="' + CSS.escape(String(v)) + '"]'); if (x) x.checked = true; };
+  Object.entries(t.puan || {}).forEach(([k, v]) => isaretle('f_' + k, v));
+  ['karar', 'tekrar', 'olay', 'kvkk'].forEach((k) => { if (t[k]) isaretle(k, t[k]); });
+  (Array.isArray(t.kime) ? t.kime : []).forEach((v) => isaretle('kime', v));
+  ['yonetici', 'diger', 'olayAciklama', 'kosul', 'dusunce'].forEach((k) => { if (t[k] && $(k)) $(k).value = t[k]; });
+  $('olayKap').hidden = t.olay !== 'Evet';
+}
+
+/* ---------------------------------------------------------------- gönder */
+function eksikleriBul(c) {
+  const eksik = [];
+  FAKTORLER.forEach((f) => { if (!(f.k in c.puan)) eksik.push(document.querySelector('[data-faktor="' + f.k + '"]')); });
+  if (!c.yonetici) eksik.push(document.querySelector('[data-soru="yonetici"]'));
+  if (KARARLAR.indexOf(c.karar) < 0) eksik.push(document.querySelector('[data-soru="karar"]'));
+  if (!c.kime.length) eksik.push(document.querySelector('[data-soru="kime"]'));
+  if (EVET_HAYIR.indexOf(c.tekrar) < 0) eksik.push(document.querySelector('[data-soru="tekrar"]'));
+  if (EVET_HAYIR.indexOf(c.olay) < 0) eksik.push(document.querySelector('[data-soru="olay"]'));
+  if (KVKK.indexOf(c.kvkk) < 0) eksik.push(document.querySelector('[data-soru="kvkk"]'));
+  return eksik.filter(Boolean);
+}
+let gonderiliyor = false;
+async function gonder() {
+  if (gonderiliyor) return;
+  const hk = $('hataKutu'); hk.classList.remove('acik');
+  document.querySelectorAll('.eksik').forEach((x) => x.classList.remove('eksik'));
+  const c = cevaplariTopla();
+  const eksik = eksikleriBul(c);
+  if (eksik.length) {
+    eksik.forEach((x) => x.classList.add('eksik'));
+    hk.textContent = eksik.length + ' soru yanıtlanmadı. Kırmızıyla işaretlenen soruları tamamlayıp tekrar gönderin.';
+    hk.classList.add('acik');
+    eksik[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  gonderiliyor = true;
+  const b = $('gonder'); b.disabled = true; b.textContent = 'Gönderiliyor…';
+  const cevaplar = { puan: c.puan, yonetici: c.yonetici, diger: c.diger, karar: c.karar, kime: c.kime, tekrar: c.tekrar, olay: c.olay, olayAciklama: c.olayAciklama, kosul: c.kosul, dusunce: c.dusunce, kvkk: c.kvkk };
+  try {
+    await Promise.race([
+      updateDoc(doc(db, 'ayrilisAnketleri', anahtar), { durum: 'tamamlandi', cevaplar, tamamlanma: serverTimestamp() }),
+      new Promise((_, r) => setTimeout(() => r(Object.assign(new Error('zaman aşımı'), { code: 'zaman' })), 20000))
+    ]);
+    taslakSil();
+    durumGoster('ok', 'Anketiniz alındı', 'Zaman ayırıp düşüncelerinizi paylaştığınız için teşekkür ederiz. Yeni yolculuğunuzda başarılar dileriz.');
+  } catch (e) {
+    gonderiliyor = false; b.disabled = false; b.textContent = 'Anketi gönder';
+    if (e && e.code === 'permission-denied') taslakSil();
+    hk.textContent = e && e.code === 'permission-denied'
+      ? 'Anket gönderilemedi: bu bağlantı artık geçerli değil (anket daha önce gönderilmiş olabilir). Sorun olduğunu düşünüyorsanız İnsan Kaynakları ile görüşün.'
+      : 'Anket gönderilemedi. İnternet bağlantınızı kontrol edip yeniden “Anketi gönder”e basın; yanıtlarınız bu cihazda saklanıyor.';
+    hk.classList.add('acik');
+  }
+}
+
+yukle();
+</script>
+</body>
+</html>

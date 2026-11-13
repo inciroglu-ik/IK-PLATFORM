@@ -10,9 +10,9 @@ rules_version = '2';
 //            uidBag/{uid}   (Firebase oturumu ↔ hesap bağı; kişi yalnız geçerli
 //                            aktivasyon koduyla KENDİ bağını kurar)
 //  hid     : SHA-256("inciroglu-hesap|" + TC Kimlik No) — belge adlarında TC yoktur.
-//  Herkese açık yalnız üç uç vardır: iş başvurusu OLUŞTURMA ve portal erişim talebi
+//  Herkese açık yalnız dört uç vardır: iş başvurusu OLUŞTURMA ve portal erişim talebi
 //  OLUŞTURMA (ikisi de sıkı alan denetimiyle, okuma yok) ve tahmin edilemez anahtarla
-//  tek bir sınav kaydı (aday sınavı).
+//  tek bir sınav kaydı (aday sınavı) ile tek bir ayrılış anketi kaydı (12.11.2026).
 //  Ayrıntılı açıklama ve değişiklik süreci: guvenlik/README.md
 //  Yayın   : Firebase Konsolu → Firestore Database → Kurallar (Rules) → Yayınla.
 // =============================================================================
@@ -373,6 +373,73 @@ service cloud.firestore {
         && request.resource.data.olusturma == request.time
         && metin(request.resource.data.adayAd, 60);
       allow update: if ik() || sinavTamamlama();
+      allow delete: if ik();
+    }
+
+    // ===================================================== AYRILIŞ ANKETİ
+    // İstifayla ayrılan çalışana İK tek kullanımlık bağlantı üretir (anket.html#a_<32 onaltılık> = 128 bit).
+    // Çalışan oturum açmaz: bağlantıdaki anahtarla YALNIZ bekleyen kendi kaydını okur ve BİR KEZ tamamlar;
+    // cevaplar alan alan denetlenir. Tamamlanan anket bağlantıyla OKUNAMAZ ve değiştirilemez.
+    // Sonuçları yalnız İK ve direktörler görür (ayrilis.html); bağlantıyı yalnız İK üretir / iptal eder.
+    // Direktör YALNIZ tamamlanmış yanıtları okur: bekleyen kaydın kimliği gizli anahtarın kendisidir
+    // (görebilen, çalışanın yerine anketi doldurabilirdi). Direktör sorgusu durum=='tamamlandi' süzgeçli olmalıdır.
+    // Alan ve seçenek listeleri ortak/ayrilis-sorular.js ile BİREBİR aynıdır.
+    function anketDirektoru() { return rol('direktor') && resource.data.durum == 'tamamlandi'; }
+    function anketAnahtari(t) { return t.matches('a_[0-9a-f]{32}'); }
+    function anketAlanlari() {
+      return ['ad', 'departman', 'pozisyon', 'giris', 'cikis', 'durum', 'kaynak', 'olusturma', 'olusturan',
+              'tamamlanma', 'cevaplar', 'ikKodu'];
+    }
+    function faktorler() {
+      return ['tatmin', 'ucret', 'gorevBelirsiz', 'kariyer', 'yanHak', 'isyeri', 'yonetici', 'arkadas',
+              'egitimYetersiz', 'odul', 'isYuku', 'saat', 'sektor', 'ailevi', 'sirketEgitim', 'evlilik',
+              'askerlik', 'tasinma', 'saglik', 'kultur', 'okul', 'gorevDisi', 'isYasam'];
+    }
+    function puan(v) { return v is int && v >= 0 && v <= 5; }
+    function puanlarGecerli(p) {
+      return p is map && p.keys().hasOnly(faktorler()) && p.keys().hasAll(faktorler())
+        && puan(p.tatmin) && puan(p.ucret) && puan(p.gorevBelirsiz) && puan(p.kariyer) && puan(p.yanHak)
+        && puan(p.isyeri) && puan(p.yonetici) && puan(p.arkadas) && puan(p.egitimYetersiz) && puan(p.odul)
+        && puan(p.isYuku) && puan(p.saat) && puan(p.sektor) && puan(p.ailevi) && puan(p.sirketEgitim)
+        && puan(p.evlilik) && puan(p.askerlik) && puan(p.tasinma) && puan(p.saglik) && puan(p.kultur)
+        && puan(p.okul) && puan(p.gorevDisi) && puan(p.isYasam);
+    }
+    function anketCevaplariGecerli(c) {
+      let alanlar = ['puan', 'yonetici', 'diger', 'karar', 'kime', 'tekrar', 'olay', 'olayAciklama', 'kosul', 'dusunce', 'kvkk'];
+      return c is map && c.keys().hasOnly(alanlar) && c.keys().hasAll(alanlar)
+        && puanlarGecerli(c.puan)
+        && metin(c.yonetici, 120) && c.yonetici.size() > 0
+        && metin(c.diger, 1500) && metin(c.olayAciklama, 1500) && metin(c.kosul, 1500) && metin(c.dusunce, 1500)
+        && c.karar in ['Bir hafta içinde', 'Bir ay içinde', 'Altı ay içinde', 'Uzun zamandan beri', 'İşe başladıktan hemen sonra']
+        && c.kime is list && c.kime.size() >= 1 && c.kime.size() <= 2
+        && c.kime.toSet().size() == c.kime.size() && c.kime.hasOnly(['Yöneticilerime', 'Mesai arkadaşlarıma'])
+        && c.tekrar in ['Evet', 'Hayır']
+        && c.olay in ['Evet', 'Hayır']
+        && c.kvkk in ['ONAYLIYORUM.', 'ONAYLAMIYORUM.'];
+    }
+    function anketTamamlama() {
+      let once = resource.data;
+      let sonra = request.resource.data;
+      return once.durum == 'bekliyor'
+        && sonra.durum == 'tamamlandi'
+        && sonra.diff(once).affectedKeys().hasOnly(['durum', 'cevaplar', 'tamamlanma'])
+        && sonra.tamamlanma == request.time
+        && anketCevaplariGecerli(sonra.cevaplar);
+    }
+    // İK kaydı: yeni bağlantı (bekliyor, cevapsız) ya da eski Google Form yanıtlarının aktarımı (tamamlandi).
+    function anketKaydiGecerli() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(anketAlanlari())
+        && metin(d.ad, 80) && d.ad.size() > 0
+        && d.olusturma == request.time
+        && ((d.durum == 'bekliyor' && d.kaynak == 'link' && !('cevaplar' in d) && !('tamamlanma' in d))
+            || (d.durum == 'tamamlandi' && d.kaynak in ['google_form', 'ik'] && d.cevaplar is map));
+    }
+    match /ayrilisAnketleri/{t} {
+      allow get: if ik() || anketDirektoru() || (anketAnahtari(t) && resource.data.durum == 'bekliyor');
+      allow list: if ik() || anketDirektoru();
+      allow create: if ik() && anketAnahtari(t) && anketKaydiGecerli();
+      allow update: if (anketAnahtari(t) && anketTamamlama()) || ik();
       allow delete: if ik();
     }
   }

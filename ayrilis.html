@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>İşten Ayrılış Anketleri · İnciroğlu Otomotiv</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0f1b2d">
+<link rel="icon" href="pano/amblem.svg" type="image/svg+xml">
+<link rel="icon" href="pano/amblem-192.png" sizes="192x192">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="pano/kokpit.css">
+<link rel="stylesheet" href="pano/pano.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+/* İşten Ayrılış Anketleri — İK Portalı kutucuğu. Kabuk ve bileşenler İK Dashboard ile ortaktır (pano/*.css, pano/ortak.js);
+   burada yalnız sol menüsüz yerleşim ve bu sayfaya özel küçük parçalar var. */
+body.ayrilis .ust-marka { display: flex; }
+.ay-araclar { display: flex; gap: 8px; flex-wrap: wrap; }
+.ay-araclar .btn { height: 32px; padding: 0 10px; font-size: 12.5px; }
+.ay-islem { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.ay-islem .btn { height: 30px; padding: 0 10px; font-size: 12px; white-space: nowrap; }
+.ay-islem .btn svg { width: 14px; height: 14px; }
+.ay-soluk { color: var(--metin-3); font-size: 12px; }
+.ay-not-hucre { max-width: 260px; white-space: normal; line-height: 1.35; }
+.ay-cipler { display: flex; gap: 4px; flex-wrap: wrap; }
+.ay-cipler .cip { height: auto; min-height: 20px; padding: 2px 7px; white-space: normal; line-height: 1.25; }
+.ay-oran { display: grid; gap: 14px; }
+.ay-oran-blok h4 { font-size: 13px; font-weight: 600; color: var(--metin-1); margin: 0 0 4px; }
+.ay-oran-blok p { font-size: 12px; color: var(--metin-3); margin: 6px 0 0; line-height: 1.5; }
+.ay-buyuk { display: flex; align-items: baseline; gap: 8px; margin: 2px 0 8px; }
+.ay-buyuk b { font-size: 30px; font-weight: 700; letter-spacing: -.02em; color: var(--metin-marka); font-variant-numeric: tabular-nums; }
+.ay-buyuk span { font-size: 12.5px; color: var(--metin-3); }
+.ay-serit { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--n-100); }
+.ay-serit i { display: block; height: 100%; }
+.ay-serit-lejant { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; font-size: 12px; color: var(--metin-2); }
+.ay-serit-lejant span { display: inline-flex; align-items: center; gap: 6px; }
+.ay-serit-lejant i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+/* Pencere (ayrıntı, bağlantı oluşturma) */
+.ay-modal .modal { width: min(720px, 100%); }
+.ay-modal.dar .modal { width: min(560px, 100%); }
+.ay-modal .modal-ust { align-items: flex-start; }
+.ay-modal .modal-ust > div { flex: 1; min-width: 0; }
+.ay-kapat { margin-left: auto; }
+.ay-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
+.ay-form label { display: grid; gap: 5px; font-size: 12.5px; font-weight: 600; color: var(--metin-2); }
+.ay-form label.genis { grid-column: 1 / -1; }
+.ay-form .girdi { height: 40px; font-size: 14px; }
+.ay-link-kutu { display: flex; gap: 8px; align-items: center; background: var(--n-50); border: 1px solid var(--cizgi-1); border-radius: 12px; padding: 10px 12px; }
+.ay-link-kutu code { flex: 1; min-width: 0; font-size: 12.5px; overflow-wrap: anywhere; color: var(--metin-1); }
+.ay-mesaj { width: 100%; min-height: 120px; box-sizing: border-box; font: inherit; font-size: 13px; line-height: 1.5; border: 1px solid var(--cizgi-2); border-radius: 12px; padding: 10px 12px; color: var(--metin-1); background: var(--yuzey-kart); resize: vertical; }
+.ay-bilgi { font-size: 12.5px; color: var(--metin-3); line-height: 1.55; }
+.ay-hata { background: var(--ht-50); color: var(--ht-700); border: 1px solid var(--ht-200); border-radius: 10px; padding: 9px 12px; font-size: 13px; }
+.ay-ozet-satir { display: flex; gap: 8px 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--metin-3); margin-top: 6px; }
+.ay-ozet-satir b { color: var(--metin-1); font-weight: 600; }
+.ay-puanlar { display: grid; gap: 6px; }
+.ay-puan-satir { display: grid; grid-template-columns: minmax(0, 1fr) 96px 118px; gap: 10px; align-items: center; font-size: 13px; padding: 4px 0; border-bottom: 1px solid var(--cizgi-1); }
+.ay-puan-satir:last-child { border-bottom: 0; }
+.ay-puan-cubuk { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; }
+.ay-puan-cubuk i { height: 8px; border-radius: 2px; background: var(--n-150); }
+.ay-puan-cubuk i.dolu { background: var(--pir-500); }
+.ay-puan-satir.guclu .ay-puan-cubuk i.dolu { background: var(--pir-700); }
+.ay-puan-satir.guclu b { color: var(--metin-marka); }
+.ay-puan-etiket { font-size: 12px; color: var(--metin-3); text-align: right; }
+.ay-soru-izgara { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
+.ay-soru { min-width: 0; }
+.ay-soru.genis { grid-column: 1 / -1; }
+.ay-soru span { display: block; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--metin-3); margin-bottom: 3px; }
+.ay-soru p { margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--metin-1); white-space: pre-wrap; overflow-wrap: anywhere; }
+.ay-bolum-baslik { font-family: var(--font-serif); font-size: 16px; font-weight: 600; color: var(--metin-marka); margin: 4px 0 0; }
+@media (max-width: 640px) {
+  .ay-form, .ay-soru-izgara { grid-template-columns: minmax(0, 1fr); }
+  .ay-puan-satir { grid-template-columns: minmax(0, 1fr) 70px; }
+  .ay-puan-etiket { display: none; }
+}
+</style>
+</head>
+<!--
+  İŞTEN AYRILIŞ ANKETLERİ (ayrilis.html) — İK Portalı'nda kutucuk.
+  Görenler: İK + direktörler (ortak kimlik, Firestore kuralı ayrilisAnketleri). Bağlantı üretme / iptal / aktarım: yalnız İK.
+  Veri: ayrilisAnketleri koleksiyonu (canlı, onSnapshot) + satisVeri/ikPano (istifa listesi ve anket oranı için).
+  Çalışanın doldurduğu sayfa: anket.html#a_<anahtar>. Sorular: ortak/ayrilis-sorular.js.
+-->
+<body class="ayrilis">
+<div class="acilis" id="acilis" role="status" aria-live="polite">
+  <div class="acilis-ic">
+    <span class="amblem buyuk" role="img" aria-label="İnciroğlu Otomotiv İK amblemi"></span>
+    <div class="acilis-baslik">İşten Ayrılış Anketleri</div>
+    <div class="acilis-metin" id="acilisMetin">Oturum denetleniyor…</div>
+    <div class="acilis-cubuk"><i></i></div>
+  </div>
+</div>
+<div class="ana">
+  <div class="ust-alan kokpit">
+    <header class="ust-bant">
+      <div class="ic ust-ic">
+        <div class="ust-marka"><span class="amblem" role="img" aria-label="İnciroğlu Otomotiv İK amblemi"></span></div>
+        <div class="uyg-ad"><span>İşten Ayrılış Anketleri</span><small id="ustAlt">İnsan Kaynakları</small></div>
+        <div class="ust-sag" id="ustSag"></div>
+      </div>
+    </header>
+    <div id="kaputYuva"></div>
+  </div>
+  <main class="ic icerik" id="icerik"></main>
+</div>
+
+<script type="module">
+import { doc, getDoc, setDoc, deleteDoc, collection, query, where, onSnapshot, writeBatch, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { db, kimlikBaslat, cikisYap, adBasliklari } from "./ortak/kimlik.js";
+import * as O from "./pano/ortak.js";
+import * as A from "./ortak/ayrilis-sorular.js";
+
+const $ = (id) => document.getElementById(id);
+const acilisMetni = (t) => { const e = $('acilisMetin'); if (e) e.textContent = t; };
+const acilisGizle = () => { const a = $('acilis'); if (a) { a.classList.add('gizle'); setTimeout(() => a.remove(), 600); } };
+const SVG = (yol) => '<svg class="ikon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + yol + '</svg>';
+const IK_LINK = SVG('<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.2 1.2"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2"/>');
+const IK_KOPYA = SVG('<rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/>');
+const IK_GONDER = SVG('<path d="M20.5 3.5 3.5 10.5l7 3 3 7z"/><path d="m10.5 13.5 4-4"/>');
+const IK_SIL = SVG('<path d="M4.5 7h15M9.5 7V5h5v2M6.5 7l1 12.5h9l1-12.5"/>');
+
+/* ============================================================== OTURUM */
+const OTURUM = await kimlikBaslat({ uygulama: 'İşten Ayrılış Anketleri', roller: ['ik', 'direktor'] });
+const IK = OTURUM.hesap.roller.indexOf('ik') >= 0;
+const AD = adBasliklari(OTURUM.hesap.ad || '');
+const ROL_AD = IK ? 'İnsan Kaynakları' : 'Direktör';
+const KOL = collection(db, 'ayrilisAnketleri');
+acilisMetni('Anketler yükleniyor…');
+
+/* ============================================================== YARDIMCILAR */
+function tarihCoz(s) {
+  if (!s) return null;
+  if (s instanceof Date) return s;
+  if (typeof s.toDate === 'function') return s.toDate();
+  let m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s));
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+  m = /^(\d{1,2})[./](\d{1,2})[./](\d{4})/.exec(String(s));
+  if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
+  return null;
+}
+const isoGun = (d) => (d ? d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') : '');
+const gunYaz = (d) => (d ? String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + d.getFullYear() : '—');
+const adAnahtari = (s) => O.katla(s).replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ').trim();
+function lev(a, b) {
+  if (a === b) return 0;
+  const p = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    let onceki = p[0]; p[0] = i;
+    for (let j = 1; j <= b.length; j++) { const t = p[j]; p[j] = Math.min(p[j] + 1, p[j - 1] + 1, onceki + (a[i - 1] === b[j - 1] ? 0 : 1)); onceki = t; }
+  }
+  return p[b.length];
+}
+/** Anket kaydı ↔ pano ayrılan kaydı: aynı ad (Türkçe katlamalı) ve yakın çıkış tarihi; küçük yazım farkı tolere edilir */
+function eslesir(kayit, a) {
+  const x = adAnahtari(kayit.ad), y = adAnahtari(a.ad);
+  const t1 = tarihCoz(kayit.cikis), t2 = tarihCoz(a.tarih);
+  if (!t1 || !t2) return x === y;                 /* tarih yoksa yalnız birebir ad */
+  const gun = Math.abs(t1 - t2) / 864e5;
+  return (x === y && gun <= 45) || (lev(x, y) <= 2 && gun <= 10);
+}
+function satirBol(s, n) {
+  const k = String(s).split(' '); const r = []; let c = '';
+  k.forEach((w) => { if ((c + ' ' + w).trim().length > n && c) { r.push(c); c = w; } else c = (c + ' ' + w).trim(); });
+  if (c) r.push(c);
+  return r.length > 1 ? r : r[0] || '';
+}
+function anketLinki(id) { return new URL('anket.html', location.href).href.split('#')[0].split('?')[0] + '#' + id; }
+function davetMesaji(ad, link) {
+  const ilk = String(ad || '').trim().split(/\s+/)[0] || '';
+  return 'Merhaba ' + O.trBaslik(ilk) + ',\n\nİnciroğlu Otomotiv’de birlikte çalıştığımız süre için teşekkür ederiz. Ayrılış nedenlerinizi anlamak ve çalışma koşullarımızı iyileştirmek için hazırladığımız kısa anketi (yaklaşık 5 dakika) doldurmanızı rica ederiz:\n\n' + link + '\n\nBağlantı size özeldir ve tek kullanımlıktır.\nİnciroğlu Otomotiv · İnsan Kaynakları';
+}
+async function kopyala(metin, bildirim) {
+  try { await navigator.clipboard.writeText(metin); }
+  catch (e) {
+    const t = document.createElement('textarea'); t.value = metin; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.append(t); t.select(); try { document.execCommand('copy'); } catch (e2) { /* elle kopyalanır */ } t.remove();
+  }
+  O.bildirim(bildirim || 'Kopyalandı');
+}
+const yuzdeTam = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+const KAYNAK_CIP = { link: 'cip-ok', google_form: 'cip-bilgi', ik: 'cip-pirinc' };
+function kaynakCip(k) { return O.el('span', { class: 'cip ' + (KAYNAK_CIP[k] || 'cip-bilgi'), text: A.KAYNAK_AD[k] || k || '—' }); }
+
+/* ============================================================== DURUM */
+let KAYITLAR = [];          /* ayrilisAnketleri (canlı) */
+let AYRILANLAR = [];        /* satisVeri/ikPano → D.ayrilanlar (istifa listesi) */
+let PANO_ETIKET = '';
+let PANO_HATA = null;
+let YIL = new Date().getFullYear();
+let ILK = true;
+const GORULEN = new Set();
+
+const istifaMi = (a) => (a.neden === 'İstifa' || a.neden === 'Deneme (İşçi)') && !O.isVI(a.dept);
+const yilOf = (s) => { const d = tarihCoz(s); return d ? d.getFullYear() : null; };
+/* Yanıtın yılı: çıkış tarihi; yoksa yanıt / oluşturma tarihi (tarihsiz kayıt hiçbir yılda kaybolmasın) */
+const kayitYili = (k) => yilOf(k.cikis) || yilOf(k.tamamlanma) || yilOf(k.olusturma);
+/* KVKK: "ONAYLAMIYORUM" diyen kişi yanıtlarının anonim veri olarak kullanılmasına izin vermemiştir. Bu yanıtlar anket oranında
+   sayılır (kişi formu doldurdu) ama grafik/istatistiklere girmez ve ayrıntısını yalnız İK görür. Kurum kararı değişirse false yapın. */
+const KVKK_RET_HARIC = true;
+const onayYok = (k) => !!(k.cevaplar && k.cevaplar.kvkk === 'ONAYLAMIYORUM.');
+const tamamlananlar = () => KAYITLAR.filter((k) => k.durum === 'tamamlandi' && kayitYili(k) === YIL);
+const bekleyenler = () => KAYITLAR.filter((k) => k.durum === 'bekliyor');
+const istifalar = () => AYRILANLAR.filter((a) => istifaMi(a) && yilOf(a.tarih) === YIL);
+
+function nedenIstatistik(liste) {
+  return A.FAKTORLER.map((f) => {
+    const v = liste.map((k) => k.cevaplar && k.cevaplar.puan ? k.cevaplar.puan[f.k] : null).filter((x) => Number.isInteger(x));
+    const etkili = v.filter((x) => x >= A.ETKILI_ESIK).length;
+    return { k: f.k, ad: f.ad, n: v.length, etkili, oran: v.length ? (etkili / v.length) * 100 : 0, ort: v.length ? v.reduce((s, x) => s + x, 0) / v.length : null };
+  }).sort((a, b) => b.oran - a.oran || (b.ort || 0) - (a.ort || 0));
+}
+function sayim(liste, fn, sira) {
+  const m = new Map(); liste.forEach((k) => { [].concat(fn(k)).forEach((v) => { if (v) m.set(v, (m.get(v) || 0) + 1); }); });
+  const r = [...m.entries()].map(([ad, deger]) => ({ ad, deger }));
+  if (sira) r.sort((a, b) => sira.indexOf(a.ad) - sira.indexOf(b.ad)); else r.sort((a, b) => b.deger - a.deger);
+  return r;
+}
+
+/* ============================================================== PENCERE */
+let acik = null;
+/* Açık pencere varken gelen canlı güncelleme sayfayı yeniden çizmez (yazılan form kaybolmasın); pencere kapanınca çizilir */
+let BEKLEYEN_CIZIM = false;
+function pencereKapat() {
+  if (!acik) return;
+  const p = acik; acik = null;
+  document.removeEventListener('keydown', p.tus, true);
+  p.ort.classList.remove('acik');
+  setTimeout(() => p.ort.remove(), O.azHareket() ? 0 : 240);
+  if (p.onceki && document.contains(p.onceki)) p.onceki.focus({ preventScroll: true });
+  if (BEKLEYEN_CIZIM) { BEKLEYEN_CIZIM = false; setTimeout(ciz, 0); }
+}
+function pencereAc(etiket, parcalar, { dar = false } = {}) {
+  const onceki = acik ? acik.onceki : document.activeElement;
+  if (acik) { const p = acik; acik = null; document.removeEventListener('keydown', p.tus, true); p.ort.remove(); }
+  const pen = O.el('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': etiket }, ...parcalar);
+  const ort = O.el('div', { class: 'modal-ort ay-modal' + (dar ? ' dar' : '') }, pen);
+  const tus = (e) => { if (e.key === 'Escape') { e.preventDefault(); pencereKapat(); } };
+  ort.addEventListener('click', (e) => { if (e.target === ort) pencereKapat(); });
+  document.addEventListener('keydown', tus, true);
+  document.body.append(ort);
+  acik = { ort, onceki, tus };
+  requestAnimationFrame(() => { ort.classList.add('acik'); const o = pen.querySelector('input, textarea, .modal-alt .btn'); if (o) o.focus({ preventScroll: true }); });
+  return pen;
+}
+function ustParca(baslik, alt) {
+  const x = O.el('button', { class: 'btn btn-hayalet ay-kapat', type: 'button', 'aria-label': 'Kapat', html: O.ikon('carpi'), on: { click: pencereKapat } });
+  return O.el('div', { class: 'modal-ust' }, O.el('div', null, O.el('h3', { text: baslik }), alt ? (alt instanceof Node ? alt : O.el('p', { text: alt })) : null), x);
+}
+
+/* ============================================================== BAĞLANTI OLUŞTUR (İK) */
+function baglantiFormu(kisi) {
+  if (!IK) return;
+  const cikis = kisi ? tarihCoz(kisi.tarih) : null;
+  const m = kisi ? /\/\s*(\d+)\s*gün/.exec(kisi.sure || '') : null;
+  const giris = cikis && m ? new Date(cikis.getTime() - (+m[1]) * 864e5) : null;
+  const g = (ad, deger, tip = 'text') => O.el('input', { class: 'girdi', type: tip, name: ad, value: deger || '', autocomplete: 'off', maxlength: tip === 'text' ? '80' : null });
+  const fAd = g('ad', kisi ? O.trBaslik(kisi.ad) : ''), fDep = g('departman', kisi ? kisi.dept : ''), fPoz = g('pozisyon', kisi ? O.trBaslik(kisi.unvan || '') : '');
+  const fGir = g('giris', isoGun(giris), 'date'), fCik = g('cikis', isoGun(cikis), 'date');
+  const hata = O.el('div', { class: 'ay-hata', hidden: true });
+  const form = O.el('div', { class: 'ay-form' },
+    O.el('label', { class: 'genis' }, 'Ad Soyad *', fAd),
+    O.el('label', null, 'Departman', fDep), O.el('label', null, 'Pozisyon', fPoz),
+    O.el('label', null, 'İşe giriş tarihi', fGir), O.el('label', null, 'İşten çıkış tarihi *', fCik));
+  const olustur = O.el('button', { class: 'btn btn-pirinc', type: 'button', html: IK_LINK + '<span>Bağlantıyı oluştur</span>' });
+  const vazgec = O.el('button', { class: 'btn', type: 'button', text: 'Vazgeç', on: { click: pencereKapat } });
+  const govde = O.el('div', { class: 'modal-govde' },
+    O.el('p', { class: 'ay-bilgi', html: 'Bilgiler çalışanın anket sayfasında “Çalışma bilgileriniz” olarak görünür. Bağlantı <b>kişiye özel ve tek kullanımlıktır</b>; anket gönderildiği anda sonuç bu sayfaya düşer.' }), form, hata);
+  pencereAc('Anket bağlantısı oluştur', [ustParca('Anket bağlantısı oluştur', kisi ? 'İstifa listesinden: ' + O.trBaslik(kisi.ad) : 'Elle kişi bilgisi girin'), govde, O.el('div', { class: 'modal-alt' }, vazgec, olustur)], { dar: true });
+  olustur.addEventListener('click', async () => {
+    const ad = A.metinTemizle(fAd.value, 80);
+    if (ad.length < 3) { hata.textContent = 'Ad soyad girin.'; hata.hidden = false; fAd.focus(); return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fCik.value)) { hata.textContent = 'İşten çıkış tarihini girin (anket sonuçları bu tarihin yılına göre gruplanır).'; hata.hidden = false; fCik.focus(); return; }
+    olustur.disabled = true; olustur.lastElementChild.textContent = 'Oluşturuluyor…';
+    const id = A.anahtarUret();
+    try {
+      await setDoc(doc(KOL, id), {
+        ad, departman: A.metinTemizle(fDep.value, 80), pozisyon: A.metinTemizle(fPoz.value, 120),
+        giris: fGir.value || '', cikis: fCik.value || '', durum: 'bekliyor', kaynak: 'link',
+        olusturma: serverTimestamp(), olusturan: AD
+      });
+      baglantiGoster({ id, ad });
+    } catch (e) {
+      olustur.disabled = false; olustur.lastElementChild.textContent = 'Bağlantıyı oluştur';
+      hata.textContent = 'Bağlantı oluşturulamadı: ' + (e && e.code === 'permission-denied' ? 'bu işlem için yetkiniz yok (güvenlik kuralı yayınlanmamış olabilir).' : (e && e.message) || 'bilinmeyen hata');
+      hata.hidden = false;
+    }
+  });
+}
+function baglantiGoster(k) {
+  const link = anketLinki(k.id);
+  const mesaj = davetMesaji(k.ad, link);
+  const ta = O.el('textarea', { class: 'ay-mesaj', readonly: '' }); ta.value = mesaj;
+  const wa = O.el('a', { class: 'btn btn-pirinc', href: 'https://wa.me/?text=' + encodeURIComponent(mesaj), target: '_blank', rel: 'noopener', html: IK_GONDER + '<span>WhatsApp’ta gönder</span>' });
+  const ep = O.el('a', { class: 'btn', href: 'mailto:?subject=' + encodeURIComponent('İşten Ayrılış Anketi · İnciroğlu Otomotiv') + '&body=' + encodeURIComponent(mesaj), html: O.ikon('dosya') + '<span>E-posta</span>' });
+  const kl = O.el('button', { class: 'btn', type: 'button', html: IK_KOPYA + '<span>Bağlantıyı kopyala</span>', on: { click: () => kopyala(link, 'Bağlantı kopyalandı') } });
+  const km = O.el('button', { class: 'btn', type: 'button', html: IK_KOPYA + '<span>Mesajı kopyala</span>', on: { click: () => kopyala(mesaj, 'Mesaj kopyalandı') } });
+  const govde = O.el('div', { class: 'modal-govde' },
+    O.el('div', { class: 'ay-link-kutu' }, O.el('code', { text: link }), kl),
+    O.el('div', null, O.el('div', { class: 'ay-bilgi', style: 'margin-bottom:6px', text: 'Kişiye gönderilecek mesaj (düzenlemek isterseniz kopyalayıp değiştirebilirsiniz):' }), ta),
+    O.el('p', { class: 'ay-bilgi', text: 'Bağlantı “Bekleyen bağlantılar” listesinde durur; gerekirse oradan yeniden kopyalayabilir ya da iptal edebilirsiniz.' }));
+  pencereAc('Anket bağlantısı hazır', [ustParca('Bağlantı hazır', O.trBaslik(k.ad)), govde, O.el('div', { class: 'modal-alt' }, km, ep, wa)], { dar: true });
+}
+async function baglantiIptal(k) {
+  if (!IK || !confirm(O.trBaslik(k.ad) + ' için oluşturulan bağlantı iptal edilecek; kişi anketi artık açamaz. Devam edilsin mi?')) return;
+  try { await deleteDoc(doc(KOL, k.id)); O.bildirim('Bağlantı iptal edildi'); }
+  catch (e) { alert('İptal edilemedi: ' + ((e && e.code) || (e && e.message) || 'hata')); }
+}
+
+/* ============================================================== ESKİ YANITLARI AKTAR (İK) */
+function aktarimSec() {
+  const inp = O.el('input', { type: 'file', accept: '.json,application/json', style: 'display:none' });
+  inp.addEventListener('change', async () => {
+    const f = inp.files && inp.files[0]; inp.remove(); if (!f) return;
+    let o = null; try { o = JSON.parse(await f.text()); } catch (e) { o = null; }
+    const ham = o && o.tur === 'inciroglu-ayrilis-anketi' && Array.isArray(o.kayitlar) ? o.kayitlar : null;
+    if (!ham || !ham.length) { alert('Bu dosya bir ayrılış anketi aktarım dosyası değil. Lütfen size verilen “ayrilis_anketi_…_aktarim.json” dosyasını seçin.'); return; }
+    if (ham.length > 450) { alert('Tek seferde en fazla 450 yanıt aktarılabilir.'); return; }
+    /* Kayıt kayıt denetim: bozuk kayıt atlanır (tüm aktarım düşmesin) */
+    const tarihGecerli = (d) => d instanceof Date && !isNaN(d.getTime());
+    const kayitlar = [], atlanan = [];
+    ham.forEach((r, i) => {
+      const ad = r && A.metinTemizle(r.ad, 80);
+      const c = r && r.cevaplar;
+      const cik = r && tarihCoz(r.cikis);
+      let tam = r && typeof r.tamamlanma === 'string' && /T/.test(r.tamamlanma) ? new Date(r.tamamlanma) : (r && tarihCoz(r.tamamlanma));
+      if (!tarihGecerli(tam)) tam = cik;
+      const iyi = r && A.anahtarGecerli(r.id) && ad && ad.length >= 3 && ['google_form', 'ik'].indexOf(r.kaynak) >= 0
+        && c && typeof c === 'object' && !Array.isArray(c) && c.puan && typeof c.puan === 'object' && !Array.isArray(c.puan)
+        && tarihGecerli(cik) && tarihGecerli(tam);
+      if (!iyi) { atlanan.push(i + 1); return; }
+      kayitlar.push({ id: r.id, veri: {
+        ad, departman: A.metinTemizle(r.departman, 80), pozisyon: A.metinTemizle(r.pozisyon, 120),
+        giris: typeof r.giris === 'string' ? r.giris : '', cikis: isoGun(cik), durum: 'tamamlandi', kaynak: r.kaynak,
+        olusturma: serverTimestamp(), olusturan: AD, ikKodu: A.metinTemizle(r.ikKodu || '', 80),
+        tamamlanma: Timestamp.fromDate(tam), cevaplar: c } });
+    });
+    if (!kayitlar.length) { alert('Dosyada aktarılabilecek geçerli yanıt bulunamadı.'); return; }
+    const kisi = kayitlar.filter((r) => r.veri.kaynak === 'google_form').length;
+    if (!confirm(kayitlar.length + ' yanıt aktarılacak (' + kisi + ' Google Form, ' + (kayitlar.length - kisi) + ' İK doldurdu)' + (atlanan.length ? '; ' + atlanan.length + ' bozuk kayıt atlanacak' : '') + '. Daha önce aktarılmış aynı yanıtlar güncellenir, mükerrer kayıt oluşmaz. Devam edilsin mi?')) return;
+    /* Güvenlik kuralı her yazımda yetkiyi okur; toplu yazma okuma sınırına takılmasın diye 8'erli parçalar hâlinde */
+    let yazilan = 0;
+    try {
+      for (let i = 0; i < kayitlar.length; i += 8) {
+        const b = writeBatch(db);
+        kayitlar.slice(i, i + 8).forEach((r) => b.set(doc(KOL, r.id), r.veri));
+        await b.commit();
+        yazilan = Math.min(kayitlar.length, i + 8);
+      }
+      O.bildirim(yazilan + ' yanıt aktarıldı' + (atlanan.length ? ' · ' + atlanan.length + ' kayıt atlandı' : ''));
+    } catch (e) {
+      alert('Aktarım tamamlanamadı (' + yazilan + ' / ' + kayitlar.length + ' yazıldı; tekrar aktarabilirsiniz, mükerrer olmaz): ' + (e && e.code === 'permission-denied' ? 'bu işlem için yetkiniz yok ya da güvenlik kuralı yayınlanmamış olabilir.' : (e && e.message) || 'bilinmeyen hata'));
+    }
+  });
+  document.body.append(inp);
+  inp.click();
+}
+
+/* ============================================================== AYRINTI PENCERESİ */
+function ayrintiAc(k) {
+  const c = k.cevaplar || {};
+  const p = c.puan || {};
+  const sirali = A.FAKTORLER.map((f) => ({ ad: f.ad, v: Number.isInteger(p[f.k]) ? p[f.k] : null })).sort((a, b) => (b.v ?? -1) - (a.v ?? -1));
+  const puanlar = O.el('div', { class: 'ay-puanlar' }, ...sirali.map((x) => {
+    const cubuk = O.el('div', { class: 'ay-puan-cubuk', 'aria-hidden': 'true' }, ...[1, 2, 3, 4, 5].map((i) => O.el('i', { class: x.v !== null && x.v >= i ? 'dolu' : '' })));
+    return O.el('div', { class: 'ay-puan-satir' + (x.v !== null && x.v >= A.ETKILI_ESIK ? ' guclu' : '') }, O.el(x.v !== null && x.v >= A.ETKILI_ESIK ? 'b' : 'span', { text: x.ad }), cubuk, O.el('span', { class: 'ay-puan-etiket', text: x.v === null ? '—' : A.OLCEK[x.v] }));
+  }));
+  const soru = (et, deger, genis) => O.el('div', { class: 'ay-soru' + (genis ? ' genis' : '') }, O.el('span', { text: et }), O.el('p', { text: deger || '—' }));
+  const olay = c.olay ? c.olay + (c.olayAciklama ? ' — ' + c.olayAciklama : '') : '—';
+  const sorular = O.el('div', { class: 'ay-soru-izgara' },
+    soru('İlk yöneticisi', c.yonetici), soru('İstifa kararı', c.karar),
+    soru('Fikrini önce kime açtı', Array.isArray(c.kime) ? c.kime.join(', ') : c.kime), soru('Tekrar çalışmayı düşünür mü', c.tekrar),
+    soru('Ayrılmasına sebep olan olumsuz olay', olay, true),
+    soru('Diğer sebepler', c.diger, true), soru('Hangi koşullarda devam ederdi', c.kosul, true), soru('Önerileri / düşünceleri', c.dusunce, true),
+    soru('Kişisel veri onayı', c.kvkk ? String(c.kvkk).replace(/\.$/, '') : (k.kaynak === 'ik' ? 'İK doldurdu (kişiden alınmadı)' : '—')),
+    IK && k.ikKodu ? soru('İK kodu', k.ikKodu) : null);
+  const alt = O.el('div', null,
+    O.el('div', { class: 'ay-ozet-satir' },
+      O.el('span', { html: 'Departman: <b>' + O.esc(k.departman || '—') + '</b>' }), O.el('span', { html: 'Pozisyon: <b>' + O.esc(k.pozisyon || '—') + '</b>' }),
+      O.el('span', { html: 'Çıkış: <b>' + gunYaz(tarihCoz(k.cikis)) + '</b>' }), O.el('span', { html: 'Yanıt: <b>' + gunYaz(tarihCoz(k.tamamlanma)) + '</b>' })),
+    O.el('div', { style: 'margin-top:8px' }, kaynakCip(k.kaynak)));
+  const altBar = O.el('div', { class: 'modal-alt' });
+  if (IK) altBar.append(O.el('button', { class: 'btn btn-hayalet', type: 'button', html: IK_SIL + '<span>Kaydı sil</span>', on: { click: async () => {
+    if (!confirm(O.trBaslik(k.ad) + ' kişisinin anket yanıtı kalıcı olarak silinecek. Devam edilsin mi?')) return;
+    try { await deleteDoc(doc(KOL, k.id)); pencereKapat(); O.bildirim('Yanıt silindi'); } catch (e) { alert('Silinemedi: ' + ((e && e.code) || 'hata')); }
+  } } }));
+  altBar.append(O.el('button', { class: 'btn btn-lacivert', type: 'button', text: 'Kapat', on: { click: pencereKapat } }));
+  pencereAc('Anket yanıtı', [ustParca(O.trBaslik(k.ad), alt),
+    O.el('div', { class: 'modal-govde' }, O.el('h4', { class: 'ay-bolum-baslik', text: 'Ayrılmada etkili nedenler' }), puanlar, O.el('h4', { class: 'ay-bolum-baslik', text: 'Cevaplar' }), sorular), altBar]);
+}
+
+/* ============================================================== ÜST BANT */
+function ustBantKur() {
+  const sag = $('ustSag'); sag.textContent = '';
+  const yillar = [...new Set(KAYITLAR.map(kayitYili).filter(Boolean).concat([new Date().getFullYear()]))].sort();
+  if (yillar.length > 1) O.bolumlu(sag, { secenekler: yillar.map((y) => ({ v: String(y), ad: String(y) })), deger: String(YIL), kucuk: true, koyu: true, etiket: 'Yıl', degisince: (v) => { YIL = +v; ciz(); } });
+  if (IK) {
+    sag.append(O.el('button', { class: 'btn btn-pirinc', type: 'button', title: 'İstifa eden kişiye tek kullanımlık anket bağlantısı oluşturur', html: IK_LINK + '<span class="etk">Bağlantı oluştur</span>', on: { click: () => baglantiFormu(null) } }));
+    sag.append(O.el('button', { class: 'btn btn-koyu', type: 'button', title: 'Eski Google Form yanıtlarını (aktarım dosyası) yükler', html: O.ikon('yukle') + '<span class="etk">Yanıt aktar</span>', on: { click: aktarimSec } }));
+  }
+  const bas = AD.split(/\s+/).filter(Boolean);
+  sag.append(O.el('div', { class: 'kisi' }, O.el('span', { class: 'avatar', text: ((bas[0] || '?')[0] + ((bas[bas.length - 1] || ' ')[0] || '')).toLocaleUpperCase('tr') }),
+    O.el('div', { class: 'kisi-ad' }, O.el('div', { text: AD }), O.el('span', { class: 'rozet', text: ROL_AD }))));
+  if (window.top === window.self) sag.append(O.el('button', { class: 'btn btn-koyu', type: 'button', html: O.ikon('cikis') + '<span class="etk">Çıkış</span>', on: { click: () => cikisYap('cikis') } }));
+}
+
+/* ============================================================== SAYFA */
+function ciz() {
+  const kaydirma = window.scrollY;
+  O.grafikleriTemizle();
+  const kok = O.el('section', { class: 'pg on', id: 'p-ayrilis' });
+  $('icerik').replaceChildren(kok);
+  ustBantKur();
+  const T = tamamlananlar();
+  const BEK = bekleyenler();
+  const IST = istifalar();
+  const istFormlu = IST.filter((a) => T.some((k) => eslesir(k, a)));
+  /* İstatistik kümesi: KVKK onayını reddedenler hariç (bkz. KVKK_RET_HARIC) */
+  const S = KVKK_RET_HARIC ? T.filter((k) => !onayYok(k)) : T;
+  const RET = T.length - S.length;
+  const NED = nedenIstatistik(S);
+  const enUst = NED[0] && NED[0].n ? NED[0] : null;
+  const evetHayir = (alan) => { const v = S.map((k) => k.cevaplar && k.cevaplar[alan]).filter((x) => x === 'Evet' || x === 'Hayır'); return { evet: v.filter((x) => x === 'Evet').length, n: v.length }; };
+  const tekrar = evetHayir('tekrar'), olay = evetHayir('olay');
+  const simdi = new Date();
+  const buAy = T.filter((k) => { const d = tarihCoz(k.tamamlanma); return d && d.getFullYear() === simdi.getFullYear() && d.getMonth() === simdi.getMonth(); }).length;
+  $('ustAlt').innerHTML = O.ikon('takvim') + '<b>' + YIL + '</b>&nbsp;· canlı';
+
+  /* ---- 1) ÖZET */
+  O.kaput(kok, {
+    bindirme: true, ustEtiket: 'İnsan Kaynakları · ' + YIL, baslik: 'İşten Ayrılış Anketleri',
+    ozetHtml: (IST.length
+      ? YIL + ' yılında istifayla ayrılan <b>' + O.sayi(IST.length) + '</b> kişi var; bunların <b>' + O.sayi(istFormlu.length) + '</b> tanesinin ayrılış anketi bulunuyor.'
+      : YIL + ' yılında <b>' + O.sayi(T.length) + '</b> ayrılış anketi var.') +
+      (enUst ? ' Ayrılmada en çok öne çıkan neden: <b>' + O.esc(enUst.ad) + '</b>.' : ''),
+    meta: [{ ikon: 'saat', html: 'Canlı · anket gönderildiği anda burada görünür' }, { ikon: 'dosya', html: 'İstifa listesi: <b>' + O.esc(PANO_ETIKET || 'haftalık İK pano verisi') + '</b>' }],
+    kadranlar: IST.length ? [{ etiket: 'Anket oranı', deger: yuzdeTam(istFormlu.length, IST.length), max: 100, onek: '%', alt: '<b>' + O.sayi(istFormlu.length) + '</b> / ' + O.sayi(IST.length) + ' istifa' }] : []
+  });
+  O.kpiSatiri(kok, [
+    { anahtar: 'anket', etiket: 'Anket', deger: T.length, alt: YIL + ' yanıtı', ikon: 'dosya', renk: 'var(--g1)' },
+    { anahtar: 'buay', etiket: 'Bu ay gelen', deger: buAy, alt: 'yeni yanıt', ikon: 'takvim', renk: 'var(--g4)' },
+    /* Bekleyen bağlantılar yalnız İK'ya görünür (kuralda da yalnız İK okur) */
+    IK ? { anahtar: 'bekleyen', etiket: 'Bekleyen bağlantı', deger: BEK.length, alt: 'gönderildi, yanıt bekleniyor', ikon: 'saat', renk: 'var(--g3)' } : null,
+    { anahtar: 'tekrar', etiket: 'Tekrar çalışırım', deger: yuzdeTam(tekrar.evet, tekrar.n), onek: '%', alt: tekrar.evet + ' / ' + tekrar.n + ' kişi “Evet”', ikon: 'donus', renk: 'var(--g2)' },
+    { anahtar: 'olay', etiket: 'Olumsuz olay', deger: yuzdeTam(olay.evet, olay.n), onek: '%', alt: olay.evet + ' / ' + olay.n + ' kişi “yaşadım”', ikon: 'uyari', renk: 'var(--g8)' }
+  ].filter(Boolean), { sinif: 'bindir' });
+
+  let no = 0;
+  const akis = (baslik, aciklama) => O.akisBaslik(kok, { no: String(++no).padStart(2, '0'), baslik, aciklama });
+
+  /* ---- 2) BAĞLANTILAR (yalnız İK) */
+  if (IK) {
+    akis('Anket bağlantıları', 'İstifayla ayrılan kişiye tek kullanımlık bağlantı gönderin; kişi anketi gönderdiği anda sonuç bu sayfaya düşer.');
+    const iz = O.izgara(kok);
+    const eksik = IST.filter((a) => !T.some((k) => eslesir(k, a))).map((a) => Object.assign({}, a, { _bek: BEK.find((k) => eslesir(k, a)) || null, _t: tarihCoz(a.tarih) }));
+    const k1 = O.kart(iz, { baslik: 'Anketi olmayan istifalar', aciklama: YIL + ' · haftalık İK pano verisindeki istifalar içinde anketi bulunmayanlar (' + eksik.length + ' kişi)', sinif: 's12' });
+    if (!AYRILANLAR.length) O.bosDurum(k1.govde, { ikon: 'dosya', baslik: 'İstifa listesi okunamadı', metin: PANO_HATA ? 'Haftalık İK pano verisine erişilemedi.' : 'Haftalık İK pano verisi henüz yüklenmemiş.', kucuk: true });
+    else O.tablo(k1.govde, {
+      sutunlar: [
+        { k: 'ad', ad: 'Ad Soyad', sinif: 'ad-hucre', bicim: (v) => O.trBaslik(v) },
+        { k: 'dept', ad: 'Departman' },
+        { k: '_t', ad: 'Çıkış', tip: 'tarih', bicim: (v) => gunYaz(v), siralamaDegeri: (r) => (r._t ? r._t.getTime() : 0) },
+        { k: 'aciklama', ad: 'İK notu', hucreSinif: () => 'ay-not-hucre ay-soluk', bicim: (v) => v && v !== '-' ? v : '—' },
+        { k: '_islem', ad: '', siralanamaz: true, bicim: (v, r) => r._bek
+          ? O.el('div', { class: 'ay-islem' }, O.el('span', { class: 'cip cip-uy', text: 'Bağlantı gönderildi' }), O.el('button', { class: 'btn', type: 'button', html: IK_KOPYA + 'Kopyala', on: { click: (e) => { e.stopPropagation(); baglantiGoster(r._bek); } } }))
+          : O.el('div', { class: 'ay-islem' }, O.el('button', { class: 'btn btn-pirinc', type: 'button', html: IK_LINK + 'Bağlantı oluştur', on: { click: (e) => { e.stopPropagation(); baglantiFormu(r); } } })) }
+      ],
+      satirlar: eksik, sayfaBoyu: 8, varsayilanSira: { k: '_t', y: 'azalan' }, araYer: 'Ad, departman ara…', araAlanlari: ['ad', 'dept', 'aciklama'],
+      bos: { baslik: 'Tüm istifaların anketi var', metin: '' }
+    });
+    const k2 = O.kart(iz, { baslik: 'Bekleyen bağlantılar', aciklama: 'Gönderildi, yanıt bekleniyor (' + BEK.length + ')', sinif: 's12' });
+    O.tablo(k2.govde, {
+      sutunlar: [
+        { k: 'ad', ad: 'Ad Soyad', sinif: 'ad-hucre', bicim: (v) => O.trBaslik(v) },
+        { k: 'olusturma', ad: 'Oluşturma', tip: 'tarih', bicim: (v) => gunYaz(tarihCoz(v)), siralamaDegeri: (r) => { const d = tarihCoz(r.olusturma); return d ? d.getTime() : 0; } },
+        { k: '_islem', ad: '', siralanamaz: true, bicim: (v, r) => O.el('div', { class: 'ay-islem' },
+          O.el('button', { class: 'btn', type: 'button', title: 'Bağlantıyı ve mesajı göster', html: IK_KOPYA + 'Gönder', on: { click: () => baglantiGoster(r) } }),
+          O.el('button', { class: 'btn btn-hayalet', type: 'button', title: 'Bağlantıyı iptal et', 'aria-label': 'İptal et', html: IK_SIL, on: { click: () => baglantiIptal(r) } })) }
+      ],
+      satirlar: BEK, sayfaBoyu: 8, varsayilanSira: { k: 'olusturma', y: 'azalan' }, ara: BEK.length > 8, araAlanlari: ['ad'],
+      bos: { baslik: 'Bekleyen bağlantı yok', metin: 'Soldaki listeden ya da üstteki “Bağlantı oluştur” ile yeni bağlantı oluşturun.' }
+    });
+  }
+
+  if (!T.length) {
+    akis('Yanıtlar', '');
+    const b = O.kart(kok, { baslik: YIL + ' yanıtı yok' });
+    O.bosDurum(b.govde, IK
+      ? { ikon: 'dosya', baslik: 'Henüz anket yanıtı yok', metin: 'Eski Google Form yanıtlarını “Yanıt aktar” ile yükleyebilir ya da istifa eden kişilere bağlantı gönderebilirsiniz.', eylem: { metin: 'Yanıt aktar', fn: aktarimSec } }
+      : { ikon: 'dosya', baslik: 'Henüz anket yanıtı yok', metin: 'İnsan Kaynakları yanıtları ekledikçe burada görünecek.' });
+    bitir(kok, kaydirma);
+    return;
+  }
+
+  /* ---- 3) NEDENLER */
+  akis('Neden ayrılıyorlar?', 'Her neden için “Etkili” ya da “Çok etkili” diyenlerin oranı');
+  const iz2 = O.izgara(kok);
+  const ilk10 = NED.slice(0, 10);
+  const g = O.grafikKarti(iz2, {
+    baslik: 'En etkili 10 neden', aciklama: O.sayi(S.length) + ' anket · “Etkili” + “Çok etkili” payı' + (RET ? ' · kişisel veri onayı vermeyen ' + RET + ' yanıt hariç' : ''), sinif: 's8', yukseklik: 440,
+    tablo: () => ({ sutunlar: [{ ad: 'Neden' }, { ad: 'Etkili / Çok etkili', sag: true }, { ad: 'Kişi', sag: true }, { ad: 'Ortalama (0–5)', sag: true }],
+      satirlar: NED.map((x) => [x.ad, O.yuzde(x.oran, 0), O.sayi(x.etkili) + ' / ' + O.sayi(x.n), x.ort === null ? '—' : O.sayi(x.ort, 1)]) }),
+    not: 'Tablo görünümünde 23 nedenin tamamı var. Ölçek: Etkisi yok · Çok az · Az · Orta · Etkili · Çok etkili.'
+  });
+  O.grafik(g.canvas, {
+    type: 'bar',
+    data: { labels: ilk10.map((x) => satirBol(x.ad, 24)), datasets: [{ label: 'Etkili / Çok etkili', data: ilk10.map((x) => Math.round(x.oran)), backgroundColor: O.RENK.g1, maxBarThickness: 20, datalabels: O.etiket.sag({ onek: '%' }) }] },
+    options: { indexAxis: 'y', layout: { padding: { right: 40, left: 14 } },
+      scales: { x: O.eksenY({ max: 100, ticks: { callback: (v) => '%' + v } }), y: O.eksenX({ ticks: { autoSkip: false, font: { size: 11.5 }, color: O.RENK.n700 } }) },
+      plugins: { tooltip: { callbacks: { title: (c) => ilk10[c[0].dataIndex].ad, label: (c) => ' %' + c.parsed.x + ' · ' + ilk10[c.dataIndex].etkili + ' / ' + ilk10[c.dataIndex].n + ' kişi' } } } }
+  });
+  const k3 = O.kart(iz2, { baslik: 'Bağlılık ve deneyim', aciklama: 'Evet / Hayır yanıtlarına göre', sinif: 's4' });
+  const serit = (baslik, d, renkE, aciklama) => {
+    const h = d.n - d.evet;
+    return O.el('div', { class: 'ay-oran-blok' },
+      O.el('h4', { text: baslik }),
+      O.el('div', { class: 'ay-buyuk' }, O.el('b', { text: '%' + yuzdeTam(d.evet, d.n) }), O.el('span', { text: '“Evet” · ' + d.evet + ' / ' + d.n + ' kişi' })),
+      O.el('div', { class: 'ay-serit', role: 'img', 'aria-label': baslik + ': ' + d.evet + ' evet, ' + h + ' hayır' }, O.el('i', { style: 'width:' + (d.n ? (d.evet / d.n) * 100 : 0) + '%;background:' + renkE }), O.el('i', { style: 'width:' + (d.n ? (h / d.n) * 100 : 0) + '%;background:var(--n-300)' })),
+      O.el('div', { class: 'ay-serit-lejant' }, O.el('span', null, O.el('i', { style: 'background:' + renkE }), 'Evet ' + d.evet), O.el('span', null, O.el('i', { style: 'background:var(--n-300)' }), 'Hayır ' + h)),
+      aciklama ? O.el('p', { text: aciklama }) : null);
+  };
+  k3.govde.append(O.el('div', { class: 'ay-oran' },
+    serit('Gelecekte tekrar İnciroğlu’nda çalışmayı düşünür', tekrar, O.RENK.g1, 'Yüksek olması, ayrılanların şirketle ilişkisini olumlu kapattığını gösterir.'),
+    serit('Ayrılmasına sebep olan olumsuz bir olay yaşadı', olay, O.RENK.g8, 'Olumsuz olayı açıklayanların metni yanıt ayrıntısında görülür.')));
+
+  /* ---- 4) KARAR VE İLETİŞİM */
+  akis('Karar ve iletişim', 'İstifa kararının zamanı ve ilk kime açıldığı');
+  const iz3 = O.izgara(kok);
+  const kK = O.kart(iz3, { baslik: 'İstifa kararı ne zaman verildi?', aciklama: 'Kişi sayısı', sinif: 's6' });
+  O.cubukListe(kK.govde, sayim(S, (k) => k.cevaplar && k.cevaplar.karar, A.KARARLAR), { renk: O.RENK.g4 });
+  const kM = O.kart(iz3, { baslik: 'Fikrini işyerinde önce kime açtı?', aciklama: 'Kişi sayısı (birden fazla seçilebilir)', sinif: 's6' });
+  O.cubukListe(kM.govde, sayim(S, (k) => (k.cevaplar && k.cevaplar.kime) || [], A.KIME), { renk: O.RENK.g5 });
+
+  /* ---- 5) KIRILIM */
+  akis('Kırılım', 'Departman ve çıkış ayına göre anket sayısı');
+  const iz4 = O.izgara(kok);
+  const kD = O.kart(iz4, { baslik: 'Departmanlara göre anket', aciklama: 'Anket sayısı', sinif: 's6' });
+  O.cubukListe(kD.govde, sayim(S, (k) => k.departman || 'Belirtilmemiş'), { renk: O.RENK.g6, kaydir: 330 });
+  const aylar = Array.from({ length: 12 }, (_, i) => i + 1);
+  const aySay = aylar.map((m) => S.filter((k) => { const d = tarihCoz(k.cikis) || tarihCoz(k.tamamlanma); return d && d.getMonth() + 1 === m; }).length);
+  const sonAy = Math.max(...aylar.filter((m, i) => aySay[i] > 0), (YIL === simdi.getFullYear() ? simdi.getMonth() + 1 : 12));
+  const gA = O.grafikKarti(iz4, { baslik: 'Aylara göre anket', aciklama: 'Çıkış ayına göre anket sayısı', sinif: 's6', yukseklik: 300,
+    tablo: () => ({ sutunlar: [{ ad: 'Ay' }, { ad: 'Anket', sag: true }], satirlar: aylar.slice(0, sonAy).map((m, i) => [O.ayAdi(m), O.sayi(aySay[i])]) }) });
+  O.grafik(gA.canvas, { type: 'bar', data: { labels: aylar.slice(0, sonAy).map(O.ayKisa), datasets: [{ label: 'Anket', data: aySay.slice(0, sonAy), backgroundColor: O.RENK.g1, maxBarThickness: 22, datalabels: O.etiket.ust({ secim: 'hepsi' }) }] },
+    options: { scales: { x: O.eksenX(), y: O.eksenY({ grace: '15%' }) } } });
+
+  /* ---- 6) YANITLAR */
+  akis('Yanıtlar', 'Satıra tıklayınca kişinin tüm cevapları açılır');
+  /* Onay vermeyenlerin yanıtını yalnız İK görür (listede işaretli); direktör listesinde yer almaz */
+  const listelenen = KVKK_RET_HARIC && !IK ? S : T;
+  const kY = O.kart(kok, { baslik: 'Anket yanıtları', aciklama: O.sayi(listelenen.length) + ' yanıt · ' + YIL + (KVKK_RET_HARIC && !IK && RET ? ' · kişisel veri onayı vermeyen ' + RET + ' yanıt gösterilmez' : '') });
+  const satirlar = listelenen.map((k) => {
+    const p = (k.cevaplar && k.cevaplar.puan) || {};
+    const ust = A.FAKTORLER.map((f) => ({ ad: f.ad, v: p[f.k] })).filter((x) => Number.isInteger(x.v) && x.v >= A.ETKILI_ESIK).sort((a, b) => b.v - a.v).slice(0, 2);
+    return Object.assign({}, k, { _t: tarihCoz(k.cikis), _ust: ust, _tekrar: (k.cevaplar && k.cevaplar.tekrar) || '—' });
+  });
+  O.tablo(kY.govde, {
+    sutunlar: [
+      { k: 'ad', ad: 'Ad Soyad', sinif: 'ad-hucre', bicim: (v) => O.trBaslik(v) },
+      { k: 'departman', ad: 'Departman' },
+      { k: 'pozisyon', ad: 'Pozisyon', bicim: (v) => (v ? O.trBaslik(v) : '—') },
+      { k: '_t', ad: 'Çıkış', tip: 'tarih', bicim: (v) => gunYaz(v), siralamaDegeri: (r) => (r._t ? r._t.getTime() : 0) },
+      { k: '_ust', ad: 'En etkili nedenler', siralanamaz: true, bicim: (v) => (v && v.length ? O.el('div', { class: 'ay-cipler' }, ...v.map((x) => O.el('span', { class: 'cip cip-bilgi', text: x.ad }))) : '—') },
+      { k: '_tekrar', ad: 'Tekrar çalışır' },
+      { k: 'kaynak', ad: 'Kaynak', bicim: (v, r) => (onayYok(r) ? O.el('div', { class: 'ay-cipler' }, kaynakCip(v), O.el('span', { class: 'cip cip-uy', title: 'Kişi, yanıtlarının anonim veri olarak kullanılmasını onaylamadı; istatistiklere dahil edilmez.', text: 'KVKK onayı yok' })) : kaynakCip(v)), siralamaDegeri: (r) => A.KAYNAK_AD[r.kaynak] || '' }
+    ],
+    satirlar, sayfaBoyu: 12, siraNo: true, varsayilanSira: { k: '_t', y: 'azalan' }, araYer: 'Ad, departman, pozisyon ara…', araAlanlari: ['ad', 'departman', 'pozisyon'],
+    satirTikla: (r) => ayrintiAc(KAYITLAR.find((x) => x.id === r.id) || r)
+  });
+  O.notlar(kok, [
+    'Kaynak: ayrılış anketi yanıtları (canlı) · istifa listesi ve anket oranı: haftalık İK pano verisi' + (PANO_ETIKET ? ' (' + PANO_ETIKET + ')' : '') + '.',
+    'Anket oranı: istifayla ayrılanlar (V.İ. ve stajyer hariç; deneme süresinde işçi feshi dahil) içinde anketi olanlar. Eşleştirme ad soyad ve çıkış tarihiyle yapılır.',
+    '“Etkili” payı: 6’lı ölçekte “Etkili” ya da “Çok etkili” işaretleyenlerin, o soruyu yanıtlayanlara oranı.',
+    'Kaynak sütunu: Bağlantı = kişi bu sistemden doldurdu · Google Form = kişi eski formdan doldurdu · İK doldurdu = kişi doldurmadığı için İK’nın çıkış görüşmesindeki gerçek nedene göre girdiği yanıt.',
+    KVKK_RET_HARIC ? 'Kişisel veri onayı: yanıtlarının anonim veri olarak kullanılmasını onaylamayan kişilerin yanıtları anket oranında sayılır, grafik ve istatistiklere dahil edilmez; ayrıntısını yalnız İK görür.' : null
+  ].filter(Boolean));
+  bitir(kok, kaydirma);
+}
+function bitir(kok, kaydirma) {
+  if (!ILK) window.scrollTo({ top: kaydirma });
+  ILK = false;
+  window.__TEST_HAZIR = true;
+}
+
+function durumEkrani(baslik, metin) {
+  acilisGizle();
+  const kart = O.el('div', { class: 'durum-kart', role: 'alert' },
+    O.el('span', { class: 'amblem', role: 'img', 'aria-label': 'İnciroğlu Otomotiv İK amblemi' }),
+    O.el('div', { class: 'ust-etiket', text: 'İnciroğlu Otomotiv · İşten Ayrılış Anketleri' }),
+    O.el('div', { class: 'durum-ikon hata', html: O.ikon('uyari') }), O.el('h2', { text: baslik }), O.el('p', { text: metin }));
+  const eylem = O.el('div', { class: 'durum-eylem' },
+    O.el('button', { type: 'button', class: 'btn', html: O.ikon('sifirla') + 'Yeniden dene', on: { click: () => location.reload() } }));
+  kart.append(eylem, O.el('div', { class: 'durum-alt', text: AD + ' · ' + ROL_AD }));
+  document.body.append(O.el('div', { class: 'durum-ekran' }, kart));
+  window.__TEST_HAZIR = true;
+}
+
+/* ============================================================== VERİ */
+O.grafikVarsayilan();
+/* Grafik eksen etiketleri Inter ile ölçülsün (yazı tipi gelmeden ölçülürse uzun etiketin başı kesilir); en çok 2,5 sn beklenir */
+try { await Promise.race([Promise.all([document.fonts.load('500 11.5px Inter'), document.fonts.load('600 11px Inter')]), new Promise((r) => setTimeout(r, 2500))]); } catch (e) { /* yazı tipi gelmezse sistem yazısı */ }
+try {
+  const s = await getDoc(doc(db, 'satisVeri', 'ikPano'));
+  if (s.exists() && s.data().json) {
+    const p = JSON.parse(s.data().json);
+    AYRILANLAR = (p && p.D && Array.isArray(p.D.ayrilanlar)) ? p.D.ayrilanlar : [];
+    PANO_ETIKET = (p && p.etiket && (p.etiket.short || p.etiket.label)) || '';
+  }
+} catch (e) { PANO_HATA = e; console.warn('İK pano verisi okunamadı', e); }
+
+/* Direktör yalnız tamamlanmış yanıtları okur (kural da sorgunun bu süzgeçle yapılmasını ister); bekleyen bağlantıların
+   kimliği gizli anahtardır, yalnız İK görür. */
+onSnapshot(IK ? KOL : query(KOL, where('durum', '==', 'tamamlandi')), (snap) => {
+  KAYITLAR = snap.docs.map((d) => Object.assign({ id: d.id }, d.data()));
+  const tam = KAYITLAR.filter((k) => k.durum === 'tamamlandi');
+  if (!ILK) tam.filter((k) => !GORULEN.has(k.id) && k.kaynak === 'link').forEach((k) => O.bildirim('Yeni anket geldi: ' + O.trBaslik(k.ad)));
+  tam.forEach((k) => GORULEN.add(k.id));
+  if (acik) { BEKLEYEN_CIZIM = true; return; }
+  ciz();
+  acilisGizle();
+}, (e) => {
+  console.warn('Anketler okunamadı', e);
+  durumEkrani('Anketler okunamadı', e && e.code === 'permission-denied'
+    ? 'Bu sayfayı görme yetkiniz yok ya da güvenlik kuralı henüz yayınlanmadı. Yetki gerekiyorsa İnsan Kaynakları ile görüşün.'
+    : 'Bağlantı sorunu olabilir. Sayfayı yenileyip tekrar deneyin.');
+});
+window.__AYRILIS = { kayitlar: () => KAYITLAR, ayrilanlar: () => AYRILANLAR, yil: () => YIL };
+</script>
+</body>
+</html>
