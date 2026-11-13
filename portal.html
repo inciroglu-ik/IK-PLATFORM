@@ -171,6 +171,8 @@ var PANOLAR={
     svg:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>'},
   ayrilis: {ad:'İşten Ayrılış Anketleri', tag:'Geri Bildirim', url:'https://inciroglu-ik.github.io/IK-PLATFORM/ayrilis.html', aciklama:'İstifa edenlerin ayrılış anketi sonuçları ve kişiye özel anket bağlantısı.',
     svg:'<rect x="5" y="3.5" width="14" height="17.5" rx="2"/><path d="M9 3.5h6v2.5H9z"/><polyline points="8.5 12.5 10.5 14.5 15.5 9.5"/><line x1="8.5" y1="17.5" x2="15.5" y2="17.5"/>'},
+  oryantasyon: {ad:'Oryantasyon Formları', tag:'Uyum Süreci', url:'https://inciroglu-ik.github.io/IK-PLATFORM/oryantasyon.html', aciklama:'Unvanlara göre oryantasyon formları; inceleme, düzenleme ve öneriler.',
+    svg:'<path d="M4 6.5h9M4 11.5h9M4 16.5h6"/><circle cx="17.5" cy="15.5" r="3.5"/><path d="m16 15.5 1.1 1.1 2-2.2"/><path d="M15.5 6.5h4.5"/>'},
   mr:      {ad:'MR',             tag:'Personel',       url:'https://inciroglu-ik.github.io/IK-PLATFORM/mr.html', aciklama:'Aktif çalışan listesi ve işten ayrılan personel takibi.',
     svg:'<rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/>'},
   iksistem:{ad:'İK Sistemi',     tag:'Personel Yönetimi', url:'https://inciroglu-ik.github.io/IK-PLATFORM/ik.html', aciklama:'Çalışan özlük kartları, izin, puantaj, raporlar — tek sistem (Kolay İK benzeri, gelişmekte).',
@@ -181,12 +183,12 @@ var PANOLAR={
    ROL -> GÖRÜNEN KUTUCUKLAR
    ============================================================ */
 var ROL_KUTU={
-  ik:           ['ikdash','satis','servis','yetenek','isealim','ayrilis','mr'],   /* İK Sistemi portalda GÖSTERİLMEZ — ayrı link (ik.html) olarak erişilir */
-  direktor:     ['ikdash','satis','servis','yetenek','isealim','ayrilis','mr'],   /* Direktör: İK Sistemi YOK. Ayrılış anketleri: yalnız İK + direktör (12.11.2026) */
-  satis_mudur:  ['satis','yetenek','isealim','mr'],                     /* Satış müdürü: servis YOK, İK Sistemi YOK */
-  servis_mudur: ['servis','yetenek','isealim','mr'],                    /* Servis müdürü: satış YOK, İK Sistemi YOK */
-  idari_mudur:  ['ikdash','yetenek','isealim','mr']                     /* İdari müdür: İK Sistemi YOK */
-};
+  ik:           ['ikdash','satis','servis','yetenek','isealim','ayrilis','oryantasyon','mr'],   /* İK Sistemi portalda GÖSTERİLMEZ — ayrı link (ik.html) olarak erişilir */
+  direktor:     ['ikdash','satis','servis','yetenek','isealim','ayrilis','oryantasyon','mr'],   /* Direktör: İK Sistemi YOK. Ayrılış anketleri: yalnız İK + direktör (12.11.2026) */
+  satis_mudur:  ['satis','yetenek','isealim','oryantasyon','mr'],                     /* Satış müdürü: servis YOK, İK Sistemi YOK */
+  servis_mudur: ['servis','yetenek','isealim','oryantasyon','mr'],                    /* Servis müdürü: satış YOK, İK Sistemi YOK */
+  idari_mudur:  ['ikdash','yetenek','isealim','oryantasyon','mr']                     /* İdari müdür: İK Sistemi YOK */
+};                                                                       /* Oryantasyon formları: tüm yönetim rolleri (13.11.2026) */
 var ROL_ETIKET={ik:'İK / Tam Yetki',direktor:'Direktör',satis_mudur:'Satış Müdürü',servis_mudur:'Servis Müdürü',idari_mudur:'İdari Müdür'};
 
 /* ============================================================
@@ -195,7 +197,7 @@ var ROL_ETIKET={ik:'İK / Tam Yetki',direktor:'Direktör',satis_mudur:'Satış M
    rolleri ve kapsamı (marka vb.) İK'nın yönettiği 'hesaplar' kaydından gelir. Verilere erişim
    Firestore güvenlik kurallarıyla sunucuda denetlenir.
    ============================================================ */
-ROL_KUTU.mudur=['yetenek','isealim','mr'];                               /* Departman müdürü */
+ROL_KUTU.mudur=['yetenek','isealim','oryantasyon','mr'];                 /* Departman müdürü */
 ROL_ETIKET.mudur='Departman Müdürü';
 var ROL_ONCELIK=['ik','direktor','idari_mudur','satis_mudur','servis_mudur','mudur'];
 var $=function(id){return document.getElementById(id);};
@@ -224,7 +226,7 @@ window.portalBaslat=function(hesap){
    ============================================================ */
 function kutularim(k){
   var set=[]; k.roller.forEach(function(r){ (ROL_KUTU[r]||[]).forEach(function(id){ if(set.indexOf(id)<0) set.push(id); }); });
-  return ['ikdash','satis','servis','yetenek','isealim','ayrilis','mr'].filter(function(id){ return set.indexOf(id)>=0; });
+  return ['ikdash','satis','servis','yetenek','isealim','ayrilis','oryantasyon','mr'].filter(function(id){ return set.indexOf(id)>=0; });
 }
 function anaEkran(){
   var k=AKTIF_KULLANICI; if(!k) return;

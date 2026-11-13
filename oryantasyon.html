@@ -1,0 +1,1005 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Oryantasyon Formları · İnciroğlu Otomotiv</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0f1b2d">
+<link rel="icon" href="pano/amblem.svg" type="image/svg+xml">
+<link rel="icon" href="pano/amblem-192.png" sizes="192x192">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="pano/kokpit.css">
+<link rel="stylesheet" href="pano/pano.css">
+<style>
+/* Oryantasyon Formları — İK Portalı kutucuğu. Kabuk ve bileşenler İK Dashboard ile ortaktır (pano/*.css, pano/ortak.js). */
+body.oryantasyon .ust-marka { display: flex; }
+.oy-izgara-kart { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.oy-unvan { display: flex; flex-direction: column; gap: 10px; }
+.oy-unvan h3 { font-family: var(--font-serif); font-size: 19px; font-weight: 600; color: var(--metin-marka); margin: 0; }
+.oy-unvan .oy-alt { font-size: 12.5px; color: var(--metin-3); }
+.oy-unvan .oy-durum { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; min-height: 24px; }
+.oy-unvan .oy-durum .cip { height: auto; min-height: 22px; padding: 3px 9px; white-space: normal; line-height: 1.3; }
+.oy-unvan .oy-eylem { margin-top: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+.oy-unvan .oy-eylem .btn { height: 34px; }
+.oy-unvan.kapali { opacity: .72; }
+.oy-isimler { display: flex; gap: 5px; flex-wrap: wrap; }
+.oy-isimler span { font-size: 11.5px; background: var(--lac-50); color: var(--lac-700); border: 1px solid var(--lac-100); border-radius: 999px; padding: 2px 8px; }
+.oy-sira { font-size: 11px; font-weight: 700; color: var(--metin-3); letter-spacing: .08em; text-transform: uppercase; }
+
+/* Düzenleyici */
+.oy-cubuk { position: sticky; top: 0; z-index: 30; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; background: rgba(255,255,255,.96); backdrop-filter: blur(6px);
+  border: 1px solid var(--cizgi-1); border-radius: 14px; padding: 10px 12px; box-shadow: var(--gol-1); }
+.oy-cubuk .oy-ozet { font-size: 13px; color: var(--metin-2); font-weight: 600; margin-right: auto; min-width: 0; }
+.oy-cubuk .oy-ozet small { display: block; font-weight: 500; color: var(--metin-3); font-size: 11.5px; }
+.oy-cubuk .btn { height: 36px; }
+.oy-kirli { color: var(--uy-700); }
+.oy-bilgi { background: var(--lac-50); border: 1px solid var(--lac-100); border-radius: 12px; padding: 12px 14px; font-size: 13px; color: var(--metin-2); line-height: 1.6; }
+.oy-bilgi.uyari { background: var(--uy-50); border-color: var(--uy-200); color: var(--uy-700); }
+.oy-bilgi b { color: var(--metin-1); }
+.oy-lejant { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--metin-2); }
+.oy-lejant span { display: inline-flex; align-items: center; gap: 6px; }
+.oy-lejant i { width: 14px; height: 10px; border-radius: 3px; display: inline-block; }
+.oy-bolum { border: 1px solid var(--cizgi-1); border-radius: 16px; background: var(--yuzey-kart); box-shadow: var(--gol-1); overflow: hidden; }
+.oy-bolum-ust { display: flex; gap: 10px; align-items: center; padding: 12px 14px; background: var(--n-50); border-bottom: 1px solid var(--cizgi-1); flex-wrap: wrap; }
+.oy-bolum-ust .oy-bolum-ad { flex: 1; min-width: 200px; font-family: var(--font-serif); font-weight: 600; font-size: 17px; color: var(--metin-marka); }
+.oy-bolum-ust input.oy-bolum-ad { border: 1px solid transparent; background: transparent; border-radius: 8px; padding: 4px 8px; }
+.oy-bolum-ust input.oy-bolum-ad:hover { border-color: var(--cizgi-2); background: #fff; }
+.oy-bolum-ust input.oy-bolum-ad:focus { border-color: var(--pir-500); background: #fff; outline: none; box-shadow: var(--odak-halkasi); }
+.oy-bolum.yeni { border-color: #9cc9a4; } .oy-bolum.yeni .oy-bolum-ust { background: #eef8f0; }
+.oy-bolum.degisti .oy-bolum-ust { background: #fff6dd; }
+.oy-bolum-govde { padding: 6px 14px 14px; }
+.oy-madde { position: relative; border-bottom: 1px solid var(--cizgi-1); padding: 12px 0 12px 12px; border-left: 3px solid transparent; }
+.oy-madde:last-child { border-bottom: 0; }
+.oy-madde.yeni { border-left-color: #3f9a55; background: linear-gradient(90deg, #f1faf3, transparent 60%); }
+.oy-madde.degisti { border-left-color: #d9a21b; }
+.oy-madde-ust { display: flex; gap: 10px; align-items: flex-start; }
+.oy-no { flex: none; width: 28px; height: 28px; border-radius: 8px; background: var(--lac-50); color: var(--lac-700); display: grid; place-items: center; font-size: 12px; font-weight: 700; margin-top: 2px; }
+.oy-plan { flex: 1; min-width: 0; }
+.oy-araclar { display: flex; gap: 2px; flex: none; }
+.oy-araclar .btn { width: 32px; height: 32px; padding: 0; justify-content: center; }
+.oy-araclar .btn svg { width: 15px; height: 15px; }
+.oy-alanlar { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px 12px; margin: 8px 0 0 38px; }
+.oy-alan { display: grid; gap: 3px; min-width: 0; grid-column: span 2; }
+.oy-alan.s1 { grid-column: span 1; } .oy-alan.s3 { grid-column: span 3; } .oy-alan.s4 { grid-column: span 4; } .oy-alan.s6 { grid-column: span 6; }
+.oy-alan > span { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--metin-3); }
+.oy-girdi { width: 100%; box-sizing: border-box; font: inherit; font-size: 13.5px; line-height: 1.45; color: var(--metin-1); border: 1px solid var(--cizgi-2); border-radius: 9px; padding: 6px 9px; background: #fff; resize: none; overflow: hidden; min-height: 34px; }
+.oy-girdi:focus { outline: none; border-color: var(--pir-500); box-shadow: var(--odak-halkasi); }
+.oy-plan .oy-girdi { font-weight: 600; font-size: 14.5px; }
+.oy-alan.degisti .oy-girdi, .oy-plan.degisti .oy-girdi, .oy-ust-alan.degisti .oy-girdi { background: #fff6dd; border-color: #e7c35a; }
+.oy-eski { display: block; font-size: 11.5px; color: #8a6a12; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
+.oy-eski::before { content: 'Önceki: '; font-weight: 700; }
+.oy-eski.bos::after { content: '(boştu)'; font-style: italic; }
+.oy-etiket-yeni { display: inline-flex; font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #2f7d43; background: #e2f4e6; border-radius: 6px; padding: 2px 7px; margin: 0 0 4px 38px; }
+.oy-etiket-tasindi { display: inline-flex; font-size: 11px; color: var(--lac-700); background: var(--lac-50); border-radius: 6px; padding: 2px 7px; margin: 0 0 4px 38px; }
+.oy-silinenler { margin-top: 8px; padding: 10px 12px; border: 1px dashed #e0a7a0; border-radius: 12px; background: #fdf3f1; }
+.oy-silinenler h5 { margin: 0 0 6px; font-size: 12px; font-weight: 700; color: #9b3a2e; letter-spacing: .03em; }
+.oy-sil-satir { display: flex; gap: 10px; align-items: center; font-size: 13px; color: #7d3a32; padding: 3px 0; }
+.oy-sil-satir s { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.oy-sil-satir .btn { height: 28px; font-size: 12px; padding: 0 10px; flex: none; }
+.oy-silinenler.cop { border-color: var(--cizgi-2); background: var(--n-50); }
+.oy-silinenler.cop h5 { color: var(--metin-2); }
+.oy-silinenler.cop .oy-sil-satir { color: var(--metin-2); }
+.oy-sil-alt { font-size: 11.5px; color: var(--metin-3); margin: -2px 0 4px; }
+.oy-ekle { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.oy-ekle .btn { height: 32px; font-size: 12.5px; }
+.oy-ust-bilgi { display: flex; flex-wrap: wrap; gap: 8px; }
+.oy-ust-alan { display: flex; gap: 4px; align-items: center; border: 1px solid var(--cizgi-1); border-radius: 10px; padding: 4px 4px 4px 6px; background: #fff; }
+.oy-ust-alan.yeni { border-color: #9cc9a4; background: #f1faf3; }
+.oy-ust-alan .oy-girdi { width: 190px; min-height: 30px; padding: 4px 8px; }
+.oy-ust-alan .btn { width: 28px; height: 28px; padding: 0; justify-content: center; }
+.oy-ust-alan .oy-eski { max-width: 200px; }
+
+/* İnceleme (İK) */
+.oy-inceleme { display: grid; grid-template-columns: 290px minmax(0, 1fr) 280px; gap: 16px; align-items: start; }
+.oy-mudurler { display: grid; gap: 8px; }
+.oy-mudur { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 3px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--cizgi-1); background: var(--yuzey-kart); }
+.oy-mudur:hover { border-color: var(--pir-300); }
+.oy-mudur.secili { border-color: var(--pir-500); box-shadow: 0 0 0 3px var(--pir-100); }
+.oy-mudur b { font-size: 13.5px; color: var(--metin-1); }
+.oy-mudur small { font-size: 11.5px; color: var(--metin-3); }
+.oy-mudur .cip { justify-self: start; height: auto; min-height: 20px; padding: 2px 8px; white-space: normal; line-height: 1.3; }
+.oy-notlar { position: sticky; top: 12px; display: grid; gap: 12px; }
+.oy-notlar .kart-govde { display: grid; gap: 8px; }
+.oy-not { font-size: 12.5px; line-height: 1.45; color: var(--metin-2); border-left: 3px solid var(--cizgi-2); padding: 2px 0 2px 8px; overflow-wrap: anywhere; }
+.oy-not.sil { border-left-color: #c96a5d; } .oy-not.ekl { border-left-color: #3f9a55; } .oy-not.tas { border-left-color: var(--pir-400); }
+.oy-not b { color: var(--metin-1); }
+.oy-oku { font-size: 13.5px; line-height: 1.5; color: var(--metin-1); white-space: pre-wrap; overflow-wrap: anywhere; min-height: 1.5em; }
+.oy-oku.bos { color: var(--metin-3); }
+.oy-alan.degisti .oy-oku, .oy-plan.degisti .oy-oku, .oy-ust-alan.degisti .oy-oku { background: #fff3cd; border-radius: 6px; padding: 2px 6px; margin-left: -6px; }
+.oy-madde.silindi, .oy-madde.bolumle-silindi { opacity: .9; border-left-color: #c96a5d; background: #fdf3f1; }
+.oy-madde.silindi .oy-oku, .oy-madde.bolumle-silindi .oy-oku { text-decoration: line-through; color: #8a4038; }
+.oy-etiket-sil { display: inline-flex; font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #9b3a2e; background: #f8dcd7; border-radius: 6px; padding: 2px 7px; margin: 0 0 4px 38px; }
+@media (max-width: 1180px) { .oy-inceleme { grid-template-columns: 260px minmax(0, 1fr); } .oy-notlar { grid-column: 1 / -1; position: static; } }
+@media (max-width: 760px) {
+  .oy-inceleme { grid-template-columns: minmax(0, 1fr); }
+  .oy-alanlar { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-left: 0; }
+  .oy-alan, .oy-alan.s3, .oy-alan.s4, .oy-alan.s6 { grid-column: span 2; } .oy-alan.s1 { grid-column: span 1; }
+  .oy-etiket-yeni, .oy-etiket-tasindi, .oy-etiket-sil { margin-left: 0; }
+  .oy-ust-alan .oy-girdi { width: 150px; }
+}
+@media print {
+  .ust-alan, .oy-cubuk, .oy-mudurler-kart, .oy-araclar, .btn, .acilis { display: none !important; }
+  .oy-inceleme { grid-template-columns: minmax(0, 1fr) 240px; }
+  body { background: #fff; }
+}
+</style>
+</head>
+<!--
+  ORYANTASYON FORMLARI (oryantasyon.html) — İK Portalı'nda kutucuk.
+  Müdür/direktör: unvanların ana formunu KENDİ kopyasında düzenler (başkası göremez). İK: ana formu yönetir, müdürlerin
+  düzenlemelerini ana formla karşılaştırmalı (değişen/eklenen/silinen işaretli) inceler.
+  Veri: oryantasyonFormlari/{unvanKodu} (ana form) · oryantasyonDuzenlemeleri/{unvanKodu}__{hid} (müdür kopyası).
+  Karşılaştırma motoru: ortak/oryantasyon-fark.js. Kurallar: guvenlik/firestore.rules → ORYANTASYON FORMLARI.
+-->
+<body class="oryantasyon">
+<div class="acilis" id="acilis" role="status" aria-live="polite">
+  <div class="acilis-ic">
+    <span class="amblem buyuk" role="img" aria-label="İnciroğlu Otomotiv İK amblemi"></span>
+    <div class="acilis-baslik">Oryantasyon Formları</div>
+    <div class="acilis-metin" id="acilisMetin">Oturum denetleniyor…</div>
+    <div class="acilis-cubuk"><i></i></div>
+  </div>
+</div>
+<div class="ana">
+  <div class="ust-alan kokpit">
+    <header class="ust-bant">
+      <div class="ic ust-ic">
+        <div class="ust-marka"><span class="amblem" role="img" aria-label="İnciroğlu Otomotiv İK amblemi"></span></div>
+        <div class="uyg-ad"><span>Oryantasyon Formları</span><small id="ustAlt">İnsan Kaynakları</small></div>
+        <div class="ust-sag" id="ustSag"></div>
+      </div>
+    </header>
+    <div id="kaputYuva"></div>
+  </div>
+  <main class="ic icerik" id="icerik"></main>
+</div>
+
+<script type="module">
+import { doc, setDoc, updateDoc, writeBatch, collection, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { db, kimlikBaslat, cikisYap, adBasliklari } from "./ortak/kimlik.js";
+import * as O from "./pano/ortak.js";
+import * as F from "./ortak/oryantasyon-fark.js";
+
+const $ = (id) => document.getElementById(id);
+const acilisMetni = (t) => { const e = $('acilisMetin'); if (e) e.textContent = t; };
+const acilisGizle = () => { const a = $('acilis'); if (a) { a.classList.add('gizle'); setTimeout(() => a.remove(), 600); } };
+const SVG = (yol) => '<svg class="ikon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + yol + '</svg>';
+const IK_YUKARI = SVG('<path d="m6 14 6-6 6 6"/>');
+const IK_ASAGI = SVG('<path d="m6 10 6 6 6-6"/>');
+const IK_EKLE = SVG('<path d="M12 5v14M5 12h14"/>');
+const IK_SIL = SVG('<path d="M4.5 7h15M9.5 7V5h5v2M6.5 7l1 12.5h9l1-12.5"/>');
+const IK_KAYDET = SVG('<path d="M5 4.5h11l3 3V19.5H5z"/><path d="M8 4.5v5h7v-5M8 19.5v-6h8v6"/>');
+const IK_GERI = SVG('<path d="M15 6l-6 6 6 6"/>');
+const IK_YAZDIR = SVG('<path d="M7 9V4.5h10V9"/><rect x="4" y="9" width="16" height="7.5" rx="1.5"/><path d="M7 14h10v5.5H7z"/>');
+
+/* ============================================================== OTURUM */
+const ROLLER = ['ik', 'direktor', 'satis_mudur', 'servis_mudur', 'idari_mudur', 'mudur'];
+const ROL_ADI = { ik: 'İnsan Kaynakları', direktor: 'Direktör', satis_mudur: 'Satış Müdürü', servis_mudur: 'Servis Müdürü', idari_mudur: 'İdari Müdür', mudur: 'Departman Müdürü' };
+const OTURUM = await kimlikBaslat({ uygulama: 'Oryantasyon Formları', roller: ROLLER });
+const HESAP = OTURUM.hesap;
+const HID = OTURUM.hid;
+const IK = HESAP.roller.indexOf('ik') >= 0;
+const AD = adBasliklari(HESAP.ad || '');
+const ANA_ROL = ROLLER.find((r) => HESAP.roller.indexOf(r) >= 0) || '';
+const ROL_AD = ROL_ADI[ANA_ROL] || ANA_ROL;
+acilisMetni('Formlar yükleniyor…');
+
+/* ============================================================== DURUM */
+const ANA = new Map();          /* kod → ana form belgesi */
+const DUZ = new Map();          /* belge kimliği → müdür düzenlemesi (İK: hepsi · müdür: yalnız kendisininki) */
+let ED = null;                  /* açık düzenleyici: { mod:'mudur'|'ana', kod, calisma, taban, tabanSurum, kayit, kirli, cop, taslak } */
+let ILK_ANA = false, ILK_DUZ = false;
+const unvanAdi = (kod) => (F.UNVANLAR.find((u) => u.kod === kod) || {}).ad || (ANA.get(kod) || {}).unvan || kod;
+const tarihCoz = (t) => (t && typeof t.toDate === 'function' ? t.toDate() : t instanceof Date ? t : (t && typeof t.seconds === 'number' ? new Date(t.seconds * 1000) : null));
+const gunSaat = (t) => { const d = tarihCoz(t); return d ? d.toLocaleDateString('tr-TR') + ' ' + d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '—'; };
+const benimKayit = (kod) => DUZ.get(kod + '__' + HID) || null;
+const duzenlemeler = (kod) => [...DUZ.values()].filter((d) => d.kod === kod).sort((a, b) => ((tarihCoz(b.guncelleme) || 0) - (tarihCoz(a.guncelleme) || 0)));
+/* Bir kopyanın durumu ve sayıları HER ZAMAN kayıttaki form ile tabandan yeniden hesaplanır (kayıttaki özete güvenilmez;
+   bozuk bir kayıt da formuDuzenle ile zararsız hâle gelir) — kartlar, liste ve inceleme aynı hesabı kullanır */
+function kopyaDurumu(d) {
+  const form = F.formuDuzenle(d.form), taban = F.formuDuzenle(d.taban);
+  const fark = F.farkHesapla(taban, form);
+  return { form, taban, fark, sayac: fark.sayac, duzenlendi: fark.sayac.toplam > 0 };
+}
+/* Kopya, ana formun eski bir sürümü üzerinden mi? */
+const eskiSurum = (d) => { const a = ANA.get(d.kod); return !!(a && Number(d.tabanSurum) < Number(a.surum)); };
+/* Çift tıklamada iki öğe silinmesin (ilk tık listeyi yeniden çizer, ikinci tık kayan öğeye denk gelir) */
+let SON_SIL = 0;
+const silKilit = () => { const t = Date.now(); if (t - SON_SIL < 450) return false; SON_SIL = t; return true; };
+
+/* ============================================================== YÖNLENDİRME */
+function rota() {
+  const p = (location.hash || '').replace(/^#\/?/, '').split('/').filter(Boolean);
+  return { sayfa: p[0] || 'liste', kod: p[1] || '', hid: p[2] || '' };
+}
+let SON_HASH = location.hash;
+window.addEventListener('hashchange', () => {
+  /* kayıt sürerken sayfadan çıkılmaz (kayıt tamamlanınca kendiliğinden yönlenir) */
+  if (KAYDEDILIYOR) { history.replaceState(null, '', SON_HASH); O.bildirim('Kaydediliyor, lütfen bekleyin…'); return; }
+  if (ED && ED.kirli) {
+    if (!confirm('Kaydedilmemiş değişiklikleriniz var. Kaydetmeden çıkılsın mı? (Değişiklikler silinir.)')) { history.replaceState(null, '', SON_HASH); return; }
+    taslakSil(ED);                 /* bilerek vazgeçti: bu cihazdaki taslak da silinir */
+  }
+  ED = null; SON_HASH = location.hash; ciz();
+});
+/* Sayfa kapanırken / oturum düşerken kaydedilmemiş düzenleme taslak olarak hemen yazılır */
+window.addEventListener('beforeunload', (e) => { if (ED && ED.kirli) { taslakYaz(ED, true); e.preventDefault(); e.returnValue = ''; } });
+const git = (h) => { location.hash = h; };
+
+/* ============================================================== ÜST BANT */
+function ustBantKur() {
+  const sag = $('ustSag'); sag.textContent = '';
+  if (IK) sag.append(O.el('button', { class: 'btn btn-koyu', type: 'button', title: 'Excel’den hazırlanmış ana form dosyasını (.json) yükler', html: O.ikon('yukle') + '<span class="etk">Ana form aktar</span>', on: { click: aktarimSec } }));
+  const bas = AD.split(/\s+/).filter(Boolean);
+  sag.append(O.el('div', { class: 'kisi' }, O.el('span', { class: 'avatar', text: ((bas[0] || '?')[0] + ((bas[bas.length - 1] || ' ')[0] || '')).toLocaleUpperCase('tr') }),
+    O.el('div', { class: 'kisi-ad' }, O.el('div', { text: AD }), O.el('span', { class: 'rozet', text: ROL_AD }))));
+  /* bilerek çıkışta bu cihazdaki taslaklar da silinir (ortak bilgisayarda kalmasın) */
+  if (window.top === window.self) sag.append(O.el('button', { class: 'btn btn-koyu', type: 'button', html: O.ikon('cikis') + '<span class="etk">Çıkış</span>', on: { click: () => { taslaklariTemizle(); cikisYap('cikis'); } } }));
+}
+
+/* ============================================================== ÇİZİM */
+function ciz() {
+  ustBantKur();
+  const r = rota();
+  O.grafikleriTemizle();
+  const kok = O.el('section', { class: 'pg on', id: 'p-oryantasyon' });
+  $('icerik').replaceChildren(kok);
+  /* İK kendi kopyasını oluşturmaz (sayıma karışmasın); İK ana formu düzenler */
+  if (r.sayfa === 'form' && ANA.get(r.kod) && !IK) duzenleyiciAc(kok, 'mudur', r.kod);
+  else if (r.sayfa === 'ana' && IK) duzenleyiciAc(kok, 'ana', r.kod);
+  else if (r.sayfa === 'inceleme' && IK) incelemeCiz(kok, r.kod, r.hid);
+  else listeCiz(kok);
+  window.__TEST_HAZIR = true;
+}
+
+/* ---------------------------------------------------- 1) LİSTE */
+function listeCiz(kok) {
+  ED = null;
+  const hazir = F.UNVANLAR.filter((u) => ANA.get(u.kod)).length;
+  O.kaput(kok, {
+    ustEtiket: 'İnsan Kaynakları · Oryantasyon', baslik: 'Oryantasyon Formları',
+    ozetHtml: IK
+      ? 'Her unvanın <b>ana formunu</b> siz hazırlarsınız; müdür ve direktörler kendi kopyalarında düzenler. Düzenleyenleri ve yaptıkları değişiklikleri buradan izleyebilirsiniz.'
+      : 'İnsan Kaynakları’nın hazırladığı oryantasyon formlarını inceleyin; gerekli gördüğünüz yerleri <b>düzenleyin, ekleyin ya da çıkarın</b> ve kaydedin. Düzenlemenizi yalnız siz ve İnsan Kaynakları görür.',
+    meta: [{ ikon: 'kisiler', html: 'İlk etap: 2026’da en çok alım yapılan <b>5 unvan</b>' }, { ikon: 'dosya', html: '<b>' + hazir + '</b> / ' + F.UNVANLAR.length + ' unvanın formu hazır' }]
+  });
+  O.akisBaslik(kok, { no: '01', baslik: 'Unvanlar', aciklama: IK ? 'Karta tıklayarak müdür düzenlemelerini inceleyin ya da ana formu düzenleyin' : 'Formu açıp düzenleyin; değişiklikler kaydedene kadar saklanmaz' });
+  const g = O.el('div', { class: 'oy-izgara-kart' });
+  F.UNVANLAR.forEach((u, i) => g.append(IK ? unvanKartiIK(u, i) : unvanKartiMudur(u, i)));
+  kok.append(g);
+  O.notlar(kok, IK
+    ? ['Müdürler birbirinin düzenlemesini göremez; düzenlemeleri yalnız İnsan Kaynakları görür.',
+       'Ana formu değiştirdiğinizde müdürlerin daha önce kaydettiği düzenlemeler değişmez; karşılaştırma her müdürün başladığı ana form sürümüne göre yapılır.',
+       '“Değişiklik önerim yok” diyen müdürler de listede görünür.']
+    : ['Kaydetmediğiniz değişiklikler saklanmaz.', 'Hiçbir değişiklik gerekmiyorsa formu açıp “Değişiklik önerim yok” diyebilirsiniz; İnsan Kaynakları formu incelediğinizi görür.']);
+}
+function unvanKartiMudur(u, i) {
+  const ana = ANA.get(u.kod);
+  const k = benimKayit(u.kod);
+  const kart = O.el('div', { class: 'kart oy-unvan' + (ana ? '' : ' kapali'), 'data-unvan': u.kod });
+  const ic = O.el('div', { class: 'kart-govde oy-unvan' });
+  ic.append(O.el('span', { class: 'oy-sira', text: (i + 1) + '. unvan' }), O.el('h3', { text: u.ad }));
+  ic.append(O.el('div', { class: 'oy-alt', text: ana ? F.maddeSayisi(ana.form) + ' madde · ' + (ana.form.bolumler || []).length + ' bölüm' : 'İnsan Kaynakları bu unvanın formunu hazırlıyor' }));
+  const durum = O.el('div', { class: 'oy-durum' });
+  const kd = k ? kopyaDurumu(k) : null;
+  if (!ana) durum.append(O.el('span', { class: 'cip cip-bilgi', text: 'Form hazırlanıyor' }));
+  else if (!k) durum.append(O.el('span', { class: 'cip cip-uy', text: 'Henüz incelemediniz' }));
+  else if (!kd.duzenlendi) durum.append(O.el('span', { class: 'cip cip-ok', text: 'Değişiklik önermediniz · ' + gunSaat(k.guncelleme) }));
+  else durum.append(O.el('span', { class: 'cip cip-pirinc', text: 'Düzenlediniz · ' + F.ozetMetni(kd.sayac) }), O.el('small', { class: 'oy-alt', text: 'Son kayıt ' + gunSaat(k.guncelleme) }));
+  if (k && eskiSurum(k)) durum.append(O.el('span', { class: 'cip cip-uy', text: 'İnsan Kaynakları formu güncelledi — yeniden inceleyin' }));
+  ic.append(durum);
+  if (ana) ic.append(O.el('div', { class: 'oy-eylem' }, O.el('button', { class: 'btn btn-pirinc', type: 'button', html: O.ikon('dosya') + (k ? 'Düzenlememi aç' : 'Formu aç'), on: { click: () => git('#/form/' + u.kod) } })));
+  kart.append(ic);
+  return kart;
+}
+function unvanKartiIK(u, i) {
+  const ana = ANA.get(u.kod);
+  const dz = duzenlemeler(u.kod);
+  const duzenleyen = dz.filter((d) => kopyaDurumu(d).duzenlendi).length, onaylayan = dz.length - duzenleyen;
+  const eski = dz.filter(eskiSurum).length;
+  const kart = O.el('div', { class: 'kart oy-unvan', 'data-unvan': u.kod });
+  const ic = O.el('div', { class: 'kart-govde oy-unvan' });
+  ic.append(O.el('span', { class: 'oy-sira', text: (i + 1) + '. unvan' }), O.el('h3', { text: u.ad }));
+  ic.append(O.el('div', { class: 'oy-alt', text: ana ? 'Ana form: ' + F.maddeSayisi(ana.form) + ' madde · sürüm ' + ana.surum + ' · ' + gunSaat(ana.guncelleme) : 'Ana form henüz yok' }));
+  const durum = O.el('div', { class: 'oy-durum' });
+  if (!ana) durum.append(O.el('span', { class: 'cip cip-uy', text: 'Müdürler bu formu göremez' }));
+  else if (!dz.length) durum.append(O.el('span', { class: 'cip cip-bilgi', text: 'Henüz düzenleme yok' }));
+  else {
+    if (duzenleyen) durum.append(O.el('span', { class: 'cip cip-pirinc', text: duzenleyen + ' kişi düzenledi' }));
+    if (onaylayan) durum.append(O.el('span', { class: 'cip cip-ok', text: onaylayan + ' kişi değişiklik önermedi' }));
+    if (eski) durum.append(O.el('span', { class: 'cip cip-uy', text: 'Bunlardan ' + eski + ' kişi eski sürüm üzerinden' }));
+  }
+  ic.append(durum);
+  if (dz.length) ic.append(O.el('div', { class: 'oy-isimler' }, ...dz.slice(0, 6).map((d) => O.el('span', { text: adBasliklari(d.ad) })), dz.length > 6 ? O.el('span', { text: '+' + (dz.length - 6) }) : null));
+  const ey = O.el('div', { class: 'oy-eylem' });
+  if (ana) ey.append(O.el('button', { class: 'btn btn-pirinc', type: 'button', html: O.ikon('kisiler') + 'Düzenlemeleri incele', on: { click: () => git('#/inceleme/' + u.kod) } }));
+  ey.append(O.el('button', { class: 'btn', type: 'button', html: O.ikon('dosya') + (ana ? 'Ana formu düzenle' : 'Ana form oluştur'), on: { click: () => (ana ? git('#/ana/' + u.kod) : anaFormOlustur(u.kod)) } }));
+  ic.append(ey);
+  kart.append(ic);
+  return kart;
+}
+
+/* ---------------------------------------------------- 2) DÜZENLEYİCİ (müdür kopyası ya da İK ana formu) */
+/* Çöp kutusu: silinen madde / bölüm / alan, silindiği andaki (düzenlenmiş) hâliyle saklanır; geri alınınca öyle döner.
+   Ana formda olmayan (sonradan eklenip silinen) öğeler de buradan geri alınabilir. */
+const yeniCop = () => ({ maddeler: new Map(), bolumler: new Map(), alanlar: new Map() });
+/* Yerel taslak: kaydedilmemiş düzenleme bu cihazda (localStorage) tutulur; oturum düşse ya da sayfa kapansa da kaybolmaz.
+   Formu yeniden açınca "Taslağı geri yükle" önerilir. Başarılı kayıtta ve bilerek vazgeçildiğinde silinir. */
+const TASLAK_ON = 'ory-taslak-v1|';
+const TASLAK_GUN = 7;            /* taslak bu cihazda en fazla 7 gün tutulur */
+const TASLAK_VAR = (() => { try { localStorage.setItem(TASLAK_ON + 'deneme', '1'); localStorage.removeItem(TASLAK_ON + 'deneme'); return true; } catch (e) { return false; } })();
+/* Anahtarda hesap kimliğinin yalnız ilk 4 karakteri kullanılır (kişiyi belirlemeye yetmez; aynı cihazdaki kullanıcıları ayırır) */
+const taslakAnahtar = (ed) => TASLAK_ON + ed.mod + '|' + ed.kod + '|' + String(HID).slice(0, 4);
+function taslaklariTemizle() { if (!TASLAK_VAR) return; try { Object.keys(localStorage).filter((k) => k.startsWith(TASLAK_ON)).forEach((k) => localStorage.removeItem(k)); } catch (e) { /* yok say */ } }
+let taslakZaman = null;
+function taslakYaz(ed, hemen) {
+  if (!ed || !TASLAK_VAR) return;
+  clearTimeout(taslakZaman);
+  const yaz = () => { try { if (ed.kirli) localStorage.setItem(taslakAnahtar(ed), JSON.stringify({ calisma: ed.calisma, taban: ed.taban, tabanSurum: ed.tabanSurum, zaman: Date.now() })); } catch (e) { /* depolama dolu ya da kapalı */ } };
+  if (hemen) yaz(); else taslakZaman = setTimeout(yaz, 400);
+}
+function taslakSil(ed) { clearTimeout(taslakZaman); if (!ed || !TASLAK_VAR) return; try { localStorage.removeItem(taslakAnahtar(ed)); } catch (e) { /* yok say */ } }
+function taslakOku(ed) {
+  if (!TASLAK_VAR) return null;
+  try {
+    const t = JSON.parse(localStorage.getItem(taslakAnahtar(ed)) || 'null');
+    if (!t || typeof t !== 'object' || !t.calisma || typeof t.zaman !== 'number') return null;
+    if (Date.now() - t.zaman > TASLAK_GUN * 864e5) { taslakSil(ed); return null; }   /* süresi geçmiş taslak */
+    const s = { calisma: F.formuDuzenle(t.calisma), taban: F.formuDuzenle(t.taban), tabanSurum: Number(t.tabanSurum) || 0, zaman: t.zaman };
+    if (s.tabanSurum === ed.tabanSurum && F.ayniMi(s.calisma, ed.calisma)) { taslakSil(ed); return null; }   /* kayıtlı hâlle aynı */
+    return s;
+  } catch (e) { return null; }
+}
+function taslakGeriYukle() {
+  const t = ED && ED.taslak; if (!t) return;
+  ED.calisma = t.calisma; ED.taban = t.taban; ED.tabanSurum = t.tabanSurum; ED.kirli = true; ED.taslak = null; ED.cop = yeniCop(); ED.rev = (ED.rev || 0) + 1;
+  ciz();
+  O.bildirim('Taslak geri yüklendi · kaydetmeyi unutmayın');
+}
+
+function duzenleyiciAc(kok, mod, kod) {
+  const ana = ANA.get(kod);
+  if (!ED || ED.kod !== kod || ED.mod !== mod) {
+    if (mod === 'mudur') {
+      const k = benimKayit(kod);
+      ED = k
+        ? { mod, kod, calisma: F.formuDuzenle(k.form), taban: F.formuDuzenle(k.taban), tabanSurum: Number(k.tabanSurum) || 0, kayit: k, kirli: false }
+        : { mod, kod, calisma: F.formuDuzenle(ana.form), taban: F.formuDuzenle(ana.form), tabanSurum: Number(ana.surum) || 0, kayit: null, kirli: false };
+    } else {
+      const bas = ana ? ana.form : (YENI_ANA[kod] || { alanlar: [], bolumler: [] });
+      ED = { mod, kod, calisma: F.formuDuzenle(bas), taban: F.formuDuzenle(ana ? ana.form : { alanlar: [], bolumler: [] }), tabanSurum: ana ? Number(ana.surum) || 0 : 0, kayit: ana || null, kirli: !ana };
+    }
+    ED.cop = yeniCop();
+    ED.taslak = taslakOku(ED);
+  }
+  const unvan = unvanAdi(kod);
+  O.kaput(kok, {
+    ustEtiket: 'Oryantasyon · ' + (mod === 'ana' ? 'Ana form (İnsan Kaynakları)' : 'Sizin düzenlemeniz'), baslik: unvan + ' oryantasyon formu',
+    ozetHtml: mod === 'ana'
+      ? 'Müdürlerin gördüğü <b>ana formu</b> düzenliyorsunuz. Kaydettiğinizde formu henüz düzenlememiş müdürler yeni hâli görür; daha önce kaydedilmiş müdür düzenlemeleri değişmez.'
+      : 'Bu form İnsan Kaynakları’nın önerdiği taslaktır. Başlık, gün planı, kapsam, termin, sorumlu ve açıklama dahil her şeyi değiştirebilir, madde ekleyip çıkarabilirsiniz. Düzenlemenizi <b>yalnız siz ve İnsan Kaynakları</b> görür.',
+    meta: [{ ikon: 'dosya', html: 'Ana form sürümü: <b>' + (mod === 'ana' ? (ana ? ana.surum : 'yeni') : ED.tabanSurum) + '</b>' }]
+      .concat(mod === 'mudur' && ED.kayit ? [{ ikon: 'saat', html: 'Son kaydınız: <b>' + gunSaat(ED.kayit.guncelleme) + '</b>' }] : [])
+  });
+  const geri = O.el('a', { class: 'btn btn-hayalet', href: mod === 'ana' ? (ana ? '#/inceleme/' + kod : '#/') : '#/', html: IK_GERI + (mod === 'ana' && ana ? 'İncelemeye dön' : 'Unvanlara dön') });
+  kok.append(O.el('div', null, geri));
+  /* bu cihazda kaydedilmemiş taslak var mı? (onay penceresi değil, sayfa içi öneri) */
+  if (ED.taslak) {
+    const t = ED.taslak;
+    const kayitZ = ED.kayit ? tarihCoz(ED.kayit.guncelleme) : null;
+    kok.append(O.el('div', { class: 'oy-bilgi uyari', id: 'oyTaslak' },
+      O.el('b', { text: 'Bu cihazda kaydedilmemiş bir taslağınız var. ' }),
+      gunSaat(new Date(t.zaman)) + ' tarihinde bu formda yaptığınız değişiklikler kaydedilmeden kalmış' +
+        (kayitZ && kayitZ.valueOf() > t.zaman ? ' (taslak, ' + gunSaat(kayitZ) + ' tarihli son kaydınızdan daha eski)' : '') + '. Taslağı geri yükleyip kaldığınız yerden devam edebilirsiniz.',
+      O.el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px' },
+        O.el('button', { class: 'btn btn-pirinc', type: 'button', text: 'Taslağı geri yükle', on: { click: taslakGeriYukle } }),
+        O.el('button', { class: 'btn', type: 'button', text: 'Taslağı sil', on: { click: () => { if (!confirm('Bu cihazdaki kaydedilmemiş taslak silinecek. Devam edilsin mi?')) return; taslakSil(ED); ED.taslak = null; ciz(); } } }))));
+  }
+  /* ana form, müdürün başladığı sürümden yeni mi? */
+  if (mod === 'mudur' && ana && Number(ana.surum) > ED.tabanSurum) {
+    kok.append(O.el('div', { class: 'oy-bilgi uyari' },
+      O.el('b', { text: 'İnsan Kaynakları bu formu siz düzenledikten sonra güncelledi. ' }),
+      'Düzenlemeniz ana formun ' + ED.tabanSurum + '. sürümü üzerinden. İsterseniz güncel ana formdan baştan başlayabilirsiniz (kaydedene kadar mevcut düzenlemeniz değişmez). ',
+      O.el('button', { class: 'btn', type: 'button', style: 'margin-top:8px', text: 'Güncel ana formdan baştan başla', on: { click: anaFormaDon } })));
+  }
+  const cubuk = O.el('div', { class: 'oy-cubuk', id: 'oyCubuk' });
+  kok.append(cubuk);
+  kok.append(O.el('div', { class: 'oy-lejant' },
+    O.el('span', null, O.el('i', { style: 'background:#fff6dd;border:1px solid #e7c35a' }), 'Değiştirildi (altında önceki hâli)'),
+    O.el('span', null, O.el('i', { style: 'background:#e2f4e6;border:1px solid #9cc9a4' }), 'Yeni eklendi'),
+    O.el('span', null, O.el('i', { style: 'background:var(--lac-50);border:1px solid var(--lac-100)' }), 'Yeri değişti'),
+    O.el('span', null, O.el('i', { style: 'background:#fdf3f1;border:1px dashed #e0a7a0' }), 'Silindi (bölüm sonunda, geri alınabilir)')));
+  const govde = O.el('div', { id: 'oyGovde', style: 'display:grid;gap:16px' });
+  kok.append(govde);
+  formuCiz();
+}
+/* Taban ve çalışma formundaki kimlikler (çöp kutusunda yalnız "ana formda olmayan ve şu an formda bulunmayan" öğeler ayrı listelenir) */
+function kimlikKumeleri() {
+  const tm = new Set(), cm = new Set();
+  ED.taban.bolumler.forEach((b) => b.maddeler.forEach((m) => tm.add(m.id)));
+  ED.calisma.bolumler.forEach((b) => b.maddeler.forEach((m) => cm.add(m.id)));
+  return { tabanMadde: tm, calismaMadde: cm,
+    tabanBolum: new Set(ED.taban.bolumler.map((b) => b.id)), calismaBolum: new Set(ED.calisma.bolumler.map((b) => b.id)),
+    tabanAlan: new Set(ED.taban.alanlar.map((a) => a.id)), calismaAlan: new Set(ED.calisma.alanlar.map((a) => a.id)) };
+}
+const SINIR_MESAJ = { alan: 'Bir formda en fazla ' + F.EN_FAZLA.alan + ' üst bilgi alanı olabilir.', bolum: 'Bir formda en fazla ' + F.EN_FAZLA.bolum + ' bölüm olabilir.' };
+/* Düzenleyicinin gövdesi: yapısal işlemlerden sonra baştan çizilir; yazarken yalnız işaretler güncellenir */
+function formuCiz() {
+  const govde = $('oyGovde'); if (!govde || !ED) return;
+  const fark = F.farkHesapla(ED.taban, ED.calisma);
+  const kk = kimlikKumeleri();
+  govde.textContent = '';
+  /* üst bilgi alanları */
+  const ub = O.kart(govde, { baslik: 'Formun üst bilgileri', aciklama: 'Oryantasyona başlayan personelin formda doldurulacak bilgileri' });
+  const liste = O.el('div', { class: 'oy-ust-bilgi' });
+  ED.calisma.alanlar.forEach((a, i) => {
+    const f = fark.alan[a.id] || { tur: 'ayni' };
+    const g = girdi(a.ad, 200, (v) => { a.ad = v; degisti(); alanIsaret(a.id); }, 'Alan adı');
+    const kutu = O.el('div', { class: 'oy-ust-alan ' + (f.tur !== 'ayni' ? f.tur : ''), 'data-alan-id': a.id }, g,
+      O.el('button', { class: 'btn btn-hayalet', type: 'button', title: 'Alanı sil', 'aria-label': 'Alanı sil', html: IK_SIL, on: { click: () => {
+        if (!silKilit()) return;
+        ED.cop.alanlar.set(a.id, { alan: F.kopya(a), sira: i }); ED.calisma.alanlar.splice(i, 1); yapisal(); } } }));
+    if (f.tur === 'degisti') kutu.append(eskiEl(f.eskiAd));
+    liste.append(kutu);
+  });
+  ub.govde.append(liste);
+  ub.govde.append(O.el('div', { class: 'oy-ekle' }, O.el('button', { class: 'btn', type: 'button', html: IK_EKLE + 'Alan ekle', on: { click: () => {
+    if (!silKilit()) return;
+    if (ED.calisma.alanlar.length >= F.EN_FAZLA.alan) { alert(SINIR_MESAJ.alan); return; }
+    ED.calisma.alanlar.push({ id: F.yeniKimlik('a'), ad: '' }); yapisal(); odakla('[data-alan-id]:last-of-type textarea'); } } })));
+  silinenKutusu(ub.govde, fark.silinenAlanlar.map((s) => ({ metin: s.alan.ad || '(adsız alan)', geriAl: () => alanGeriAl(s.alan.id, s.alan, s.sira) })), 'Silinen üst bilgi alanları');
+  silinenKutusu(ub.govde, [...ED.cop.alanlar.values()].filter((c) => !kk.tabanAlan.has(c.alan.id) && !kk.calismaAlan.has(c.alan.id))
+    .map((c) => ({ metin: c.alan.ad || '(adsız alan)', geriAl: () => alanGeriAl(c.alan.id, c.alan, c.sira) })), 'Eklediğiniz ve sildiğiniz alanlar', 'Ana formda yoktu; değişiklik sayılmaz.');
+  /* bölümler */
+  ED.calisma.bolumler.forEach((b, bi) => govde.append(bolumEl(b, bi, fark, kk)));
+  /* silinen bölümler */
+  silinenKutusu(govde, fark.silinenBolumler.map((s) => ({ metin: (s.bolum.ad || '(adsız bölüm)') + ' — ana formdaki ' + s.maddeler.length + ' maddesiyle', geriAl: () => bolumGeriAl(s.bolum.id, s.bolum, s.sira) })), 'Silinen bölümler');
+  silinenKutusu(govde, [...ED.cop.bolumler.values()].filter((c) => !kk.tabanBolum.has(c.bolum.id) && !kk.calismaBolum.has(c.bolum.id))
+    .map((c) => ({ metin: (c.bolum.ad || '(adsız bölüm)') + ' — ' + c.bolum.maddeler.length + ' madde', geriAl: () => bolumGeriAl(c.bolum.id, c.bolum, c.sira) })), 'Eklediğiniz ve sildiğiniz bölümler', 'Ana formda yoktu; değişiklik sayılmaz.');
+  govde.append(O.el('div', { class: 'oy-ekle' }, O.el('button', { class: 'btn', type: 'button', html: IK_EKLE + 'Yeni bölüm ekle', on: { click: () => {
+    if (!silKilit()) return;
+    if (ED.calisma.bolumler.length >= F.EN_FAZLA.bolum) { alert(SINIR_MESAJ.bolum); return; }
+    ED.calisma.bolumler.push({ id: F.yeniKimlik('b'), ad: 'YENİ BÖLÜM', maddeler: [bosMadde()] }); yapisal(); odakla('.oy-bolum:last-of-type input.oy-bolum-ad'); } } })));
+  cubukCiz(fark);
+  otoBoyutla(govde);
+}
+/* Geri alma: önce çöp kutusundaki (düzenlenmiş) hâl, yoksa ana formdaki hâl.
+   Ana formda olan öğe ANA FORMDAKİ SIRASINA göre yerleşir (geri alma sırası, bölüm / alan sırasını bozmasın);
+   ana formda olmayan öğe silindiği sıraya döner. */
+function geriYeri(liste, tabanListe, id, yedekSira) {
+  const ti = new Map(tabanListe.map((x, i) => [x.id, i]));
+  if (!ti.has(id)) return Math.min(yedekSira, liste.length);
+  const hedef = ti.get(id);
+  const sonra = liste.findIndex((x) => ti.has(x.id) && ti.get(x.id) > hedef);
+  if (sonra >= 0) return sonra;
+  let once = -1; liste.forEach((x, i) => { if (ti.has(x.id) && ti.get(x.id) < hedef) once = i; });
+  return once >= 0 ? once + 1 : Math.min(yedekSira, liste.length);
+}
+function alanGeriAl(id, yedek, sira) {
+  if (ED.calisma.alanlar.some((a) => a.id === id)) return;
+  if (ED.calisma.alanlar.length >= F.EN_FAZLA.alan) { alert(SINIR_MESAJ.alan); return; }
+  const c = ED.cop.alanlar.get(id);
+  ED.calisma.alanlar.splice(geriYeri(ED.calisma.alanlar, ED.taban.alanlar, id, c ? c.sira : sira), 0, F.kopya(c ? c.alan : yedek));
+  ED.cop.alanlar.delete(id); yapisal();
+}
+function bolumGeriAl(id, yedek, sira) {
+  if (ED.calisma.bolumler.some((b) => b.id === id)) return;
+  if (ED.calisma.bolumler.length >= F.EN_FAZLA.bolum) { alert(SINIR_MESAJ.bolum); return; }
+  const c = ED.cop.bolumler.get(id);
+  const kullanilan = new Set(ED.calisma.bolumler.flatMap((x) => x.maddeler.map((m) => m.id)));
+  const geri = F.kopya(c ? c.bolum : yedek);
+  geri.maddeler = geri.maddeler.filter((m) => !kullanilan.has(m.id));
+  ED.calisma.bolumler.splice(geriYeri(ED.calisma.bolumler, ED.taban.bolumler, id, c ? c.sira : sira), 0, geri);
+  ED.cop.bolumler.delete(id);
+  geri.maddeler.forEach((m) => ED.cop.maddeler.delete(m.id));
+  yapisal();
+}
+function maddeGeriAl(b, id, yedek, sira) {
+  if (ED.calisma.bolumler.some((x) => x.maddeler.some((m) => m.id === id))) return;
+  const c = ED.cop.maddeler.get(id);
+  const tb = ED.taban.bolumler.find((x) => x.id === b.id);
+  b.maddeler.splice(geriYeri(b.maddeler, tb ? tb.maddeler : [], id, c ? c.sira : sira), 0, F.kopya(c ? c.madde : yedek));
+  ED.cop.maddeler.delete(id); yapisal();
+}
+function bolumEl(b, bi, fark, kk) {
+  const fb = fark.bolum[b.id] || { tur: 'ayni' };
+  const kap = O.el('div', { class: 'oy-bolum ' + (fb.tur !== 'ayni' ? fb.tur : ''), 'data-bolum': b.id });
+  const ad = O.el('input', { class: 'oy-bolum-ad', type: 'text', maxlength: '200', value: b.ad, 'aria-label': 'Bölüm adı' });
+  ad.addEventListener('input', () => { b.ad = F.temiz(ad.value, 200); degisti(); bolumIsaret(b.id); });
+  const ust = O.el('div', { class: 'oy-bolum-ust' }, ad,
+    O.el('span', { style: 'font-size:12px;color:var(--metin-3)', text: b.maddeler.length + ' madde' }),
+    O.el('button', { class: 'btn btn-hayalet', type: 'button', title: 'Bölümü sil', html: IK_SIL + '<span>Bölümü sil</span>', on: { click: () => {
+      if (!silKilit()) return;
+      if (b.maddeler.length && !confirm('“' + (b.ad || 'Bölüm') + '” bölümü ve içindeki ' + b.maddeler.length + ' madde silinecek. Kaydetmeden önce sayfanın altındaki “Silinen bölümler” kutusundan, düzenlemelerinizle birlikte geri alabilirsiniz. Devam edilsin mi?')) return;
+      ED.cop.bolumler.set(b.id, { bolum: F.kopya(b), sira: bi }); ED.calisma.bolumler.splice(bi, 1); yapisal(); } } }));
+  kap.append(ust);
+  if (fb.tur === 'degisti') ust.append(O.el('div', { class: 'oy-bolum-eski', style: 'flex-basis:100%' }, eskiEl(fb.eskiAd)));
+  const govde = O.el('div', { class: 'oy-bolum-govde' });
+  b.maddeler.forEach((m, mi) => govde.append(maddeEl(b, m, mi, fark)));
+  govde.append(O.el('div', { class: 'oy-ekle' }, O.el('button', { class: 'btn', type: 'button', html: IK_EKLE + 'Bu bölüme madde ekle', on: { click: () => {
+    if (!silKilit()) return;
+    const y = bosMadde(); b.maddeler.push(y); yapisal(); odakla('[data-madde="' + CSS.escape(y.id) + '"] .oy-plan textarea'); } } })));
+  silinenKutusu(govde, fark.silinenMaddeler.filter((s) => s.bolumId === b.id).map((s) => ({ metin: s.madde.plan || '(adsız madde)', geriAl: () => maddeGeriAl(b, s.madde.id, s.madde, s.sira) })), 'Bu bölümden silinen maddeler');
+  silinenKutusu(govde, [...ED.cop.maddeler.values()].filter((c) => c.bolumId === b.id && !kk.tabanMadde.has(c.madde.id) && !kk.calismaMadde.has(c.madde.id))
+    .map((c) => ({ metin: c.madde.plan || '(adsız madde)', geriAl: () => maddeGeriAl(b, c.madde.id, c.madde, c.sira) })), 'Eklediğiniz ve sildiğiniz maddeler', 'Ana formda yoktu; değişiklik sayılmaz.');
+  kap.append(govde);
+  return kap;
+}
+/* Boş yeni madde kaydedilmez (bosYenileriAt) — etiket bunu söyler, üst çubuk da saymaz */
+const bosMaddeMi = (m) => !F.ALANLAR.some((a) => F.sade(m[a.k]));
+const yeniEtiket = (m) => (bosMaddeMi(m) ? 'Yeni madde · boş bırakılırsa kaydedilmez' : 'Yeni madde');
+/* "Yeri değişti" / "Başka bölümden taşındı" etiketi (düzenleyici ve inceleme aynı metni kullanır; sayaçtaki "sira" ile birebir) */
+function yerEtiketi(fm) {
+  if (fm.tasindi) return O.el('span', { class: 'oy-etiket-tasindi', 'data-tur': 'bolum', text: 'Başka bölümden taşındı (önceki: ' + (fm.eskiBolum || '—') + ')' });
+  if (fm.siraDegisti) return O.el('span', { class: 'oy-etiket-tasindi', 'data-tur': 'sira', text: 'Yeri değişti (ana formda ' + (Number(fm.eskiSira) + 1) + '. sıradaydı)' });
+  return null;
+}
+function maddeEl(b, m, mi, fark) {
+  const fm = fark.madde[m.id] || { tur: 'ayni', eski: {} };
+  const kap = O.el('div', { class: 'oy-madde ' + (fm.tur !== 'ayni' ? fm.tur : ''), 'data-madde': m.id });
+  if (fm.tur === 'yeni') kap.append(O.el('span', { class: 'oy-etiket-yeni', text: yeniEtiket(m) }));
+  const yer = yerEtiketi(fm); if (yer) kap.append(yer);
+  const planKap = O.el('div', { class: 'oy-plan' + (fm.eski && 'plan' in fm.eski ? ' degisti' : ''), 'data-alan': 'plan' }, girdi(m.plan, F.SINIR, (v) => { m.plan = v; degisti(); maddeIsaret(m.id); }, 'Gün planı'));
+  if (fm.eski && 'plan' in fm.eski) planKap.append(eskiEl(fm.eski.plan));
+  const islem = (fn) => () => { if (silKilit()) fn(); };
+  const arac = O.el('div', { class: 'oy-araclar' },
+    O.el('button', { class: 'btn btn-hayalet', type: 'button', title: 'Yukarı taşı', 'aria-label': 'Yukarı taşı', disabled: mi === 0 ? true : null, html: IK_YUKARI, on: { click: islem(() => tasi(b, m.id, -1)) } }),
+    O.el('button', { class: 'btn btn-hayalet', type: 'button', title: 'Aşağı taşı', 'aria-label': 'Aşağı taşı', disabled: mi === b.maddeler.length - 1 ? true : null, html: IK_ASAGI, on: { click: islem(() => tasi(b, m.id, 1)) } }),
+    O.el('button', { class: 'btn btn-hayalet', type: 'button', title: 'Altına yeni madde ekle', 'aria-label': 'Altına yeni madde ekle', html: IK_EKLE, on: { click: islem(() => { const i = b.maddeler.indexOf(m); const y = bosMadde(); b.maddeler.splice(i + 1, 0, y); yapisal(); odakla('[data-madde="' + CSS.escape(y.id) + '"] .oy-plan textarea'); }) } }),
+    O.el('button', { class: 'btn btn-hayalet', type: 'button', title: 'Maddeyi sil', 'aria-label': 'Maddeyi sil', html: IK_SIL, on: { click: islem(() => {
+      const i = b.maddeler.indexOf(m); if (i < 0) return;
+      ED.cop.maddeler.set(m.id, { madde: F.kopya(m), bolumId: b.id, sira: i }); b.maddeler.splice(i, 1); yapisal(); }) } }));
+  kap.append(O.el('div', { class: 'oy-madde-ust' }, O.el('span', { class: 'oy-no', text: String(mi + 1) }), planKap, arac));
+  const izgara = O.el('div', { class: 'oy-alanlar' });
+  const yerlesim = { kapsam: 's4', sorumlu: '', termin: '', saat: 's1', sure: 's1', aciklama: 's4' };
+  ['kapsam', 'sorumlu', 'termin', 'saat', 'sure', 'aciklama'].forEach((k) => {
+    const deg = fm.eski && k in fm.eski;
+    const a = O.el('label', { class: 'oy-alan ' + (yerlesim[k] || '') + (deg ? ' degisti' : ''), 'data-alan': k }, O.el('span', { text: F.ALAN_AD[k] }),
+      girdi(m[k], F.SINIR, (v) => { m[k] = v; degisti(); maddeIsaret(m.id); }, F.ALAN_AD[k]));
+    if (deg) a.append(eskiEl(fm.eski[k]));
+    izgara.append(a);
+  });
+  kap.append(izgara);
+  return kap;
+}
+function girdi(deger, sinir, yaz, etiket) {
+  const t = O.el('textarea', { class: 'oy-girdi', rows: '1', maxlength: String(sinir), 'aria-label': etiket || null });
+  t.value = deger || '';
+  t.addEventListener('input', () => { yaz(F.temiz(t.value, sinir)); boyutla(t); });
+  return t;
+}
+function eskiEl(eski) { return O.el('small', { class: 'oy-eski' + (F.sade(eski) ? '' : ' bos'), text: F.sade(eski) ? eski : '' }); }
+function silinenKutusu(kap, satirlar, baslik, alt) {
+  if (!satirlar.length) return;
+  const k = O.el('div', { class: 'oy-silinenler' + (alt ? ' cop' : '') }, O.el('h5', { text: baslik + ' (' + satirlar.length + ')' }));
+  if (alt) k.append(O.el('div', { class: 'oy-sil-alt', text: alt }));
+  satirlar.forEach((s) => k.append(O.el('div', { class: 'oy-sil-satir' }, O.el('s', { text: s.metin }),
+    O.el('button', { class: 'btn', type: 'button', text: 'Geri al', on: { click: () => { if (silKilit()) s.geriAl(); } } }))));
+  kap.append(k);
+}
+const bosMadde = () => { const m = { id: F.yeniKimlik('m') }; F.ALANLAR.forEach((a) => { m[a.k] = ''; }); return m; };
+function tasi(b, id, yon) { const i = b.maddeler.findIndex((x) => x.id === id), j = i + yon; if (i < 0 || j < 0 || j >= b.maddeler.length) return; const t = b.maddeler[i]; b.maddeler[i] = b.maddeler[j]; b.maddeler[j] = t; yapisal(); }
+/* rev: her değişiklikte artar; kayıt sürerken yapılan değişiklik kayıttan sonra kaybolmasın diye karşılaştırılır */
+function yapisal() { if (!ED) return; ED.kirli = true; ED.rev = (ED.rev || 0) + 1; const y = window.scrollY; formuCiz(); window.scrollTo({ top: y }); taslakYaz(ED); }
+function degisti() { if (!ED) return; ED.kirli = true; ED.rev = (ED.rev || 0) + 1; cubukCiz(); taslakYaz(ED); }
+function odakla(sec) { requestAnimationFrame(() => { const e = document.querySelector(sec); if (e) { e.focus(); e.scrollIntoView({ block: 'center', behavior: 'smooth' }); } }); }
+function boyutla(t) { t.style.height = 'auto'; t.style.height = (t.scrollHeight + 2) + 'px'; }
+function otoBoyutla(kap) { requestAnimationFrame(() => kap.querySelectorAll('textarea.oy-girdi').forEach(boyutla)); }
+/* Yazarken: yalnız o maddenin / bölümün işaretleri güncellenir (odak kaybolmaz) */
+function maddeIsaret(id) {
+  if (!ED) return;
+  const fark = F.farkHesapla(ED.taban, ED.calisma);
+  const fm = fark.madde[id] || { tur: 'ayni', eski: {} };
+  const el = document.querySelector('[data-madde="' + CSS.escape(id) + '"]'); if (!el) return;
+  el.classList.toggle('degisti', fm.tur === 'degisti');
+  const etk = el.querySelector('.oy-etiket-yeni'); const m = F.kopya(ED.calisma.bolumler.flatMap((b) => b.maddeler).find((x) => x.id === id) || {});
+  if (etk && fm.tur === 'yeni') etk.textContent = yeniEtiket(m);
+  el.querySelectorAll('[data-alan]').forEach((a) => {
+    const k = a.getAttribute('data-alan'); const deg = !!(fm.eski && k in fm.eski);
+    a.classList.toggle('degisti', deg);
+    const eskiVar = a.querySelector('.oy-eski');
+    if (deg && !eskiVar) a.append(eskiEl(fm.eski[k]));
+    if (!deg && eskiVar) eskiVar.remove();
+  });
+}
+function bolumIsaret(id) {
+  if (!ED) return;
+  const fark = F.farkHesapla(ED.taban, ED.calisma);
+  const fb = fark.bolum[id] || { tur: 'ayni' };
+  const el = document.querySelector('[data-bolum="' + CSS.escape(id) + '"]'); if (!el || fb.tur === 'yeni') return;
+  el.classList.toggle('degisti', fb.tur === 'degisti');
+  const ust = el.querySelector('.oy-bolum-ust'); const eski = ust && ust.querySelector('.oy-bolum-eski');
+  if (fb.tur === 'degisti' && !eski) ust.append(O.el('div', { class: 'oy-bolum-eski', style: 'flex-basis:100%' }, eskiEl(fb.eskiAd)));
+  if (fb.tur !== 'degisti' && eski) eski.remove();
+}
+function alanIsaret(id) {
+  if (!ED) return;
+  const fark = F.farkHesapla(ED.taban, ED.calisma);
+  const f = fark.alan[id] || { tur: 'ayni' };
+  const el = document.querySelector('[data-alan-id="' + CSS.escape(id) + '"]'); if (!el || f.tur === 'yeni') return;
+  el.classList.toggle('degisti', f.tur === 'degisti');
+  const eski = el.querySelector('.oy-eski');
+  if (f.tur === 'degisti' && !eski) el.append(eskiEl(f.eskiAd));
+  if (f.tur !== 'degisti' && eski) eski.remove();
+}
+/* Üst çubuk KAYDEDİLECEK hâli sayar (boş yeni maddeler kayıtta atıldığı için sayılmaz) — kayıttan sonraki kart sayısıyla aynı */
+function cubukCiz() {
+  const c = $('oyCubuk'); if (!c || !ED) return;
+  c.textContent = '';
+  const s = F.farkHesapla(ED.taban, bosYenileriAt(ED.calisma, ED.taban)).sayac;
+  const durumMetni = ED.kirli ? 'Kaydedilmemiş değişiklik var' + (TASLAK_VAR ? ' · bu cihazda taslak olarak tutuluyor' : '') : (ED.kayit ? 'Tüm değişiklikler kaydedildi' : 'Henüz kaydetmediniz');
+  c.append(O.el('div', { class: 'oy-ozet' }, O.el('span', { text: (ED.mod === 'ana' ? 'Kayıtlı ana forma göre: ' : 'Ana forma göre değişiklikleriniz: ') + F.ozetMetni(s) }),
+    O.el('small', { class: ED.kirli ? 'oy-kirli' : '', text: durumMetni })));
+  if (ED.mod === 'mudur' && !s.toplam) c.append(O.el('button', { class: 'btn', type: 'button', html: O.ikon('onay') + 'Değişiklik önerim yok', title: 'Formu olduğu gibi uygun bulduğunuzu İnsan Kaynakları’na bildirir', on: { click: () => kaydet(true) } }));
+  if (s.toplam) c.append(O.el('button', { class: 'btn btn-hayalet', type: 'button', text: ED.mod === 'ana' ? 'Değişiklikleri geri al' : 'Ana forma döndür', on: { click: anaFormaDon } }));
+  c.append(O.el('button', { class: 'btn btn-pirinc', type: 'button', id: 'oyKaydet', html: IK_KAYDET + 'Kaydet', on: { click: () => kaydet(false) } }));
+}
+function anaFormaDon() {
+  if (!ED) return;
+  const ana = ANA.get(ED.kod);
+  const msj = ED.mod === 'ana' ? 'Kaydedilmemiş değişiklikleriniz geri alınacak. Devam edilsin mi?' : 'Formunuz İnsan Kaynakları’nın güncel ana formuna döndürülecek; yaptığınız değişiklikler (kaydedene kadar) ekrandan kalkar. Devam edilsin mi?';
+  if (!confirm(msj)) return;
+  if (ED.mod === 'ana') {
+    ED.calisma = F.formuDuzenle(ana ? ana.form : (YENI_ANA[ED.kod] || { alanlar: [], bolumler: [] }));
+    ED.taban = F.formuDuzenle(ana ? ana.form : { alanlar: [], bolumler: [] }); ED.tabanSurum = ana ? Number(ana.surum) || 0 : 0;
+    ED.kirli = !ana;
+    if (!ED.kirli) taslakSil(ED);
+  } else { ED.calisma = F.formuDuzenle(ana.form); ED.taban = F.formuDuzenle(ana.form); ED.tabanSurum = Number(ana.surum) || 0; ED.kirli = true; taslakYaz(ED); }
+  ED.cop = yeniCop();
+  ciz();
+}
+/* Kaydetmeden önce: ana formda olmayan ve TÜM alanları boş yeni maddeler atılır (bilgi taşımaz, "eklendi" diye sayılmasın) */
+function bosYenileriAt(form, taban) {
+  const tm = new Set(); taban.bolumler.forEach((b) => b.maddeler.forEach((m) => tm.add(m.id)));
+  const f = F.kopya(form);
+  f.bolumler.forEach((b) => { b.maddeler = b.maddeler.filter((m) => tm.has(m.id) || F.ALANLAR.some((a) => F.sade(m[a.k]))); });
+  return f;
+}
+const yetkiHatasi = (e) => !!(e && e.code === 'permission-denied');
+/* Kayıt sürerken (yavaş bağlantı) yazılmaya devam edildiyse: kayıt tamamlandı ama son yazılanlar ekranda ve taslakta kalır */
+function kayitSirasindaDegisti(ed) {
+  O.bildirim('Kaydedildi. Kayıt sürerken yaptığınız son değişiklikler için yeniden “Kaydet”e basın.');
+  if (ED === ed) cubukCiz();
+}
+let KAYDEDILIYOR = false;
+async function kaydet(degisiklikYok) {
+  const ed = ED;                       /* kayıt sürerken sayfa değişse de bu düzenleyiciyle çalışılır */
+  if (KAYDEDILIYOR || !ed) return;
+  const b = $('oyKaydet');
+  taslakYaz(ed, true);
+  try {
+    KAYDEDILIYOR = true; if (b) b.disabled = true;
+    if (ed.mod === 'ana') {
+      const form = F.formuDuzenle(bosYenileriAt(ed.calisma, ed.taban));
+      if (!form.bolumler.length) { alert('Ana formda en az bir bölüm olmalı.'); return; }
+      const ana = ANA.get(ed.kod);
+      const guncel = ana ? Number(ana.surum) || 0 : 0;
+      if (guncel !== ed.tabanSurum) {
+        if (!confirm('Siz düzenlerken bu ana form ' + (ana && ana.guncelleyen ? adBasliklari(ana.guncelleyen) + ' tarafından ' : '') + 'güncellendi (şu an ' + guncel + '. sürüm). Kaydederseniz o değişikliklerin yerine ekranınızdaki hâl geçer. Yine de kaydedilsin mi?')) return;
+      } else if (!confirm((ana ? 'Ana form güncellenecek (sürüm ' + (guncel + 1) + ').' : 'Ana form oluşturulacak.') + ' Formu henüz düzenlememiş müdürler yeni hâli görür. Devam edilsin mi?')) return;
+      const n = guncel + 1;
+      const rev = ed.rev || 0;
+      const wb = writeBatch(db);
+      wb.set(doc(db, 'oryantasyonFormlari', ed.kod), {
+        kod: ed.kod, unvan: F.temiz(unvanAdi(ed.kod), 80), form, surum: n,
+        guncelleme: serverTimestamp(), guncelleyen: HESAP.ad || '', kaynak: F.temiz((ana && ana.kaynak) || 'Panodan oluşturuldu', 200)
+      });
+      wb.set(doc(db, 'oryantasyonFormlari', ed.kod, 'surumler', String(n)), { surum: n, form, guncelleme: serverTimestamp(), guncelleyen: HESAP.ad || '' });
+      await wb.commit();
+      delete YENI_ANA[ed.kod];
+      /* kaydedilen hâl yeni taban olur (kayıt sürerken yazılan varsa ekranda kalır ve bir sonraki kayıtla gider) */
+      ed.taban = F.kopya(form); ed.tabanSurum = n; ed.kayit = { surum: n };
+      if ((ed.rev || 0) !== rev) { taslakYaz(ed, true); kayitSirasindaDegisti(ed); return; }
+      ed.kirli = false; taslakSil(ed);
+      O.bildirim('Ana form kaydedildi · sürüm ' + n);
+      if (ED === ed) git('#/inceleme/' + ed.kod);
+      return;
+    }
+    const taban = F.formuDuzenle(ed.taban);
+    let calisma = F.formuDuzenle(bosYenileriAt(ed.calisma, taban));
+    if (degisiklikYok) {
+      if (!confirm('Formu olduğu gibi uygun bulduğunuz İnsan Kaynakları’na bildirilecek. Devam edilsin mi?')) return;
+    } else if (!F.farkHesapla(taban, calisma).sayac.toplam) {
+      if (!confirm('Formda değişiklik yapmadınız. “Değişiklik önerim yok” olarak kaydedilsin mi?')) return;
+      degisiklikYok = true;
+    }
+    if (degisiklikYok) calisma = F.kopya(taban);
+    const s = F.farkHesapla(taban, calisma).sayac;
+    const ref = doc(db, 'oryantasyonDuzenlemeleri', ed.kod + '__' + HID);
+    const veri = { kod: ed.kod, hid: HID, ad: HESAP.ad || '', rol: ROL_AD, durum: s.toplam ? 'duzenlendi' : 'onaylandi',
+      form: calisma, taban, tabanSurum: ed.tabanSurum, ozet: s, guncelleme: serverTimestamp() };
+    /* var olan kopyada oluşturma zamanı korunur (updateDoc ona dokunmaz); yeni kopyada sunucu saatiyle yazılır */
+    const rev = ed.rev || 0;
+    if (benimKayit(ed.kod) || ed.kaydedildi) {
+      try { await updateDoc(ref, veri); }
+      catch (e) { if (e && e.code === 'not-found') await setDoc(ref, Object.assign({ olusturma: serverTimestamp() }, veri)); else throw e; }
+    } else await setDoc(ref, Object.assign({ olusturma: serverTimestamp() }, veri));
+    ed.kaydedildi = true;
+    if ((ed.rev || 0) !== rev) { taslakYaz(ed, true); kayitSirasindaDegisti(ed); return; }
+    ed.kirli = false; taslakSil(ed);
+    if (degisiklikYok) ed.calisma = F.kopya(taban);
+    O.bildirim(s.toplam ? 'Düzenlemeniz kaydedildi · İnsan Kaynakları görebilir' : 'Kaydedildi: değişiklik önermediniz');
+    if (ED === ed) git('#/');
+  } catch (e) {
+    if (ed.kirli) taslakYaz(ed, true);
+    const neden = !yetkiHatasi(e) ? ((e && e.message) || 'bilinmeyen hata')
+      : ed.mod === 'ana' ? 'yetkiniz yok, oturumunuzun süresi dolmuş, güvenlik kuralı henüz yayınlanmamış ya da ana form bu sırada başka biri tarafından güncellenmiş olabilir.'
+      : 'oturumunuzun süresi dolmuş ya da yetkiniz değişmiş olabilir.';
+    alert('Kaydedilemedi: ' + neden + (ed.kirli && TASLAK_VAR ? '\n\nDeğişiklikleriniz bu cihazda taslak olarak saklandı. Sayfayı yenileyip formu yeniden açtığınızda “Taslağı geri yükle” ile kaldığınız yerden devam edebilirsiniz.' : ''));
+  } finally { KAYDEDILIYOR = false; if (b && b.isConnected) b.disabled = false; }
+}
+
+/* ---------------------------------------------------- 3) İNCELEME (İK) */
+function incelemeCiz(kok, kod, hid) {
+  ED = null;
+  const ana = ANA.get(kod);
+  const dz = duzenlemeler(kod).map((d) => Object.assign({}, d, { _kd: kopyaDurumu(d) }));   /* sayılar kayıttaki formdan yeniden hesaplanır */
+  const sec = dz.find((d) => d.hid === hid) || dz[0] || null;
+  const duzenleyen = dz.filter((d) => d._kd.duzenlendi).length;
+  O.kaput(kok, {
+    ustEtiket: 'Oryantasyon · Müdür düzenlemeleri', baslik: unvanAdi(kod) + ' oryantasyon formu',
+    ozetHtml: dz.length
+      ? '<b>' + dz.length + '</b> kişi formu inceledi: ' + duzenleyen + ' düzenleme, ' + (dz.length - duzenleyen) + ' “değişiklik önerim yok”.'
+      : 'Henüz bu formu kaydeden müdür ya da direktör yok.',
+    meta: ana ? [{ ikon: 'dosya', html: 'Ana form: <b>' + F.maddeSayisi(ana.form) + ' madde</b> · sürüm ' + ana.surum + ' · ' + gunSaat(ana.guncelleme) }] : []
+  });
+  kok.append(O.el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' },
+    O.el('a', { class: 'btn btn-hayalet', href: '#/', html: IK_GERI + 'Unvanlara dön' }),
+    O.el('a', { class: 'btn', href: '#/ana/' + kod, html: O.ikon('dosya') + 'Ana formu düzenle' }),
+    sec ? O.el('button', { class: 'btn', type: 'button', html: IK_YAZDIR + 'Yazdır', on: { click: () => window.print() } }) : null));
+  if (!dz.length) { const k = O.kart(kok, { baslik: 'Düzenleme yok' }); O.bosDurum(k.govde, { ikon: 'kisiler', baslik: 'Henüz düzenleme yapan olmadı', metin: 'Müdürler formu kaydettiğinde burada isimleriyle listelenir.' }); return; }
+  const iz = O.el('div', { class: 'oy-inceleme' });
+  /* sol: müdür listesi */
+  const sol = O.kart(iz, { baslik: 'Düzenleyenler', aciklama: dz.length + ' kişi · en son kaydeden üstte', sinif: 'oy-mudurler-kart' });
+  const ml = O.el('div', { class: 'oy-mudurler' });
+  dz.forEach((d) => {
+    const b = O.el('button', { class: 'oy-mudur' + (d === sec ? ' secili' : ''), type: 'button', 'data-hid': d.hid, on: { click: () => git('#/inceleme/' + kod + '/' + d.hid) } },
+      O.el('b', { text: adBasliklari(d.ad) }), O.el('small', { text: (d.rol || '') + ' · ' + gunSaat(d.guncelleme) }),
+      O.el('span', { class: 'cip ' + (d._kd.duzenlendi ? 'cip-pirinc' : 'cip-ok'), text: d._kd.duzenlendi ? F.ozetMetni(d._kd.sayac) : 'Değişiklik önermedi' }),
+      eskiSurum(d) ? O.el('span', { class: 'cip cip-uy', text: 'Ana formun ' + (Number(d.tabanSurum) || 0) + '. sürümü üzerinden' }) : null);
+    ml.append(b);
+  });
+  sol.govde.append(ml);
+  /* orta: seçili düzenleme (karşılaştırmalı) */
+  const kd = sec._kd, fark = kd.fark;
+  const orta = O.el('div', { style: 'display:grid;gap:14px;min-width:0' });
+  orta.append(O.el('div', { class: 'oy-bilgi' }, O.el('b', { text: adBasliklari(sec.ad) + ' · ' + (sec.rol || '') }), O.el('br'),
+    'Son kayıt: ' + gunSaat(sec.guncelleme) + ' · ' + F.ozetMetni(fark.sayac) +
+    (eskiSurum(sec) ? ' · Bu düzenleme ana formun ' + (Number(sec.tabanSurum) || 0) + '. sürümü üzerinden yapıldı (ana form şu an ' + ana.surum + '. sürümde); karşılaştırma o sürüme göredir.' : '')));
+  orta.append(O.el('div', { class: 'oy-lejant' },
+    O.el('span', null, O.el('i', { style: 'background:#fff3cd;border:1px solid #e7c35a' }), 'Değiştirdi (altında önceki hâli)'),
+    O.el('span', null, O.el('i', { style: 'background:#e2f4e6;border:1px solid #9cc9a4' }), 'Ekledi'),
+    O.el('span', null, O.el('i', { style: 'background:var(--lac-50);border:1px solid var(--lac-100)' }), 'Yerini değiştirdi'),
+    O.el('span', null, O.el('i', { style: 'background:#fdf3f1;border:1px dashed #e0a7a0' }), 'Sildi')));
+  orta.append(okumaFormu(kd.form, fark));
+  iz.append(orta);
+  /* sağ: notlar */
+  iz.append(notlarEl(fark, kd.form));
+  kok.append(iz);
+}
+function okumaFormu(form, fark) {
+  const kap = O.el('div', { style: 'display:grid;gap:14px', id: 'oyOkuma' });
+  const ub = O.kart(kap, { baslik: 'Formun üst bilgileri' });
+  const liste = O.el('div', { class: 'oy-ust-bilgi' });
+  form.alanlar.forEach((a) => {
+    const f = fark.alan[a.id] || { tur: 'ayni' };
+    const k = O.el('div', { class: 'oy-ust-alan ' + (f.tur !== 'ayni' ? f.tur : ''), 'data-alan-id': a.id }, O.el('span', { class: 'oy-oku', text: a.ad || '—' }));
+    if (f.tur === 'degisti') k.append(eskiEl(f.eskiAd));
+    liste.append(k);
+  });
+  fark.silinenAlanlar.forEach((s) => liste.append(O.el('div', { class: 'oy-ust-alan silindi', style: 'background:#fdf3f1;border-style:dashed;border-color:#e0a7a0' }, O.el('s', { class: 'oy-oku', text: s.alan.ad || '—' }))));
+  ub.govde.append(liste);
+  form.bolumler.forEach((b) => {
+    const fb = fark.bolum[b.id] || { tur: 'ayni' };
+    const bk = O.el('div', { class: 'oy-bolum ' + (fb.tur !== 'ayni' ? fb.tur : ''), 'data-bolum': b.id });
+    const ust = O.el('div', { class: 'oy-bolum-ust' }, O.el('div', { class: 'oy-bolum-ad', text: b.ad || '—' }), O.el('span', { style: 'font-size:12px;color:var(--metin-3)', text: b.maddeler.length + ' madde' }));
+    if (fb.tur === 'yeni') ust.append(O.el('span', { class: 'oy-etiket-yeni', style: 'margin:0', text: 'Yeni bölüm' }));
+    if (fb.tur === 'degisti') ust.append(O.el('div', { style: 'flex-basis:100%' }, eskiEl(fb.eskiAd)));
+    bk.append(ust);
+    const g = O.el('div', { class: 'oy-bolum-govde' });
+    b.maddeler.forEach((m, i) => g.append(okumaMadde(m, i, fark.madde[m.id] || { tur: 'ayni', eski: {} }, false)));
+    fark.silinenMaddeler.filter((s) => s.bolumId === b.id).forEach((s) => g.append(okumaMadde(s.madde, s.sira, { tur: 'silindi', eski: {} }, true)));
+    bk.append(g);
+    kap.append(bk);
+  });
+  /* silinen bölümler: bölümle birlikte giden maddeler de üstü çizili listelenir */
+  fark.silinenBolumler.forEach((s) => {
+    const bk = O.el('div', { class: 'oy-bolum silindi', 'data-bolum': s.bolum.id, style: 'border-style:dashed;border-color:#e0a7a0' },
+      O.el('div', { class: 'oy-bolum-ust', style: 'background:#fdf3f1' }, O.el('s', { class: 'oy-bolum-ad', text: s.bolum.ad || '—' }), O.el('span', { class: 'oy-etiket-sil', style: 'margin:0', text: 'Bölüm silindi · içindeki ' + s.maddeler.length + ' maddeyle' })));
+    if (s.maddeler.length) {
+      const g = O.el('div', { class: 'oy-bolum-govde' });
+      s.maddeler.forEach((m) => g.append(okumaMadde(m, s.bolum.maddeler.indexOf(m), { tur: 'silindi', eski: {} }, true, true)));
+      bk.append(g);
+    }
+    kap.append(bk);
+  });
+  return kap;
+}
+/* bolumle: bölümle birlikte silinen madde — ayrı işaret (tek tek silinenlerin sayısına karışmaz; özette "içindeki N maddeyle") */
+function okumaMadde(m, i, fm, silindi, bolumle) {
+  const kap = O.el('div', { class: 'oy-madde ' + (silindi ? (bolumle ? 'bolumle-silindi' : 'silindi') : (fm.tur !== 'ayni' ? fm.tur : '')), 'data-madde': m.id });
+  if (silindi) kap.append(O.el('span', { class: 'oy-etiket-sil', text: (bolumle ? 'Bölümle birlikte silindi' : 'Silindi') + ' (ana formdaki ' + (i + 1) + '. madde)' }));
+  else if (fm.tur === 'yeni') kap.append(O.el('span', { class: 'oy-etiket-yeni', text: 'Eklendi' }));
+  if (!silindi) { const yer = yerEtiketi(fm); if (yer) kap.append(yer); }
+  const oku = (v) => O.el('div', { class: 'oy-oku' + (F.sade(v) ? '' : ' bos'), text: F.sade(v) ? v : '—' });
+  const planDeg = !!(fm.eski && 'plan' in fm.eski);
+  const planKap = O.el('div', { class: 'oy-plan' + (planDeg ? ' degisti' : ''), 'data-alan': 'plan' }, O.el('b', null, oku(m.plan)));
+  if (planDeg) planKap.append(eskiEl(fm.eski.plan));
+  kap.append(O.el('div', { class: 'oy-madde-ust' }, O.el('span', { class: 'oy-no', text: silindi ? '–' : String(i + 1) }), planKap));
+  const izgara = O.el('div', { class: 'oy-alanlar' });
+  const yerlesim = { kapsam: 's4', sorumlu: '', termin: '', saat: 's1', sure: 's1', aciklama: 's4' };
+  ['kapsam', 'sorumlu', 'termin', 'saat', 'sure', 'aciklama'].forEach((k) => {
+    const deg = !!(fm.eski && k in fm.eski);
+    if (!deg && !F.sade(m[k])) return;          /* boş ve değişmemiş alan gösterilmez (okuma sade kalsın) */
+    const a = O.el('div', { class: 'oy-alan ' + (yerlesim[k] || '') + (deg ? ' degisti' : ''), 'data-alan': k }, O.el('span', { text: F.ALAN_AD[k] }), oku(m[k]));
+    if (deg) a.append(eskiEl(fm.eski[k]));
+    izgara.append(a);
+  });
+  kap.append(izgara);
+  return kap;
+}
+/* Sağdaki notlar: önce silinenler (kullanıcı isteği: "sildiği yer varsa yanda not olarak yazsın"), sonra eklenenler,
+   yeri değişenler, bölüm / üst bilgi değişiklikleri. Sayılar sayaçla birebir aynıdır. */
+function notlarEl(fark, form) {
+  const kap = O.el('div', { class: 'oy-notlar' });
+  const k = O.kart(kap, { baslik: 'Notlar', aciklama: F.ozetMetni(fark.sayac) });
+  const not = (sinif, html, tur) => O.el('div', { class: 'oy-not ' + sinif, 'data-not': tur || '', html });
+  const soluk = (t) => ' <span style="color:var(--metin-3)">' + t + '</span>';
+  const s = fark.sayac;
+  if (!s.toplam) k.govde.append(not('', 'Bu kişi formu <b>değiştirmeden</b> kaydetti; ana formu uygun buluyor.', 'yok'));
+  /* silinenler */
+  fark.silinenMaddeler.forEach((x) => k.govde.append(not('sil', '<b>Silindi:</b> ' + O.esc(x.madde.plan || '(adsız madde)') + soluk('· ' + O.esc(x.bolumAd || '') + (F.sade(x.madde.sorumlu) ? ' · ' + O.esc(x.madde.sorumlu) : '')), 'silinen')));
+  fark.silinenBolumler.forEach((x) => k.govde.append(not('sil', '<b>Bölüm silindi:</b> ' + O.esc(x.bolum.ad || '(adsız)') + ' (içindeki ' + x.maddeler.length + ' maddeyle)' +
+    (x.maddeler.length ? '<br>' + soluk(x.maddeler.map((m) => O.esc(m.plan || '(adsız madde)')).join(' · ')) : ''), 'bolumSilinen')));
+  fark.silinenAlanlar.forEach((x) => k.govde.append(not('sil', '<b>Üst bilgi alanı silindi:</b> ' + O.esc(x.alan.ad || '(adsız)'), 'alanSilinen')));
+  /* eklenenler ve yeri değişenler (formdaki sırayla) */
+  const ekl = [], yer = [];
+  form.bolumler.forEach((b) => b.maddeler.forEach((m, i) => {
+    const f = fark.madde[m.id]; if (!f) return;
+    if (f.tur === 'yeni') ekl.push({ m, b });
+    if (f.tasindi || f.siraDegisti) yer.push({ m, b, f, i });
+  }));
+  ekl.forEach((x) => k.govde.append(not('ekl', '<b>Eklendi:</b> ' + O.esc(x.m.plan || '(adsız madde)') + soluk('· ' + O.esc(x.b.ad || '')), 'eklenen')));
+  yer.forEach((x) => k.govde.append(not('tas', x.f.tasindi
+    ? '<b>Taşındı:</b> ' + O.esc(x.m.plan || '(adsız)') + ' → ' + O.esc(x.b.ad || '') + soluk('(önceki bölüm: ' + O.esc(x.f.eskiBolum || '') + ')')
+    : '<b>Yeri değişti:</b> ' + O.esc(x.m.plan || '(adsız)') + soluk('(ana formda ' + (Number(x.f.eskiSira) + 1) + '. sıradaydı, şimdi ' + (x.i + 1) + '. · ' + O.esc(x.b.ad || '') + ')'), 'sira')));
+  /* bölüm ve üst bilgi değişiklikleri */
+  form.bolumler.forEach((b) => {
+    const f = fark.bolum[b.id];
+    if (f && f.tur === 'yeni') k.govde.append(not('ekl', '<b>Yeni bölüm:</b> ' + O.esc(b.ad || ''), 'bolumEklenen'));
+    if (f && f.tur === 'degisti') k.govde.append(not('', '<b>Bölüm adı değişti:</b> ' + O.esc(f.eskiAd || '') + ' → ' + O.esc(b.ad || ''), 'bolumDegisen'));
+  });
+  form.alanlar.forEach((a) => {
+    const f = fark.alan[a.id];
+    if (f && f.tur === 'yeni') k.govde.append(not('ekl', '<b>Üst bilgi alanı eklendi:</b> ' + O.esc(a.ad || '(adsız)'), 'alanEklenen'));
+    if (f && f.tur === 'degisti') k.govde.append(not('', '<b>Üst bilgi alanı değişti:</b> ' + O.esc(f.eskiAd || '') + ' → ' + O.esc(a.ad || ''), 'alanDegisen'));
+  });
+  if (s.degisen) k.govde.append(not('', '<b>' + s.degisen + ' maddede</b> içerik değişikliği var (sarı işaretli alanlar; altında önceki hâli).', 'degisen'));
+  return kap;
+}
+
+/* ---------------------------------------------------- ANA FORM OLUŞTUR / AKTAR (İK) */
+const YENI_ANA = {};    /* henüz kaydedilmemiş yeni ana form başlangıçları */
+/* Ana form oluşturma: boş başlangıç ya da hazır bir unvanın ana formundan kopya (küçük pencere) */
+function anaFormOlustur(kod) {
+  const kaynaklar = F.UNVANLAR.filter((u) => ANA.get(u.kod));
+  const bas = (kaynak) => {
+    YENI_ANA[kod] = kaynak ? F.kopya(kaynak.form) : { alanlar: [{ id: 'a1', ad: 'Adı Soyadı' }, { id: 'a2', ad: 'Birim / Görev' }, { id: 'a3', ad: 'İşe Giriş Tarihi' }, { id: 'a4', ad: 'İlk Yönetici / Amir' }], bolumler: [{ id: 'b1', ad: 'İK SÜREÇLERİ', maddeler: [bosMadde()] }, { id: 'b2', ad: 'ORYANTASYON SÜREÇLERİ', maddeler: [bosMadde()] }] };
+    pencereKapat(); ED = null; git('#/ana/' + kod);
+  };
+  const secenekler = O.el('div', { style: 'display:grid;gap:8px' },
+    O.el('button', { class: 'btn', type: 'button', style: 'justify-content:flex-start;height:auto;padding:10px 12px', html: O.ikon('dosya') + '<span><b>Boş form</b><br><small style="color:var(--metin-3)">İK süreçleri ve oryantasyon süreçleri bölümleriyle boş başlar</small></span>', on: { click: () => bas(null) } }),
+    ...kaynaklar.map((u) => O.el('button', { class: 'btn', type: 'button', style: 'justify-content:flex-start;height:auto;padding:10px 12px', on: { click: () => bas(ANA.get(u.kod)) } },
+      O.el('span', { html: O.ikon('kisiler') }), O.el('span', null, O.el('b', { text: u.ad + ' formundan kopyala' }), O.el('br'), O.el('small', { style: 'color:var(--metin-3)', text: F.maddeSayisi(ANA.get(u.kod).form) + ' madde; kopyayı istediğiniz gibi değiştirebilirsiniz' })))));
+  pencereAc('Ana form oluştur', [
+    O.el('div', { class: 'modal-ust' }, O.el('div', null, O.el('h3', { text: unvanAdi(kod) + ' · ana form oluştur' }), O.el('p', { text: 'Form nasıl başlasın? Kaydedene kadar müdürler görmez.' }))),
+    O.el('div', { class: 'modal-govde' }, secenekler),
+    O.el('div', { class: 'modal-alt' }, O.el('button', { class: 'btn', type: 'button', text: 'Vazgeç', on: { click: pencereKapat } }))]);
+}
+let PENCERE = null;
+function pencereKapat() { if (!PENCERE) return; const p = PENCERE; PENCERE = null; document.removeEventListener('keydown', p.tus, true); p.ort.classList.remove('acik'); setTimeout(() => p.ort.remove(), 200); }
+function pencereAc(etiket, parcalar) {
+  pencereKapat();
+  const pen = O.el('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': etiket }, ...parcalar);
+  const ort = O.el('div', { class: 'modal-ort' }, pen);
+  const tus = (e) => { if (e.key === 'Escape') { e.preventDefault(); pencereKapat(); } };
+  ort.addEventListener('click', (e) => { if (e.target === ort) pencereKapat(); });
+  document.addEventListener('keydown', tus, true);
+  document.body.append(ort);
+  PENCERE = { ort, tus };
+  requestAnimationFrame(() => { ort.classList.add('acik'); const b = pen.querySelector('.modal-govde .btn'); if (b) b.focus(); });
+}
+function aktarimSec() {
+  const inp = O.el('input', { type: 'file', accept: '.json,application/json', style: 'display:none' });
+  inp.addEventListener('change', async () => {
+    const f = inp.files && inp.files[0]; inp.remove(); if (!f) return;
+    let o = null; try { o = JSON.parse(await f.text()); } catch (e) { o = null; }
+    /* yalnız tanımlı unvanlar, her unvan bir kez, en az bir bölümü olan formlar */
+    const gorulen = new Set();
+    const formlar = o && o.tur === 'inciroglu-oryantasyon-formlari' && Array.isArray(o.formlar)
+      ? o.formlar.filter((x) => x && F.UNVANLAR.some((u) => u.kod === x.kod) && !gorulen.has(x.kod) && gorulen.add(x.kod) && F.formuDuzenle(x.form).bolumler.length > 0) : [];
+    if (!formlar.length) { alert('Bu dosya bir oryantasyon ana form dosyası değil. Lütfen size verilen “oryantasyon_ana_formlar.json” dosyasını seçin.'); return; }
+    const varOlan = formlar.filter((x) => ANA.get(x.kod)).map((x) => unvanAdi(x.kod));
+    if (!confirm(formlar.length + ' ana form yüklenecek: ' + formlar.map((x) => unvanAdi(x.kod)).join(', ') + '.' + (varOlan.length ? '\n\nŞu formlar zaten var ve YENİ SÜRÜM olarak güncellenecek: ' + varOlan.join(', ') + '.' : '') + '\n\nDevam edilsin mi?')) return;
+    /* Her unvan AYRI toplu yazım: ana form + sürüm geçmişi birlikte (ikisi ya da hiçbiri). Tek toplu yazımda çok unvan,
+       güvenlik kuralının istek başına belge okuma sınırını (20) aşabilir. Biri başarısız olursa diğerleri yine yüklenir. */
+    const tamam = [], hatali = [];
+    for (const x of formlar) {
+      try {
+        const ana = ANA.get(x.kod);
+        const n = (ana ? Number(ana.surum) || 0 : 0) + 1;
+        const form = F.formuDuzenle(x.form);
+        const wb = writeBatch(db);
+        wb.set(doc(db, 'oryantasyonFormlari', x.kod), {
+          kod: x.kod, unvan: F.temiz(unvanAdi(x.kod), 80), form, surum: n,
+          guncelleme: serverTimestamp(), guncelleyen: HESAP.ad || '', kaynak: F.temiz(x.kaynak || 'Dosyadan aktarıldı', 200)
+        });
+        wb.set(doc(db, 'oryantasyonFormlari', x.kod, 'surumler', String(n)), { surum: n, form, guncelleme: serverTimestamp(), guncelleyen: HESAP.ad || '' });
+        await wb.commit();
+        tamam.push(unvanAdi(x.kod));
+      } catch (e) {
+        hatali.push(unvanAdi(x.kod) + ' (' + (yetkiHatasi(e) ? 'yetki reddedildi: güvenlik kuralı henüz yayınlanmamış olabilir' : ((e && e.message) || 'bilinmeyen hata')) + ')');
+      }
+    }
+    if (!hatali.length) O.bildirim(tamam.length + ' ana form yüklendi');
+    else alert((tamam.length ? 'Yüklenen: ' + tamam.join(', ') + '\n\n' : '') + 'Yüklenemeyen: ' + hatali.join('; ') + '\n\nYüklenemeyenler için dosyayı yeniden seçebilirsiniz; yüklenmiş olanlar yeni sürüm olarak tekrar yazılır.');
+  });
+  document.body.append(inp);
+  inp.click();
+}
+
+/* ============================================================== VERİ (canlı) */
+function hataEkrani(e) {
+  acilisGizle();
+  const yetki = e && e.code === 'permission-denied';
+  const kart = O.el('div', { class: 'durum-kart', role: 'alert' },
+    O.el('span', { class: 'amblem', role: 'img', 'aria-label': 'İnciroğlu Otomotiv İK amblemi' }),
+    O.el('div', { class: 'ust-etiket', text: 'İnciroğlu Otomotiv · Oryantasyon Formları' }),
+    O.el('div', { class: 'durum-ikon hata', html: O.ikon('uyari') }), O.el('h2', { text: 'Formlar okunamadı' }),
+    O.el('p', { text: yetki ? 'Bu sayfayı görme yetkiniz yok ya da güvenlik kuralı henüz yayınlanmadı. Yetki gerekiyorsa İnsan Kaynakları ile görüşün.' : 'Bağlantı sorunu olabilir. Sayfayı yenileyip tekrar deneyin.' }));
+  kart.append(O.el('div', { class: 'durum-eylem' }, O.el('button', { type: 'button', class: 'btn', html: O.ikon('sifirla') + 'Yeniden dene', on: { click: () => location.reload() } })), O.el('div', { class: 'durum-alt', text: AD + ' · ' + ROL_AD }));
+  document.body.append(O.el('div', { class: 'durum-ekran' }, kart));
+  window.__TEST_HAZIR = true;
+}
+let cizZaman = null;
+function guncellendi() {
+  if (!(ILK_ANA && ILK_DUZ)) return;
+  /* Kaydedilmemiş değişiklik içeren düzenleyici canlı güncellemeyle baştan çizilmez (yazılanlar kaybolmasın);
+     ana form bu sırada güncellenirse bir kez bildirilir. */
+  if (ED && ED.kirli) { surumBildir(); return; }
+  clearTimeout(cizZaman);
+  cizZaman = setTimeout(() => {
+    if (ED && ED.kirli) { surumBildir(); return; }
+    /* temiz düzenleyici her zaman güncel veriden yeniden kurulur (bayat ana form ya da eski kayıt üzerinden çalışılmasın) */
+    ED = null;
+    ciz(); acilisGizle();
+  }, 120);
+}
+function surumBildir() {
+  if (KAYDEDILIYOR) return;          /* kendi kaydımızın yansıması "başkası güncelledi" diye bildirilmesin */
+  const a = ED && ANA.get(ED.kod);
+  if (!a || !(Number(a.surum) > ED.tabanSurum) || ED.bildirilen === a.surum) return;
+  ED.bildirilen = a.surum;
+  O.bildirim(ED.mod === 'ana'
+    ? 'Dikkat: bu ana form siz düzenlerken başka biri tarafından güncellendi (sürüm ' + a.surum + ')'
+    : 'İnsan Kaynakları bu formu güncelledi (sürüm ' + a.surum + '). Kaydettiğinizde düzenlemeniz ' + ED.tabanSurum + '. sürüme göre saklanır.');
+}
+onSnapshot(collection(db, 'oryantasyonFormlari'), (snap) => {
+  ANA.clear(); snap.docs.forEach((d) => ANA.set(d.id, Object.assign({ kod: d.id }, d.data())));
+  ILK_ANA = true; guncellendi();
+}, hataEkrani);
+const GORULEN = new Set();
+onSnapshot(IK ? collection(db, 'oryantasyonDuzenlemeleri') : query(collection(db, 'oryantasyonDuzenlemeleri'), where('hid', '==', HID)), (snap) => {
+  const ilk = !ILK_DUZ;
+  DUZ.clear(); snap.docs.forEach((d) => DUZ.set(d.id, Object.assign({ id: d.id }, d.data())));
+  if (IK && !ilk) DUZ.forEach((d) => { const anahtar = d.id + '|' + (tarihCoz(d.guncelleme) || '').valueOf(); if (!GORULEN.has(anahtar)) O.bildirim(adBasliklari(d.ad) + ', ' + unvanAdi(d.kod) + ' formunu kaydetti'); });
+  DUZ.forEach((d) => GORULEN.add(d.id + '|' + (tarihCoz(d.guncelleme) || '').valueOf()));
+  ILK_DUZ = true; guncellendi();
+}, hataEkrani);
+window.__ORY = { ana: () => ANA, duz: () => DUZ, ed: () => ED };
+</script>
+</body>
+</html>

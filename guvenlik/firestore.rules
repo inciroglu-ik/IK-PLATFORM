@@ -442,5 +442,87 @@ service cloud.firestore {
       allow update: if (anketAnahtari(t) && anketTamamlama()) || ik();
       allow delete: if ik();
     }
+
+    // ================================================== ORYANTASYON FORMLARI
+    // oryantasyon.html — İK her unvan için bir ANA FORM hazırlar (oryantasyonFormlari/{unvanKodu}); tüm yönetim
+    // rolleri okur, yalnız İK yazar. Her kayıtta sürüm TAM 1 artar ve aynı toplu yazımda sürüm geçmişine
+    // (oryantasyonFormlari/{kod}/surumler/{sürüm}) formun o anki hâli yazılır (iki İK aynı anda kaydederse biri reddedilir).
+    // Her müdür/direktör ana formun KENDİ kopyasını düzenler: oryantasyonDuzenlemeleri/{unvanKodu}__{hid}.
+    // Kopyayı yalnız sahibi oluşturur/günceller: kimlik ve ad hesaptan, zaman sunucu saatinden denetlenir; kopyadaki
+    // "taban" (karşılaştırmanın yapıldığı ana form) sürüm geçmişindeki kayıtla BİREBİR aynı olmalıdır; "değişiklik
+    // önerim yok" (onaylandi) ancak form tabanla aynıysa yazılabilir. Başka bir müdür okuyamaz. İK tümünü okur ama
+    // başkasının kopyasını DEĞİŞTİREMEZ (yalnız silebilir). Müdür sorgusu hid süzgeçli olmalıdır.
+    function unvanKodu(k) { return k is string && k.matches('[a-z0-9-]{3,40}'); }
+    function oryFormYolu(kod) { return /databases/$(database)/documents/oryantasyonFormlari/$(kod); }
+    function orySurumYolu(kod, n) { return /databases/$(database)/documents/oryantasyonFormlari/$(kod)/surumler/$(string(n)); }
+    // Form yapısı: yalnız { alanlar: [...], bolumler: [...] }, sınırlar ortak/oryantasyon-fark.js EN_FAZLA ile aynı
+    function oryFormSekli(f) {
+      return f is map && f.keys().hasOnly(['alanlar', 'bolumler']) && f.keys().hasAll(['alanlar', 'bolumler'])
+        && f.alanlar is list && f.alanlar.size() <= 30
+        && f.bolumler is list && f.bolumler.size() <= 40;
+    }
+    function oryAnaGecerli(kod) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['kod', 'unvan', 'form', 'surum', 'guncelleme', 'guncelleyen', 'kaynak'])
+        && d.keys().hasAll(['kod', 'unvan', 'form', 'surum', 'guncelleme', 'guncelleyen', 'kaynak'])
+        && d.kod == kod
+        && metin(d.unvan, 80) && metin(d.kaynak, 200) && d.guncelleyen == hesap().ad
+        && oryFormSekli(d.form) && d.form.bolumler.size() >= 1
+        && d.surum is int && d.surum == (resource == null ? 1 : resource.data.surum + 1)
+        && d.guncelleme == request.time
+        && existsAfter(orySurumYolu(kod, d.surum));
+    }
+    match /oryantasyonFormlari/{kod} {
+      allow read: if yonetim();
+      allow create, update: if ik() && unvanKodu(kod) && oryAnaGecerli(kod);
+      allow delete: if ik();
+      // Sürüm geçmişi: yalnız ana formla aynı toplu yazımda, ana formun YENİ sürümüyle birebir aynı içerikle yazılır
+      match /surumler/{n} {
+        allow read: if yonetim();
+        allow create, update: if ik() && n.matches('[1-9][0-9]{0,5}')
+          && request.resource.data.keys().hasOnly(['surum', 'form', 'guncelleme', 'guncelleyen'])
+          && request.resource.data.surum == int(n)
+          && getAfter(oryFormYolu(kod)).data.surum == int(n)
+          && request.resource.data.form == getAfter(oryFormYolu(kod)).data.form
+          && request.resource.data.guncelleyen == hesap().ad
+          && request.resource.data.guncelleme == request.time;
+        allow delete: if ik();
+      }
+    }
+    // Rol adı hesaptaki gerçek role bağlıdır (oryantasyon.html ROL_ADI ile birebir). İK kopya oluşturmaz (sayılara karışmasın).
+    function oryRolKodu() {
+      return { 'Direktör': 'direktor', 'Satış Müdürü': 'satis_mudur', 'Servis Müdürü': 'servis_mudur',
+               'İdari Müdür': 'idari_mudur', 'Departman Müdürü': 'mudur' };
+    }
+    function oryRolGecerli(r) {
+      return r is string && r in oryRolKodu() && hesap().roller.hasAny([oryRolKodu()[r]]) && !hesap().roller.hasAny(['ik']);
+    }
+    function oryOzetAlanlari() {
+      return ['degisen', 'eklenen', 'silinen', 'sira', 'bolumDegisen', 'bolumEklenen', 'bolumSilinen', 'bolumMaddeSilinen',
+              'alanDegisen', 'alanEklenen', 'alanSilinen', 'toplam'];
+    }
+    function oryDuzenlemeGecerli(id) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['kod', 'hid', 'ad', 'rol', 'durum', 'form', 'taban', 'tabanSurum', 'ozet', 'olusturma', 'guncelleme'])
+        && d.keys().hasAll(['kod', 'hid', 'ad', 'rol', 'durum', 'form', 'taban', 'tabanSurum', 'ozet', 'olusturma', 'guncelleme'])
+        && unvanKodu(d.kod)
+        && d.hid == benimHid()
+        && id == d.kod + '__' + d.hid
+        && d.ad == hesap().ad
+        && oryRolGecerli(d.rol)
+        && d.durum in ['duzenlendi', 'onaylandi']
+        && oryFormSekli(d.form) && oryFormSekli(d.taban)
+        && d.ozet is map && d.ozet.keys().hasOnly(oryOzetAlanlari())
+        && d.tabanSurum is int && d.tabanSurum >= 1
+        && d.taban == get(orySurumYolu(d.kod, d.tabanSurum)).data.form
+        && ((d.durum == 'onaylandi') == (d.form == d.taban))
+        && d.guncelleme == request.time
+        && (resource == null ? d.olusturma == request.time : d.olusturma == resource.data.olusturma);
+    }
+    match /oryantasyonDuzenlemeleri/{id} {
+      allow get, list: if ik() || (gecerli() && resource.data.hid == benimHid());
+      allow create, update: if yonetim() && oryDuzenlemeGecerli(id);
+      allow delete: if ik() || (gecerli() && resource.data.hid == benimHid());
+    }
   }
 }
