@@ -489,6 +489,52 @@ service cloud.firestore {
         allow delete: if ik();
       }
     }
+    // Aktif personel listesi (oryantasyon sorumlusu seçici): yalnız ad, unvan, departman. Tüm yönetim rolleri okur,
+    // İK yazar (İK sayfayı açınca haftalık İK pano verisinden yeniden kurulur).
+    // "epostalar": çalışan e-posta listesi (sorumlu bildirimi) — yalnız İK okur ve yazar.
+    match /oryantasyonAyar/{d} {
+      allow read: if (yonetim() && d == 'personel') || (ik() && d == 'epostalar');
+      allow create, update: if ik() && d in ['personel', 'epostalar']
+        && request.resource.data.keys().hasOnly(['liste', 'guncelleme', 'kaynak'])
+        && request.resource.data.liste is list && request.resource.data.liste.size() <= 3000
+        && metin(request.resource.data.kaynak, 80)
+        && request.resource.data.guncelleme == request.time;
+    }
+    // Kişiye özel oryantasyon formu (yeni başlayan personel): yalnız İK. İK Dashboard (haftalık veri / işe giriş
+    // hareketi) ya da oryantasyon.html açar; sorumlu bildirimleri "bildirimler" haritasında tutulur.
+    function oryKisiAlanlari() {
+      return ['kod', 'unvan', 'ad', 'dept', 'pozisyon', 'iseGiris', 'yonetici', 'form', 'taban', 'tabanSurum', 'durum', 'kaynak',
+              'bildirimler', 'olusturma', 'olusturan', 'guncelleme', 'guncelleyen'];
+    }
+    match /oryantasyonKisiler/{id} {
+      allow read, delete: if ik();
+      allow create, update: if ik()
+        && request.resource.data.keys().hasOnly(oryKisiAlanlari())
+        && unvanKodu(request.resource.data.kod)
+        && metin(request.resource.data.ad, 80) && request.resource.data.ad.size() >= 3
+        && oryFormSekli(request.resource.data.form) && oryFormSekli(request.resource.data.taban)
+        && request.resource.data.durum in ['hazirlanacak', 'hazirlandi']
+        && request.resource.data.bildirimler is map
+        && request.resource.data.guncelleme == request.time;
+    }
+    // E-POSTA KUYRUĞU: İK yazar (durum "bekliyor"); gönderimi GitHub Actions görevi yapar (ise-alim-sureci deposu,
+    // scripts/eposta-kuyrugu.js, yönetici hesabıyla — kural dışı). Yalnız şirket alan adına (@inciroglu.com.tr) gönderilir.
+    // İK bekleyen e-postayı iptal edebilir; gönderilmiş kayıt değiştirilemez.
+    match /epostaKuyrugu/{id} {
+      allow read: if ik();
+      allow create: if ik()
+        && request.resource.data.keys().hasOnly(['kime', 'kimeAd', 'konu', 'html', 'kaynak', 'ilgili', 'durum', 'olusturma', 'olusturan'])
+        && request.resource.data.kime is string && request.resource.data.kime.matches('[a-z0-9._%+-]+@inciroglu[.]com[.]tr')
+        && metin(request.resource.data.kimeAd, 120) && !request.resource.data.kimeAd.matches('.*[@,;"].*')
+        && metin(request.resource.data.konu, 200)
+        && request.resource.data.html is string && request.resource.data.html.size() <= 60000
+        && metin(request.resource.data.kaynak, 40) && metin(request.resource.data.ilgili, 120) && metin(request.resource.data.olusturan, 120)
+        && request.resource.data.durum == 'bekliyor'
+        && request.resource.data.olusturma == request.time;
+      allow update: if ik() && resource.data.durum == 'bekliyor' && request.resource.data.durum == 'iptal'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['durum']);
+      allow delete: if false;
+    }
     // Rol adı hesaptaki gerçek role bağlıdır (oryantasyon.html ROL_ADI ile birebir). İK kopya oluşturmaz (sayılara karışmasın).
     function oryRolKodu() {
       return { 'Direktör': 'direktor', 'Satış Müdürü': 'satis_mudur', 'Servis Müdürü': 'servis_mudur',

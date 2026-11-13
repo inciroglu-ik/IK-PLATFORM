@@ -17,14 +17,14 @@
 <link rel="stylesheet" href="pano/pano.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
-<meta name="version" content="202611091200">
+<meta name="version" content="202611141200">
 <script>/* Eski PWA service worker kayıtlarını ve önbellekleri temizle (klasik panodaki satırlarla aynı) */
 if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister();});}).catch(function(){});}
 if('caches' in window){caches.keys().then(function(k){k.forEach(function(c){caches.delete(c);});}).catch(function(){});}
 /* Güncel sürüm kontrolü (klasik panodaki mekanizma): telefon önbellekten eski bir kopya gösteriyorsa sunucudaki dosyanın
    sürümü (meta version) farklı çıkar ve sayfa önbelleğe takılmayan bir adresle yeniden yüklenir. Oturum başına bir kez.
    Yeni sürüm yayınlarken yukarıdaki meta version ile buradaki değeri BİRLİKTE artırın. */
-(function(){var v='202611091200';try{if(sessionStorage.getItem('ikv2_kontrol'))return;sessionStorage.setItem('ikv2_kontrol','1');
+(function(){var v='202611141200';try{if(sessionStorage.getItem('ikv2_kontrol'))return;sessionStorage.setItem('ikv2_kontrol','1');
 fetch(location.pathname+'?_taze='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=t.match(/name="version"\s+content="(\d+)"/);if(m&&m[1]&&m[1]!==v){location.replace(location.pathname+'?_cb='+Date.now()+location.hash);}}).catch(function(){});}catch(e){}})();</script>
 </head>
 <!--
@@ -93,12 +93,14 @@ fetch(location.pathname+'?_taze='+Date.now(),{cache:'no-store'}).then(function(r
 </div>
 
 <script type="module">
-import { doc, getDoc, setDoc, deleteDoc, getDocs, collection, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { doc, getDoc, setDoc, deleteDoc, getDocs, collection, query, where, runTransaction, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { db, kimlikBaslat, cikisYap, sifreDegistir, adBasliklari } from "./ortak/kimlik.js";
 import * as O from "./pano/ortak.js";
 import * as H from "./pano/hareket.js";
 import * as AB from "./ortak/ayrilis-baglanti.js";
 import { anahtarUret } from "./ortak/ayrilis-sorular.js";
+import * as OF from "./ortak/oryantasyon-fark.js";
+import * as KS from "./ortak/oryantasyon-kisi.js";
 
 /* ==========================================================================
    SAYFA KAYDI — TEK YER. Sıra = menü sırası. Modül dosyası yoksa ya da hata verirse
@@ -157,16 +159,21 @@ async function veriDosyasiYukle(f) {
   if (!confirm(et + ' verisi yüklenecek. Panoyu açan tüm yetkililer bu veriyi görecek. Devam edilsin mi?')) return;
   /* Ayrılış anketi: yeni pakette olup ŞU ANKİ panoda (paket + elle girilen hareketler) olmayan çıkışlar.
      Yalnız son 60 günün çıkışları (eski bir düzeltme yüzünden aylar önce ayrılana bağlantı açılmasın). */
-  let yeniCikislar = [];
+  let yeniCikislar = [], yeniGirisler = [];
   try {
     if (PAKET && B && B.D && Array.isArray(B.D.ayrilanlar)) {
       const eski = B.D.ayrilanlar;
-      const yeni = H.uygula({ D: o.D, MONTHLY_HC: o.MONTHLY_HC, etiket: o.etiket }, HAREKETLER).D.ayrilanlar || [];
+      const yD = H.uygula({ D: o.D, MONTHLY_HC: o.MONTHLY_HC, etiket: o.etiket }, HAREKETLER).D;
+      const yeni = yD.ayrilanlar || [];
       const sinir = new Date(); sinir.setDate(sinir.getDate() - 60);
       yeniCikislar = yeni.filter((a) => a && AB.anketGerekir(a.neden, a.dept) && (AB.tarihCoz(a.tarih) || 0) >= sinir
         && !eski.some((e) => e && AB.eslesir({ ad: e.ad, cikis: e.tarih }, a)));
+      /* Oryantasyon: yeni pakette işe başlayan (son 60 gün) satış / servis danışmanı ya da satış / servis müdürü */
+      const eskiGiris = (B.D.isealim || []);
+      yeniGirisler = (yD.isealim || []).filter((a) => a && KS.otomatikUnvanKodu(a.unvan) && (AB.tarihCoz(a.tarih) || 0) >= sinir
+        && !eskiGiris.some((e) => e && KS.ayniKisi({ ad: e.ad, iseGiris: e.tarih }, { ad: a.ad, iseGiris: a.tarih })));
     }
-  } catch (e) { console.warn('Yeni çıkışlar hesaplanamadı', e); yeniCikislar = []; }
+  } catch (e) { console.warn('Yeni çıkış / girişler hesaplanamadı', e); yeniCikislar = []; yeniGirisler = []; }
   try {
     const json = JSON.stringify(o);
     /* merge: belgedeki `hareketler` (panodan girilen personel hareketleri) korunur; Excel'e işlenenler yüklemeden sonra
@@ -177,12 +184,15 @@ async function veriDosyasiYukle(f) {
     return;
   }
   if (yeniCikislar.length > 15 && !confirm(yeniCikislar.length + ' yeni çıkış için ayrılış anketi bağlantısı oluşturulacak. Bu sayı beklenenden fazla; yine de oluşturulsun mu?')) yeniCikislar = [];
+  if (yeniGirisler.length > 15 && !confirm(yeniGirisler.length + ' yeni başlayan için oryantasyon formu açılacak. Bu sayı beklenenden fazla; yine de açılsın mı?')) yeniGirisler = [];
+  const ory = yeniGirisler.length ? await oryantasyonBaslat(yeniGirisler.map((a) => ({ ad: a.ad, dept: a.dept, unvan: a.unvan, tarih: a.tarih })), 'haftalık rapor') : [];
+  const oryNot = ory.length ? ory.length + ' yeni başlayan için oryantasyon formu açıldı (' + ory.map((x) => x.ad).join(', ') + '); İK’ya e-posta gönderilecek.' : '';
   const sonuc = yeniCikislar.length ? await anketBaglantilari(yeniCikislar.map((a) => ({ ad: a.ad, dept: a.dept, unvan: a.unvan, tarih: a.tarih })), 'haftalık rapor') : [];
   if (sonuc.length) {
-    anketPenceresi(sonuc, { baslik: 'Veri yüklendi · ayrılış anketi bağlantıları hazır', aciklama: et + ' · ' + sonuc.length + ' yeni çıkış için bağlantı (pencere kapanınca pano yenilenir)', kapaninca: () => location.reload() });
+    anketPenceresi(sonuc, { baslik: 'Veri yüklendi · ayrılış anketi bağlantıları hazır', aciklama: et + ' · ' + sonuc.length + ' yeni çıkış için bağlantı' + (oryNot ? ' · ' + oryNot : '') + ' (pencere kapanınca pano yenilenir)', kapaninca: () => location.reload() });
     return;
   }
-  alert('Veri yüklendi: ' + et + '. Pano yenileniyor.');
+  alert('Veri yüklendi: ' + et + '.' + (oryNot ? '\n\n' + oryNot : '') + '\n\nPano yenileniyor.');
   location.reload();
 }
 
@@ -644,6 +654,65 @@ function anketPenceresi(sonuc, { baslik, aciklama, kapaninca } = {}) {
   pencereAc('pk-modal ab-modal', baslik || 'Ayrılış anketi bağlantıları', [ust, govde, kapatAlt()], () => govde.querySelector('[data-kopya="mesaj"]') || govde.querySelector('button'));
   if (kapaninca && acikPencere) acikPencere.kapaninca = kapaninca;
 }
+/* ---- ORYANTASYON: yeni başlayan için kişiye özel form (otomatik) ----
+   Satış / servis danışmanı ya da satış / servis müdürü işe başlayınca (haftalık veri yüklemesinde yeni gelen ya da
+   elle girilen işe giriş) unvanın ana formundan kişi formu açılır (oryantasyonKisiler, durum "hazırlanacak") ve
+   ik@inciroglu.com.tr adresine "formu hazırlayınız" e-postası sıraya alınır (epostaKuyrugu → GitHub Actions → Gmail).
+   Aynı kişi için (±10 gün) ikinci form açılmaz. */
+async function oryantasyonBaslat(kisiler, kaynak) {
+  if (!IK || !kisiler || !kisiler.length) return [];
+  let mevcut = [];
+  const anaForm = new Map();
+  try {
+    mevcut = (await getDocs(collection(db, 'oryantasyonKisiler'))).docs.map((d) => Object.assign({ id: d.id }, d.data()));
+    (await getDocs(collection(db, 'oryantasyonFormlari'))).docs.forEach((d) => anaForm.set(d.id, d.data()));
+  } catch (e) { console.warn('Oryantasyon formları okunamadı', e); return []; }
+  const sonuc = [];
+  for (const k of kisiler) {
+    const kod = KS.otomatikUnvanKodu(k.unvan), ana = kod ? anaForm.get(kod) : null;
+    if (!ana) continue;
+    const ad = OF.temiz(O.trBaslik(String(k.ad || '').trim()), 80), iseGiris = KS.isoTarih(k.tarih);
+    if (ad.length < 3 || mevcut.some((m) => KS.ayniKisi(m, { ad, iseGiris }))) continue;
+    try {
+      const ref = doc(collection(db, 'oryantasyonKisiler'));
+      const form = OF.formuDuzenle(ana.form), unvan = OF.temiz(ana.unvan || (OF.UNVANLAR.find((u) => u.kod === kod) || {}).ad || kod, 80);
+      const dept = OF.temiz(k.dept || '', 80);
+      const wb = writeBatch(db);
+      wb.set(ref, { kod, unvan, ad, dept, pozisyon: unvan, iseGiris, yonetici: '', form, taban: form, tabanSurum: Number(ana.surum) || 0, durum: 'hazirlanacak',
+        kaynak: OF.temiz('Otomatik · ' + kaynak, 60), bildirimler: {}, olusturma: serverTimestamp(), olusturan: AD, guncelleme: serverTimestamp(), guncelleyen: AD });
+      const e = KS.yeniBaslayanEpostasi({ ad, unvan, dept, iseGiris, sayfa: new URL('oryantasyon.html#/kisi/' + ref.id, location.href).href });
+      wb.set(doc(collection(db, 'epostaKuyrugu')), Object.assign(KS.kuyrukKaydi({ kime: KS.IK_EPOSTA, kimeAd: 'İnsan Kaynakları', konu: e.konu, html: e.html, kaynak: 'oryantasyon-yeni', ilgili: 'oryantasyonKisiler/' + ref.id }),
+        { olusturma: serverTimestamp(), olusturan: AD }));
+      await wb.commit();
+      mevcut.push({ id: ref.id, ad, iseGiris });
+      sonuc.push({ id: ref.id, ad, unvan });
+    } catch (e) { console.warn('Oryantasyon formu açılamadı', e); }
+  }
+  return sonuc;
+}
+/** Elle girilen işe giriş geri alınınca, ondan otomatik açılmış ve henüz hazırlanmamış oryantasyon formu silinir;
+    İK'ya giden "formu hazırlayınız" e-postası henüz gönderilmediyse iptal edilir */
+async function oryantasyonGeriAl(h) {
+  if (!IK || !h || !h.ad) return;
+  try {
+    const ad = OF.temiz(O.trBaslik(String(h.ad).trim()), 80), iseGiris = KS.isoTarih(h.tarih);
+    const kayitlar = (await getDocs(collection(db, 'oryantasyonKisiler'))).docs.map((d) => Object.assign({ id: d.id }, d.data()));
+    const k = kayitlar.find((x) => x.durum === 'hazirlanacak' && /personel hareketi/.test(x.kaynak || '') && KS.ayniKisi(x, { ad, iseGiris }));
+    if (!k) return;
+    /* e-posta tam bu sırada gönderilirse toplu yazım reddedilir: bir kez yeniden okunup denenir */
+    for (let deneme = 0; ; deneme++) {
+      try {
+        const bekleyen = (await getDocs(query(collection(db, 'epostaKuyrugu'), where('ilgili', '==', 'oryantasyonKisiler/' + k.id)))).docs.filter((d) => d.data().durum === 'bekliyor');
+        const wb = writeBatch(db);
+        bekleyen.forEach((d) => wb.update(doc(db, 'epostaKuyrugu', d.id), { durum: 'iptal' }));
+        wb.delete(doc(db, 'oryantasyonKisiler', k.id));
+        await wb.commit();
+        break;
+      } catch (e) { if (deneme >= 1 || !(e && e.code === 'permission-denied')) throw e; }
+    }
+    O.bildirim(h.ad + ' — oryantasyon formu da kaldırıldı.');
+  } catch (e) { console.warn('Oryantasyon formu kaldırılamadı', e); }
+}
 /** Elle girilen çıkış geri alınınca, ondan otomatik açılmış ve henüz doldurulmamış anket bağlantısı da iptal edilir */
 async function anketBaglantisiGeriAl(h) {
   if (!IK || !h || !h.id) return;
@@ -863,6 +932,11 @@ function girisFormu(kap) {
       await hareketYaz((m) => m.concat([ev]));
       pencereKapat(false);
       O.bildirim(ev.ad + ' — işe giriş kaydedildi; pano güncellendi.');
+      /* Satış / servis danışmanı ya da satış / servis müdürü → kişiye özel oryantasyon formu açılır, ik@ adresine bildirilir */
+      if ((ev.liste || 'normal') === 'normal' && KS.otomatikUnvanKodu(ev.unvan)) {
+        const ory = await oryantasyonBaslat([{ ad: ev.ad, dept: ev.dept, unvan: ev.unvan, tarih: ev.tarih }], 'personel hareketi');
+        if (ory.length) O.bildirim(ev.ad + ' için oryantasyon formu açıldı (Oryantasyon Formları sayfasında “Hazırlanacak”); İK’ya e-posta gönderilecek.');
+      }
     } catch (e) {
       console.error('Hareket kaydedilemedi', e);
       kaydetB.disabled = false; mesaj.classList.add('hata');
@@ -899,7 +973,7 @@ function gunlukCiz(kap, yenile) {
         try {
           await hareketYaz((m) => m.map((x) => (x && x.id === h.id ? Object.assign({}, x, { iptal: hkKimlik() }) : x)));
           O.bildirim(h.ad + ' — hareket geri alındı; pano güncellendi.');
-          if (h.tur === 'cikis') anketBaglantisiGeriAl(h);
+          if (h.tur === 'cikis') anketBaglantisiGeriAl(h); else oryantasyonGeriAl(h);
           kap.textContent = ''; yenile();
         } catch (e) { gb.disabled = false; console.error('Geri alınamadı', e); O.bildirim('Geri alınamadı: ' + ((e && e.message) || 'bilinmeyen hata')); }
       });

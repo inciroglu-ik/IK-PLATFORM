@@ -28,13 +28,26 @@ export const UNVANLAR = [
 export const ALANLAR = [
   { k: 'plan', ad: 'Gün planı' },
   { k: 'kapsam', ad: 'Kapsam' },
-  { k: 'termin', ad: 'Tarih / termin' },
+  { k: 'termin', ad: 'Tarih' },
   { k: 'saat', ad: 'Saat' },
-  { k: 'sure', ad: 'Süre (dk)' },
+  { k: 'sure', ad: 'Süre' },
   { k: 'sorumlu', ad: 'Oryantasyon sorumlusu' },
   { k: 'aciklama', ad: 'Açıklama / yorum' }
 ];
 export const ALAN_AD = Object.fromEntries(ALANLAR.map((a) => [a.k, a.ad]));
+
+/* Elle yazılmayan, listeden seçilen alanlar (kullanıcı kararı 13.11.2026):
+   Tarih → takvimden (YYYY-AA-GG saklanır) · Saat → 15 dakikada bir · Süre → sabit seçenekler · Sorumlu → aktif personel listesi */
+export const SAATLER = Array.from({ length: 96 }, (_, i) => String(Math.floor(i / 4)).padStart(2, '0') + ':' + String((i % 4) * 15).padStart(2, '0'));
+export const SURELER = ['30 dk', '1 saat', '2 saat', '4 saat', '8 saat', '2 gün', '3 gün'];
+/** Birden çok sorumlu tek alanda " & " ile ayrılır */
+export const SORUMLU_AYRAC = ' & ';
+export const sorumlular = (v) => String(v || '').split(/\s*&\s*/).map((x) => x.trim()).filter(Boolean);
+/** Tarih alanını gösterir: "2026-11-20" → "20.11.2026"; eski serbest metin olduğu gibi */
+export function tarihGoster(v) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v || '').trim());
+  return m ? m[3] + '.' + m[2] + '.' + m[1] : String(v || '');
+}
 export const SINIR = 2000;            /* bir alanın en fazla karakteri */
 export const EN_FAZLA = { alan: 30, bolum: 40 };   /* güvenlik kuralıyla aynı */
 

@@ -57,7 +57,7 @@ function model(form, fark) {
 }
 /** Üst bilgi alanları (işaretliyse silinenler en sonda) */
 function alanModel(form, fark) {
-  const a = form.alanlar.map((x) => { const f = fark ? (fark.alan[x.id] || { tur: 'ayni' }) : { tur: 'ayni' }; return { ad: x.ad, tur: f.tur, eskiAd: f.eskiAd }; });
+  const a = form.alanlar.map((x) => { const f = fark ? (fark.alan[x.id] || { tur: 'ayni' }) : { tur: 'ayni' }; return { id: x.id, ad: x.ad, tur: f.tur, eskiAd: f.eskiAd }; });
   if (fark) fark.silinenAlanlar.forEach((s) => a.push({ ad: s.alan.ad, tur: 'silindi' }));
   return a;
 }
@@ -78,10 +78,14 @@ export function degisiklikNotlari(fark, form) {
     if (f.tur === 'yeni') n.push({ tur: 'Üst bilgi alanı eklendi', bolum: '', madde: a.ad, ayrinti: '' });
     if (f.tur === 'degisti') n.push({ tur: 'Üst bilgi alanı değişti', bolum: '', madde: a.ad, ayrinti: 'Önceki: ' + (f.eskiAd || '') }); });
   form.bolumler.forEach((b) => b.maddeler.forEach((m) => { const f = fark.madde[m.id]; if (!f || f.tur !== 'degisti') return;
-    n.push({ tur: 'Düzenlendi', bolum: b.ad, madde: m.plan, ayrinti: Object.keys(f.eski).map((k) => F.ALAN_AD[k] + ': “' + (sade(f.eski[k]) || '(boştu)') + '” → “' + (sade(m[k]) || '(boş)') + '”').join(' · ') }); }));
+    n.push({ tur: 'Düzenlendi', bolum: b.ad, madde: m.plan, ayrinti: Object.keys(f.eski).map((k) => F.ALAN_AD[k] + ': önceki “' + (sade(gosterim(k, f.eski[k])) || '(boştu)') + '”, yeni “' + (sade(gosterim(k, m[k])) || '(boş)') + '”').join(' · ') }); }));
   return n;
 }
 const LEJANT = 'Sarı: değiştirildi (altında önceki hâli) · Yeşil: eklendi · Kırmızı, üstü çizili: silindi · Değişiklik sütununda ayrıntı';
+/** Formun sonundaki onay metni (personel imzalar) */
+const ONAY_METNI = 'Şirketin ve oryantasyon sorumlularının vermiş olduğu oryantasyonu aldım.';
+/** Hücrede gösterilecek değer: tarih GG.AA.YYYY */
+const gosterim = (k, v) => (k === 'termin' ? F.tarihGoster(v) : String(v == null ? '' : v));
 
 /* ================================================================== EXCEL (.xlsx) */
 const X = (s) => String(s ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g, '')
@@ -201,7 +205,9 @@ export async function excelUret(g) {
   const st = stilKaydi(), sst = metinKaydi(), ws = sayfaYazici(sst);
   const ince = [R.CIZ, 'thin'];
   const kutu = { sol: ince, sag: ince, ust: ince, alt: ince };
-  const GEN = [6.5, 5, 32, 46, 12, 7.5, 8, 24, 28].concat(isaretli ? [34] : []);
+  /* sütunlar: Bölüm · Sıra · Gün Planı · Kapsam · Tarih · Saat · Süre · Sorumlu · Açıklama · Sorumlu İmza · [Değişiklik] */
+  const GEN = [6.5, 5, 30, 42, 11, 7.5, 8, 22, 24, 16].concat(isaretli ? [32] : []);
+  const IMZA = 9;
   const SON = GEN.length - 1;
   const S = {
     baslik: st.xf({ font: { b: true, sz: 15, renk: R.BEYAZ }, dolgu: R.LAC9, v: 'center', girinti: 1 }),
@@ -248,14 +254,15 @@ export async function excelUret(g) {
       const sEt = a.tur === 'degisti' ? S.pEtiketDeg : a.tur === 'yeni' ? S.pEtiketYeni : a.tur === 'silindi' ? S.pEtiketSil : S.pEtiket;
       const etiket = a.tur === 'degisti' ? [{ t: a.ad || '' }, { t: '\nÖnceki: ' + (sade(a.eskiAd) || '(boştu)'), i: true, sz: 8, renk: R.SARI7 }] : (a.ad || '');
       ws.metin(1, r, etiket, sEt); ws.stil(2, r, sEt); ws.birlestir(1, r, 2, r);
-      for (let c = 3; c <= pSon; c++) ws.stil(c, r, S.pDeger); ws.birlestir(3, r, pSon, r);
+      /* kişi formunda değer dolu gelir (g.degerler); ana formda elle doldurulmak üzere boş */
+      ws.metin(3, r, (g.degerler && a.id && g.degerler[a.id]) || '', S.pDeger); for (let c = 4; c <= pSon; c++) ws.stil(c, r, S.pDeger); ws.birlestir(3, r, pSon, r);
       if (isaretli) ws.metin(SON, r, a.tur === 'degisti' ? 'Alan adı değişti' : a.tur === 'yeni' ? 'Alan eklendi' : a.tur === 'silindi' ? 'Alan silindi' : '', S.pNot);
       ws.yukseklik(r, a.tur === 'degisti' ? 30 : 20); r++;
     });
     ws.yukseklik(r, 10); r++;
   }
   /* tablo başlığı */
-  const BAS = ['Bölüm', 'Sıra', 'Gün Planı', 'Kapsam', 'Tarih / Termin', 'Saat', 'Süre (dk)', 'Oryantasyon Sorumlusu', 'Açıklama / Yorum'].concat(isaretli ? ['Değişiklik'] : []);
+  const BAS = ['Bölüm', 'Sıra', 'Gün Planı', 'Kapsam', 'Tarih', 'Saat', 'Süre', 'Oryantasyon Sorumlusu', 'Açıklama / Yorum', 'Sorumlu İmza'].concat(isaretli ? ['Değişiklik'] : []);
   const basSatir = r;
   BAS.forEach((t, c) => ws.metin(c, r, t, S.tBaslik)); ws.yukseklik(r, 30); r++;
   /* gövde */
@@ -270,13 +277,15 @@ export async function excelUret(g) {
         const silik = s.tur === 'silindi' || s.tur === 'bolumle';
         ws.metin(1, r, s.no == null ? '–' : String(s.no), gs(silik ? 'silindi' : s.tur === 'yeni' ? 'yeni' : 'ayni', 'center'));
         F.ALANLAR.forEach((a) => {
-          const c = ALAN_KOL[a.k]; const v = s.m[a.k] || '';
+          const c = ALAN_KOL[a.k]; const v = gosterim(a.k, s.m[a.k]);
           const deg = s.tur === 'degisti' && a.k in s.eski;
           const tur = silik ? 'silindi' : s.tur === 'yeni' ? 'yeni' : deg ? 'degisti' : 'ayni';
-          const icerik = deg ? [{ t: v }, { t: (v ? '\n' : '') + 'Önceki: ' + (sade(s.eski[a.k]) || '(boştu)'), i: true, sz: 8, renk: R.SARI7 }] : v;
+          const once = sade(gosterim(a.k, s.eski[a.k])) || '(boştu)';
+          const icerik = deg ? [{ t: v }, { t: (v ? '\n' : '') + 'Önceki: ' + once, i: true, sz: 8, renk: R.SARI7 }] : v;
           ws.metin(c, r, icerik, gs(tur, HIZA[a.k]));
-          ht = Math.max(ht, satirSay(v, GEN[c]) + (deg ? satirSay('Önceki: ' + (s.eski[a.k] || '(boştu)'), GEN[c], 1.3) : 0));
+          ht = Math.max(ht, satirSay(v, GEN[c]) + (deg ? satirSay('Önceki: ' + once, GEN[c], 1.3) : 0));
         });
+        ws.metin(IMZA, r, '', gs(silik ? 'silindi' : s.tur === 'yeni' ? 'yeni' : 'ayni', 'center'));   /* oryantasyonu veren, verdikten sonra imzalar */
         if (isaretli) { ws.metin(SON, r, s.not, gs('not', 'left')); ht = Math.max(ht, satirSay(s.not, GEN[SON], 1.25)); }
       } else for (let c = 1; c <= SON; c++) ws.stil(c, r, gs('ayni', 'left'));
       ws.yukseklik(r, Math.max(22, Math.round(ht * 13.2 + 7)));
@@ -287,6 +296,15 @@ export async function excelUret(g) {
     for (let rr = ilk + 1; rr < r; rr++) ws.stil(0, rr, bolumStil(b.tur));
     ws.birlestir(0, ilk, 0, r - 1);
   });
+  /* En altta: oryantasyonu alan personelin onayı (Adı Soyadı · T.C. Kimlik No · Tarih · İmza) */
+  ws.yukseklik(r, 14); r++;
+  const ONAY_GRUP = [[0, 3, 'Adı Soyadı'], [4, 6, 'T.C. Kimlik No'], [7, 7, 'Tarih'], [8, SON, 'İmza']];
+  const S_ONAY = st.xf({ font: { b: true, sz: 11, renk: R.LAC9 }, dolgu: R.LAC05, v: 'center', girinti: 1, sar: true, kenar: kutu });
+  ws.metin(0, r, ONAY_METNI, S_ONAY); for (let c = 1; c <= SON; c++) ws.stil(c, r, S_ONAY); ws.birlestir(0, r, SON, r); ws.yukseklik(r, 26); r++;
+  ONAY_GRUP.forEach(([c1, c2, et]) => { ws.metin(c1, r, et, S.pBaslik); for (let c = c1 + 1; c <= c2; c++) ws.stil(c, r, S.pBaslik); ws.birlestir(c1, r, c2, r); });
+  ws.yukseklik(r, 20); r++;
+  ONAY_GRUP.forEach(([c1, c2]) => { for (let c = c1; c <= c2; c++) ws.stil(c, r, S.pDeger); ws.birlestir(c1, r, c2, r); });
+  ws.yukseklik(r, 42); r++;
   const altBilgi = 'İnciroğlu Otomotiv · Oryantasyon Formu · ' + g.unvan;
   const dosyalar = [];
   const sayfa1 = ws.xml({ genislik: GEN, altBilgi, ilk: true });
@@ -398,7 +416,7 @@ function pdfTanimi(g) {
       const dolgu = a.tur === 'degisti' ? RK(R.SARI) : a.tur === 'yeni' ? RK(R.YESIL) : a.tur === 'silindi' ? RK(R.KIR) : RK(R.LAC05);
       const st = a.tur === 'silindi' ? { decoration: 'lineThrough', color: RK(R.KIR7) } : { color: RK(R.MET2) };
       const etk = a.tur === 'degisti' ? { stack: [Object.assign({ text: a.ad || '' }, st), { text: 'Önceki: ' + (sade(a.eskiAd) || '(boştu)'), fontSize: 6.5, italics: true, color: RK(R.SARI7) }] } : Object.assign({ text: a.ad || '' }, st);
-      return [Object.assign(etk, { fillColor: dolgu, fontSize: 8.5 }), { text: '' }];
+      return [Object.assign(etk, { fillColor: dolgu, fontSize: 8.5 }), { text: (g.degerler && a.id && g.degerler[a.id]) || '', fontSize: 9, bold: true }];
     };
     const govde = [];
     for (let i = 0; i < alanlar.length; i += 2) {
@@ -409,10 +427,10 @@ function pdfTanimi(g) {
     icerik.push({ table: { widths: [120, '*', 120, '*'], body: govde }, layout: Object.assign({}, tabloDuzen, { paddingTop: () => 5, paddingBottom: () => 5 }), margin: [0, 0, 0, 10] });
   }
   /* ana tablo */
-  const W = isaretli ? [20, 100, '*', 46, 28, 30, 82, 92, 112] : [22, 118, '*', 52, 30, 32, 100, 122];
+  const W = isaretli ? [18, 92, '*', 44, 28, 32, 76, 80, 56, 100] : [20, 108, '*', 48, 30, 34, 94, 104, 70];
   const nKol = W.length;
   /* pdfmake hücre nesnelerine iç alan yazar: her tabloya YENİ başlık satırı verilir */
-  const basSatiri = () => ['Sıra', 'Gün Planı', 'Kapsam', 'Tarih / Termin', 'Saat', 'Süre (dk)', 'Oryantasyon Sorumlusu', 'Açıklama / Yorum'].concat(isaretli ? ['Değişiklik'] : [])
+  const basSatiri = () => ['Sıra', 'Gün Planı', 'Kapsam', 'Tarih', 'Saat', 'Süre', 'Oryantasyon Sorumlusu', 'Açıklama / Yorum', 'Sorumlu İmza'].concat(isaretli ? ['Değişiklik'] : [])
     .map((t) => ({ text: t, bold: true, color: '#FFFFFF', fillColor: RK(R.LAC7), alignment: 'center', fontSize: 7.5 }));
   const ALAN_SIRA = ['plan', 'kapsam', 'termin', 'saat', 'sure', 'sorumlu', 'aciklama'];
   const ORTA = { termin: 1, saat: 1, sure: 1, sorumlu: 1 };
@@ -432,18 +450,25 @@ function pdfTanimi(g) {
       const silStil = silik ? { decoration: 'lineThrough', color: RK(R.KIR7) } : {};
       const row = [Object.assign({ text: s.no == null ? '–' : String(s.no), alignment: 'center', fillColor: satirDolgu }, silik ? { color: RK(R.KIR7) } : {})];
       ALAN_SIRA.forEach((k) => {
-        const v = s.m[k] || '';
+        const v = gosterim(k, s.m[k]);
         const deg = s.tur === 'degisti' && k in s.eski;
         const temel = Object.assign({ alignment: ORTA[k] ? 'center' : 'left', fillColor: deg ? RK(R.SARI) : satirDolgu }, k === 'plan' ? { bold: true } : {});
-        if (deg) row.push(Object.assign(temel, { stack: [{ text: v }, { text: 'Önceki: ' + (sade(s.eski[k]) || '(boştu)'), fontSize: 6.5, italics: true, color: RK(R.SARI7), margin: [0, 1, 0, 0] }] }));
+        if (deg) row.push(Object.assign(temel, { stack: [{ text: v }, { text: 'Önceki: ' + (sade(gosterim(k, s.eski[k])) || '(boştu)'), fontSize: 6.5, italics: true, color: RK(R.SARI7), margin: [0, 1, 0, 0] }] }));
         else row.push(Object.assign(temel, { text: v }, silStil));
       });
+      row.push({ text: '', fillColor: satirDolgu });   /* Sorumlu İmza: oryantasyonu veren, verdikten sonra imzalar */
       if (isaretli) row.push({ text: s.not, fontSize: 7, color: RK(R.MET2), fillColor: satirDolgu });
       govde.push(row);
     });
     if (!b.satir.length) { const bos = [{ text: '(bu bölümde madde yok)', italics: true, color: RK(R.MET3), colSpan: nKol }]; for (let i = 1; i < nKol; i++) bos.push({}); govde.push(bos); }
     icerik.push({ table: { headerRows: 2, keepWithHeaderRows: 1, dontBreakRows: true, widths: W, body: govde }, layout: tabloDuzen, margin: [0, bi ? 8 : 0, 0, 0] });
   });
+  /* En altta: oryantasyonu alan personelin onayı (bölünmeden tek parça) */
+  const etk = (t) => ({ text: t, bold: true, fontSize: 8, color: RK(R.LAC9), fillColor: RK(R.LAC05) });
+  icerik.push({ unbreakable: true, margin: [0, 16, 0, 0], stack: [
+    { text: ONAY_METNI, bold: true, fontSize: 10, color: RK(R.LAC9), margin: [0, 0, 0, 6] },
+    { table: { widths: ['*', 150, 110, '*'], body: [[etk('Adı Soyadı'), etk('T.C. Kimlik No'), etk('Tarih'), etk('İmza')], [{ text: '', margin: [0, 18, 0, 18] }, { text: '' }, { text: '' }, { text: '' }]] }, layout: tabloDuzen }
+  ] });
   /* işaretli: değişiklik notları */
   if (isaretli) {
     const notlar = degisiklikNotlari(g.fark, g.form);

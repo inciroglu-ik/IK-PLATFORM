@@ -72,6 +72,51 @@ body.oryantasyon .ust-marka { display: flex; }
 .oy-girdi { width: 100%; box-sizing: border-box; font: inherit; font-size: 13.5px; line-height: 1.45; color: var(--metin-1); border: 1px solid var(--cizgi-2); border-radius: 9px; padding: 6px 9px; background: #fff; resize: none; overflow: hidden; min-height: 34px; }
 .oy-girdi:focus { outline: none; border-color: var(--pir-500); box-shadow: var(--odak-halkasi); }
 .oy-plan .oy-girdi { font-weight: 600; font-size: 14.5px; }
+/* seçmeli alanlar */
+select.oy-girdi, input.oy-girdi[type="date"] { height: 34px; padding: 4px 8px; overflow: visible; }
+select.oy-girdi { cursor: pointer; }
+.oy-denetim { display: grid; gap: 3px; }
+.oy-eski-metin { font-size: 11px; color: var(--metin-3); }
+.oy-kisi-btn { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; text-align: left; cursor: pointer; min-height: 34px; height: auto; }
+.oy-kisi-btn:hover { border-color: var(--pir-400); }
+.oy-kisi-bos { color: var(--metin-3); }
+.oy-kisi-cip { display: inline-flex; align-items: center; font-size: 12.5px; font-weight: 600; color: var(--lac-700); background: var(--lac-50); border: 1px solid var(--lac-100); border-radius: 999px; padding: 1px 9px; }
+button.oy-kisi-cip.kaldir { cursor: pointer; }
+button.oy-kisi-cip.kaldir:hover { background: #fdf3f1; border-color: #e0a7a0; color: #9b3a2e; }
+.oy-kisi-panel { position: fixed; z-index: 90; background: #fff; border: 1px solid var(--cizgi-2); border-radius: 14px; box-shadow: 0 18px 50px rgba(15, 27, 45, .22); padding: 10px; display: grid; gap: 8px; }
+.oy-kisi-secili { display: flex; flex-wrap: wrap; gap: 4px; }
+.oy-kisi-secili:empty { display: none; }
+.oy-kisi-liste { max-height: 280px; overflow: auto; display: grid; gap: 2px; }
+.oy-kisi-satir { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 1px; padding: 6px 9px; border-radius: 9px; }
+.oy-kisi-satir:hover, .oy-kisi-satir:focus-visible { background: var(--n-50); outline: none; }
+.oy-kisi-satir.secili { background: var(--lac-50); box-shadow: inset 3px 0 0 var(--pir-500); }
+.oy-kisi-satir b { font-size: 13px; color: var(--metin-1); }
+.oy-kisi-satir small { font-size: 11.5px; color: var(--metin-3); }
+.oy-kisi-bilgi { font-size: 12.5px; color: var(--metin-3); padding: 8px; line-height: 1.5; }
+.oy-kisi-alt { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.oy-kisi-alt small { font-size: 11.5px; color: var(--metin-3); }
+.oy-kisi-alt .btn { height: 32px; }
+/* kişiye özel formlar */
+.oy-hazirlanacak-liste { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.oy-hazirlanacak-liste .btn { height: 32px; font-size: 12.5px; background: #fff; }
+.oy-islem { display: flex; gap: 6px; justify-content: flex-end; }
+.oy-islem .btn { height: 30px; padding: 0 10px; font-size: 12px; white-space: nowrap; }
+.oy-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
+.oy-form label { display: grid; gap: 5px; font-size: 12.5px; font-weight: 600; color: var(--metin-2); }
+.oy-form label.genis { grid-column: 1 / -1; }
+.oy-hata { margin-top: 10px; font-size: 13px; color: #9b3a2e; }
+.oy-personel-izgara { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px 12px; }
+.oy-personel-izgara .oy-alan { grid-column: auto; }
+.oy-bildirim-liste { display: grid; gap: 6px; }
+.oy-bildirim-satir { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 8px 10px; border: 1px solid var(--cizgi-1); border-radius: 10px; cursor: pointer; }
+.oy-bildirim-satir.eksik { opacity: .75; cursor: default; }
+.oy-bildirim-satir input { width: 16px; height: 16px; accent-color: var(--pir-500); }
+.oy-bildirim-ad { display: grid; gap: 1px; min-width: 0; }
+.oy-bildirim-ad b { font-size: 13.5px; }
+.oy-bildirim-ad small { font-size: 12px; color: var(--metin-3); overflow: hidden; text-overflow: ellipsis; }
+.oy-bildirim-say { font-size: 12px; color: var(--metin-2); }
+.oy-kisi-bilgi-not { font-size: 12px; color: var(--metin-3); margin: 8px 0 0; }
+@media (max-width: 900px) { .oy-personel-izgara { grid-template-columns: repeat(2, minmax(0, 1fr)); } .oy-form { grid-template-columns: minmax(0, 1fr); } }
 .oy-alan.degisti .oy-girdi, .oy-plan.degisti .oy-girdi, .oy-ust-alan.degisti .oy-girdi { background: #fff6dd; border-color: #e7c35a; }
 .oy-eski { display: block; font-size: 11.5px; color: #8a6a12; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
 .oy-eski::before { content: 'Önceki: '; font-weight: 700; }
@@ -162,11 +207,13 @@ body.oryantasyon .ust-marka { display: flex; }
 </div>
 
 <script type="module">
-import { doc, setDoc, updateDoc, writeBatch, collection, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { doc, getDoc, getDocs, setDoc, updateDoc, writeBatch, collection, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { db, kimlikBaslat, cikisYap, adBasliklari } from "./ortak/kimlik.js";
 import * as O from "./pano/ortak.js";
 import * as F from "./ortak/oryantasyon-fark.js";
 import * as C from "./ortak/oryantasyon-cikti.js";
+import { uygula as hareketUygula } from "./pano/hareket.js";
+import * as KS from "./ortak/oryantasyon-kisi.js";
 
 const $ = (id) => document.getElementById(id);
 const acilisMetni = (t) => { const e = $('acilisMetin'); if (e) e.textContent = t; };
@@ -197,7 +244,10 @@ acilisMetni('Formlar yükleniyor…');
 const ANA = new Map();          /* kod → ana form belgesi */
 const DUZ = new Map();          /* belge kimliği → müdür düzenlemesi (İK: hepsi · müdür: yalnız kendisininki) */
 let ED = null;                  /* açık düzenleyici: { mod:'mudur'|'ana', kod, calisma, taban, tabanSurum, kayit, kirli, cop, taslak } */
-let ILK_ANA = false, ILK_DUZ = false;
+let ILK_ANA = false, ILK_DUZ = false, ILK_KISI = false;
+const KISI = new Map();         /* kişiye özel oryantasyon formları (yalnız İK) — oryantasyonKisiler/{id} */
+let EPOSTALAR = [];             /* çalışan e-posta listesi (yalnız İK) — oryantasyonAyar/epostalar */
+let BASARISIZ = new Set();      /* gönderilemeyen / iptal edilen e-posta kayıtlarının kimlikleri (yalnız İK) — epostaKuyrugu */
 const unvanAdi = (kod) => (F.UNVANLAR.find((u) => u.kod === kod) || {}).ad || (ANA.get(kod) || {}).unvan || kod;
 /* Rol bazlı görünürlük (13.11.2026): satış müdürü → satış danışmanı + satış müdürü formları; servis müdürü → servis
    danışmanı + servis müdürü; direktör ve İK → hepsi; idari müdür / departman müdürü → hepsi (değiştirilmedi).
@@ -264,6 +314,7 @@ function ciz() {
   /* İK kendi kopyasını oluşturmaz (sayıma karışmasın); İK ana formu düzenler */
   if (r.sayfa === 'form' && ANA.get(r.kod) && !IK && gorebilir(r.kod)) duzenleyiciAc(kok, 'mudur', r.kod);
   else if (r.sayfa === 'ana' && IK) duzenleyiciAc(kok, 'ana', r.kod);
+  else if (r.sayfa === 'kisi' && IK && KISI.get(r.kod) && ANA.get(KISI.get(r.kod).kod)) duzenleyiciAc(kok, 'kisi', r.kod);
   else if (r.sayfa === 'inceleme' && IK) incelemeCiz(kok, r.kod, r.hid);
   else {
     /* yetkisiz / geçersiz adres: liste gösterilir, adres çubuğu da listeye döner */
@@ -288,16 +339,159 @@ function listeCiz(kok) {
       : { ikon: 'kisiler', html: '2026’da en çok alım yapılan <b>5 unvan</b> + <b>satış ve servis müdürü</b>' },
     { ikon: 'dosya', html: '<b>' + hazir + '</b> / ' + liste.length + ' unvanın formu hazır' }]
   });
+  if (IK) hazirlanacakUyarisi(kok);
   O.akisBaslik(kok, { no: '01', baslik: 'Unvanlar', aciklama: IK ? 'Karta tıklayarak müdür düzenlemelerini inceleyin ya da ana formu düzenleyin' : 'Formu açıp düzenleyin; değişiklikler kaydedene kadar saklanmaz' });
   const g = O.el('div', { class: 'oy-izgara-kart' });
   liste.forEach((u, i) => g.append(IK ? unvanKartiIK(u, i) : unvanKartiMudur(u, i)));
   kok.append(g);
+  if (IK) kisiBolumu(kok);
   O.notlar(kok, IK
     ? ['Kim hangi formu görür: satış müdürleri satış danışmanı ve satış müdürü formlarını, servis müdürleri servis danışmanı ve servis müdürü formlarını görür; direktörler, idari müdür ve departman müdürleri tüm formları görür.',
        'Müdürler birbirinin düzenlemesini göremez; düzenlemeleri yalnız İnsan Kaynakları görür.',
        'Ana formu değiştirdiğinizde müdürlerin daha önce kaydettiği düzenlemeler değişmez; karşılaştırma her müdürün başladığı ana form sürümüne göre yapılır.',
        '“Değişiklik önerim yok” diyen müdürler de listede görünür.']
     : ['Kaydetmediğiniz değişiklikler saklanmaz.', 'Hiçbir değişiklik gerekmiyorsa formu açıp “Değişiklik önerim yok” diyebilirsiniz; İnsan Kaynakları formu incelediğinizi görür.']);
+}
+/* ---------------------------------------------------- KİŞİYE ÖZEL ORYANTASYON FORMLARI (İK)
+   Yeni başlayan için unvanın ana formundan kopyalanır (haftalık veri / işe giriş hareketinde İK Dashboard otomatik açar
+   ve ik@ adresine bildirir; İK buradan elle de açabilir). İK sorumluları, tarih ve saatleri seçip kaydeder; kayıttan
+   sonra seçilen sorumlulara görevlerini içeren e-posta gider (epostaKuyrugu → GitHub Actions → Gmail). */
+const kisiListesi = () => [...KISI.values()].sort((a, b) => (a.durum === b.durum ? String(b.iseGiris || '').localeCompare(String(a.iseGiris || '')) : a.durum === 'hazirlanacak' ? -1 : 1));
+function hazirlanacakUyarisi(kok) {
+  const bek = kisiListesi().filter((k) => k.durum === 'hazirlanacak');
+  if (!bek.length) return;
+  kok.append(O.el('div', { class: 'oy-bilgi uyari oy-hazirlanacak' },
+    O.el('b', { text: bek.length + ' yeni başlayan için oryantasyon formu hazırlanacak. ' }),
+    'Formlar unvanın ana formundan açıldı; sorumluları, tarih ve saatleri seçip kaydedin.',
+    O.el('div', { class: 'oy-hazirlanacak-liste' }, ...bek.slice(0, 8).map((k) => O.el('a', { class: 'btn', href: '#/kisi/' + k.id, html: O.ikon('dosya') + '<span>' + O.esc(O.trBaslik(k.ad || '')) + ' · ' + O.esc(k.unvan || unvanAdi(k.kod)) + '</span>' })))));
+}
+function kisiBolumu(kok) {
+  O.akisBaslik(kok, { no: '02', baslik: 'Kişiye özel oryantasyon formları', aciklama: 'Yeni başlayan her personel için sorumlu, tarih ve saatleri belirlenmiş form · kaydedince sorumlulara e-posta gider' });
+  const iz = O.izgara(kok);
+  const arac = O.el('div', { class: 'kart-arac' },
+    O.el('button', { class: 'btn', type: 'button', title: 'Çalışanların e-posta adreslerini içeren Excel / CSV dosyasını yükler', html: O.ikon('yukle') + '<span>E-posta listesi' + (EPOSTALAR.length ? ' (' + EPOSTALAR.length + ')' : '') + '</span>', on: { click: epostaListesiSec } }),
+    O.el('button', { class: 'btn btn-pirinc', type: 'button', html: O.ikon('dosya') + '<span>Yeni kişi formu</span>', on: { click: yeniKisiFormu } }));
+  const liste = kisiListesi();
+  const k = O.kart(iz, { baslik: 'Kişi formları', aciklama: liste.length + ' form · ' + liste.filter((x) => x.durum === 'hazirlanacak').length + ' hazırlanacak' + (EPOSTALAR.length ? '' : ' · e-posta listesi henüz yüklenmedi (sorumlulara e-posta için gerekli)'), sinif: 's12', sag: arac });
+  O.tablo(k.govde, {
+    sutunlar: [
+      { k: 'ad', ad: 'Personel', sinif: 'ad-hucre', bicim: (v) => O.trBaslik(v || '') },
+      { k: 'unvan', ad: 'Unvan', bicim: (v, r) => v || unvanAdi(r.kod) },
+      { k: 'dept', ad: 'Departman', bicim: (v) => v || '—' },
+      { k: 'iseGiris', ad: 'İşe giriş', bicim: (v) => (v ? F.tarihGoster(v) : '—'), siralamaDegeri: (r) => String(r.iseGiris || '') },
+      { k: 'durum', ad: 'Durum', bicim: (v) => O.el('span', { class: 'cip ' + (v === 'hazirlanacak' ? 'cip-uy' : 'cip-ok'), text: v === 'hazirlanacak' ? 'Hazırlanacak' : 'Hazırlandı' }) },
+      { k: '_bild', ad: 'Sorumlu bildirimi', siralanamaz: true, bicim: (v, r) => { const kisiler = [...KS.sorumluGorevleri(r.form).entries()].filter(([ad]) => sorumluKisiMi(ad)), b = r.bildirimler || {};
+        /* "bildirildi" = görevleri o günden beri değişmemiş ve e-postası gönderilemez / iptal olmamış (bildirim penceresiyle aynı ölçü) */
+        return kisiler.length ? kisiler.filter(([ad, g]) => KS.bildirimDurumu(b[KS.adAnahtari(ad)], KS.gorevImzasi(g), BASARISIZ) === 'ayni').length + ' / ' + kisiler.length + ' sorumlu' : '—'; } },
+      { k: 'kaynak', ad: 'Açılış', bicim: (v) => v || '—' },
+      { k: '_islem', ad: '', siralanamaz: true, bicim: (v, r) => O.el('div', { class: 'oy-islem' }, O.el('a', { class: 'btn btn-pirinc', href: '#/kisi/' + r.id, html: O.ikon('dosya') + 'Formu aç' }),
+        O.el('button', { class: 'btn btn-hayalet oy-kisi-sil', type: 'button', title: 'Bu kişinin oryantasyon formunu sil', 'aria-label': 'Formu sil', html: IK_SIL, on: { click: (e) => kisiSil(r, e.currentTarget) } })) }
+    ],
+    satirlar: liste, sayfaBoyu: 10, ara: liste.length > 10, araAlanlari: ['ad', 'unvan', 'dept'],
+    bos: { baslik: 'Henüz kişi formu yok', metin: 'Haftalık veriye satış / servis danışmanı ya da satış / servis müdürü eklendiğinde form kendiliğinden açılır; “Yeni kişi formu” ile elle de açabilirsiniz.' }
+  });
+}
+/* Yeni kişi formu (elle): unvan + kişi bilgileri → ana formun kopyası */
+function yeniKisiFormu() {
+  const uygun = F.UNVANLAR.filter((u) => ANA.get(u.kod));
+  if (!uygun.length) { alert('Önce bir unvanın ana formunu yükleyin.'); return; }
+  const g = (ad, tip = 'text', deger = '') => O.el('input', { class: 'girdi', type: tip, name: ad, value: deger, autocomplete: 'off', maxlength: tip === 'text' ? '80' : null });
+  const unvanS = O.el('select', { class: 'girdi', name: 'unvan' }, ...uygun.map((u) => O.el('option', { value: u.kod, text: u.ad })));
+  const dl = O.el('datalist', { id: 'oyPersonelListe' }, ...PERSONEL.map((p) => O.el('option', { value: p.ad, label: [p.unvan, p.dept].filter(Boolean).join(' · ') })));
+  const fAd = g('ad'); fAd.setAttribute('list', 'oyPersonelListe');
+  const fDep = g('dept'), fGir = g('iseGiris', 'date', KS.isoTarih(new Date())), fYon = g('yonetici'); fYon.setAttribute('list', 'oyPersonelListe');
+  fAd.addEventListener('change', () => { const p = PERSONEL.find((x) => O.aramaAnahtari(x.ad) === O.aramaAnahtari(fAd.value)); if (p && !fDep.value) fDep.value = p.dept || ''; });
+  const hata = O.el('div', { class: 'oy-hata', hidden: true });
+  const olustur = O.el('button', { class: 'btn btn-pirinc', type: 'button', html: O.ikon('dosya') + '<span>Formu oluştur</span>' });
+  pencereAc('Yeni kişi formu', [
+    O.el('div', { class: 'modal-ust' }, O.el('div', null, O.el('h3', { text: 'Yeni kişi formu' }), O.el('p', { text: 'Seçtiğiniz unvanın ana formu bu kişi için kopyalanır; sorumluları, tarih ve saatleri sonra seçersiniz.' }))),
+    O.el('div', { class: 'modal-govde' }, O.el('div', { class: 'oy-form' },
+      O.el('label', { class: 'genis' }, 'Unvan (oryantasyon formu)', unvanS), O.el('label', { class: 'genis' }, 'Ad Soyad *', fAd, dl),
+      O.el('label', null, 'Departman', fDep), O.el('label', null, 'İşe giriş tarihi', fGir), O.el('label', { class: 'genis' }, 'İlk yönetici / amir', fYon)), hata),
+    O.el('div', { class: 'modal-alt' }, O.el('button', { class: 'btn', type: 'button', text: 'Vazgeç', on: { click: pencereKapat } }), olustur)]);
+  olustur.addEventListener('click', async () => {
+    const ad = F.temiz(O.trBaslik(fAd.value.trim()), 80);
+    if (ad.length < 3) { hata.textContent = 'Ad soyad girin.'; hata.hidden = false; fAd.focus(); return; }
+    const varOlan = [...KISI.values()].find((k) => KS.ayniKisi(k, { ad, iseGiris: fGir.value }));
+    if (varOlan && !confirm(ad + ' için zaten bir oryantasyon formu var. Yine de yeni form açılsın mı? (Vazgeçerseniz mevcut form açılır.)')) { pencereKapat(); git('#/kisi/' + varOlan.id); return; }
+    olustur.disabled = true;
+    try {
+      const ref = doc(collection(db, 'oryantasyonKisiler'));
+      await setDoc(ref, kisiKaydi({ kod: unvanS.value, ad, dept: fDep.value, iseGiris: fGir.value, yonetici: fYon.value, kaynak: 'Elle (İK)' }));
+      pencereKapat(); git('#/kisi/' + ref.id);
+    } catch (e) { olustur.disabled = false; hata.textContent = 'Oluşturulamadı: ' + (yetkiHatasi(e) ? 'yetki reddedildi (güvenlik kuralı yayınlanmamış olabilir).' : (e && e.message) || 'bilinmeyen hata'); hata.hidden = false; }
+  });
+}
+/** Kişi formu belgesi (yeni): ana formun kopyası — İK Dashboard da aynı alanlarla oluşturur (kural: oryantasyonKisiler) */
+function kisiKaydi({ kod, ad, dept, iseGiris, yonetici, kaynak }) {
+  const ana = ANA.get(kod), form = F.formuDuzenle(ana ? ana.form : { alanlar: [], bolumler: [] });
+  return { kod, unvan: unvanAdi(kod), ad: F.temiz(ad, 80), dept: F.temiz(dept || '', 80), pozisyon: unvanAdi(kod), iseGiris: KS.isoTarih(iseGiris), yonetici: F.temiz(O.trBaslik(yonetici || ''), 80),
+    form, taban: form, tabanSurum: ana ? Number(ana.surum) || 0 : 0, durum: 'hazirlanacak', kaynak: F.temiz(kaynak || '', 60), bildirimler: {},
+    olusturma: serverTimestamp(), olusturan: HESAP.ad || '', guncelleme: serverTimestamp(), guncelleyen: HESAP.ad || '' };
+}
+/* Kişi formunu sil (yanlış açılmış / işe başlamayan): henüz gönderilmemiş e-postaları da iptal edilir; gönderilmiş olanlar geri alınamaz */
+async function kisiSil(r, dugme) {
+  const bildirilen = Object.keys(r.bildirimler || {}).length;
+  if (!confirm(O.trBaslik(r.ad || '') + ' için oryantasyon formu silinecek.' + (bildirilen ? ' Sorumlulara daha önce gönderilmiş ' + bildirilen + ' e-posta geri alınamaz; henüz gönderilmeyenler iptal edilir.' : '') + ' Devam edilsin mi?')) return;
+  if (dugme) dugme.disabled = true;
+  try {
+    /* e-posta tam bu sırada gönderilirse ("bekliyor" → "gönderildi") toplu yazım reddedilir: bir kez yeniden okunup denenir */
+    let iptal = 0;
+    for (let deneme = 0; ; deneme++) {
+      try {
+        const bekleyen = (await getDocs(query(collection(db, 'epostaKuyrugu'), where('ilgili', '==', 'oryantasyonKisiler/' + r.id)))).docs.filter((d) => d.data().durum === 'bekliyor');
+        const wb = writeBatch(db);
+        bekleyen.forEach((d) => wb.update(doc(db, 'epostaKuyrugu', d.id), { durum: 'iptal' }));
+        wb.delete(doc(db, 'oryantasyonKisiler', r.id));
+        await wb.commit();
+        iptal = bekleyen.length; break;
+      } catch (e) { if (deneme >= 1 || !yetkiHatasi(e)) throw e; }
+    }
+    try { localStorage.removeItem(TASLAK_ON + 'kisi|' + r.id + '|' + String(HID).slice(0, 4)); } catch (e) { /* yok say */ }
+    O.bildirim(O.trBaslik(r.ad || '') + ' — oryantasyon formu silindi' + (iptal ? '; gönderilmemiş ' + iptal + ' e-posta iptal edildi' : ''));
+  } catch (e) { if (dugme && dugme.isConnected) dugme.disabled = false; alert('Silinemedi: ' + (yetkiHatasi(e) ? 'yetki reddedildi.' : (e && e.message) || 'bilinmeyen hata')); }
+}
+/* Çalışan e-posta listesi: Excel (.xlsx/.xls) ya da CSV → [{ ad, eposta }] (yalnız @inciroglu.com.tr adresleri) */
+const XLSX_JS = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+function epostaListesiSec() {
+  const inp = O.el('input', { type: 'file', accept: '.xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv', style: 'display:none' });
+  inp.addEventListener('change', async () => {
+    const f = inp.files && inp.files[0]; inp.remove(); if (!f) return;
+    try {
+      if (!window.XLSX) await new Promise((ok, no) => { const s = document.createElement('script'); s.src = XLSX_JS; s.onload = ok; s.onerror = () => no(new Error('Excel okuyucu indirilemedi; internet bağlantınızı kontrol edin.')); document.head.append(s); });
+      const wb = window.XLSX.read(await f.arrayBuffer(), { type: 'array' });
+      const satirlar = window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
+      const sonuc = epostaSatirlari(satirlar);
+      if (!sonuc.liste.length) { alert('Dosyada e-posta adresi bulunamadı. İlk satırda “Ad Soyad” (ya da “Ad” ve “Soyad”) ile “E-posta” sütunları olmalı.'); return; }
+      if (!confirm(sonuc.liste.length + ' çalışanın e-posta adresi yüklenecek' + (sonuc.disari ? '; @inciroglu.com.tr dışındaki ' + sonuc.disari + ' adres alınmayacak' : '') + '. Önceki liste bununla değiştirilir. Devam edilsin mi?')) return;
+      await setDoc(doc(db, 'oryantasyonAyar', 'epostalar'), { liste: sonuc.liste, guncelleme: serverTimestamp(), kaynak: F.temiz(f.name, 80) });
+      O.bildirim(sonuc.liste.length + ' e-posta adresi yüklendi');
+    } catch (e) { alert('E-posta listesi yüklenemedi: ' + (yetkiHatasi(e) ? 'yetki reddedildi (güvenlik kuralı yayınlanmamış olabilir).' : (e && e.message) || 'bilinmeyen hata')); }
+  });
+  document.body.append(inp); inp.click();
+}
+function epostaSatirlari(satirlar) {
+  const k = (s) => O.aramaAnahtari(String(s || ''));
+  let bas = -1, cAd = -1, cSoyad = -1, cEp = -1;
+  for (let i = 0; i < Math.min(15, satirlar.length) && bas < 0; i++) {
+    const r = satirlar[i].map(k);
+    const e = r.findIndex((x) => /e ?-?posta|e ?-?mail|^mail/.test(x));
+    if (e < 0) continue;
+    bas = i; cEp = e;
+    cAd = r.findIndex((x) => /ad soyad|adi soyadi|isim|personel|calisan/.test(x));
+    if (cAd < 0) { cAd = r.findIndex((x) => /^adi?$/.test(x)); cSoyad = r.findIndex((x) => /^soyadi?$/.test(x)); }
+  }
+  const liste = [], gor = new Set(); let disari = 0;
+  if (bas < 0 || cAd < 0) return { liste, disari };
+  satirlar.slice(bas + 1).forEach((r) => {
+    const ad = O.trBaslik((String(r[cAd] || '') + (cSoyad >= 0 ? ' ' + String(r[cSoyad] || '') : '')).replace(/\s+/g, ' ').trim());
+    const ep = String(r[cEp] || '').trim().toLowerCase();
+    if (!ad || !ep) return;
+    if (!KS.epostaGecerli(ep)) { disari++; return; }
+    const a = O.aramaAnahtari(ad); if (gor.has(a)) return; gor.add(a);
+    liste.push({ ad: F.temiz(ad, 80), eposta: ep });
+  });
+  return { liste, disari };
 }
 function unvanKartiMudur(u, i) {
   const ana = ANA.get(u.kod);
@@ -355,13 +549,13 @@ const TASLAK_ON = 'ory-taslak-v1|';
 const TASLAK_GUN = 7;            /* taslak bu cihazda en fazla 7 gün tutulur */
 const TASLAK_VAR = (() => { try { localStorage.setItem(TASLAK_ON + 'deneme', '1'); localStorage.removeItem(TASLAK_ON + 'deneme'); return true; } catch (e) { return false; } })();
 /* Anahtarda hesap kimliğinin yalnız ilk 4 karakteri kullanılır (kişiyi belirlemeye yetmez; aynı cihazdaki kullanıcıları ayırır) */
-const taslakAnahtar = (ed) => TASLAK_ON + ed.mod + '|' + ed.kod + '|' + String(HID).slice(0, 4);
+const taslakAnahtar = (ed) => TASLAK_ON + ed.mod + '|' + (ed.mod === 'kisi' ? ed.kisiId : ed.kod) + '|' + String(HID).slice(0, 4);
 function taslaklariTemizle() { if (!TASLAK_VAR) return; try { Object.keys(localStorage).filter((k) => k.startsWith(TASLAK_ON)).forEach((k) => localStorage.removeItem(k)); } catch (e) { /* yok say */ } }
 let taslakZaman = null;
 function taslakYaz(ed, hemen) {
   if (!ed || !TASLAK_VAR) return;
   clearTimeout(taslakZaman);
-  const yaz = () => { try { if (ed.kirli) localStorage.setItem(taslakAnahtar(ed), JSON.stringify({ calisma: ed.calisma, taban: ed.taban, tabanSurum: ed.tabanSurum, zaman: Date.now() })); } catch (e) { /* depolama dolu ya da kapalı */ } };
+  const yaz = () => { try { if (ed.kirli) localStorage.setItem(taslakAnahtar(ed), JSON.stringify({ calisma: ed.calisma, taban: ed.taban, tabanSurum: ed.tabanSurum, bilgi: ed.bilgi || null, zaman: Date.now() })); } catch (e) { /* depolama dolu ya da kapalı */ } };
   if (hemen) yaz(); else taslakZaman = setTimeout(yaz, 400);
 }
 function taslakSil(ed) { clearTimeout(taslakZaman); if (!ed || !TASLAK_VAR) return; try { localStorage.removeItem(taslakAnahtar(ed)); } catch (e) { /* yok say */ } }
@@ -371,22 +565,28 @@ function taslakOku(ed) {
     const t = JSON.parse(localStorage.getItem(taslakAnahtar(ed)) || 'null');
     if (!t || typeof t !== 'object' || !t.calisma || typeof t.zaman !== 'number') return null;
     if (Date.now() - t.zaman > TASLAK_GUN * 864e5) { taslakSil(ed); return null; }   /* süresi geçmiş taslak */
-    const s = { calisma: F.formuDuzenle(t.calisma), taban: F.formuDuzenle(t.taban), tabanSurum: Number(t.tabanSurum) || 0, zaman: t.zaman };
+    const s = { calisma: F.formuDuzenle(t.calisma), taban: F.formuDuzenle(t.taban), tabanSurum: Number(t.tabanSurum) || 0, bilgi: t.bilgi && typeof t.bilgi === 'object' ? t.bilgi : null, zaman: t.zaman };
     if (s.tabanSurum === ed.tabanSurum && F.ayniMi(s.calisma, ed.calisma)) { taslakSil(ed); return null; }   /* kayıtlı hâlle aynı */
     return s;
   } catch (e) { return null; }
 }
 function taslakGeriYukle() {
   const t = ED && ED.taslak; if (!t) return;
-  ED.calisma = t.calisma; ED.taban = t.taban; ED.tabanSurum = t.tabanSurum; ED.kirli = true; ED.taslak = null; ED.cop = yeniCop(); ED.rev = (ED.rev || 0) + 1;
+  ED.calisma = t.calisma; ED.taban = t.taban; ED.tabanSurum = t.tabanSurum; if (ED.mod === 'kisi' && t.bilgi) ED.bilgi = Object.assign({}, ED.bilgi, t.bilgi); ED.kirli = true; ED.taslak = null; ED.cop = yeniCop(); ED.rev = (ED.rev || 0) + 1;
   ciz();
   O.bildirim('Taslak geri yüklendi · kaydetmeyi unutmayın');
 }
 
-function duzenleyiciAc(kok, mod, kod) {
+function duzenleyiciAc(kok, mod, kodVeyaId) {
+  /* kişi formunda adres kişi formunun kimliğini taşır; unvan kodu kayıttan gelir */
+  const kisi = mod === 'kisi' ? KISI.get(kodVeyaId) : null;
+  const kod = kisi ? kisi.kod : kodVeyaId;
   const ana = ANA.get(kod);
-  if (!ED || ED.kod !== kod || ED.mod !== mod) {
-    if (mod === 'mudur') {
+  if (!ED || ED.mod !== mod || (mod === 'kisi' ? ED.kisiId !== kodVeyaId : ED.kod !== kod)) {
+    if (mod === 'kisi') {
+      ED = { mod, kod, kisiId: kodVeyaId, calisma: F.formuDuzenle(kisi.form), taban: F.formuDuzenle(kisi.taban), tabanSurum: Number(kisi.tabanSurum) || 0, kayit: kisi, kirli: false,
+        bilgi: { ad: kisi.ad || '', dept: kisi.dept || '', pozisyon: kisi.pozisyon || unvanAdi(kod), iseGiris: kisi.iseGiris || '', yonetici: kisi.yonetici || '' } };
+    } else if (mod === 'mudur') {
       const k = benimKayit(kod);
       ED = k
         ? { mod, kod, calisma: F.formuDuzenle(k.form), taban: F.formuDuzenle(k.taban), tabanSurum: Number(k.tabanSurum) || 0, kayit: k, kirli: false }
@@ -399,7 +599,11 @@ function duzenleyiciAc(kok, mod, kod) {
     ED.taslak = taslakOku(ED);
   }
   const unvan = unvanAdi(kod);
-  O.kaput(kok, {
+  O.kaput(kok, mod === 'kisi' ? {
+    ustEtiket: 'Oryantasyon · Kişiye özel form', baslik: O.trBaslik(ED.bilgi.ad || '') + ' · ' + unvan,
+    ozetHtml: 'Bu form <b>kişiye özeldir</b>. Her madde için oryantasyon sorumlusunu, tarih ve saati seçip kaydedin; kaydettiğinizde seçilen sorumlulara görevlerini içeren <b>e-posta</b> gönderilir. Formu Excel ya da PDF olarak indirip imzaya sunabilirsiniz.',
+    meta: [{ ikon: 'takvim', html: 'İşe giriş: <b>' + O.esc(F.tarihGoster(ED.bilgi.iseGiris) || '—') + '</b>' }, { ikon: 'dosya', html: (kisi.durum === 'hazirlanacak' ? '<b>Hazırlanacak</b>' : 'Hazırlandı · ' + gunSaat(kisi.guncelleme)) + ' · açılış: ' + O.esc(kisi.kaynak || '—') }]
+  } : {
     ustEtiket: 'Oryantasyon · ' + (mod === 'ana' ? 'Ana form (İnsan Kaynakları)' : 'Sizin düzenlemeniz'), baslik: unvan + ' oryantasyon formu',
     ozetHtml: mod === 'ana'
       ? 'Müdürlerin gördüğü <b>ana formu</b> düzenliyorsunuz. Kaydettiğinizde formu henüz düzenlememiş müdürler yeni hâli görür; daha önce kaydedilmiş müdür düzenlemeleri değişmez.'
@@ -409,6 +613,7 @@ function duzenleyiciAc(kok, mod, kod) {
   });
   const geri = O.el('a', { class: 'btn btn-hayalet', href: mod === 'ana' ? (ana ? '#/inceleme/' + kod : '#/') : '#/', html: IK_GERI + (mod === 'ana' && ana ? 'İncelemeye dön' : 'Unvanlara dön') });
   kok.append(O.el('div', null, geri));
+  if (mod === 'kisi') kok.append(kisiBilgiKarti());
   /* bu cihazda kaydedilmemiş taslak var mı? (onay penceresi değil, sayfa içi öneri) */
   if (ED.taslak) {
     const t = ED.taslak;
@@ -438,6 +643,19 @@ function duzenleyiciAc(kok, mod, kod) {
   const govde = O.el('div', { id: 'oyGovde', style: 'display:grid;gap:16px' });
   kok.append(govde);
   formuCiz();
+}
+/* Kişi formu: personel bilgileri (formun "Personelin" bölümüne ve sorumlu e-postasına girer; T.C. kimlik no saklanmaz) */
+function kisiBilgiKarti() {
+  const iz = O.el('section', { class: 'izgara' });
+  const k = O.kart(iz, { baslik: 'Personel bilgileri', aciklama: 'Formun “Personelin” bölümüne yazılır · T.C. kimlik numarası sistemde tutulmaz, çıktıda elle doldurulur', sinif: 's12' });
+  const b = ED.bilgi;
+  const metinG = (alan, etiket, n) => { const i = O.el('input', { class: 'oy-girdi', type: 'text', value: b[alan] || '', maxlength: String(n), 'aria-label': etiket }); i.addEventListener('input', () => { b[alan] = F.temiz(i.value, n); degisti(); }); return O.el('label', { class: 'oy-alan' }, O.el('span', { text: etiket }), i); };
+  const tarih = O.el('input', { class: 'oy-girdi', type: 'date', value: KS.isoTarih(b.iseGiris), 'aria-label': 'İşe giriş tarihi' });
+  tarih.addEventListener('change', () => { b.iseGiris = tarih.value || ''; degisti(); });
+  const yon = O.el('div', { class: 'oy-alan' }, O.el('span', { text: 'İlk yönetici / amir' }), kisiSecici(b.yonetici, (v) => { b.yonetici = v; degisti(); }));
+  k.govde.append(O.el('div', { class: 'oy-personel-izgara' }, metinG('ad', 'Ad Soyad', 80), metinG('dept', 'Departman', 80), metinG('pozisyon', 'Pozisyon', 120),
+    O.el('label', { class: 'oy-alan' }, O.el('span', { text: 'İşe giriş tarihi' }), tarih), yon));
+  return iz;
 }
 /* Taban ve çalışma formundaki kimlikler (çöp kutusunda yalnız "ana formda olmayan ve şu an formda bulunmayan" öğeler ayrı listelenir) */
 function kimlikKumeleri() {
@@ -580,13 +798,103 @@ function maddeEl(b, m, mi, fark) {
   const yerlesim = { kapsam: 's4', sorumlu: '', termin: '', saat: 's1', sure: 's1', aciklama: 's4' };
   ['kapsam', 'sorumlu', 'termin', 'saat', 'sure', 'aciklama'].forEach((k) => {
     const deg = fm.eski && k in fm.eski;
-    const a = O.el('label', { class: 'oy-alan ' + (yerlesim[k] || '') + (deg ? ' degisti' : ''), 'data-alan': k }, O.el('span', { text: F.ALAN_AD[k] }),
-      girdi(m[k], F.SINIR, (v) => { m[k] = v; degisti(); maddeIsaret(m.id); }, F.ALAN_AD[k]));
-    if (deg) a.append(eskiEl(fm.eski[k]));
+    const a = O.el(k === 'sorumlu' ? 'div' : 'label', { class: 'oy-alan ' + (yerlesim[k] || '') + (deg ? ' degisti' : ''), 'data-alan': k }, O.el('span', { text: F.ALAN_AD[k] }),
+      alanDenetimi(m, k, (v) => { m[k] = v; degisti(); maddeIsaret(m.id); }));
+    if (deg) a.append(eskiEl(eskiDeger(k, fm.eski[k])));
     izgara.append(a);
   });
   kap.append(izgara);
   return kap;
+}
+/* ---- Seçmeli alanlar (elle yazılmaz): Tarih → takvim · Saat → 15 dakikada bir · Süre → seçenek · Sorumlu → aktif personel (aramalı) */
+const eskiDeger = (k, v) => (k === 'termin' ? F.tarihGoster(v) : v);
+function alanDenetimi(m, k, yaz) {
+  if (k === 'termin') return tarihGirdi(m.termin, yaz);
+  if (k === 'saat') return secimGirdi(F.SAATLER, m.saat, yaz, 'Saat seçin', 'Saat');
+  if (k === 'sure') return secimGirdi(F.SURELER, m.sure, yaz, 'Süre seçin', 'Süre');
+  if (k === 'sorumlu') return kisiSecici(m.sorumlu, yaz);
+  return girdi(m[k], F.SINIR, yaz, F.ALAN_AD[k]);
+}
+function tarihGirdi(deger, yaz) {
+  const iso = /^\d{4}-\d{2}-\d{2}$/.test(String(deger || '')) ? deger : '';
+  const i = O.el('input', { class: 'oy-girdi', type: 'date', value: iso, 'aria-label': 'Tarih' });
+  i.addEventListener('change', () => yaz(i.value || ''));
+  const kap = O.el('div', { class: 'oy-denetim' }, i);
+  if (deger && !iso) kap.append(O.el('small', { class: 'oy-eski-metin', text: 'Önceden yazılan: ' + deger }));
+  return kap;
+}
+function secimGirdi(secenekler, deger, yaz, bos, etiket) {
+  const s = O.el('select', { class: 'oy-girdi oy-secim', 'aria-label': etiket });
+  s.append(O.el('option', { value: '', text: bos }));
+  if (deger && secenekler.indexOf(deger) < 0) s.append(O.el('option', { value: deger, text: deger + ' (önceki)' }));
+  secenekler.forEach((v) => s.append(O.el('option', { value: v, text: v })));
+  s.value = deger || '';
+  s.addEventListener('change', () => yaz(s.value));
+  return s;
+}
+/* Sorumlu seçici: düğme → açılır panel (en üstte arama kutusu; isim yazınca süzülür). Birden çok sorumlu seçilebilir. */
+let ACIK_SECICI = null;
+function kisiSecici(deger, yaz) {
+  let sec = F.sorumlular(deger);
+  const btn = O.el('button', { type: 'button', class: 'oy-girdi oy-kisi-btn', 'aria-haspopup': 'listbox', 'aria-label': 'Oryantasyon sorumlusu seç' });
+  const ciz = () => {
+    btn.textContent = '';
+    if (!sec.length) btn.append(O.el('span', { class: 'oy-kisi-bos', text: 'Sorumlu seçin…' }));
+    else sec.forEach((a) => btn.append(O.el('span', { class: 'oy-kisi-cip', text: a })));
+  };
+  ciz();
+  btn.addEventListener('click', (e) => { e.preventDefault(); kisiPaneli(btn, sec, (yeni) => { sec = yeni; ciz(); yaz(yeni.join(F.SORUMLU_AYRAC)); }); });
+  return btn;
+}
+function kisiPaneliKapat() {
+  if (!ACIK_SECICI) return;
+  const p = ACIK_SECICI; ACIK_SECICI = null;
+  document.removeEventListener('mousedown', p.dis, true); document.removeEventListener('keydown', p.tus, true); window.removeEventListener('scroll', p.konum, true);
+  p.el.remove();
+  if (p.btn && p.btn.isConnected) p.btn.focus({ preventScroll: true });
+}
+function kisiPaneli(btn, secili, degisince) {
+  kisiPaneliKapat();
+  let sec = secili.slice();
+  const ara = O.el('input', { class: 'oy-girdi', type: 'search', placeholder: 'İsim yazın…', 'aria-label': 'Personel ara', autocomplete: 'off', spellcheck: 'false' });
+  const secKap = O.el('div', { class: 'oy-kisi-secili' });
+  const liste = O.el('div', { class: 'oy-kisi-liste', role: 'listbox', 'aria-multiselectable': 'true' });
+  const tamam = O.el('button', { type: 'button', class: 'btn btn-pirinc', text: 'Tamam', on: { click: kisiPaneliKapat } });
+  const panel = O.el('div', { class: 'oy-kisi-panel', role: 'dialog', 'aria-label': 'Oryantasyon sorumlusu seç' }, ara, secKap, liste,
+    O.el('div', { class: 'oy-kisi-alt' }, O.el('small', { text: PERSONEL.length ? PERSONEL.length + ' aktif personel' : '' }), tamam));
+  const uygula = (yeni) => { sec = yeni; degisince(sec); cizSecili(); cizListe(); };
+  const cizSecili = () => {
+    secKap.textContent = '';
+    sec.forEach((a) => secKap.append(O.el('button', { type: 'button', class: 'oy-kisi-cip kaldir', title: 'Kaldır', text: a + ' ×', on: { click: () => uygula(sec.filter((x) => x !== a)) } })));
+  };
+  const cizListe = () => {
+    const q = O.aramaAnahtari(ara.value);
+    const bul = (q ? PERSONEL.filter((p) => O.aramaAnahtari(p.ad + ' ' + (p.unvan || '') + ' ' + (p.dept || '')).includes(q)) : PERSONEL).slice(0, 80);
+    liste.textContent = '';
+    if (!PERSONEL.length) { liste.append(O.el('div', { class: 'oy-kisi-bilgi', text: 'Personel listesi henüz yüklenmedi. İnsan Kaynakları sayfayı açtığında aktif personel listesi kendiliğinden yüklenir.' })); return; }
+    if (!bul.length) { liste.append(O.el('div', { class: 'oy-kisi-bilgi', text: '“' + ara.value + '” ile eşleşen aktif personel yok.' })); return; }
+    bul.forEach((p) => {
+      const var_ = sec.indexOf(p.ad) >= 0;
+      liste.append(O.el('button', { type: 'button', class: 'oy-kisi-satir' + (var_ ? ' secili' : ''), role: 'option', 'aria-selected': String(var_), 'data-ad': p.ad,
+        on: { click: () => uygula(var_ ? sec.filter((x) => x !== p.ad) : sec.concat([p.ad])) } },
+        O.el('b', { text: p.ad }), O.el('small', { text: [p.unvan, p.dept].filter(Boolean).join(' · ') || '—' })));
+    });
+  };
+  ara.addEventListener('input', cizListe);
+  document.body.append(panel);
+  const konum = () => {
+    const r = btn.getBoundingClientRect(), g = Math.min(380, window.innerWidth - 16);
+    panel.style.width = g + 'px';
+    panel.style.left = Math.max(8, Math.min(r.left, window.innerWidth - g - 8)) + 'px';
+    const asagi = window.innerHeight - r.bottom > 340 || r.top < 360;
+    panel.style.top = (asagi ? r.bottom + 4 : Math.max(8, r.top - panel.offsetHeight - 4)) + 'px';
+  };
+  const dis = (e) => { if (!panel.contains(e.target) && e.target !== btn && !btn.contains(e.target)) kisiPaneliKapat(); };
+  const tus = (e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); kisiPaneliKapat(); } };
+  document.addEventListener('mousedown', dis, true); document.addEventListener('keydown', tus, true); window.addEventListener('scroll', konum, true);
+  ACIK_SECICI = { el: panel, dis, tus, konum, btn };
+  cizSecili(); cizListe(); konum();
+  requestAnimationFrame(() => ara.focus({ preventScroll: true }));
 }
 function girdi(deger, sinir, yaz, etiket) {
   const t = O.el('textarea', { class: 'oy-girdi', rows: '1', maxlength: String(sinir), 'aria-label': etiket || null });
@@ -624,7 +932,7 @@ function maddeIsaret(id) {
     const k = a.getAttribute('data-alan'); const deg = !!(fm.eski && k in fm.eski);
     a.classList.toggle('degisti', deg);
     const eskiVar = a.querySelector('.oy-eski');
-    if (deg && !eskiVar) a.append(eskiEl(fm.eski[k]));
+    if (deg && !eskiVar) a.append(eskiEl(eskiDeger(k, fm.eski[k])));
     if (!deg && eskiVar) eskiVar.remove();
   });
 }
@@ -661,7 +969,8 @@ function cubukCiz() {
   c.append(O.el('div', { class: 'oy-indir', role: 'group', 'aria-label': 'Formu indir' },
     O.el('button', { class: 'btn', type: 'button', 'data-indir': 'xlsx', title: 'Formu Excel (.xlsx) olarak indir', html: IK_INDIR + 'Excel', on: { click: (e) => ciktiAl('xlsx', duzenleyiciCiktisi, e.currentTarget) } }),
     O.el('button', { class: 'btn', type: 'button', 'data-indir': 'pdf', title: 'Formu PDF olarak indir', html: IK_INDIR + 'PDF', on: { click: (e) => ciktiAl('pdf', duzenleyiciCiktisi, e.currentTarget) } })));
-  c.append(O.el('button', { class: 'btn btn-pirinc', type: 'button', id: 'oyKaydet', html: IK_KAYDET + 'Kaydet', on: { click: () => kaydet(false) } }));
+  c.append(O.el('button', { class: 'btn btn-pirinc', type: 'button', id: 'oyKaydet', html: IK_KAYDET + (ED.mod === 'kisi' ? 'Kaydet ve bildir' : 'Kaydet'),
+    title: ED.mod === 'kisi' ? 'Formu kaydeder; ardından seçilen sorumlulara e-posta gönderme penceresi açılır' : null, on: { click: () => kaydet(false) } }));
 }
 /* ---------------------------------------------------- EXCEL / PDF ÇIKTISI */
 const bugunSaat = () => { const d = new Date(); return d.toLocaleDateString('tr-TR') + ' ' + d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }); };
@@ -671,6 +980,21 @@ function duzenleyiciCiktisi() {
   const unvan = unvanAdi(ed.kod);
   const form = F.formuDuzenle(bosYenileriAt(ed.calisma, ed.taban));
   const kaydedilmemis = ed.kirli ? ' · kaydedilmemiş değişiklikler dahil' : '';
+  if (ed.mod === 'kisi') {
+    /* kişi formu: "Personelin" bölümü dolu gelir (T.C. kimlik no boş — elle yazılır) */
+    const b = ed.bilgi, ad = O.trBaslik(b.ad || '');
+    const deger = (etiket) => {
+      const k = O.aramaAnahtari(etiket);
+      if (/ad.*soyad|isim/.test(k)) return ad;
+      if (/birim|gorev|departman/.test(k)) return [b.dept, b.pozisyon].filter(Boolean).join(' / ');
+      if (/giris/.test(k)) return F.tarihGoster(b.iseGiris);
+      if (/yonetici|amir/.test(k)) return b.yonetici || '';
+      return '';
+    };
+    return { unvan: b.pozisyon || unvan, form, degerler: Object.fromEntries(form.alanlar.map((a) => [a.id, deger(a.ad)])),
+      meta: ad + ' · ' + (b.dept || '—') + ' · işe giriş ' + (F.tarihGoster(b.iseGiris) || '—') + kaydedilmemis + ' · indirildi ' + bugunSaat(),
+      dosya: 'Oryantasyon Formu - ' + ad + ' (' + (b.pozisyon || unvan) + ')' };
+  }
   if (ed.mod === 'ana') {
     const ana = ANA.get(ed.kod);
     return { unvan, form, meta: 'Ana form (İnsan Kaynakları) · ' + (ana ? 'sürüm ' + ed.tabanSurum : 'yeni form') + kaydedilmemis + ' · indirildi ' + bugunSaat(),
@@ -719,6 +1043,63 @@ function bosYenileriAt(form, taban) {
   return f;
 }
 const yetkiHatasi = (e) => !!(e && e.code === 'permission-denied');
+/* Sorumlu alanındaki değer bir kişi mi? (aktif personel ya da e-posta listesinde adı geçen) — ana formdan gelen
+   "Satış Müdürü / Finans" gibi unvan yazıları kişi sayılmaz, bildirim listesine ve sorumlu sayısına girmez */
+const sorumluKisiMi = (ad) => { const a = KS.adAnahtari(ad); return PERSONEL.some((p) => KS.adAnahtari(p.ad) === a) || !!KS.epostaBul(EPOSTALAR, ad); };
+/* Kişi formu kaydından sonra: her sorumluya kendi görevlerini içeren e-posta. Daha önce aynı görev listesiyle bildirilen
+   sorumluya yeniden gönderilmez (görevleri değiştiyse "güncelleme" olarak gönderilir). E-posta adresi yüklenen listeden bulunur. */
+function sorumluBildirimi(kisiId, form, bilgi) {
+  const kayit = KISI.get(kisiId) || {};
+  const onceki = kayit.bildirimler || {};
+  const unvan = bilgi.pozisyon || kayit.unvan || unvanAdi(kayit.kod);
+  const tum = [...KS.sorumluGorevleri(form).entries()];
+  const roller = tum.filter(([ad]) => !sorumluKisiMi(ad)).map(([ad]) => ad);
+  const satirlar = tum.filter(([ad]) => sorumluKisiMi(ad)).map(([ad, gorevler]) => {
+    const anahtar = KS.adAnahtari(ad), imza = KS.gorevImzasi(gorevler), o = onceki[anahtar];
+    return { ad, anahtar, gorevler, imza, eposta: KS.epostaBul(EPOSTALAR, ad), durum: KS.bildirimDurumu(o, imza, BASARISIZ) };
+  });
+  if (!satirlar.length) { O.bildirim(roller.length ? 'Sorumlu olarak kişi seçilmemiş (yalnız unvan yazılı); e-posta gönderilmedi. Maddelerde sorumluyu personel listesinden seçin.' : 'Formda seçilmiş oryantasyon sorumlusu yok; e-posta gönderilmedi.'); return; }
+  const kutular = new Map();
+  const liste = O.el('div', { class: 'oy-bildirim-liste' }, ...satirlar.map((s) => {
+    const kutu = O.el('input', { type: 'checkbox', 'data-sorumlu': s.ad }); kutu.checked = !!s.eposta && s.durum !== 'ayni'; kutu.disabled = !s.eposta;
+    kutular.set(s.anahtar, kutu);
+    const cip = s.durum === 'yeni' ? ['cip-bilgi', 'Yeni'] : s.durum === 'degisti' ? ['cip-uy', 'Görevleri değişti'] : s.durum === 'hata' ? ['cip-ht', 'Önceki e-posta gönderilemedi'] : ['cip-ok', 'Daha önce bildirildi'];
+    return O.el('label', { class: 'oy-bildirim-satir' + (s.eposta ? '' : ' eksik') }, kutu,
+      O.el('span', { class: 'oy-bildirim-ad' }, O.el('b', { text: s.ad }), O.el('small', { text: s.eposta || 'E-posta adresi bulunamadı — e-posta listesini yükleyin' })),
+      O.el('span', { class: 'oy-bildirim-say', text: s.gorevler.length + ' konu' }), O.el('span', { class: 'cip ' + cip[0], text: cip[1] }));
+  }));
+  const eksik = satirlar.filter((s) => !s.eposta).length;
+  const gonder = O.el('button', { class: 'btn btn-pirinc', type: 'button', html: O.ikon('onay') + '<span>Seçilenlere e-posta gönder</span>' });
+  pencereAc('Oryantasyon sorumlularına bildirim', [
+    O.el('div', { class: 'modal-ust' }, O.el('div', null, O.el('h3', { text: 'Oryantasyon sorumlularına bildirim' }),
+      O.el('p', { text: O.trBaslik(bilgi.ad) + ' · ' + unvan + ' — her sorumluya, kendisine düşen konuları (tarih, saat, süre) içeren e-posta gider.' }))),
+    O.el('div', { class: 'modal-govde' }, liste,
+      eksik ? O.el('p', { class: 'oy-bilgi uyari', style: 'margin-top:10px', text: eksik + ' sorumlunun e-posta adresi listede yok. “Kişi formları” bölümündeki “E-posta listesi” ile çalışan e-posta listesini yükleyin; sonra formu yeniden kaydederek bildirebilirsiniz.' }) : null,
+      roller.length ? O.el('p', { class: 'oy-bilgi oy-bildirim-rol', style: 'margin-top:10px', text: roller.length + ' sorumlu aktif personel listesinde yok (' + roller.slice(0, 3).join(' · ') + (roller.length > 3 ? ' …' : '') + '); bunlara e-posta gitmez. Çoğu ana formdan gelen unvan yazısıdır — sorumluyu personel listesinden seçip yeniden kaydederseniz bildirilir.' }) : null,
+      O.el('p', { class: 'oy-kisi-bilgi-not', text: 'E-postalar birkaç dakika içinde (en geç yarım saat) gönderilir.' })),
+    O.el('div', { class: 'modal-alt' }, O.el('button', { class: 'btn', type: 'button', text: 'Şimdi değil', on: { click: pencereKapat } }), gonder)]);
+  gonder.addEventListener('click', async () => {
+    const secilen = satirlar.filter((s) => s.eposta && kutular.get(s.anahtar).checked);
+    if (!secilen.length) { pencereKapat(); return; }
+    gonder.disabled = true;
+    try {
+      const wb = writeBatch(db);
+      const yeniBildirim = Object.assign({}, onceki);
+      secilen.forEach((s) => {
+        const e = KS.sorumluEpostasi({ sorumlu: s.ad, kisi: O.trBaslik(bilgi.ad), unvan, dept: bilgi.dept, iseGiris: bilgi.iseGiris, gorevler: s.gorevler, guncelleme: s.durum === 'degisti' });
+        const q = doc(collection(db, 'epostaKuyrugu'));
+        wb.set(q, Object.assign(KS.kuyrukKaydi({ kime: s.eposta, kimeAd: s.ad, konu: e.konu, html: e.html, kaynak: 'oryantasyon-sorumlu', ilgili: 'oryantasyonKisiler/' + kisiId }),
+          { olusturma: serverTimestamp(), olusturan: HESAP.ad || '' }));
+        /* kuyruk: e-posta kaydının kimliği — gönderilemez / iptal edilirse sorumlu "bildirilmedi" sayılır */
+        yeniBildirim[s.anahtar] = { ad: s.ad, eposta: s.eposta, imza: s.imza, zaman: new Date().toISOString(), kuyruk: q.id };
+      });
+      wb.update(doc(db, 'oryantasyonKisiler', kisiId), { bildirimler: yeniBildirim, guncelleme: serverTimestamp(), guncelleyen: HESAP.ad || '' });
+      await wb.commit();
+      pencereKapat();
+      O.bildirim(secilen.length + ' sorumluya e-posta sıraya alındı; birkaç dakika içinde gönderilir');
+    } catch (e) { gonder.disabled = false; alert('E-posta sıraya alınamadı: ' + (yetkiHatasi(e) ? 'yetki reddedildi (güvenlik kuralı yayınlanmamış olabilir).' : (e && e.message) || 'bilinmeyen hata')); }
+  });
+}
 /* Kayıt sürerken (yavaş bağlantı) yazılmaya devam edildiyse: kayıt tamamlandı ama son yazılanlar ekranda ve taslakta kalır */
 function kayitSirasindaDegisti(ed) {
   O.bildirim('Kaydedildi. Kayıt sürerken yaptığınız son değişiklikler için yeniden “Kaydet”e basın.');
@@ -732,6 +1113,21 @@ async function kaydet(degisiklikYok) {
   taslakYaz(ed, true);
   try {
     KAYDEDILIYOR = true; if (b) b.disabled = true;
+    if (ed.mod === 'kisi') {
+      /* kişi formu: kaydet → ardından seçilen sorumlulara bildirim penceresi */
+      const form = F.formuDuzenle(bosYenileriAt(ed.calisma, ed.taban));
+      const bl = ed.bilgi;
+      if (F.sade(bl.ad).length < 3) { alert('Personelin adını girin.'); return; }
+      const rev = ed.rev || 0;
+      await updateDoc(doc(db, 'oryantasyonKisiler', ed.kisiId), {
+        form, ad: F.temiz(O.trBaslik(bl.ad), 80), dept: F.temiz(bl.dept, 80), pozisyon: F.temiz(bl.pozisyon, 120), iseGiris: KS.isoTarih(bl.iseGiris), yonetici: F.temiz(bl.yonetici, 120),
+        tabanSurum: ed.tabanSurum, taban: F.formuDuzenle(ed.taban), durum: 'hazirlandi', guncelleme: serverTimestamp(), guncelleyen: HESAP.ad || '' });
+      if ((ed.rev || 0) !== rev) { taslakYaz(ed, true); kayitSirasindaDegisti(ed); return; }
+      ed.kirli = false; taslakSil(ed);
+      O.bildirim('Kişi formu kaydedildi');
+      sorumluBildirimi(ed.kisiId, form, Object.assign({}, bl));
+      return;
+    }
     if (ed.mod === 'ana') {
       const form = F.formuDuzenle(bosYenileriAt(ed.calisma, ed.taban));
       if (!form.bolumler.length) { alert('Ana formda en az bir bölüm olmalı.'); return; }
@@ -911,8 +1307,8 @@ function okumaMadde(m, i, fm, silindi, bolumle) {
   ['kapsam', 'sorumlu', 'termin', 'saat', 'sure', 'aciklama'].forEach((k) => {
     const deg = !!(fm.eski && k in fm.eski);
     if (!deg && !F.sade(m[k])) return;          /* boş ve değişmemiş alan gösterilmez (okuma sade kalsın) */
-    const a = O.el('div', { class: 'oy-alan ' + (yerlesim[k] || '') + (deg ? ' degisti' : ''), 'data-alan': k }, O.el('span', { text: F.ALAN_AD[k] }), oku(m[k]));
-    if (deg) a.append(eskiEl(fm.eski[k]));
+    const a = O.el('div', { class: 'oy-alan ' + (yerlesim[k] || '') + (deg ? ' degisti' : ''), 'data-alan': k }, O.el('span', { text: F.ALAN_AD[k] }), oku(eskiDeger(k, m[k])));
+    if (deg) a.append(eskiEl(eskiDeger(k, fm.eski[k])));
     izgara.append(a);
   });
   kap.append(izgara);
@@ -1052,7 +1448,8 @@ function hataEkrani(e) {
 }
 let cizZaman = null;
 function guncellendi() {
-  if (!(ILK_ANA && ILK_DUZ)) return;
+  /* İK: kişi formları da gelmeden ilk çizim yapılmaz (e-postadaki "#/kisi/…" bağlantısı doğrudan açılabilsin) */
+  if (!(ILK_ANA && ILK_DUZ && (ILK_KISI || !IK))) return;
   /* Kaydedilmemiş değişiklik içeren düzenleyici canlı güncellemeyle baştan çizilmez (yazılanlar kaybolmasın);
      ana form bu sırada güncellenirse bir kez bildirilir. */
   if (ED && ED.kirli) { surumBildir(); return; }
@@ -1073,6 +1470,36 @@ function surumBildir() {
     ? 'Dikkat: bu ana form siz düzenlerken başka biri tarafından güncellendi (sürüm ' + a.surum + ')'
     : 'İnsan Kaynakları bu formu güncelledi (sürüm ' + a.surum + '). Kaydettiğinizde düzenlemeniz ' + ED.tabanSurum + '. sürüme göre saklanır.');
 }
+/* Aktif personel listesi (sorumlu seçici): oryantasyonAyar/personel — tüm yönetim rolleri okur. İK sayfayı açınca liste
+   haftalık İK pano verisinden (+ panodan girilen işe giriş / çıkış hareketleri) yeniden kurulur, değiştiyse yazılır. */
+let PERSONEL = [];
+async function personelYukle() {
+  try { const s = await getDoc(doc(db, 'oryantasyonAyar', 'personel')); if (s.exists() && Array.isArray(s.data().liste)) PERSONEL = s.data().liste; }
+  catch (e) { console.warn('Personel listesi okunamadı', e); }
+  if (!IK) return;
+  try {
+    const p = await getDoc(doc(db, 'satisVeri', 'ikPano'));
+    if (!p.exists() || !p.data().json) return;
+    const pk = JSON.parse(p.data().json);
+    let D = pk && pk.D; if (!D) return;
+    const h = Array.isArray(p.data().hareketler) ? p.data().hareketler : [];
+    if (h.length) { try { D = hareketUygula({ D: pk.D, MONTHLY_HC: pk.MONTHLY_HC, etiket: pk.etiket }, h).D; } catch (e) { /* paket yeterli */ } }
+    const gor = new Set(), liste = [];
+    ['normal', 'stajyer', 'gecici', 'vi'].forEach((l) => (D[l] || []).forEach((k) => {
+      if (!k || !k.ad) return;
+      const ad = O.trBaslik(String(k.ad).trim()), a = O.aramaAnahtari(ad);
+      if (!a || gor.has(a)) return; gor.add(a);
+      liste.push({ ad: F.temiz(ad, 80), unvan: F.temiz(O.trBaslik(k.unvan || ''), 80), dept: F.temiz(k.dept || '', 60) });
+    }));
+    liste.sort((x, y) => O.trKarsilastir(x.ad, y.ad));
+    if (liste.length && JSON.stringify(liste) !== JSON.stringify(PERSONEL)) {
+      PERSONEL = liste;
+      await setDoc(doc(db, 'oryantasyonAyar', 'personel'), { liste, guncelleme: serverTimestamp(), kaynak: F.temiz((pk.etiket && (pk.etiket.short || pk.etiket.label)) || '', 80) });
+    }
+  } catch (e) { console.warn('Personel listesi güncellenemedi', e); }
+}
+/* liste gelince ekran tazelenir (sorumlu sayıları ve seçici aktif personele göre hesaplanır) */
+personelYukle().finally(() => guncellendi());
 onSnapshot(collection(db, 'oryantasyonFormlari'), (snap) => {
   ANA.clear(); snap.docs.forEach((d) => ANA.set(d.id, Object.assign({ kod: d.id }, d.data())));
   ILK_ANA = true; guncellendi();
@@ -1085,7 +1512,19 @@ onSnapshot(IK ? collection(db, 'oryantasyonDuzenlemeleri') : query(collection(db
   DUZ.forEach((d) => GORULEN.add(d.id + '|' + (tarihCoz(d.guncelleme) || '').valueOf()));
   ILK_DUZ = true; guncellendi();
 }, hataEkrani);
-window.__ORY = { ana: () => ANA, duz: () => DUZ, ed: () => ED };
+/* İK: kişiye özel formlar ve e-posta listesi (okunamazsa sayfa yine açılır; ilgili bölüm boş görünür) */
+if (IK) {
+  onSnapshot(collection(db, 'oryantasyonKisiler'), (snap) => {
+    KISI.clear(); snap.docs.forEach((d) => KISI.set(d.id, Object.assign({ id: d.id }, d.data())));
+    ILK_KISI = true; guncellendi();
+  }, (e) => { console.warn('Kişi formları okunamadı', e); ILK_KISI = true; guncellendi(); });
+  onSnapshot(doc(db, 'oryantasyonAyar', 'epostalar'), (s) => { EPOSTALAR = s.exists() && Array.isArray(s.data().liste) ? s.data().liste : []; guncellendi(); }, (e) => console.warn('E-posta listesi okunamadı', e));
+  /* gönderilemeyen ya da iptal edilen e-postalar: o sorumlu "bildirilmedi" sayılır, bildirim penceresinde yeniden önerilir */
+  onSnapshot(query(collection(db, 'epostaKuyrugu'), where('durum', 'in', ['hata', 'iptal'])), (snap) => {
+    BASARISIZ = new Set(snap.docs.map((d) => d.id)); guncellendi();
+  }, (e) => console.warn('E-posta kuyruğu okunamadı', e));
+}
+window.__ORY = { ana: () => ANA, duz: () => DUZ, ed: () => ED, kisi: () => KISI, eposta: () => EPOSTALAR };
 </script>
 </body>
 </html>
