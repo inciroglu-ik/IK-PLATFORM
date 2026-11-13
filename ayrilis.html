@@ -22,6 +22,13 @@ body.ayrilis .ust-marka { display: flex; }
 .ay-araclar { display: flex; gap: 8px; flex-wrap: wrap; }
 .ay-araclar .btn { height: 32px; padding: 0 10px; font-size: 12.5px; }
 .ay-islem { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.ay-suzgec { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin: 0 0 12px; }
+.ay-suzgec .alan { min-width: 260px; }
+.ay-suzgec .btn { height: 38px; }
+.ay-yorumlar { display: grid; gap: 10px; max-width: 980px; }
+.ay-yorumlar p { margin: 0; font-size: 14px; line-height: 1.65; color: var(--metin-2); }
+.ay-yorumlar p b { color: var(--metin-1); }
+.ay-yorum-kart { border-left: 3px solid var(--pir-500); }
 .ay-islem .btn { height: 30px; padding: 0 10px; font-size: 12px; white-space: nowrap; }
 .ay-islem .btn svg { width: 14px; height: 14px; }
 .ay-soluk { color: var(--metin-3); font-size: 12px; }
@@ -124,6 +131,8 @@ import { doc, getDoc, setDoc, deleteDoc, collection, query, where, onSnapshot, w
 import { db, kimlikBaslat, cikisYap, adBasliklari } from "./ortak/kimlik.js";
 import * as O from "./pano/ortak.js";
 import * as A from "./ortak/ayrilis-sorular.js";
+import * as AB from "./ortak/ayrilis-baglanti.js";
+import { uygula as hareketUygula } from "./pano/hareket.js";
 
 const $ = (id) => document.getElementById(id);
 const acilisMetni = (t) => { const e = $('acilisMetin'); if (e) e.textContent = t; };
@@ -155,35 +164,17 @@ function tarihCoz(s) {
 }
 const isoGun = (d) => (d ? d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') : '');
 const gunYaz = (d) => (d ? String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + d.getFullYear() : '—');
-const adAnahtari = (s) => O.katla(s).replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ').trim();
-function lev(a, b) {
-  if (a === b) return 0;
-  const p = Array.from({ length: b.length + 1 }, (_, i) => i);
-  for (let i = 1; i <= a.length; i++) {
-    let onceki = p[0]; p[0] = i;
-    for (let j = 1; j <= b.length; j++) { const t = p[j]; p[j] = Math.min(p[j] + 1, p[j - 1] + 1, onceki + (a[i - 1] === b[j - 1] ? 0 : 1)); onceki = t; }
-  }
-  return p[b.length];
-}
-/** Anket kaydı ↔ pano ayrılan kaydı: aynı ad (Türkçe katlamalı) ve yakın çıkış tarihi; küçük yazım farkı tolere edilir */
-function eslesir(kayit, a) {
-  const x = adAnahtari(kayit.ad), y = adAnahtari(a.ad);
-  const t1 = tarihCoz(kayit.cikis), t2 = tarihCoz(a.tarih);
-  if (!t1 || !t2) return x === y;                 /* tarih yoksa yalnız birebir ad */
-  const gun = Math.abs(t1 - t2) / 864e5;
-  return (x === y && gun <= 45) || (lev(x, y) <= 2 && gun <= 10);
-}
+/** Anket kaydı ↔ pano ayrılan kaydı: aynı ad (Türkçe katlamalı) ve yakın çıkış tarihi; küçük yazım farkı tolere edilir.
+    İK Dashboard'daki otomatik bağlantı da AYNI eşleştirmeyi kullanır (ortak/ayrilis-baglanti.js) */
+const eslesir = AB.eslesir;
 function satirBol(s, n) {
   const k = String(s).split(' '); const r = []; let c = '';
   k.forEach((w) => { if ((c + ' ' + w).trim().length > n && c) { r.push(c); c = w; } else c = (c + ' ' + w).trim(); });
   if (c) r.push(c);
   return r.length > 1 ? r : r[0] || '';
 }
-function anketLinki(id) { return new URL('anket.html', location.href).href.split('#')[0].split('?')[0] + '#' + id; }
-function davetMesaji(ad, link) {
-  const ilk = String(ad || '').trim().split(/\s+/)[0] || '';
-  return 'Merhaba ' + O.trBaslik(ilk) + ',\n\nİnciroğlu Otomotiv’de birlikte çalıştığımız süre için teşekkür ederiz. Ayrılış nedenlerinizi anlamak ve çalışma koşullarımızı iyileştirmek için hazırladığımız kısa anketi (yaklaşık 5 dakika) doldurmanızı rica ederiz:\n\n' + link + '\n\nBağlantı size özeldir ve tek kullanımlıktır.\nİnciroğlu Otomotiv · İnsan Kaynakları';
-}
+const anketLinki = (id) => AB.anketLinki(id, location.href);
+const davetMesaji = AB.davetMesaji;
 async function kopyala(metin, bildirim) {
   try { await navigator.clipboard.writeText(metin); }
   catch (e) {
@@ -196,7 +187,8 @@ const yuzdeTam = (a, b) => (b ? Math.round((a / b) * 100) : 0);
 
 /* ============================================================== DURUM */
 let KAYITLAR = [];          /* ayrilisAnketleri (canlı) */
-let AYRILANLAR = [];        /* satisVeri/ikPano → D.ayrilanlar (istifa listesi) */
+let AYRILANLAR = [];        /* satisVeri/ikPano → D.ayrilanlar (haftalık paket + İK Dashboard'dan girilen hareketler) */
+let HAREKET_SAYI = 0;       /* paketteki çıkışlara panodan eklenen (Excel'e henüz işlenmemiş) çıkış sayısı */
 let PANO_ETIKET = '';
 let PANO_HATA = null;
 let YIL = new Date().getFullYear();
@@ -425,7 +417,7 @@ function ayrintiAc(k) {
     soru('Ayrılmasına sebep olan olumsuz olay', olay, true),
     soru('Diğer sebepler', c.diger, true), soru('Hangi koşullarda devam ederdi', c.kosul, true), soru('Önerileri / düşünceleri', c.dusunce, true),
     soru('Kişisel veri onayı', c.kvkk ? String(c.kvkk).replace(/\.$/, '') : '—'),
-    IK && k.ikKodu ? soru('İK kodu', k.ikKodu) : null);
+    IK && k.ikKodu && !/^hareket:/.test(k.ikKodu) ? soru('İK kodu', k.ikKodu) : null);
   const alt = O.el('div', null,
     O.el('div', { class: 'ay-ozet-satir' },
       O.el('span', { html: 'Departman: <b>' + O.esc(k.departman || '—') + '</b>' }), O.el('span', { html: 'Pozisyon: <b>' + O.esc(k.pozisyon || '—') + '</b>' }),
@@ -457,15 +449,142 @@ function ustBantKur() {
 }
 
 /* ============================================================== SAYFA */
+let BIRIM = '';             /* "Neden ayrılıyorlar?" birim süzgeci ('' = tüm birimler) — yalnız bu bölümü etkiler */
+const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+/* Konu başlıkları (yorumlarda nedenler bu başlıklarda toplanır; her neden tek başlıkta) */
+const TEMALAR = [
+  { ad: 'ücret ve yan haklar', k: ['ucret', 'odul', 'yanHak'], oneri: 'ücret ve prim yapısının piyasayla karşılaştırılması, ödüllendirme ve yan hak uygulamalarının gözden geçirilmesi' },
+  { ad: 'kariyer ve gelişim', k: ['kariyer', 'egitimYetersiz', 'sirketEgitim'], oneri: 'kariyer yolunun ve eğitim planlarının çalışanlara görünür kılınması' },
+  { ad: 'iş yükü ve çalışma koşulları', k: ['isYuku', 'saat', 'isYasam', 'gorevDisi', 'gorevBelirsiz', 'isyeri'], oneri: 'iş yükü dağılımının, çalışma saatlerinin ve görev tanımlarının gözden geçirilmesi' },
+  { ad: 'yönetim, ekip ve kültür', k: ['yonetici', 'arkadas', 'kultur', 'tatmin'], oneri: 'yönetici geri bildirimi ve ekip içi iletişimin güçlendirilmesi' },
+  { ad: 'kişisel nedenler ve sektör değişikliği', k: ['ailevi', 'evlilik', 'askerlik', 'tasinma', 'saglik', 'okul', 'sektor'], kisisel: true }
+];
+function temaPayi(liste, t) {
+  const n = liste.filter((k) => k.cevaplar && k.cevaplar.puan).length;
+  const v = liste.filter((k) => k.cevaplar && k.cevaplar.puan && t.k.some((f) => Number.isInteger(k.cevaplar.puan[f]) && k.cevaplar.puan[f] >= A.ETKILI_ESIK)).length;
+  return { n, v, oran: pct(v, n) };
+}
+/** "Yorumlar": seçili birimin (ya da tüm birimlerin) anket yanıtlarından üretilen değerlendirme — yalnız veriye dayanır */
+function yorumlar(Sf, Sall, birim, deptOf) {
+  const b = (s) => '<b>' + O.esc(s) + '</b>';
+  const N = nedenIstatistik(Sf).filter((x) => x.n > 0);
+  const p = [];
+  if (!N.length) return ['Bu seçimde değerlendirilecek yanıt yok.'];
+  const [n1, n2, n3] = N;
+  const yer = birim ? b(birim) + ' biriminde' : 'Tüm birimlerde';
+  /* oranı sözle anlatır (yalnız orana gerçekten uyan aralıklarda) */
+  const kesir = (o) => (o >= 45 && o < 56 ? ' — yaklaşık her iki kişiden biri' : o >= 62 && o < 71 ? ' — yaklaşık her üç kişiden ikisi' : o >= 72 && o < 79 ? ' — yaklaşık her dört kişiden üçü' : o >= 30 && o < 36 ? ' — yaklaşık her üç kişiden biri' : '');
+  p.push(yer + ' ' + Sf.length + ' anket değerlendirildi. ' + (birim ? 'Bu birimde ayrılışlarda en çok öne çıkan neden ' : 'Ayrılışlarda en belirleyici neden ') + b(n1.ad) +
+    ': bu nedeni “etkili” ya da “çok etkili” bulanların oranı ' + b('%' + Math.round(n1.oran)) + kesir(Math.round(n1.oran)) + '.' +
+    (n2 ? ' Onu ' + b(n2.ad) + ' (%' + Math.round(n2.oran) + ')' + (n3 ? ' ve ' + b(n3.ad) + ' (%' + Math.round(n3.oran) + ')' : '') + ' izliyor.' : ''));
+  /* konu başlıkları */
+  const tm = TEMALAR.map((t) => Object.assign({}, t, temaPayi(Sf, t))).sort((a, c) => c.oran - a.oran);
+  const sirket = tm.filter((t) => !t.kisisel), kis = tm.find((t) => t.kisisel);
+  if (sirket[0] && sirket[0].oran) {
+    let s = 'Konu başlıklarına bakıldığında ' + b(sirket[0].ad) + ' öne çıkıyor: katılımcıların ' + b('%' + sirket[0].oran) + ' kadarı bu başlıktaki nedenlerden en az birini etkili buldu';
+    s += sirket[1] && sirket[1].oran ? '; ' + O.esc(sirket[1].ad) + ' %' + sirket[1].oran + ' ile ikinci sırada.' : '.';
+    /* kişisel başlık, şirket kaynaklı başlıklarla gerçekten kıyaslanarak anlatılır (ikinci başlıktan yüksekse "sınırlı" denmez) */
+    if (kis && sirket[1] && kis.oran < sirket[1].oran) s += ' Kişisel nedenler ve sektör değişikliği %' + kis.oran + ' ile daha sınırlı; ayrılışların büyük kısmı şirketin etkileyebileceği nedenlerden kaynaklanıyor.';
+    else if (kis && kis.oran < sirket[0].oran) s += ' Kişisel nedenler ve sektör değişikliği de %' + kis.oran + ' ile azımsanmayacak düzeyde; yine de en güçlü başlık ' + O.esc(sirket[0].ad) + '.';
+    else if (kis) s += ' Kişisel nedenler ve sektör değişikliği %' + kis.oran + ' ile en az şirket kaynaklı nedenler kadar belirleyici; bu ayrılışlarda şirketin etki alanı daha dar.';
+    p.push(s);
+  }
+  /* birim ↔ şirket geneli, ya da birim bazında öne çıkanlar */
+  if (birim) {
+    const G = new Map(nedenIstatistik(Sall).map((x) => [x.k, x]));
+    const fark = N.filter((x) => x.n >= 2 && G.get(x.k)).map((x) => ({ x, g: G.get(x.k), d: x.oran - G.get(x.k).oran }));
+    const ust = fark.filter((f) => f.d >= 10).sort((a, c) => c.d - a.d)[0], alt = fark.filter((f) => f.d <= -10).sort((a, c) => a.d - c.d)[0];
+    if (ust || alt) p.push('Şirket geneliyle karşılaştırıldığında ' + (ust ? b(ust.x.ad) + ' bu birimde belirgin biçimde daha yüksek (%' + Math.round(ust.x.oran) + ', şirket genelinde %' + Math.round(ust.g.oran) + ')' : '') +
+      (ust && alt ? '; ' : '') + (alt ? b(alt.x.ad) + ' ise genelin altında (%' + Math.round(alt.x.oran) + ', genelde %' + Math.round(alt.g.oran) + ')' : '') + '.');
+    else p.push('Nedenlerin dağılımı şirket geneline benziyor; bu birime özgü belirgin bir sapma görünmüyor.');
+  } else {
+    const dm = new Map(); Sall.forEach((k) => { const d = deptOf(k); if (!dm.has(d)) dm.set(d, []); dm.get(d).push(k); });
+    const buyuk = [...dm.entries()].filter(([d, l]) => l.length >= 4 && d !== 'Belirtilmemiş').sort((a, c) => c[1].length - a[1].length).slice(0, 3)
+      .map(([d, l]) => { const t = nedenIstatistik(l).filter((x) => x.n > 0)[0]; return t ? b(d) + ' — ' + O.esc(t.ad) + ' (%' + Math.round(t.oran) + ', ' + l.length + ' anket)' : null; }).filter(Boolean);
+    if (buyuk.length) p.push('En çok anket gelen birimlerde öne çıkan nedenler: ' + buyuk.join(' · ') + '. Birim seçerek her birimin ayrıntısını görebilirsiniz.');
+  }
+  /* karar, iletişim, bağlılık */
+  const yanit = (alan) => Sf.map((k) => k.cevaplar && k.cevaplar[alan]).filter(Boolean);
+  const kr = yanit('karar'), hizli = kr.filter((x) => x === 'Bir hafta içinde' || x === 'Bir ay içinde' || x === 'İşe başladıktan hemen sonra').length, uzun = kr.filter((x) => x === 'Uzun zamandan beri').length;
+  const km = yanit('kime').map((x) => [].concat(x)), yon = km.filter((x) => x.indexOf('Yöneticilerime') >= 0).length;
+  const tk = yanit('tekrar'), evet = tk.filter((x) => x === 'Evet').length;
+  const c = [];
+  if (kr.length) c.push('İstifa kararını kısa sürede (bir ay içinde) verenlerin oranı ' + b('%' + pct(hizli, kr.length)) + (uzun ? ', uzun zamandır düşünenlerin oranı %' + pct(uzun, kr.length) : '') + '.');
+  if (km.length) c.push('Ayrılma fikrini önce yöneticisine açanların oranı ' + b('%' + pct(yon, km.length)) + (pct(yon, km.length) >= 50 ? '; yöneticiler ayrılma sinyalini ilk duyan kişiler.' : '.'));
+  if (tk.length) { const o = pct(evet, tk.length); c.push('Gelecekte yeniden İnciroğlu’nda çalışmayı düşünenlerin oranı ' + b('%' + o) + (o >= 60 ? '; ayrılışlar çoğunlukla olumlu kapanıyor.' : o < 40 ? '; ayrılışların önemli kısmı olumsuz bir izle kapanıyor.' : '.')); }
+  if (c.length) p.push(c.join(' '));
+  /* öneri */
+  const on = sirket[0] && sirket[0].oran ? sirket[0] : null;
+  if (on && (!kis || on.oran >= kis.oran)) p.push('<b>Öneri:</b> Öne çıkan başlık ' + O.esc(on.ad) + ' olduğundan ' + on.oneri + ' faydalı olabilir' + (km.length && pct(yon, km.length) >= 50 ? '; ayrıca ayrılma sinyali veren çalışanlarla yöneticilerin erken görüşme yapması önerilir.' : '.'));
+  if (Sf.length < 8) p.push('<i>Not: ' + (birim ? 'Bu birimde' : 'Bu seçimde') + ' yalnız ' + Sf.length + ' anket olduğu için sonuçlar yön göstericidir; tek bir kişinin yanıtı oranları belirgin biçimde değiştirebilir.</i>');
+  return p;
+}
+let NEDEN_GRAFIK = null;
+/* 01 · Neden ayrılıyorlar? — birim süzgeci değişince yalnız bu bölüm yeniden çizilir (sayfa kaymaz) */
+function nedenBolumuCiz(kap, S, RET, deptOf) {
+  kap.textContent = '';
+  if (NEDEN_GRAFIK) { try { NEDEN_GRAFIK.destroy(); } catch (e) { /* yok */ } NEDEN_GRAFIK = null; }
+  const birimler = sayim(S, deptOf);
+  if (BIRIM && !birimler.some((x) => x.ad === BIRIM)) BIRIM = '';
+  const Sf = BIRIM ? S.filter((k) => deptOf(k) === BIRIM) : S;
+  const ust = O.el('div', { class: 'ay-suzgec' });
+  O.secim(ust, { etiket: 'Birim', id: 'aySuzgecBirim', deger: BIRIM,
+    secenekler: [{ v: '', ad: 'Tüm birimler (' + S.length + ' anket)' }].concat(birimler.map((x) => ({ v: x.ad, ad: x.ad + ' (' + x.deger + ' anket)' }))),
+    degisince: (v) => { BIRIM = v; nedenBolumuCiz(kap, S, RET, deptOf); } });
+  if (BIRIM) ust.append(O.el('button', { class: 'btn btn-hayalet', type: 'button', html: O.ikon('carpi') + '<span>Süzgeci kaldır</span>', on: { click: () => { BIRIM = ''; nedenBolumuCiz(kap, S, RET, deptOf); } } }));
+  kap.append(ust);
+  const iz = O.izgara(kap);
+  const NED = nedenIstatistik(Sf);
+  const ilk10 = NED.filter((x) => x.n > 0).slice(0, 10);
+  const g = O.grafikKarti(iz, {
+    baslik: 'En etkili 10 neden' + (BIRIM ? ' · ' + BIRIM : ''),
+    aciklama: O.sayi(Sf.length) + ' anket · “Etkili” + “Çok etkili” payı' + (BIRIM ? '' : (RET ? ' · kişisel veri onayı vermeyen ' + RET + ' yanıt hariç' : '')), sinif: 's12', yukseklik: 420,
+    tablo: () => ({ sutunlar: [{ ad: 'Neden' }, { ad: 'Etkili / Çok etkili', sag: true }, { ad: 'Kişi', sag: true }, { ad: 'Ortalama (0–5)', sag: true }],
+      satirlar: NED.map((x) => [x.ad, O.yuzde(x.oran, 0), O.sayi(x.etkili) + ' / ' + O.sayi(x.n), x.ort === null ? '—' : O.sayi(x.ort, 1)]) }),
+    not: 'Tablo görünümünde 23 nedenin tamamı var. Ölçek: Etkisi yok · Çok az · Az · Orta · Etkili · Çok etkili.'
+  });
+  if (!ilk10.length) { g.kap.textContent = ''; O.bosDurum(g.kap, { ikon: 'filtre', baslik: 'Bu birimde değerlendirilecek yanıt yok', kucuk: true }); }
+  else NEDEN_GRAFIK = O.grafik(g.canvas, {
+    type: 'bar',
+    data: { labels: ilk10.map((x) => satirBol(x.ad, 30)), datasets: [{ label: 'Etkili / Çok etkili', data: ilk10.map((x) => Math.round(x.oran)), backgroundColor: O.RENK.g1, maxBarThickness: 22, datalabels: O.etiket.sag({ onek: '%' }) }] },
+    options: { indexAxis: 'y', layout: { padding: { right: 40, left: 14 } },
+      scales: { x: O.eksenY({ max: 100, ticks: { callback: (v) => '%' + v } }), y: O.eksenX({ ticks: { autoSkip: false, font: { size: 11.5 }, color: O.RENK.n700 } }) },
+      plugins: { tooltip: { callbacks: { title: (c) => ilk10[c[0].dataIndex].ad, label: (c) => ' %' + c.parsed.x + ' · ' + ilk10[c.dataIndex].etkili + ' / ' + ilk10[c.dataIndex].n + ' kişi' } } } }
+  });
+  const ky = O.kart(iz, { baslik: 'Yorumlar', aciklama: (BIRIM ? BIRIM + ' birimi' : 'Tüm birimler') + ' · ' + O.sayi(Sf.length) + ' anket yanıtına göre', sinif: 's12 ay-yorum-kart' });
+  ky.govde.append(O.el('div', { class: 'ay-yorumlar' }, ...yorumlar(Sf, S, BIRIM, deptOf).map((h) => O.el('p', { html: h }))));
+}
+/* Halka (yüzde) grafiği: dilimler [{ ad, deger, renk }] */
+function halkaGrafik(iz, { baslik, aciklama, dilimler, sinif = 's4', alt = '' }) {
+  const top = dilimler.reduce((s, d) => s + d.deger, 0);
+  const g = O.grafikKarti(iz, { baslik, aciklama, sinif, yukseklik: 230,
+    lejant: dilimler.map((d) => ({ ad: d.ad + ' · %' + pct(d.deger, top) + ' (' + d.deger + ')', renk: d.renk })),
+    tablo: () => ({ sutunlar: [{ ad: 'Yanıt' }, { ad: 'Kişi', sag: true }, { ad: 'Oran', sag: true }], satirlar: dilimler.map((d) => [d.ad, O.sayi(d.deger), '%' + pct(d.deger, top)]).concat([['Toplam', O.sayi(top), '%100']]) }) });
+  if (!top) { g.kap.textContent = ''; O.bosDurum(g.kap, { ikon: 'filtre', baslik: 'Yanıt yok', kucuk: true }); return g; }
+  O.grafik(g.canvas, { type: 'doughnut',
+    data: { labels: dilimler.map((d) => d.ad), datasets: [{ data: dilimler.map((d) => d.deger), backgroundColor: dilimler.map((d) => d.renk), borderColor: '#fff', borderWidth: 2, hoverOffset: 6,
+      datalabels: { display: (ctx) => pct(ctx.dataset.data[ctx.dataIndex], top) >= 6, color: '#fff', font: { family: 'Inter', size: 12, weight: '700' }, formatter: (v) => '%' + pct(v, top) } }] },
+    options: { cutout: '56%', layout: { padding: 6 }, plugins: { tooltip: { callbacks: { label: (c) => ' ' + c.label + ': ' + c.parsed + ' kişi · %' + pct(c.parsed, top) } } } } });
+  if (alt) g.govde.append(O.el('p', { class: 'ay-bilgi', style: 'margin:8px 0 0', html: alt }));
+  return g;
+}
+/* Kümelenmiş sütun grafiği: kategoriler + seriler [{ ad, veri, renk }] */
+function kumeGrafik(g, kategoriler, seriler, { etiketSatir = 14 } = {}) {
+  return O.grafik(g.canvas, { type: 'bar',
+    data: { labels: kategoriler.map((x) => satirBol(x, etiketSatir)), datasets: seriler.map((s) => ({ label: s.ad, data: s.veri, backgroundColor: s.renk, maxBarThickness: 22, categoryPercentage: 0.78, barPercentage: 0.92, datalabels: O.etiket.ust({ secim: 'hepsi', boyut: 10 }) })) },
+    options: { scales: { x: O.eksenX({ ticks: { autoSkip: false, maxRotation: 0, font: { size: 10.5 } } }), y: O.eksenY({ grace: '12%' }) },
+      plugins: { tooltip: { mode: 'index', intersect: false, callbacks: { title: (c) => kategoriler[c[0].dataIndex] } } } } });
+}
 function ciz() {
   const kaydirma = window.scrollY;
-  O.grafikleriTemizle();
+  O.grafikleriTemizle(); NEDEN_GRAFIK = null;
   const kok = O.el('section', { class: 'pg on', id: 'p-ayrilis' });
   $('icerik').replaceChildren(kok);
   ustBantKur();
   const T = tamamlananlar();
   const BEK = bekleyenler();
   const IST = istifalar();
+  const CIK = AYRILANLAR.filter((a) => yilOf(a.tarih) === YIL);
   const istFormlu = IST.filter((a) => T.some((k) => eslesir(k, a)));
   /* İstatistik kümesi: KVKK onayını reddedenler hariç (bkz. KVKK_RET_HARIC) */
   const S = KVKK_RET_HARIC ? T.filter((k) => !onayYok(k)) : T;
@@ -475,33 +594,40 @@ function ciz() {
   const evetHayir = (alan) => { const v = S.map((k) => k.cevaplar && k.cevaplar[alan]).filter((x) => x === 'Evet' || x === 'Hayır'); return { evet: v.filter((x) => x === 'Evet').length, n: v.length }; };
   const tekrar = evetHayir('tekrar'), olay = evetHayir('olay');
   const simdi = new Date();
-  const buAy = T.filter((k) => { const d = tarihCoz(k.tamamlanma); return d && d.getFullYear() === simdi.getFullYear() && d.getMonth() === simdi.getMonth(); }).length;
   $('ustAlt').innerHTML = O.ikon('takvim') + '<b>' + YIL + '</b>&nbsp;· canlı';
+  /* Yanıtın departmanı: o yılın çıkış listesindeki eşleşen kaydın departmanı (yoksa ankette yazan) — tüm kartlarda aynı */
+  const kayitDept = (k) => { const a = CIK.find((x) => eslesir(k, x)); return (a && a.dept) || k.departman || 'Belirtilmemiş'; };
 
-  /* ---- 1) ÖZET */
+  /* ---- ÖZET */
   O.kaput(kok, {
     bindirme: true, ustEtiket: 'İnsan Kaynakları · ' + YIL, baslik: 'İşten Ayrılış Anketleri',
     ozetHtml: (IST.length
       ? YIL + ' yılında istifayla ayrılan <b>' + O.sayi(IST.length) + '</b> kişi var; bunların <b>' + O.sayi(istFormlu.length) + '</b> tanesinin ayrılış anketi bulunuyor.'
       : YIL + ' yılında <b>' + O.sayi(T.length) + '</b> ayrılış anketi var.') +
       (enUst ? ' Ayrılmada en çok öne çıkan neden: <b>' + O.esc(enUst.ad) + '</b>.' : ''),
-    meta: [{ ikon: 'saat', html: 'Canlı · anket gönderildiği anda burada görünür' }, { ikon: 'dosya', html: 'İstifa listesi: <b>' + O.esc(PANO_ETIKET || 'haftalık İK pano verisi') + '</b>' }],
+    meta: [{ ikon: 'saat', html: 'Canlı · anket gönderildiği anda burada görünür' }, { ikon: 'dosya', html: 'Çıkış listesi: <b>' + O.esc(PANO_ETIKET || 'haftalık İK pano verisi') + '</b>' + (HAREKET_SAYI ? ' + panodan girilen ' + HAREKET_SAYI + ' hareket' : '') }],
     kadranlar: IST.length ? [{ etiket: 'Anket oranı', deger: yuzdeTam(istFormlu.length, IST.length), max: 100, onek: '%', alt: '<b>' + O.sayi(istFormlu.length) + '</b> / ' + O.sayi(IST.length) + ' istifa' }] : []
   });
   O.kpiSatiri(kok, [
     { anahtar: 'anket', etiket: 'Anket', deger: T.length, alt: YIL + ' yanıtı', ikon: 'dosya', renk: 'var(--g1)' },
-    { anahtar: 'buay', etiket: 'Bu ay gelen', deger: buAy, alt: 'yeni yanıt', ikon: 'takvim', renk: 'var(--g4)' },
-    /* Bekleyen bağlantılar yalnız İK'ya görünür (kuralda da yalnız İK okur) */
-    IK ? { anahtar: 'bekleyen', etiket: 'Bekleyen bağlantı', deger: BEK.length, alt: 'gönderildi, yanıt bekleniyor', ikon: 'saat', renk: 'var(--g3)' } : null,
-    { anahtar: 'tekrar', etiket: 'Tekrar çalışırım', deger: yuzdeTam(tekrar.evet, tekrar.n), onek: '%', alt: tekrar.evet + ' / ' + tekrar.n + ' kişi “Evet”', ikon: 'donus', renk: 'var(--g2)' },
-    { anahtar: 'olay', etiket: 'Olumsuz olay', deger: yuzdeTam(olay.evet, olay.n), onek: '%', alt: olay.evet + ' / ' + olay.n + ' kişi “yaşadım”', ikon: 'uyari', renk: 'var(--g8)' }
-  ].filter(Boolean), { sinif: 'bindir' });
+    { anahtar: 'tekrar', etiket: 'Tekrar çalışırım', deger: yuzdeTam(tekrar.evet, tekrar.n), onek: '%', alt: tekrar.evet + ' / ' + tekrar.n + ' kişi “Evet”', ikon: 'donus', renk: 'var(--g2)' }
+  ], { sinif: 'bindir' });
 
   let no = 0;
   const akis = (baslik, aciklama) => O.akisBaslik(kok, { no: String(++no).padStart(2, '0'), baslik, aciklama });
+  const RET_NOT = RET ? ' · kişisel veri onayı vermeyen ' + RET + ' yanıt hariç' : '';
 
-  /* ---- ÇIKIŞLAR VE ÇIKIŞ GÖRÜŞMESİ (haftalık İK pano verisi + anketler) */
-  const CIK = AYRILANLAR.filter((a) => yilOf(a.tarih) === YIL);
+  /* ---- 01 NEDEN AYRILIYORLAR? (sayfanın ilk grafiği; birim süzgeci + yorumlar) */
+  akis('Neden ayrılıyorlar?', 'Her neden için “Etkili” ya da “Çok etkili” diyenlerin oranı · birime göre süzülebilir');
+  if (S.length) { const nKap = O.el('div', { class: 'ay-neden-bolum' }); kok.append(nKap); nedenBolumuCiz(nKap, S, RET, kayitDept); }
+  else {
+    const b = O.kart(kok, { baslik: YIL + ' yanıtı yok' });
+    O.bosDurum(b.govde, IK
+      ? { ikon: 'dosya', baslik: 'Henüz anket yanıtı yok', metin: 'Eski Google Form yanıtlarını “Yanıt aktar” ile yükleyebilir ya da istifa eden kişilere bağlantı gönderebilirsiniz.', eylem: { metin: 'Yanıt aktar', fn: aktarimSec } }
+      : { ikon: 'dosya', baslik: 'Henüz anket yanıtı yok', metin: 'İnsan Kaynakları yanıtları ekledikçe burada görünecek.' });
+  }
+
+  /* ---- 02 ÇIKIŞLAR VE ÇIKIŞ GÖRÜŞMESİ (haftalık İK pano verisi + panodan girilen hareketler + anketler) */
   if (CIK.length) {
     akis('Çıkışlar ve çıkış görüşmesi', YIL + ' · tüm çıkışlar ve istifa edenlerle yapılan çıkış görüşmesi (V.İ. ve stajyer hariç)');
     const izC = O.izgara(kok);
@@ -529,126 +655,98 @@ function ciz() {
     const yn = [...ynSay.entries()].map(([ad, deger]) => ({ ad, deger })).sort((a, b) => b.deger - a.deger || O.trKarsilastir(a.ad, b.ad));
     kG.govde.append(O.el('h4', { class: 'ay-alt-baslik', text: 'Yapılmama nedenleri (' + O.sayi(yapilmayanlar.length) + ' kişi)' }));
     O.cubukListe(kG.govde, yn, { renk: O.RENK.g8, bicim: (v) => O.sayi(v) + ' · %' + yuzdeTam(v, yapilmayanlar.length), bos: 'Yapılmayan görüşme yok' });
-    kG.govde.append(O.el('p', { class: 'ay-bilgi', style: 'margin-top:10px', text: 'Yapılmama nedeni, haftalık rapordaki “Açıklama” (gerçek ayrılış nedeni) sütunundan okunur. “Henüz yapılmadı” olanlara bağlantı gönderilebilir.' }));
-    /* (c) Departmanlara göre: yapılması gereken / yapılan / yapılmayan */
+    kG.govde.append(O.el('p', { class: 'ay-bilgi', style: 'margin-top:10px', text: 'Yapılmama nedeni, haftalık rapordaki “Açıklama” (gerçek ayrılış nedeni) sütunundan okunur.' }));
+    /* (c) Departmanlara göre: yapılması gereken / yapılan / yapılmayan — kümelenmiş sütun (tablo ikizinde aynı sayılar) */
     const dep = new Map();
     IST.forEach((a) => { const d = a.dept || 'Belirtilmemiş'; const r = dep.get(d) || { dept: d, gereken: 0, yapilan: 0, yapilmayan: 0 }; r.gereken++; if (T.some((k) => eslesir(k, a))) r.yapilan++; else r.yapilmayan++; dep.set(d, r); });
     const depSatir = [...dep.values()].sort((a, b) => b.gereken - a.gereken || O.trKarsilastir(a.dept, b.dept));
-    const kDep = O.kart(izC, { baslik: 'Departmanlara göre çıkış görüşmesi', aciklama: YIL + ' · istifa edenler üzerinden', sinif: 's12' });
-    O.tablo(kDep.govde, {
-      sutunlar: [
-        { k: 'dept', ad: 'Departman' },
-        { k: 'gereken', ad: 'Yapılması gereken', tip: 'sayi', sag: true },
-        { k: 'yapilan', ad: 'Yapılan', tip: 'sayi', sag: true },
-        { k: 'yapilmayan', ad: 'Yapılmayan', tip: 'sayi', sag: true, hucreSinif: (v) => (v > 0 ? 'negatif' : '') }
-      ],
-      satirlar: depSatir, ara: false, sayfaBoyu: 60,
-      toplamSatir: { dept: 'Toplam', gereken: IST.length, yapilan, yapilmayan: yapilmayanlar.length }
-    });
+    const SERI = [{ k: 'gereken', ad: 'Yapılması gereken', renk: O.RENK.lac300 }, { k: 'yapilan', ad: 'Yapılan', renk: O.RENK.g1 }, { k: 'yapilmayan', ad: 'Yapılmayan', renk: O.RENK.g8 }];
+    const gDep = O.grafikKarti(izC, { baslik: 'Departmanlara göre çıkış görüşmesi', aciklama: YIL + ' · istifa edenler üzerinden · toplam ' + IST.length + ' gereken, ' + yapilan + ' yapılan, ' + yapilmayanlar.length + ' yapılmayan', sinif: 's12', yukseklik: 320,
+      lejant: SERI.map((s) => ({ ad: s.ad, renk: s.renk })),
+      tablo: () => ({ sutunlar: [{ ad: 'Departman' }, { ad: 'Yapılması gereken', sag: true }, { ad: 'Yapılan', sag: true }, { ad: 'Yapılmayan', sag: true }],
+        satirlar: depSatir.map((r) => [r.dept, O.sayi(r.gereken), O.sayi(r.yapilan), O.sayi(r.yapilmayan)]).concat([['Toplam', O.sayi(IST.length), O.sayi(yapilan), O.sayi(yapilmayanlar.length)]]) }) });
+    if (depSatir.length) kumeGrafik(gDep, depSatir.map((r) => r.dept), SERI.map((s) => ({ ad: s.ad, renk: s.renk, veri: depSatir.map((r) => r[s.k]) })));
   }
 
-  /* ---- 2) BAĞLANTILAR (yalnız İK) */
+  /* ---- 03 KARAR VE İLETİŞİM (yüzdesel halka grafikler) + bağlılık */
+  if (S.length) {
+    akis('Karar ve iletişim', 'İstifa kararının zamanı, fikrin ilk kime açıldığı ve bağlılık');
+    const iz3 = O.izgara(kok);
+    const KRENK = [O.RENK.g1, O.RENK.g4, O.RENK.g5, O.RENK.g3, O.RENK.g2];
+    const kararSay = A.KARARLAR.map((x, i) => ({ ad: x, deger: S.filter((k) => k.cevaplar && k.cevaplar.karar === x).length, renk: KRENK[i] })).filter((d) => d.deger > 0);
+    halkaGrafik(iz3, { baslik: 'İstifa kararı ne zaman verildi?', aciklama: 'Yanıtlayanların dağılımı (' + O.sayi(kararSay.reduce((s, d) => s + d.deger, 0)) + ' kişi' + RET_NOT + ')', dilimler: kararSay });
+    /* Birden fazla seçilebilen soru: dilimler birbirini dışlar (yalnız yönetici · yalnız arkadaş · ikisi de) → toplam %100 */
+    const kimeL = S.map((k) => [].concat((k.cevaplar && k.cevaplar.kime) || []));
+    const yY = kimeL.filter((x) => x.indexOf('Yöneticilerime') >= 0 && x.indexOf('Mesai arkadaşlarıma') < 0).length;
+    const yA = kimeL.filter((x) => x.indexOf('Mesai arkadaşlarıma') >= 0 && x.indexOf('Yöneticilerime') < 0).length;
+    const yI = kimeL.filter((x) => x.indexOf('Yöneticilerime') >= 0 && x.indexOf('Mesai arkadaşlarıma') >= 0).length;
+    const kimeTop = yY + yA + yI;
+    halkaGrafik(iz3, { baslik: 'Fikrini işyerinde önce kime açtı?', aciklama: 'Yanıtlayanların dağılımı (' + O.sayi(kimeTop) + ' kişi' + RET_NOT + ')',
+      dilimler: [{ ad: 'Yalnız yöneticisine', deger: yY, renk: O.RENK.g5 }, { ad: 'Yalnız mesai arkadaşlarına', deger: yA, renk: O.RENK.g4 }, { ad: 'İkisine de', deger: yI, renk: O.RENK.g7 }].filter((d) => d.deger > 0),
+      alt: 'Toplamda yöneticisine açan: <b>%' + pct(yY + yI, kimeTop) + '</b> (' + (yY + yI) + ') · mesai arkadaşlarına açan: <b>%' + pct(yA + yI, kimeTop) + '</b> (' + (yA + yI) + ')' });
+    const k3 = O.kart(iz3, { baslik: 'Bağlılık ve deneyim', aciklama: 'Evet / Hayır yanıtlarına göre' + RET_NOT, sinif: 's4' });
+    const serit = (baslik, d, renkE, aciklama) => {
+      const h = d.n - d.evet;
+      return O.el('div', { class: 'ay-oran-blok' },
+        O.el('h4', { text: baslik }),
+        O.el('div', { class: 'ay-buyuk' }, O.el('b', { text: '%' + yuzdeTam(d.evet, d.n) }), O.el('span', { text: '“Evet” · ' + d.evet + ' / ' + d.n + ' kişi' })),
+        O.el('div', { class: 'ay-serit', role: 'img', 'aria-label': baslik + ': ' + d.evet + ' evet, ' + h + ' hayır' }, O.el('i', { style: 'width:' + (d.n ? (d.evet / d.n) * 100 : 0) + '%;background:' + renkE }), O.el('i', { style: 'width:' + (d.n ? (h / d.n) * 100 : 0) + '%;background:var(--n-300)' })),
+        O.el('div', { class: 'ay-serit-lejant' }, O.el('span', null, O.el('i', { style: 'background:' + renkE }), 'Evet ' + d.evet), O.el('span', null, O.el('i', { style: 'background:var(--n-300)' }), 'Hayır ' + h)),
+        aciklama ? O.el('p', { text: aciklama }) : null);
+    };
+    k3.govde.append(O.el('div', { class: 'ay-oran' },
+      serit('Gelecekte tekrar İnciroğlu’nda çalışmayı düşünür', tekrar, O.RENK.g1, 'Yüksek olması, ayrılanların şirketle ilişkisini olumlu kapattığını gösterir.'),
+      serit('Ayrılmasına sebep olan olumsuz bir olay yaşadı', olay, O.RENK.g8, 'Olumsuz olayı açıklayanların metni yanıt ayrıntısında görülür.')));
+  }
+
+  /* ---- 04 KIRILIM */
+  if (CIK.length || T.length) {
+    akis('Kırılım', 'Departmanlara göre anket oranı ve aylara göre yapılması gereken / yapılan anket');
+    const iz4 = O.izgara(kok);
+    /* (a) Departmanlara göre: toplam çıkışların yüzde kaçında anket var (tüm çıkış nedenleri) */
+    const dm = new Map();
+    CIK.forEach((a) => { const d = a.dept || 'Belirtilmemiş'; const r = dm.get(d) || { ad: d, toplam: 0, anket: 0 }; r.toplam++; if (T.some((k) => eslesir(k, a))) r.anket++; dm.set(d, r); });
+    const dRows = [...dm.values()].sort((a, b) => b.toplam - a.toplam || O.trKarsilastir(a.ad, b.ad)).map((r) => Object.assign(r, { deger: pct(r.anket, r.toplam) }));
+    const cAnket = dRows.reduce((s, r) => s + r.anket, 0);
+    const kD = O.kart(iz4, { baslik: 'Departmanlara göre anket oranı', aciklama: 'Toplam çıkışlar içinde anketi olanların payı · genel %' + pct(cAnket, CIK.length) + ' (' + cAnket + ' / ' + CIK.length + ') · tüm çıkış nedenleri', sinif: 's6' });
+    O.cubukListe(kD.govde, dRows, { max: 100, renk: O.RENK.g1, kaydir: 330, bicim: (v, r) => '%' + v + ' · ' + r.anket + '/' + r.toplam, bos: 'Çıkış verisi yok' });
+    /* (b) Aylara göre: yapılması gereken (istifa) ve yapılan anket — kümelenmiş sütun */
+    const sonAy = YIL === simdi.getFullYear() ? simdi.getMonth() + 1 : 12;
+    const aylar = Array.from({ length: sonAy }, (_, i) => i + 1);
+    const ayOf = (a) => { const d = tarihCoz(a.tarih); return d ? d.getMonth() + 1 : null; };
+    const ayG = aylar.map((m) => IST.filter((a) => ayOf(a) === m).length);
+    const ayY = aylar.map((m) => IST.filter((a) => ayOf(a) === m && T.some((k) => eslesir(k, a))).length);
+    const AYSERI = [{ ad: 'Yapılması gereken', renk: O.RENK.lac300, veri: ayG }, { ad: 'Yapılan', renk: O.RENK.g1, veri: ayY }];
+    const gA = O.grafikKarti(iz4, { baslik: 'Aylara göre anket', aciklama: 'Çıkış ayına göre yapılması gereken (istifa) ve yapılan anket · toplam ' + ayG.reduce((s, x) => s + x, 0) + ' / ' + ayY.reduce((s, x) => s + x, 0), sinif: 's6', yukseklik: 300,
+      lejant: AYSERI.map((s) => ({ ad: s.ad, renk: s.renk })),
+      tablo: () => ({ sutunlar: [{ ad: 'Ay' }, { ad: 'Yapılması gereken', sag: true }, { ad: 'Yapılan', sag: true }, { ad: 'Yapılmayan', sag: true }, { ad: 'Oran', sag: true }],
+        satirlar: aylar.map((m, i) => [O.ayAdi(m), O.sayi(ayG[i]), O.sayi(ayY[i]), O.sayi(ayG[i] - ayY[i]), ayG[i] ? '%' + pct(ayY[i], ayG[i]) : '—']) }) });
+    kumeGrafik(gA, aylar.map(O.ayKisa), AYSERI);
+  }
+
+  /* ---- 05 BAĞLANTILAR (yalnız İK) — otomatik ve elle oluşturulan, yanıt bekleyen bağlantılar */
   if (IK) {
-    akis('Anket bağlantıları', 'İstifayla ayrılan kişiye tek kullanımlık bağlantı gönderin; kişi anketi gönderdiği anda sonuç bu sayfaya düşer.');
-    const iz = O.izgara(kok);
-    const eksik = IST.filter((a) => !T.some((k) => eslesir(k, a))).map((a) => Object.assign({}, a, { _bek: BEK.find((k) => eslesir(k, a)) || null, _t: tarihCoz(a.tarih) }));
-    const k1 = O.kart(iz, { baslik: 'Anketi olmayan istifalar', aciklama: YIL + ' · haftalık İK pano verisindeki istifalar içinde anketi bulunmayanlar (' + eksik.length + ' kişi)', sinif: 's12' });
-    if (!AYRILANLAR.length) O.bosDurum(k1.govde, { ikon: 'dosya', baslik: 'İstifa listesi okunamadı', metin: PANO_HATA ? 'Haftalık İK pano verisine erişilemedi.' : 'Haftalık İK pano verisi henüz yüklenmemiş.', kucuk: true });
-    else O.tablo(k1.govde, {
-      sutunlar: [
-        { k: 'ad', ad: 'Ad Soyad', sinif: 'ad-hucre', bicim: (v) => O.trBaslik(v) },
-        { k: 'dept', ad: 'Departman' },
-        { k: '_t', ad: 'Çıkış', tip: 'tarih', bicim: (v) => gunYaz(v), siralamaDegeri: (r) => (r._t ? r._t.getTime() : 0) },
-        { k: 'aciklama', ad: 'İK notu', hucreSinif: () => 'ay-not-hucre ay-soluk', bicim: (v) => v && v !== '-' ? v : '—' },
-        { k: '_islem', ad: '', siralanamaz: true, bicim: (v, r) => r._bek
-          ? O.el('div', { class: 'ay-islem' }, O.el('span', { class: 'cip cip-uy', text: 'Bağlantı gönderildi' }), O.el('button', { class: 'btn', type: 'button', html: IK_KOPYA + 'Kopyala', on: { click: (e) => { e.stopPropagation(); baglantiGoster(r._bek); } } }))
-          : O.el('div', { class: 'ay-islem' }, O.el('button', { class: 'btn btn-pirinc', type: 'button', html: IK_LINK + 'Bağlantı oluştur', on: { click: (e) => { e.stopPropagation(); baglantiFormu(r); } } })) }
-      ],
-      satirlar: eksik, sayfaBoyu: 8, varsayilanSira: { k: '_t', y: 'azalan' }, araYer: 'Ad, departman ara…', araAlanlari: ['ad', 'dept', 'aciklama'],
-      bos: { baslik: 'Tüm istifaların anketi var', metin: '' }
-    });
-    const k2 = O.kart(iz, { baslik: 'Bekleyen bağlantılar', aciklama: 'Gönderildi, yanıt bekleniyor (' + BEK.length + ')', sinif: 's12' });
+    akis('Anket bağlantıları', 'İstifa, deneme süresinde işçi feshi, emeklilik ve askerlik çıkışlarında bağlantı kendiliğinden oluşur (İK Dashboard › Personel hareketi ya da haftalık veri yüklemesi); buradan kopyalayıp gönderin.');
+    const k2 = O.kart(O.izgara(kok), { baslik: 'Bekleyen bağlantılar', aciklama: 'Kişiye gönderilecek ya da gönderilmiş, yanıt bekleyen bağlantılar (' + BEK.length + ')', sinif: 's12' });
     O.tablo(k2.govde, {
       sutunlar: [
         { k: 'ad', ad: 'Ad Soyad', sinif: 'ad-hucre', bicim: (v) => O.trBaslik(v) },
+        { k: 'departman', ad: 'Departman', bicim: (v) => v || '—' },
+        { k: 'cikis', ad: 'Çıkış', tip: 'tarih', bicim: (v) => gunYaz(tarihCoz(v)), siralamaDegeri: (r) => { const d = tarihCoz(r.cikis); return d ? d.getTime() : 0; } },
+        { k: 'olusturan', ad: 'Oluşturan', bicim: (v) => v || '—' },
         { k: 'olusturma', ad: 'Oluşturma', tip: 'tarih', bicim: (v) => gunYaz(tarihCoz(v)), siralamaDegeri: (r) => { const d = tarihCoz(r.olusturma); return d ? d.getTime() : 0; } },
         { k: '_islem', ad: '', siralanamaz: true, bicim: (v, r) => O.el('div', { class: 'ay-islem' },
-          O.el('button', { class: 'btn', type: 'button', title: 'Bağlantıyı ve mesajı göster', html: IK_KOPYA + 'Gönder', on: { click: () => baglantiGoster(r) } }),
+          O.el('button', { class: 'btn btn-pirinc', type: 'button', title: 'Bağlantıyı ve hazır mesajı göster', html: IK_KOPYA + 'Gönder', on: { click: () => baglantiGoster(r) } }),
           O.el('button', { class: 'btn btn-hayalet', type: 'button', title: 'Bağlantıyı iptal et', 'aria-label': 'İptal et', html: IK_SIL, on: { click: () => baglantiIptal(r) } })) }
       ],
-      satirlar: BEK, sayfaBoyu: 8, varsayilanSira: { k: 'olusturma', y: 'azalan' }, ara: BEK.length > 8, araAlanlari: ['ad'],
-      bos: { baslik: 'Bekleyen bağlantı yok', metin: 'Soldaki listeden ya da üstteki “Bağlantı oluştur” ile yeni bağlantı oluşturun.' }
+      satirlar: BEK, sayfaBoyu: 10, varsayilanSira: { k: 'olusturma', y: 'azalan' }, ara: BEK.length > 10, araAlanlari: ['ad', 'departman'],
+      bos: { baslik: 'Bekleyen bağlantı yok', metin: 'Yeni bir çıkış girildiğinde bağlantı kendiliğinden oluşur; üstteki “Bağlantı oluştur” ile elle de oluşturabilirsiniz.' }
     });
   }
 
-  if (!T.length) {
-    akis('Yanıtlar', '');
-    const b = O.kart(kok, { baslik: YIL + ' yanıtı yok' });
-    O.bosDurum(b.govde, IK
-      ? { ikon: 'dosya', baslik: 'Henüz anket yanıtı yok', metin: 'Eski Google Form yanıtlarını “Yanıt aktar” ile yükleyebilir ya da istifa eden kişilere bağlantı gönderebilirsiniz.', eylem: { metin: 'Yanıt aktar', fn: aktarimSec } }
-      : { ikon: 'dosya', baslik: 'Henüz anket yanıtı yok', metin: 'İnsan Kaynakları yanıtları ekledikçe burada görünecek.' });
-    bitir(kok, kaydirma);
-    return;
-  }
+  if (!T.length) { bitir(kok, kaydirma); return; }
 
-  /* ---- 3) NEDENLER */
-  akis('Neden ayrılıyorlar?', 'Her neden için “Etkili” ya da “Çok etkili” diyenlerin oranı');
-  const iz2 = O.izgara(kok);
-  const ilk10 = NED.slice(0, 10);
-  const g = O.grafikKarti(iz2, {
-    baslik: 'En etkili 10 neden', aciklama: O.sayi(S.length) + ' anket · “Etkili” + “Çok etkili” payı' + (RET ? ' · kişisel veri onayı vermeyen ' + RET + ' yanıt hariç' : ''), sinif: 's8', yukseklik: 440,
-    tablo: () => ({ sutunlar: [{ ad: 'Neden' }, { ad: 'Etkili / Çok etkili', sag: true }, { ad: 'Kişi', sag: true }, { ad: 'Ortalama (0–5)', sag: true }],
-      satirlar: NED.map((x) => [x.ad, O.yuzde(x.oran, 0), O.sayi(x.etkili) + ' / ' + O.sayi(x.n), x.ort === null ? '—' : O.sayi(x.ort, 1)]) }),
-    not: 'Tablo görünümünde 23 nedenin tamamı var. Ölçek: Etkisi yok · Çok az · Az · Orta · Etkili · Çok etkili.'
-  });
-  O.grafik(g.canvas, {
-    type: 'bar',
-    data: { labels: ilk10.map((x) => satirBol(x.ad, 24)), datasets: [{ label: 'Etkili / Çok etkili', data: ilk10.map((x) => Math.round(x.oran)), backgroundColor: O.RENK.g1, maxBarThickness: 20, datalabels: O.etiket.sag({ onek: '%' }) }] },
-    options: { indexAxis: 'y', layout: { padding: { right: 40, left: 14 } },
-      scales: { x: O.eksenY({ max: 100, ticks: { callback: (v) => '%' + v } }), y: O.eksenX({ ticks: { autoSkip: false, font: { size: 11.5 }, color: O.RENK.n700 } }) },
-      plugins: { tooltip: { callbacks: { title: (c) => ilk10[c[0].dataIndex].ad, label: (c) => ' %' + c.parsed.x + ' · ' + ilk10[c.dataIndex].etkili + ' / ' + ilk10[c.dataIndex].n + ' kişi' } } } }
-  });
-  const RET_NOT = RET ? ' · kişisel veri onayı vermeyen ' + RET + ' yanıt hariç' : '';
-  const k3 = O.kart(iz2, { baslik: 'Bağlılık ve deneyim', aciklama: 'Evet / Hayır yanıtlarına göre' + RET_NOT, sinif: 's4' });
-  const serit = (baslik, d, renkE, aciklama) => {
-    const h = d.n - d.evet;
-    return O.el('div', { class: 'ay-oran-blok' },
-      O.el('h4', { text: baslik }),
-      O.el('div', { class: 'ay-buyuk' }, O.el('b', { text: '%' + yuzdeTam(d.evet, d.n) }), O.el('span', { text: '“Evet” · ' + d.evet + ' / ' + d.n + ' kişi' })),
-      O.el('div', { class: 'ay-serit', role: 'img', 'aria-label': baslik + ': ' + d.evet + ' evet, ' + h + ' hayır' }, O.el('i', { style: 'width:' + (d.n ? (d.evet / d.n) * 100 : 0) + '%;background:' + renkE }), O.el('i', { style: 'width:' + (d.n ? (h / d.n) * 100 : 0) + '%;background:var(--n-300)' })),
-      O.el('div', { class: 'ay-serit-lejant' }, O.el('span', null, O.el('i', { style: 'background:' + renkE }), 'Evet ' + d.evet), O.el('span', null, O.el('i', { style: 'background:var(--n-300)' }), 'Hayır ' + h)),
-      aciklama ? O.el('p', { text: aciklama }) : null);
-  };
-  k3.govde.append(O.el('div', { class: 'ay-oran' },
-    serit('Gelecekte tekrar İnciroğlu’nda çalışmayı düşünür', tekrar, O.RENK.g1, 'Yüksek olması, ayrılanların şirketle ilişkisini olumlu kapattığını gösterir.'),
-    serit('Ayrılmasına sebep olan olumsuz bir olay yaşadı', olay, O.RENK.g8, 'Olumsuz olayı açıklayanların metni yanıt ayrıntısında görülür.')));
-
-  /* ---- 4) KARAR VE İLETİŞİM */
-  akis('Karar ve iletişim', 'İstifa kararının zamanı ve ilk kime açıldığı');
-  const iz3 = O.izgara(kok);
-  const kK = O.kart(iz3, { baslik: 'İstifa kararı ne zaman verildi?', aciklama: 'Kişi sayısı (' + O.sayi(S.length) + ' yanıt' + RET_NOT + ')', sinif: 's6' });
-  O.cubukListe(kK.govde, sayim(S, (k) => k.cevaplar && k.cevaplar.karar, A.KARARLAR), { renk: O.RENK.g4 });
-  const kM = O.kart(iz3, { baslik: 'Fikrini işyerinde önce kime açtı?', aciklama: 'Kişi sayısı, birden fazla seçilebilir (' + O.sayi(S.length) + ' yanıt' + RET_NOT + ')', sinif: 's6' });
-  O.cubukListe(kM.govde, sayim(S, (k) => (k.cevaplar && k.cevaplar.kime) || [], A.KIME), { renk: O.RENK.g5 });
-
-  /* ---- 5) KIRILIM */
-  akis('Kırılım', 'Departman ve çıkış ayına göre anket sayısı');
-  const iz4 = O.izgara(kok);
-  /* SAYIM kartları TÜM yanıtları sayar (kaç kişinin anketi var); KVKK istisnası yalnız cevap içeriğinden üretilen
-     istatistiklere uygulanır. Departman, "Departmanlara göre çıkış görüşmesi" tablosuyla AYNI eşleştirmeden alınır
-     (istifa listesindeki departman) → iki yerde aynı departmanın sayısı her zaman aynıdır. */
-  const kayitDept = (k) => { const a = IST.find((x) => eslesir(k, x)); return (a && a.dept) || k.departman || 'Belirtilmemiş'; };
-  const kD = O.kart(iz4, { baslik: 'Departmanlara göre anket', aciklama: 'Anket sayısı (tüm yanıtlar · ' + O.sayi(T.length) + ')', sinif: 's6' });
-  O.cubukListe(kD.govde, sayim(T, kayitDept), { renk: O.RENK.g6, kaydir: 330 });
-  const aylar = Array.from({ length: 12 }, (_, i) => i + 1);
-  const aySay = aylar.map((m) => T.filter((k) => { const d = tarihCoz(k.cikis) || tarihCoz(k.tamamlanma); return d && d.getMonth() + 1 === m; }).length);
-  const sonAy = Math.max(...aylar.filter((m, i) => aySay[i] > 0), (YIL === simdi.getFullYear() ? simdi.getMonth() + 1 : 12));
-  const gA = O.grafikKarti(iz4, { baslik: 'Aylara göre anket', aciklama: 'Çıkış ayına göre anket sayısı (tüm yanıtlar · ' + O.sayi(T.length) + ')', sinif: 's6', yukseklik: 300,
-    tablo: () => ({ sutunlar: [{ ad: 'Ay' }, { ad: 'Anket', sag: true }], satirlar: aylar.slice(0, sonAy).map((m, i) => [O.ayAdi(m), O.sayi(aySay[i])]) }) });
-  O.grafik(gA.canvas, { type: 'bar', data: { labels: aylar.slice(0, sonAy).map(O.ayKisa), datasets: [{ label: 'Anket', data: aySay.slice(0, sonAy), backgroundColor: O.RENK.g1, maxBarThickness: 22, datalabels: O.etiket.ust({ secim: 'hepsi' }) }] },
-    options: { scales: { x: O.eksenX(), y: O.eksenY({ grace: '15%' }) } } });
-
-  /* ---- 6) YANITLAR */
+  /* ---- 06 YANITLAR */
   akis('Yanıtlar', 'Satıra tıklayınca kişinin tüm cevapları açılır');
   /* Onay vermeyenlerin yanıtını yalnız İK görür (listede işaretli); direktör listesinde yer almaz */
   const listelenen = KVKK_RET_HARIC && !IK ? S : T;
@@ -673,9 +771,10 @@ function ciz() {
     satirTikla: (r) => ayrintiAc(KAYITLAR.find((x) => x.id === r.id) || r)
   });
   O.notlar(kok, [
-    'Kaynak: ayrılış anketi yanıtları (canlı) · istifa listesi ve anket oranı: haftalık İK pano verisi' + (PANO_ETIKET ? ' (' + PANO_ETIKET + ')' : '') + '.',
-    'Anket oranı: istifayla ayrılanlar (V.İ. ve stajyer hariç; deneme süresinde işçi feshi dahil) içinde anketi olanlar. Eşleştirme ad soyad ve çıkış tarihiyle yapılır.',
-    '“Etkili” payı: 6’lı ölçekte “Etkili” ya da “Çok etkili” işaretleyenlerin, o soruyu yanıtlayanlara oranı.',
+    'Kaynak: ayrılış anketi yanıtları (canlı) · çıkış listesi: haftalık İK pano verisi' + (PANO_ETIKET ? ' (' + PANO_ETIKET + ')' : '') + (HAREKET_SAYI ? ' ve İK Dashboard’dan girilen personel hareketleri' : '') + '.',
+    'Anket oranı ve “yapılması gereken”: istifayla ayrılanlar (V.İ. ve stajyer hariç; deneme süresinde işçi feshi dahil) içinde anketi olanlar. Eşleştirme ad soyad ve çıkış tarihiyle yapılır.',
+    'Departmanlara göre anket oranı: o departmanın tüm çıkışları (her neden) içinde anketi olanların payı.',
+    '“Etkili” payı: 6’lı ölçekte “Etkili” ya da “Çok etkili” işaretleyenlerin, o soruyu yanıtlayanlara oranı. Yorumlar bölümü yalnız bu yanıtlardan hesaplanır.',
     KVKK_RET_HARIC ? 'Kişisel veri onayı: yanıtlarının anonim veri olarak kullanılmasını onaylamayan kişilerin yanıtları anket oranında sayılır, grafik ve istatistiklere dahil edilmez; ayrıntısını yalnız İK görür.' : null
   ].filter(Boolean));
   bitir(kok, kaydirma);
@@ -709,6 +808,14 @@ try {
     const p = JSON.parse(s.data().json);
     AYRILANLAR = (p && p.D && Array.isArray(p.D.ayrilanlar)) ? p.D.ayrilanlar : [];
     PANO_ETIKET = (p && p.etiket && (p.etiket.short || p.etiket.label)) || '';
+    /* İK Dashboard › Personel hareketi ile girilen (Excel'e henüz işlenmemiş) çıkışlar da listeye eklenir — Dashboard'la aynı motor */
+    const hareketler = Array.isArray(s.data().hareketler) ? s.data().hareketler : [];
+    if (hareketler.length && p && p.D) {
+      try {
+        const g = hareketUygula({ D: p.D, MONTHLY_HC: p.MONTHLY_HC, etiket: p.etiket }, hareketler);
+        if (g && g.D && Array.isArray(g.D.ayrilanlar)) { HAREKET_SAYI = Math.max(0, g.D.ayrilanlar.length - AYRILANLAR.length); AYRILANLAR = g.D.ayrilanlar; }
+      } catch (e) { console.warn('Personel hareketleri uygulanamadı', e); }
+    }
   }
 } catch (e) { PANO_HATA = e; console.warn('İK pano verisi okunamadı', e); }
 

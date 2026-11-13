@@ -93,10 +93,12 @@ fetch(location.pathname+'?_taze='+Date.now(),{cache:'no-store'}).then(function(r
 </div>
 
 <script type="module">
-import { doc, getDoc, setDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { doc, getDoc, setDoc, deleteDoc, getDocs, collection, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { db, kimlikBaslat, cikisYap, sifreDegistir, adBasliklari } from "./ortak/kimlik.js";
 import * as O from "./pano/ortak.js";
 import * as H from "./pano/hareket.js";
+import * as AB from "./ortak/ayrilis-baglanti.js";
+import { anahtarUret } from "./ortak/ayrilis-sorular.js";
 
 /* ==========================================================================
    SAYFA KAYDI — TEK YER. Sıra = menü sırası. Modül dosyası yoksa ya da hata verirse
@@ -153,16 +155,35 @@ async function veriDosyasiYukle(f) {
   if (!paketGecerli(o)) { alert('Bu dosya bir İK pano veri dosyası değil. Lütfen size verilen “ik_pano_…json” dosyasını seçin.'); return; }
   const et = (o.etiket && (o.etiket.label || o.etiket.hafta)) || 'Yeni dönem';
   if (!confirm(et + ' verisi yüklenecek. Panoyu açan tüm yetkililer bu veriyi görecek. Devam edilsin mi?')) return;
+  /* Ayrılış anketi: yeni pakette olup ŞU ANKİ panoda (paket + elle girilen hareketler) olmayan çıkışlar.
+     Yalnız son 60 günün çıkışları (eski bir düzeltme yüzünden aylar önce ayrılana bağlantı açılmasın). */
+  let yeniCikislar = [];
+  try {
+    if (PAKET && B && B.D && Array.isArray(B.D.ayrilanlar)) {
+      const eski = B.D.ayrilanlar;
+      const yeni = H.uygula({ D: o.D, MONTHLY_HC: o.MONTHLY_HC, etiket: o.etiket }, HAREKETLER).D.ayrilanlar || [];
+      const sinir = new Date(); sinir.setDate(sinir.getDate() - 60);
+      yeniCikislar = yeni.filter((a) => a && AB.anketGerekir(a.neden, a.dept) && (AB.tarihCoz(a.tarih) || 0) >= sinir
+        && !eski.some((e) => e && AB.eslesir({ ad: e.ad, cikis: e.tarih }, a)));
+    }
+  } catch (e) { console.warn('Yeni çıkışlar hesaplanamadı', e); yeniCikislar = []; }
   try {
     const json = JSON.stringify(o);
     /* merge: belgedeki `hareketler` (panodan girilen personel hareketleri) korunur; Excel'e işlenenler yüklemeden sonra
        otomatik "Excel'e işlendi" sayılır (pano/hareket.js) */
     await setDoc(refPano, { json, guncelleme: new Date().toISOString() }, { merge: true });
-    alert('Veri yüklendi: ' + et + '. Pano yenileniyor.');
-    location.reload();
   } catch (e) {
     alert('Veri yüklenemedi: ' + (e && e.code === 'permission-denied' ? 'bu işlem için yetkiniz yok.' : (e && e.message) || 'bilinmeyen hata'));
+    return;
   }
+  if (yeniCikislar.length > 15 && !confirm(yeniCikislar.length + ' yeni çıkış için ayrılış anketi bağlantısı oluşturulacak. Bu sayı beklenenden fazla; yine de oluşturulsun mu?')) yeniCikislar = [];
+  const sonuc = yeniCikislar.length ? await anketBaglantilari(yeniCikislar.map((a) => ({ ad: a.ad, dept: a.dept, unvan: a.unvan, tarih: a.tarih })), 'haftalık rapor') : [];
+  if (sonuc.length) {
+    anketPenceresi(sonuc, { baslik: 'Veri yüklendi · ayrılış anketi bağlantıları hazır', aciklama: et + ' · ' + sonuc.length + ' yeni çıkış için bağlantı (pencere kapanınca pano yenilenir)', kapaninca: () => location.reload() });
+    return;
+  }
+  alert('Veri yüklendi: ' + et + '. Pano yenileniyor.');
+  location.reload();
 }
 
 /** "Haftalık Veri Yükle" düğmesi + gizli dosya seçici (yalnız İK için çağrılır) */
@@ -325,6 +346,7 @@ function pencereKapat(hemen) {
   p.ort.classList.remove('acik');
   if (hemen || O.azHareket()) p.ort.remove(); else setTimeout(() => p.ort.remove(), 260);
   if (!hemen && p.onceki && document.contains(p.onceki) && typeof p.onceki.focus === 'function') p.onceki.focus({ preventScroll: true });
+  if (typeof p.kapaninca === 'function') setTimeout(p.kapaninca, 0);   /* ör. haftalık yüklemeden sonraki bağlantı penceresi → sayfa yenilenir */
 }
 /** Ortak pencere: Esc kapatır · Tab pencere içinde döner · dışına tıklayınca kapanır · kapanınca odak açan düğmeye döner */
 function pencereAc(sinif, etiket, icerik, ilkOdak) {
@@ -587,6 +609,51 @@ function hkOnizleme(kap, ev, ekler) {
   return true;
 }
 
+/* ---- AYRILIŞ ANKETİ BAĞLANTISI (otomatik) ----
+   İstifa, deneme süresinde işçi feshi, emeklilik ve askerlik çıkışlarında (tam zamanlı personel) kişiye özel anket
+   bağlantısı kendiliğinden oluşur: elle girilen çıkışta kayıttan hemen sonra, haftalık veri yüklemesinde yeni gelen
+   çıkışlar için. Kişinin bekleyen ya da tamamlanmış anketi varsa yenisi açılmaz. Sonuç İşten Ayrılış Anketleri
+   sayfasının "Bekleyen bağlantılar" listesinde de durur. Kural: ayrilisAnketleri (yalnız İK oluşturur). */
+async function anketBaglantilari(kisiler, kaynak) {
+  if (!IK || !kisiler || !kisiler.length) return [];
+  const kol = collection(db, 'ayrilisAnketleri');
+  let mevcut = [];
+  try { mevcut = (await getDocs(kol)).docs.map((d) => Object.assign({ id: d.id }, d.data())); }
+  catch (e) { console.warn('Ayrılış anketleri okunamadı', e); return kisiler.map((k) => Object.assign({}, k, { hata: e })); }
+  const sonuc = [];
+  for (const k of kisiler) {
+    const var_ = mevcut.find((m) => AB.eslesir(m, k));
+    if (var_) { if (var_.durum === 'bekliyor') sonuc.push(Object.assign({}, k, { id: var_.id, durum: 'vardi' })); continue; }   /* tamamlanmış anketi var → bağlantı gerekmez */
+    const id = anahtarUret();
+    try {
+      await setDoc(doc(kol, id), Object.assign(AB.kayitVerisi(k, 'Otomatik · ' + kaynak), k.hareket ? { ikKodu: 'hareket:' + k.hareket } : {}, { olusturma: serverTimestamp() }));
+      mevcut.push({ id, ad: k.ad, cikis: AB.isoGun(AB.tarihCoz(k.tarih)), durum: 'bekliyor' });
+      sonuc.push(Object.assign({}, k, { id, durum: 'yeni' }));
+    } catch (e) { console.warn('Anket bağlantısı oluşturulamadı', e); sonuc.push(Object.assign({}, k, { hata: e })); }
+  }
+  return sonuc;
+}
+function anketPenceresi(sonuc, { baslik, aciklama, kapaninca } = {}) {
+  const ust = O.el('div', { class: 'modal-ust' },
+    O.el('div', { class: 'modal-ikon pk-zil-ikon', html: O.ikon('dosya') }),
+    O.el('div', { class: 'pk-bas' }, O.el('h3', { text: baslik || 'Ayrılış anketi bağlantıları' }), aciklama ? O.el('p', { text: aciklama }) : null),
+    kapatX());
+  const govde = O.el('div', { class: 'modal-govde' },
+    O.el('p', { class: 'ab-bilgi', html: 'Bağlantı <b>kişiye özel ve tek kullanımlıktır</b>. <b>Mesajı kopyala</b> ile hazır metni alıp WhatsApp ya da e-postayla gönderin; kişi anketi doldurduğu anda sonuç İşten Ayrılış Anketleri sayfasına düşer. Bağlantılar o sayfadaki “Bekleyen bağlantılar” listesinde de durur.' }),
+    AB.baglantiListesi(sonuc, location.href));
+  pencereAc('pk-modal ab-modal', baslik || 'Ayrılış anketi bağlantıları', [ust, govde, kapatAlt()], () => govde.querySelector('[data-kopya="mesaj"]') || govde.querySelector('button'));
+  if (kapaninca && acikPencere) acikPencere.kapaninca = kapaninca;
+}
+/** Elle girilen çıkış geri alınınca, ondan otomatik açılmış ve henüz doldurulmamış anket bağlantısı da iptal edilir */
+async function anketBaglantisiGeriAl(h) {
+  if (!IK || !h || !h.id) return;
+  try {
+    const kayitlar = (await getDocs(collection(db, 'ayrilisAnketleri'))).docs.map((d) => Object.assign({ id: d.id }, d.data()));
+    const k = kayitlar.find((x) => x.durum === 'bekliyor' && x.ikKodu === 'hareket:' + h.id);
+    if (k) { await deleteDoc(doc(db, 'ayrilisAnketleri', k.id)); O.bildirim(h.ad + ' — ayrılış anketi bağlantısı da iptal edildi.'); }
+  } catch (e) { console.warn('Anket bağlantısı iptal edilemedi', e); }
+}
+
 function hareketAc(sekme) {
   let aktifSekme = sekme || 'cikis';
   const govde = O.el('div', { class: 'modal-govde hk-govde' });
@@ -713,6 +780,11 @@ function cikisFormu(kap) {
       await hareketYaz((m) => m.concat([ev]));
       pencereKapat(false);
       O.bildirim(ev.ad + ' — işten çıkış kaydedildi; pano güncellendi.');
+      /* İstifa / deneme süresinde işçi feshi / emeklilik / askerlik → ayrılış anketi bağlantısı kendiliğinden oluşur, gönderilmeye hazır gelir */
+      if (AB.anketGerekir(ev.neden, ev.dept, ev.liste)) {
+        const sonuc = await anketBaglantilari([{ ad: ev.ad, dept: ev.dept, unvan: ev.unvan, tarih: ev.tarih, giris: ev.iseGiris, hareket: ev.id }], 'personel hareketi');
+        if (sonuc && sonuc.length) anketPenceresi(sonuc, { baslik: 'Ayrılış anketi bağlantısı hazır', aciklama: ev.ad + ' · ' + ev.neden + ' · mesajı kopyalayıp kişiye gönderin' });
+      }
     } catch (e) {
       console.error('Hareket kaydedilemedi', e);
       kaydetB.disabled = false; mesaj.classList.add('hata');
@@ -827,6 +899,7 @@ function gunlukCiz(kap, yenile) {
         try {
           await hareketYaz((m) => m.map((x) => (x && x.id === h.id ? Object.assign({}, x, { iptal: hkKimlik() }) : x)));
           O.bildirim(h.ad + ' — hareket geri alındı; pano güncellendi.');
+          if (h.tur === 'cikis') anketBaglantisiGeriAl(h);
           kap.textContent = ''; yenile();
         } catch (e) { gb.disabled = false; console.error('Geri alınamadı', e); O.bildirim('Geri alınamadı: ' + ((e && e.message) || 'bilinmeyen hata')); }
       });
