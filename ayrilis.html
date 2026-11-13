@@ -181,8 +181,6 @@ async function kopyala(metin, bildirim) {
   O.bildirim(bildirim || 'Kopyalandı');
 }
 const yuzdeTam = (a, b) => (b ? Math.round((a / b) * 100) : 0);
-const KAYNAK_CIP = { link: 'cip-ok', google_form: 'cip-bilgi', ik: 'cip-pirinc' };
-function kaynakCip(k) { return O.el('span', { class: 'cip ' + (KAYNAK_CIP[k] || 'cip-bilgi'), text: A.KAYNAK_AD[k] || k || '—' }); }
 
 /* ============================================================== DURUM */
 let KAYITLAR = [];          /* ayrilisAnketleri (canlı) */
@@ -338,8 +336,7 @@ function aktarimSec() {
         tamamlanma: Timestamp.fromDate(tam), cevaplar: c } });
     });
     if (!kayitlar.length) { alert('Dosyada aktarılabilecek geçerli yanıt bulunamadı.'); return; }
-    const kisi = kayitlar.filter((r) => r.veri.kaynak === 'google_form').length;
-    if (!confirm(kayitlar.length + ' yanıt aktarılacak (' + kisi + ' Google Form, ' + (kayitlar.length - kisi) + ' İK doldurdu)' + (atlanan.length ? '; ' + atlanan.length + ' bozuk kayıt atlanacak' : '') + '. Daha önce aktarılmış aynı yanıtlar güncellenir, mükerrer kayıt oluşmaz. Devam edilsin mi?')) return;
+    if (!confirm(kayitlar.length + ' yanıt aktarılacak' + (atlanan.length ? '; ' + atlanan.length + ' bozuk kayıt atlanacak' : '') + '. Daha önce aktarılmış aynı yanıtlar güncellenir, mükerrer kayıt oluşmaz. Devam edilsin mi?')) return;
     /* Güvenlik kuralı her yazımda yetkiyi okur; toplu yazma okuma sınırına takılmasın diye 8'erli parçalar hâlinde.
        Bir parça reddedilirse o parçanın kayıtları TEK TEK yeniden denenir; yine yazılamayanlar adıyla ve hata koduyla bildirilir. */
     let yazilan = 0;
@@ -383,13 +380,13 @@ function ayrintiAc(k) {
     soru('Fikrini önce kime açtı', Array.isArray(c.kime) ? c.kime.join(', ') : c.kime), soru('Tekrar çalışmayı düşünür mü', c.tekrar),
     soru('Ayrılmasına sebep olan olumsuz olay', olay, true),
     soru('Diğer sebepler', c.diger, true), soru('Hangi koşullarda devam ederdi', c.kosul, true), soru('Önerileri / düşünceleri', c.dusunce, true),
-    soru('Kişisel veri onayı', c.kvkk ? String(c.kvkk).replace(/\.$/, '') : (IK && k.kaynak === 'ik' ? 'İK doldurdu (kişiden alınmadı)' : '—')),
+    soru('Kişisel veri onayı', c.kvkk ? String(c.kvkk).replace(/\.$/, '') : '—'),
     IK && k.ikKodu ? soru('İK kodu', k.ikKodu) : null);
   const alt = O.el('div', null,
     O.el('div', { class: 'ay-ozet-satir' },
       O.el('span', { html: 'Departman: <b>' + O.esc(k.departman || '—') + '</b>' }), O.el('span', { html: 'Pozisyon: <b>' + O.esc(k.pozisyon || '—') + '</b>' }),
       O.el('span', { html: 'Çıkış: <b>' + gunYaz(tarihCoz(k.cikis)) + '</b>' }), O.el('span', { html: 'Yanıt: <b>' + gunYaz(tarihCoz(k.tamamlanma)) + '</b>' })),
-    IK ? O.el('div', { style: 'margin-top:8px' }, kaynakCip(k.kaynak)) : null);
+    null);
   const altBar = O.el('div', { class: 'modal-alt' });
   if (IK) altBar.append(O.el('button', { class: 'btn btn-hayalet', type: 'button', html: IK_SIL + '<span>Kaydı sil</span>', on: { click: async () => {
     if (!confirm(O.trBaslik(k.ad) + ' kişisinin anket yanıtı kalıcı olarak silinecek. Devam edilsin mi?')) return;
