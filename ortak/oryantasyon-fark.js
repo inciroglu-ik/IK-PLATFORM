@@ -12,13 +12,16 @@
    (sarı = degisen, yeşil = eklenen, üstü çizili = silinen, "Yeri değişti" = sira, bölüm işaretleri = bolum*).
    ============================================================================= */
 
-/** İlk etap: 2026'da en çok alım yapılan 5 unvan (İK Dashboard › İşe Alım › En çok alınan 5 unvan) */
+/** İlk etap: 2026'da en çok alım yapılan 5 unvan (İK Dashboard › İşe Alım › En çok alınan 5 unvan)
+    + satış müdürü ve servis müdürü (13.11.2026) */
 export const UNVANLAR = [
   { kod: 'otomotiv-mekanikcisi', ad: 'Otomotiv Mekanikçisi' },
   { kod: 'satis-danismani', ad: 'Satış Danışmanı' },
   { kod: 'oto-yikama-elemani', ad: 'Oto Yıkama Elemanı' },
   { kod: 'servis-danismani', ad: 'Servis Danışmanı' },
-  { kod: 'resepsiyonist', ad: 'Resepsiyonist' }
+  { kod: 'resepsiyonist', ad: 'Resepsiyonist' },
+  { kod: 'satis-muduru', ad: 'Satış Müdürü' },
+  { kod: 'servis-muduru', ad: 'Servis Müdürü' }
 ];
 
 /** Madde alanları (Excel formundaki sütunlar) — sıra = ekrandaki sıra */

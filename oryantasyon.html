@@ -270,7 +270,7 @@ function listeCiz(kok) {
     ozetHtml: IK
       ? 'Her unvanın <b>ana formunu</b> siz hazırlarsınız; müdür ve direktörler kendi kopyalarında düzenler. Düzenleyenleri ve yaptıkları değişiklikleri buradan izleyebilirsiniz.'
       : 'İnsan Kaynakları’nın hazırladığı oryantasyon formlarını inceleyin; gerekli gördüğünüz yerleri <b>düzenleyin, ekleyin ya da çıkarın</b> ve kaydedin. Düzenlemenizi yalnız siz ve İnsan Kaynakları görür.',
-    meta: [{ ikon: 'kisiler', html: 'İlk etap: 2026’da en çok alım yapılan <b>5 unvan</b>' }, { ikon: 'dosya', html: '<b>' + hazir + '</b> / ' + F.UNVANLAR.length + ' unvanın formu hazır' }]
+    meta: [{ ikon: 'kisiler', html: '2026’da en çok alım yapılan <b>5 unvan</b> + <b>satış ve servis müdürü</b>' }, { ikon: 'dosya', html: '<b>' + hazir + '</b> / ' + F.UNVANLAR.length + ' unvanın formu hazır' }]
   });
   O.akisBaslik(kok, { no: '01', baslik: 'Unvanlar', aciklama: IK ? 'Karta tıklayarak müdür düzenlemelerini inceleyin ya da ana formu düzenleyin' : 'Formu açıp düzenleyin; değişiklikler kaydedene kadar saklanmaz' });
   const g = O.el('div', { class: 'oy-izgara-kart' });
@@ -982,12 +982,21 @@ function aktarimSec() {
     const formlar = o && o.tur === 'inciroglu-oryantasyon-formlari' && Array.isArray(o.formlar)
       ? o.formlar.filter((x) => x && F.UNVANLAR.some((u) => u.kod === x.kod) && !gorulen.has(x.kod) && gorulen.add(x.kod) && F.formuDuzenle(x.form).bolumler.length > 0) : [];
     if (!formlar.length) { alert('Bu dosya bir oryantasyon ana form dosyası değil. Lütfen size verilen “oryantasyon_ana_formlar.json” dosyasını seçin.'); return; }
-    const varOlan = formlar.filter((x) => ANA.get(x.kod)).map((x) => unvanAdi(x.kod));
-    if (!confirm(formlar.length + ' ana form yüklenecek: ' + formlar.map((x) => unvanAdi(x.kod)).join(', ') + '.' + (varOlan.length ? '\n\nŞu formlar zaten var ve YENİ SÜRÜM olarak güncellenecek: ' + varOlan.join(', ') + '.' : '') + '\n\nDevam edilsin mi?')) return;
+    /* Sistemdeki ana formla BİREBİR aynı olan form yeniden yazılmaz (gereksiz yeni sürüm açılmasın; müdürlere
+       "İK formu güncelledi" uyarısı boşuna çıkmasın) */
+    const ayniMi = (x) => { const a = ANA.get(x.kod); return !!a && JSON.stringify(F.formuDuzenle(a.form)) === JSON.stringify(F.formuDuzenle(x.form)); };
+    const ayni = formlar.filter(ayniMi), yazilacak = formlar.filter((x) => !ayniMi(x));
+    const yeni = yazilacak.filter((x) => !ANA.get(x.kod)).map((x) => unvanAdi(x.kod));
+    const guncel = yazilacak.filter((x) => ANA.get(x.kod)).map((x) => unvanAdi(x.kod));
+    if (!yazilacak.length) { alert('Dosyadaki ' + formlar.length + ' formun hepsi sistemdekiyle aynı; yüklenecek yeni bir şey yok.\n\n' + ayni.map((x) => unvanAdi(x.kod)).join(', ')); return; }
+    if (!confirm((yeni.length ? 'Yeni eklenecek ana form: ' + yeni.join(', ') + '.' : '')
+      + (guncel.length ? (yeni.length ? '\n\n' : '') + 'Değişmiş, YENİ SÜRÜM olarak güncellenecek: ' + guncel.join(', ') + '.' : '')
+      + (ayni.length ? '\n\nSistemdekiyle aynı olduğu için dokunulmayacak: ' + ayni.map((x) => unvanAdi(x.kod)).join(', ') + '.' : '')
+      + '\n\nDevam edilsin mi?')) return;
     /* Her unvan AYRI toplu yazım: ana form + sürüm geçmişi birlikte (ikisi ya da hiçbiri). Tek toplu yazımda çok unvan,
        güvenlik kuralının istek başına belge okuma sınırını (20) aşabilir. Biri başarısız olursa diğerleri yine yüklenir. */
     const tamam = [], hatali = [];
-    for (const x of formlar) {
+    for (const x of yazilacak) {
       try {
         const ana = ANA.get(x.kod);
         const n = (ana ? Number(ana.surum) || 0 : 0) + 1;
@@ -1004,8 +1013,8 @@ function aktarimSec() {
         hatali.push(unvanAdi(x.kod) + ' (' + (yetkiHatasi(e) ? 'yetki reddedildi: güvenlik kuralı henüz yayınlanmamış olabilir' : ((e && e.message) || 'bilinmeyen hata')) + ')');
       }
     }
-    if (!hatali.length) O.bildirim(tamam.length + ' ana form yüklendi');
-    else alert((tamam.length ? 'Yüklenen: ' + tamam.join(', ') + '\n\n' : '') + 'Yüklenemeyen: ' + hatali.join('; ') + '\n\nYüklenemeyenler için dosyayı yeniden seçebilirsiniz; yüklenmiş olanlar yeni sürüm olarak tekrar yazılır.');
+    if (!hatali.length) O.bildirim(tamam.length + ' ana form yüklendi' + (ayni.length ? ' · ' + ayni.length + ' form zaten günceldi' : ''));
+    else alert((tamam.length ? 'Yüklenen: ' + tamam.join(', ') + '\n\n' : '') + 'Yüklenemeyen: ' + hatali.join('; ') + '\n\nYüklenemeyenler için dosyayı yeniden seçebilirsiniz; yüklenmiş ya da değişmemiş olanlara dokunulmaz.');
   });
   document.body.append(inp);
   inp.click();
