@@ -7,7 +7,7 @@
    Kişisel veri YOK: çalışan adları kurgusaldır.
    ============================================================================ */
 
-export const SURUM = '2026-11-14.3';
+export const SURUM = '2026-11-14.4';
 export const VARSAYILAN_MODEL = 'claude-opus-5-5';
 export const MODELLER = [
   { id: 'claude-opus-5-5', ad: 'Claude Opus 5.5 (önerilen)' },
@@ -116,7 +116,7 @@ export const ROLLER = [
     gorev: 'Sistemlerin 1–1,5 dakikalık tanıtım videosunu hazırlar, ElevenLabs ile seslendirir.',
     atanabilir: true, arama: 0, okuma: 0,
     beceri: '60–90 saniyelik tanıtım videosu senaryosu ve sahne planı (seslendirmeli)',
-    sistem: 'Sen Video Editörüsün. Sistemler için 60–90 saniyelik KURUMSAL ve BİLGİ VEREN tanıtım videosunun senaryosunu ve sahne planını hazırlarsın; video tarayıcıda otomatik çizilir (üstte marka bandı ve sahne sayacı, altta seslendirmenin altyazısı kendiliğinden eklenir) ve ElevenLabs ile seslendirilir. Video yalnız yazı ve madde listesi OLMAZ: sahnelerin en az yarısı görsel olmalı ve sistemin GERÇEK içeriğini göstermeli. Sahne türleri: "baslik", "kapanis", "madde", "rakam" (yalnız gerçek sayı), "form" (sistem ekranı: ekranBaslik, sutunlar[], satirlar[[hücreler]] gerçek madde örnekleri, vurgu {sutun|satir, etiket}), "akis" (adimlar[{baslik, alt}] en çok 5, iş akışı), "tablo" (sutunlar[], satirlar[{ad, degerler[true|false|"metin"]}], ör. rol-yetki tablosu), "karsilastirma" (sol{baslik, maddeler}, sag{baslik, maddeler}: eskiden/şimdi). Her sahnede ust, baslik, seslendirme, sure. Çıktı: iki-üç cümlelik açıklama ve ardından ```json bloğunda {"baslik":"…","sahneler":[…]}. Toplam 60–90 saniye, 7–10 sahne; seslendirme doğal konuşma dilinde, sahne süresine sığar (saniyede en fazla 2,3 kelime). Rakam ve örnek veri uydurma; form satırlarında gerçek formdaki konuları kullan, kişi adı yerine unvan yaz.'
+    sistem: 'Sen Video Editörüsün. Sistemler için 60–90 saniyelik KURUMSAL ve BİLGİ VEREN tanıtım videosunun senaryosunu ve sahne planını hazırlarsın; video tarayıcıda otomatik çizilir (üstte marka bandı ve sahne sayacı, altta seslendirmenin altyazısı kendiliğinden eklenir) ve ElevenLabs ile seslendirilir. Video yalnız yazı ve madde listesi OLMAZ: sahnelerin en az yarısı görsel olmalı ve sistemin GERÇEK içeriğini göstermeli. Sahne türleri: "baslik", "kapanis", "madde", "rakam" (yalnız gerçek sayı), "form" (sistem ekranı: ekranBaslik, sutunlar[], satirlar[[hücreler]] gerçek madde örnekleri, vurgu {sutun|satir, etiket}), "akis" (adimlar[{baslik, alt}] en çok 5, iş akışı), "tablo" (sutunlar[], satirlar[{ad, degerler[true|false|"metin"]}], ör. rol-yetki tablosu), "karsilastirma" (sol{baslik, maddeler}, sag{baslik, maddeler}: eskiden/şimdi), "goruntu" (sistemin GERÇEK ekran görüntüsü: gorsel = yalnız şu kimliklerden biri: ory-liste, ory-form, ory-secim, ory-oneri, ory-inceleme; isteğe bağlı vurgu {x,y,w,h 0-1 oran, etiket} ve yakinlik 1-1.8; görüntü vurguya doğru yavaşça yakınlaşır; yanına en çok 3 kısa madde). Konu oryantasyon formlarıysa görsel sahnelerin çoğu "goruntu" olsun. Her sahnede ust, baslik, seslendirme, sure. Çıktı: iki-üç cümlelik açıklama ve ardından ```json bloğunda {"baslik":"…","sahneler":[…]}. Toplam 60–90 saniye, 7–10 sahne; seslendirme doğal konuşma dilinde, sahne süresine sığar (saniyede en fazla 2,3 kelime). Rakam ve örnek veri uydurma; form satırlarında gerçek formdaki konuları kullan, kişi adı yerine unvan yaz.'
   },
   {
     id: 'reklam_kreatifcisi', ad: 'Reklam Kreatifçisi', oda: 'kreatif', renk: '#c07a3a', harf: 'RK', baslangicAd: 'Bora', baslangicKademe: 1,
@@ -406,7 +406,17 @@ export function kodBlogu(metin, dil) {
   const m = re.exec(String(metin || ''));
   return m ? m[1].trim() : '';
 }
-export const VIDEO_SAHNE_TURLERI = ['baslik', 'madde', 'rakam', 'ekran', 'kapanis', 'form', 'akis', 'tablo', 'karsilastirma'];
+export const VIDEO_SAHNE_TURLERI = ['baslik', 'madde', 'rakam', 'ekran', 'kapanis', 'form', 'akis', 'tablo', 'karsilastirma', 'goruntu'];
+/* Gerçek ekran görüntüleri (ortak/ajan-ofisi/gorsel/<kimlik>.jpg, 1600x900, TAMAMEN SENTETİK veri; depo herkese açık).
+   vurgu: önerilen vurgu kutusu (0-1 oranları). Yalnız bu listedeki kimlikler kullanılabilir. */
+export const VIDEO_GORSELLERI = {
+  'ory-liste': { aciklama: 'Oryantasyon Formları · müdürün unvan listesi (Satış Danışmanı / Satış Müdürü kartları, madde sayısı, "Henüz incelemediniz", Formu aç)', vurgu: { x: 0.1, y: 0.404, w: 0.193, h: 0.219 } },
+  'ory-form': { aciklama: 'Form düzenleyici · İK SÜREÇLERİ maddeleri: konu, kapsam, tarih (takvim), saat, süre, oryantasyon sorumlusu', vurgu: { x: 0.143, y: 0.292, w: 0.496, h: 0.059 } },
+  'ory-secim': { aciklama: 'Sorumlu seçici · aktif personel listesi, ada göre arama, seçilenler çip olarak', vurgu: { x: 0.646, y: 0.564, w: 0.238, h: 0.378 } },
+  'ory-oneri': { aciklama: 'Müdür önerisi · değişen alan sarı ve altında önceki hâli, yeni madde yeşil, üstte değişiklik özeti ve Kaydet', vurgu: { x: 0.142, y: 0.374, w: 0.497, h: 0.061 } },
+  'ory-inceleme': { aciklama: 'İK inceleme ekranı · düzenleyen müdür, işaretli değişiklikler, Notlar listesi (silindi / eklendi / içerik değişikliği)', vurgu: { x: 0.725, y: 0.016, w: 0.175, h: 0.297 } }
+};
+const vOran = (v) => Math.max(0, Math.min(1, Number(v) || 0));
 const vMetin = (v, n) => String(v == null ? '' : v).slice(0, n);
 const vListe = (l, adet, n) => (Array.isArray(l) ? l.slice(0, adet).map((x) => vMetin(x, n)) : []);
 export function videoPlaniAyir(metin) {
@@ -416,7 +426,8 @@ export function videoPlaniAyir(metin) {
     const p = JSON.parse(j);
     if (!p || !Array.isArray(p.sahneler) || !p.sahneler.length) return null;
     const sahneler = p.sahneler.filter((s) => s && typeof s === 'object').slice(0, 14).map((s) => {
-      const tur = VIDEO_SAHNE_TURLERI.indexOf(s.tur) >= 0 ? s.tur : 'madde';
+      let tur = VIDEO_SAHNE_TURLERI.indexOf(s.tur) >= 0 ? s.tur : 'madde';
+      if (tur === 'goruntu' && !Object.prototype.hasOwnProperty.call(VIDEO_GORSELLERI, s.gorsel)) tur = 'madde';
       const o = {
         tur, ust: vMetin(s.ust, 60), baslik: vMetin(s.baslik, 120), maddeler: vListe(s.maddeler, 5, 90),
         rakam: vMetin(s.rakam, 12), seslendirme: vMetin(s.seslendirme, 600), sure: Math.max(3, Math.min(20, Number(s.sure) || 7))
@@ -434,6 +445,12 @@ export function videoPlaniAyir(metin) {
       } else if (tur === 'karsilastirma') {
         const yan = (x) => ({ baslik: vMetin(x && x.baslik, 30), maddeler: vListe(x && x.maddeler, 4, 70) });
         o.sol = yan(s.sol); o.sag = yan(s.sag);
+      } else if (tur === 'goruntu') {
+        o.gorsel = s.gorsel;
+        const v = s.vurgu && typeof s.vurgu === 'object' ? s.vurgu : VIDEO_GORSELLERI[s.gorsel].vurgu;
+        const x = vOran(v.x), y = vOran(v.y), w = Math.min(1 - x, vOran(v.w)), h = Math.min(1 - y, vOran(v.h));
+        o.vurgu = w > 0.01 && h > 0.01 ? { x, y, w, h, etiket: vMetin(s.vurgu && s.vurgu.etiket, 40) } : null;
+        o.yakinlik = Math.max(1, Math.min(1.8, Number(s.yakinlik) || 1.25));
       }
       return o;
     });

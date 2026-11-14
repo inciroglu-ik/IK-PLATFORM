@@ -271,6 +271,60 @@ function sahneCiz(ctx, s, lt, sure) {
         ctx.font = '500 30px ' + SANS; sar(ctx, m, 620).slice(0, 2).forEach((t, q) => yazi(ctx, t, x + 96, 498 + i * 84 + q * 34, '500 30px ' + SANS, R.beyaz));
       });
     });
+  } else if (s.tur === 'goruntu') {
+    /* sol: kısa anlatım · sağ: tarayıcı çerçevesinde GERÇEK ekran görüntüsü; vurguya doğru yavaş yakınlaşma, çevresi hafif karartılır */
+    let my = bolumBasligi(ctx, s, 110, 170, kay, 440) + 40;
+    (s.maddeler || []).slice(0, 3).forEach((m, i) => {
+      ctx.font = '500 29px ' + SANS; const sat = sar(ctx, m, 410).slice(0, 3);
+      ctx.globalAlpha = adimA(i, 0.8, 0.45);
+      ctx.fillStyle = R.pirinc; ctx.fillRect(114, my - 13, 12, 12);
+      sat.forEach((x, k) => yazi(ctx, x, 142, my + k * 35, '500 29px ' + SANS, R.beyaz));
+      my += sat.length * 35 + 24;
+    });
+    ctx.globalAlpha = gor;
+    const fx = 590, fy = 138 + kay * 0.5, fw = 1230, bar = 40, aw = fw, ah = Math.round(fw * 9 / 16), ax = fx, ay = fy + bar;
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 44; ctx.shadowOffsetY = 14; kutu(ctx, fx, fy, fw, bar + ah, 14, '#0b1526', null); ctx.restore();
+    kutu(ctx, fx, fy, fw, bar + 16, 14, '#1c2c47', null);
+    [0, 1, 2].forEach((i) => { ctx.beginPath(); ctx.arc(fx + 26 + i * 20, fy + 20, 6, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fill(); });
+    kutu(ctx, fx + 110, fy + 9, fw - 220, 23, 11, 'rgba(255,255,255,.07)', null);
+    yazi(ctx, 'İK Portalı · Oryantasyon Formları', fx + fw / 2, fy + 26, '500 15px ' + SANS, R.gri, 'center');
+    const im = GORSEL.get(s.gorsel), v = s.vurgu;
+    ctx.save(); ctx.beginPath(); ctx.rect(ax, ay, aw, ah); ctx.clip();
+    let kx = 0, ky = 0, kw = 0, kh = 0;
+    if (im) {
+      const W = im.naturalWidth, H = im.naturalHeight;
+      const t = Math.max(0, Math.min(1, (lt - 0.8) / Math.max(1, sure - 1.6))); const p = t * t * (3 - 2 * t);
+      const z = 1 + ((s.yakinlik || 1) - 1) * p, sw = W / z, sh = H / z;
+      const cx = v ? v.x + v.w / 2 : 0.5, cy = v ? v.y + v.h / 2 : 0.5;
+      const sx = Math.max(0, Math.min(W - sw, cx * W - sw / 2)), sy = Math.max(0, Math.min(H - sh, cy * H - sh / 2));
+      ctx.drawImage(im, sx, sy, sw, sh, ax, ay, aw, ah);
+      if (v) {
+        const k = aw / sw; kx = ax + (v.x * W - sx) * k - 6; ky = ay + (v.y * H - sy) * k - 6; kw = v.w * W * k + 12; kh = v.h * H * k + 12;
+        const a = Math.min(gor, yumusak((lt - 1.2) / 0.6));
+        ctx.save(); ctx.globalAlpha = a * 0.42; ctx.fillStyle = R.koyu; ctx.beginPath(); ctx.rect(ax, ay, aw, ah); ctx.rect(kx, ky, kw, kh); ctx.fill('evenodd'); ctx.restore();
+        ctx.save(); ctx.globalAlpha = a * (0.7 + 0.3 * Math.sin(lt * 4)); kutu(ctx, kx, ky, kw, kh, 10, null, R.pirinc, 5); ctx.restore();
+      }
+    } else {
+      ctx.fillStyle = R.zemin; ctx.fillRect(ax, ay, aw, ah);
+      yazi(ctx, 'Ekran görüntüsü yüklenemedi', ax + aw / 2, ay + ah / 2, '600 26px ' + SANS, R.soluk, 'center');
+    }
+    ctx.restore();
+    if (im && v && v.etiket) {
+      /* not etiketi: vurgunun altında (yer yoksa üstünde), oku vurguyu gösterir; çerçeve içinde kalır */
+      ctx.globalAlpha = Math.min(gor, yumusak((lt - 1.6) / 0.6));
+      ctx.font = '700 23px ' + SANS; const tw = ctx.measureText(v.etiket).width + 44, th = 44;
+      const ox = Math.max(ax + 10, Math.min(ax + aw - 10, kx + kw / 2));
+      const alt = ky + kh + 16 + th <= ay + ah - 10;
+      const ust = ky - 16 - th >= ay + 10;
+      const ey = alt ? ky + kh + 16 : ust ? ky - 16 - th : ay + ah - th - 14;
+      const ex = Math.max(ax + 12, Math.min(ax + aw - 12 - tw, ox - tw / 2));
+      ctx.fillStyle = R.pirinc; ctx.beginPath();
+      if (alt) { ctx.moveTo(ox, ey - 12); ctx.lineTo(ox - 11, ey + 1); ctx.lineTo(ox + 11, ey + 1); }
+      else if (ust) { ctx.moveTo(ox, ey + th + 12); ctx.lineTo(ox - 11, ey + th - 1); ctx.lineTo(ox + 11, ey + th - 1); }
+      ctx.closePath(); ctx.fill();
+      ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 14; kutu(ctx, ex, ey, tw, th, 22, R.pirinc, null); ctx.restore();
+      yazi(ctx, v.etiket, ex + tw / 2, ey + 30, '700 23px ' + SANS, R.beyaz, 'center');
+    }
   } else if (s.tur === 'ekran') {
     const y = bolumBasligi(ctx, s, 140, 170, kay, 720);
     (s.maddeler || []).slice(0, 3).forEach((m, i) => { ctx.globalAlpha = adimA(i, 0.6, 0.4); tik(ctx, 160, y + 50 + i * 60, 26, R.acikPirinc); yazi(ctx, m, 196, y + 60 + i * 60, '500 32px ' + SANS, R.gri); });
@@ -311,6 +365,20 @@ function sahneCiz(ctx, s, lt, sure) {
 }
 function kisaltF(ctx, metin, maxW, font) { ctx.font = font; return kisalt(ctx, metin, maxW); }
 
+/* ---------------------------------------------------------------- gerçek ekran görüntüleri (aynı köken: tuval kirlenmez, kayıt çalışır) */
+const GORSEL = new Map();
+export function gorselAdresi(id) { return new URL('./gorsel/' + encodeURIComponent(id) + '.jpg', import.meta.url).href; }
+export function gorselleriYukle(plan) {
+  const idler = [...new Set(((plan && plan.sahneler) || []).filter((s) => s.tur === 'goruntu' && s.gorsel && !GORSEL.has(s.gorsel)).map((s) => s.gorsel))];
+  return Promise.all(idler.map((id) => new Promise((coz) => {
+    const im = new Image();
+    const bitti = () => { clearTimeout(zs); coz(); };
+    const zs = setTimeout(bitti, 15000);
+    im.onload = () => { GORSEL.set(id, im); bitti(); }; im.onerror = bitti;
+    im.src = gorselAdresi(id);
+  })));
+}
+
 /* Tek kare çizimi (önizleme / test): plan, zaman (sn) */
 export function kareCiz(ctx, plan, sureler, baslar, t, top) {
   const sahneler = plan.sahneler;
@@ -350,6 +418,7 @@ export async function videoUret({ plan, tuval, ses, kayit, ilerleme, iptal }) {
   const sureler = sahneler.map((s, i) => Math.max(s.sure, tamponlar[i] ? tamponlar[i].duration + 0.9 : 0));
   const baslar = []; let top = 0; for (const d of sureler) { baslar.push(top); top += d; }
   try { await document.fonts.load('600 96px "Source Serif 4"'); await document.fonts.load('600 30px Inter'); } catch (e) { /* yedek font */ }
+  await gorselleriYukle(plan);
 
   let kaydedici = null, parcalar = [], bicim = '';
   const hedef = actx.createMediaStreamDestination();
