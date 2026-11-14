@@ -7,7 +7,7 @@
    Kişisel veri YOK: çalışan adları kurgusaldır.
    ============================================================================ */
 
-export const SURUM = '2026-11-14.4';
+export const SURUM = '2026-11-14.5';
 export const VARSAYILAN_MODEL = 'claude-opus-5-5';
 export const MODELLER = [
   { id: 'claude-opus-5-5', ad: 'Claude Opus 5.5 (önerilen)' },
@@ -180,7 +180,23 @@ export function baslangicKadrosu() {
 }
 export function kademeBilgisi(k) { return KADEMELER[Math.max(0, Math.min(EN_UST_KADEME, k | 0))]; }
 /* Temsili maaş = kademe maaşı + pozisyona işlenmiş kalıcı ek (ofis sahibinin "maaş skalasına ekle" kararı) */
-export function maasHesap(c) { return kademeBilgisi(c && c.kademe).maas + Math.max(0, (c && c.maasEk) | 0); }
+export function maasHesap(c) { return kademeBilgisi(c && c.kademe).maas + Math.max(0, (c && c.maasEk) | 0) + Math.max(0, (c && c.zam) | 0); }
+/* Ofis sahibinin kişiye özel maaş artışı (zam): çalışanın kendisine işlenir, yerine gelene geçmez (pozisyon eki maasEk'ten ayrı).
+   Saf fonksiyon: { yeniKadro, kayitlar } ya da { hata }. Ad tutmazsa hiçbir artış uygulanmaz (kısmi uygulama yok). */
+export function sahipMaasArtisi(kadro, karar, simdiMs) {
+  const kisiler = (karar && Array.isArray(karar.kisiler) ? karar.kisiler : []).filter((k) => k && ROL[k.rol] && k.tutar > 0);
+  if (!kisiler.length) return { hata: 'Maaş artışı için geçerli kişi yok.' };
+  const guncel = kadro && kadro.calisanlar ? kadro : baslangicKadrosu();
+  const calisanlar = Object.assign({}, guncel.calisanlar); const kayitlar = [];
+  for (const k of kisiler) {
+    const c = calisanlar[k.rol] || { ad: ROL[k.rol].baslangicAd, kademe: ROL[k.rol].baslangicKademe, no: 1 };
+    if (k.ad && k.ad !== c.ad) return { hata: ROL[k.rol].ad + ' artık ' + c.ad + '; ' + k.ad + ' için verilen artış uygulanmadı.' };
+    const yeni = Object.assign({}, c, { zam: Math.min(200000, Math.max(0, c.zam | 0) + (k.tutar | 0)) });
+    kayitlar.push({ tarihMs: simdiMs, rol: k.rol, ad: c.ad, tutar: yeni.zam - Math.max(0, c.zam | 0), eskiMaas: maasHesap(c), yeniMaas: maasHesap(yeni) });
+    calisanlar[k.rol] = yeni;
+  }
+  return { yeniKadro: Object.assign({}, guncel, { calisanlar, zamlar: (guncel.zamlar || []).concat(kayitlar).slice(-60) }), kayitlar };
+}
 /* Ofis sahibinin doğrudan kadro kararı: çalışanı çıkar, yerine daha üst kademeden (isteğe bağlı maaş ekiyle) yenisini al.
    Saf fonksiyon: { yeniKadro, kayit, eski, yeni } ya da { hata }. Beklenen ad tutmazsa (kişi zaten değişmişse) kimse çıkarılmaz. */
 export function sahipKadroKarari(kadro, karar, simdiMs) {
@@ -196,7 +212,7 @@ export function sahipKadroKarari(kadro, karar, simdiMs) {
   const yeni = { ad: yeniAd, kademe: yeniKademe, no: (eski.no || 1) + 1, iseGirisMs: simdiMs, puanlar: [], maasEk };
   const kayit = { tarihMs: simdiMs, rol, cikan: eski.ad, giren: yeniAd, ort: null, eskiKademe, yeniKademe, sahipKarari: true,
     eskiMaas: maasHesap(eski), yeniMaas: maasHesap(yeni), neden: ('Ofis sahibinin kararı' + (karar.neden ? ': ' + karar.neden : '')).slice(0, 220) };
-  const yeniKadro = { calisanlar: Object.assign({}, guncel.calisanlar, { [rol]: yeni }), gecmis: (guncel.gecmis || []).concat([kayit]).slice(-60), surum: guncel.surum || SURUM };
+  const yeniKadro = Object.assign({}, guncel, { calisanlar: Object.assign({}, guncel.calisanlar, { [rol]: yeni }), gecmis: (guncel.gecmis || []).concat([kayit]).slice(-60), surum: guncel.surum || SURUM });
   return { yeniKadro, kayit, eski, yeni };
 }
 export function unvan(rolId, kademe) { const r = ROL[rolId]; return (kademeBilgisi(kademe).ad + ' ' + (r ? r.ad : rolId)).trim(); }
@@ -691,6 +707,10 @@ export function ccSonucTemizle(j) {
       ? { rol: j.kadroKarari.rol, ad: kirp(j.kadroKarari.ad, 30), neden: kirp(j.kadroKarari.neden, 200),
           kademeArtis: Math.max(0, Math.min(2, Math.round(Number(j.kadroKarari.kademeArtis == null ? 1 : j.kadroKarari.kademeArtis) || 0))),
           maasEk: Math.max(0, Math.min(50000, Math.round(Number(j.kadroKarari.maasEk) || 0))) }
+      : null,
+    maasArtisi: j.maasArtisi && typeof j.maasArtisi === 'object' && Array.isArray(j.maasArtisi.kisiler)
+      ? { kisiler: j.maasArtisi.kisiler.slice(0, 12).filter((k) => k && ROL[k.rol]).map((k) => ({ rol: k.rol, ad: kirp(k.ad, 30), tutar: Math.max(0, Math.min(50000, Math.round(Number(k.tutar) || 0))) })),
+          konusma: kirp(j.maasArtisi.konusma, 400), kapanis: kirp(j.maasArtisi.kapanis, 240) }
       : null
   };
 }

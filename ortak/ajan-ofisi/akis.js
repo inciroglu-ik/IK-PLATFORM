@@ -9,7 +9,7 @@ import {
   planTemizle, puanTemizle, teslimNotuAyir, kodBlogu, videoPlaniAyir,
   vadesiGelenler, ZAMANLI_ISLER, trTarih, isoHafta, ayAnahtari, harcamaOzeti, zamanliSonuc,
   performans, kadroKararlari, kadroPuanIsle, SOHBETLER, ROL_SOHBETLERI, TESEKKURLER, ONAYLAR, sistemMetni,
-  azamiTahmin, VARSAYILAN_MODEL, MOTOR_CC, CC_TUR_ROL, ccIsDosyasi, ccSonucTemizle, maasHesap, sahipKadroKarari
+  azamiTahmin, VARSAYILAN_MODEL, MOTOR_CC, CC_TUR_ROL, ccIsDosyasi, ccSonucTemizle, maasHesap, sahipKadroKarari, sahipMaasArtisi
 } from './kadro.js';
 
 const rastgele = (d) => d[Math.floor(Math.random() * d.length)];
@@ -277,7 +277,7 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
         const yeniAd = yeniAdSec(guncel, Date.now());
         const yeni = { ad: yeniAd, kademe: k.yeniKademe, no: (eski.no || 1) + 1, iseGirisMs: Date.now(), puanlar: [], maasEk: Math.max(0, eski.maasEk | 0) };
         const kayitG = { tarihMs: Date.now(), rol: k.rol, cikan: eski.ad, giren: yeniAd, ort: k.ort, eskiKademe: k.eskiKademe, yeniKademe: k.yeniKademe, eskiMaas: maasHesap(eski), yeniMaas: maasHesap(yeni), neden: 'İşe girişten beri ortalama ' + ortMetni + ' (eşik 60)' };
-        const yeniKadro = { calisanlar: Object.assign({}, guncel.calisanlar, { [k.rol]: yeni }), gecmis: (guncel.gecmis || []).concat([kayitG]).slice(-60), surum: guncel.surum || 'eski' };
+        const yeniKadro = Object.assign({}, guncel, { calisanlar: Object.assign({}, guncel.calisanlar, { [k.rol]: yeni }), gecmis: (guncel.gecmis || []).concat([kayitG]).slice(-60), surum: guncel.surum || 'eski' });
         try { await veri.kadroKaydet(yeniKadro); }
         catch (e) { await sahne.konus(gm, 'Kadro kaydı yapılamadı (' + beyin.hataMetni(e) + '); kararı erteliyorum.', 2600); mesgulYap([k.rol], false); continue; }
         await degisimOyna(k.rol, kayitG, k.ad + ', işe girdiğinden beri ortalaman ' + ortMetni + '; beklentimiz en az 60. Yollarımızı ayırıyoruz. Emeğin için teşekkürler.', 'Hoş geldin ' + yeniAd + '. Masan hazır.');
@@ -304,6 +304,40 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
     await sahne.konus(rol, 'Merhaba, ben ' + kayit.giren + '. Yeni ' + unvan(rol, kayit.yeniKademe) + ' olarak başlıyorum. ' + (kayit.yeniKademe > kayit.eskiKademe ? 'Daha derin çalışacağım (' + kb.effort + ').' : 'Çalışma derinliğim: ' + kb.effort + '.'), null);
     await sahne.konus(gm, hosgeldinMetni, 2400);
     await sahne.yuru(rol, K.masa(rol));
+  }
+
+  /* Ofis sahibinin kişiye özel maaş artışı (Claude Code sonucu: maasArtisi): kayıt önce, sonra herkes toplantıda duyuru */
+  async function ccMaasArtisi(s, st) {
+    const gm = 'genel_mudur', k = s.maasArtisi;
+    st.bitti = true;
+    const r = sahipMaasArtisi(durum.kadro(), k, Date.now());
+    const arsiv = async () => { if (s.dosya) await kopru.arsivle(s.dosya).catch(() => {}); };
+    if (r.hata) { await isHatasi(s.isId, gm, new Error(r.hata), { asama: 'cc' }); await veri.isGuncelle(s.isId, { oynatma: Object.assign({}, st) }).catch(() => {}); await arsiv(); return; }
+    try { await veri.kadroKaydet(r.yeniKadro); }
+    catch (e) { st.bitti = false; await isHatasi(s.isId, gm, new Error('Kadro kaydı yapılamadı: ' + beyin.hataMetni(e)), { asama: 'cc' }); await arsiv(); return; }
+    const tl = (n) => Number(n).toLocaleString('tr-TR') + ' TL';
+    const adlar = r.kayitlar.map((x) => x.ad);
+    const adMetni = adlar.length > 1 ? adlar.slice(0, -1).join(', ') + ' ve ' + adlar[adlar.length - 1] : adlar[0];
+    const baslik = 'Maaş artışı: ' + adMetni;
+    await veri.isGuncelle(s.isId, { durum: 'tamam', plan: { baslik, konusma: '', adimlar: [] }, maasArtisi: r.kayitlar, bitisMs: Date.now(), maliyet: 0, oynatma: Object.assign({}, st) }).catch(() => {});
+    const herkes = ROLLER.map((x) => x.id);
+    mesgulYap(herkes, true);
+    try {
+      await sahne.konus(gm, 'Herkes toplantı salonuna lütfen! Kısa bir duyurum var.', 2400);
+      sahne.tahta({ baslik: 'Duyuru · Maaş artışı', adimlar: [] });
+      const yuru = [sahne.yuru(gm, K.tahtaOnu())]; let i = 0;
+      for (const x of ROLLER) if (x.id !== gm) yuru.push(sahne.yuru(x.id, K.sandalye(i++)));
+      await Promise.all(yuru);
+      const tutarlar = [...new Set(r.kayitlar.map((x) => x.tutar))];
+      await sahne.konus(gm, k.konusma || (adMetni + ': son işlerinizdeki emeğiniz için ' + (adlar.length > 1 ? 'her birinizin maaşına ' : 'maaşınıza ') + (tutarlar.length === 1 ? tl(tutarlar[0]) : 'belirlenen tutarda') + ' zam yapıldı. Tebrikler!'), null);
+      for (const x of r.kayitlar) await sahne.konus(x.rol, 'Teşekkür ederim! Yeni maaşım ' + tl(x.yeniMaas) + '; aynı özenle devam edeceğim.', 1900);
+      await sahne.konus(gm, k.kapanis || ('Maaş artışı isteyen herkes ' + (adlar.length > 1 ? 'bu arkadaşlarımızı' : 'bu arkadaşımızı') + ' örnek alsın: kurumsal, bilgi veren ve zamanında teslim edilen iş. Herkes masasına, kolay gelsin!'), null);
+      sahne.tahta({ baslik: 'Duyuru · Maaş artışı', adimlar: [], kart: false });
+      await Promise.all(ROLLER.map((x) => sahne.yuru(x.id, K.masa(x.id))));
+    } finally { mesgulYap(herkes, false); }
+    olay({ tur: 'kadro', metin: baslik + ' · ' + r.kayitlar.map((x) => x.ad + ' ' + tl(x.yeniMaas)).join(', ') });
+    bildir({ tur: 'zam', kayitlar: r.kayitlar });
+    await arsiv();
   }
 
   /* Ofis sahibinin doğrudan kadro kararı (Claude Code sonucu: kadroKarari) */
@@ -510,6 +544,7 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
     }
     const metin = (kayitli && kayitli.metin) || '';
     if (s.kadroKarari && s.durum === 'tamam') { ccBekleyen(null); await ccKadroKarari(s, st); return; }
+    if (s.maasArtisi && s.durum === 'tamam') { ccBekleyen(null); await ccMaasArtisi(s, st); return; }
     if (s.durum === 'hata') {
       ccBekleyen(null);
       st.bitti = true;
