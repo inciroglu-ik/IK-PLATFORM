@@ -587,6 +587,53 @@ export function kadroKararlari(perf, kadro) {
   return kararlar;
 }
 
+/* ---------------------------------------------------------------- CLAUDE CODE KÖPRÜSÜ (abonelikle çalışma, API'siz)
+   Ofis, Masaüstü\Ajan Ofisi\isler\<kimlik>.json dosyasını yazar; Claude Code işi yapıp
+   Masaüstü\Ajan Ofisi\sonuclar\<kimlik>.json dosyasına adım adım sonucu yazar; ofis sonucu içe aktarıp oynatır.
+   Protokolün Claude Code tarafı: Masaüstü\Ajan Ofisi\CLAUDE-OKU.md */
+export const MOTOR_CC = 'claude-code', MOTOR_API = 'api';
+export const PROTOKOL = 'ajan-ofisi-cc-1';
+export const CC_TURLERI = ['is', 'icerik', 'rakip', 'muhasebe', 'strateji', 'ofis'];
+export const CC_TUR_ROL = { icerik: 'icerik_avcisi', rakip: 'rakip_analisti', muhasebe: 'muhasebeci', strateji: 'mentalite_kocu', ofis: 'ofis_muduru' };
+export const KADEME_TALIMATI = [
+  'Stajyer (low): kısa ve hızlı; yaklaşık 250 kelime; en fazla 1-2 kaynak.',
+  'Uzman (medium): standart derinlik; 500-800 kelime; 2-4 kaynak.',
+  'Kıdemli (high): derin; 800-1200 kelime; 4-6 kaynak; riskler ve öncelik dahil.',
+  'Baş Uzman (xhigh): çok derin; alternatifler, karşılaştırma, 6+ kaynak.',
+  'Yıldız (max): en kapsamlı; çok yönlü analiz, uygulama planı, doğrulama adımları.'
+];
+export function ccIsDosyasi({ isId, tur, metin, anahtar, kadro, ayar, ek }) {
+  const k = {};
+  for (const r of ROLLER) {
+    const c = ((kadro && kadro.calisanlar) || {})[r.id] || {};
+    k[r.id] = { ad: c.ad || r.baslangicAd, unvan: unvan(r.id, c.kademe == null ? r.baslangicKademe : c.kademe), kademe: c.kademe == null ? r.baslangicKademe : (c.kademe | 0), calismaDerinligi: KADEME_TALIMATI[c.kademe == null ? r.baslangicKademe : (c.kademe | 0)] };
+  }
+  return {
+    protokol: PROTOKOL, isId, tur: CC_TURLERI.indexOf(tur) >= 0 ? tur : 'is', metin: String(metin || ''), anahtar: anahtar || '',
+    olusturmaMs: Date.now(), kadro: k, hedefler: (ayar && ayar.hedefler) || '', ek: ek || null,
+    sonucDosyasi: 'sonuclar/' + isId + '.json',
+    talimat: 'Claude Code: Masaüstü\\Ajan Ofisi\\CLAUDE-OKU.md protokolüne göre işle; roller ve talimatlar IK-PLATFORM/ortak/ajan-ofisi/kadro.js ROLLER içinde.'
+  };
+}
+const kirp = (v, n) => String(v == null ? '' : v).slice(0, n);
+function ccKaynaklar(l) { return (Array.isArray(l) ? l : []).slice(0, 40).map((x) => ({ baslik: kirp((x && (x.baslik || x.url)) || '', 200), url: kirp(x && x.url, 2000) })).filter((x) => x.url); }
+/* Claude Code'un yazdığı sonucu doğrular ve sınırlar (içerik yine de md.js / sandbox iframe ile güvenli gösterilir). */
+export function ccSonucTemizle(j) {
+  if (!j || typeof j !== 'object' || !j.isId) return null;
+  return {
+    isId: kirp(j.isId, 80), tur: CC_TURLERI.indexOf(j.tur) >= 0 ? j.tur : 'is',
+    durum: ['plan', 'calisiyor', 'tamam', 'hata'].indexOf(j.durum) >= 0 ? j.durum : 'calisiyor',
+    plan: j.plan && typeof j.plan === 'object' ? planTemizle(j.plan) : null,
+    adimlar: (Array.isArray(j.adimlar) ? j.adimlar : []).slice(0, 5).map((a) => ({
+      cikti: kirp(a && a.cikti, 60000), teslimNotu: kirp(a && a.teslimNotu, 400), kaynaklar: ccKaynaklar(a && a.kaynaklar),
+      sureSn: Math.max(0, Math.min(36000, Math.round(Number(a && a.sureSn) || 0)))
+    })),
+    puan: j.puan && typeof j.puan === 'object' ? j.puan : null,
+    not: j.not && typeof j.not === 'object' ? { baslik: kirp(j.not.baslik, 200), icerik: kirp(j.not.icerik, 100000), kaynaklar: ccKaynaklar(j.not.kaynaklar) } : null,
+    anahtar: kirp(j.anahtar, 20), hata: kirp(j.hata, 500)
+  };
+}
+
 /* ---------------------------------------------------------------- ofis sohbetleri (olgu iddiası içermez) */
 export const SOHBETLER = [
   ['Yöneticiler sence hangi grafiği daha çok seviyor?', 'Tek bakışta anlaşılanı. Gerisi süs.'],

@@ -9,14 +9,14 @@ import {
   planTemizle, puanTemizle, teslimNotuAyir, kodBlogu, videoPlaniAyir,
   vadesiGelenler, ZAMANLI_ISLER, trTarih, isoHafta, ayAnahtari, harcamaOzeti, zamanliSonuc,
   performans, kadroKararlari, kadroPuanIsle, SOHBETLER, ROL_SOHBETLERI, TESEKKURLER, ONAYLAR, sistemMetni,
-  azamiTahmin, VARSAYILAN_MODEL
+  azamiTahmin, VARSAYILAN_MODEL, MOTOR_CC, CC_TUR_ROL, ccIsDosyasi, ccSonucTemizle
 } from './kadro.js';
 
 const rastgele = (d) => d[Math.floor(Math.random() * d.length)];
 const kisalt = (s, n) => { s = String(s || '').replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n - 1).trim() + '…' : s; };
 const para = (n) => '$' + (Number(n) || 0).toFixed((Number(n) || 0) < 1 ? 3 : 2);
 
-export function akisKur({ sahne, beyin, veri, durum, kayit, bildir }) {
+export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
   const K = sahne.KONUM;
   const mesgul = new Map();                 /* rol → sayaç (sohbet döngüsü bunlara dokunmaz) */
   const sohbette = new Map();               /* rol → sohbet jetonu; iş bu kişiyi isterse sohbet kesilir */
@@ -377,6 +377,189 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir }) {
     });
   }
 
+  /* ================================================ CLAUDE CODE KÖPRÜSÜ (API'siz, abonelikle)
+     İş dosyası klasöre yazılır; Claude Code sonucu adım adım yazar; burada sonuç içe aktarılıp OYNATILIR.
+     Oynatma durumu iş kaydında (oynatma: {plan, adim, puan, bitti}) tutulur: sayfa yenilense de tekrar oynamaz. */
+  const ccSon = new Map();       /* isId → en güncel temiz sonuç (kuyrukta bekleyen oynatma bunu kullanır) */
+  const ccSirada = new Set();    /* kuyrukta oynatması bekleyen işler */
+  const ccDurumlar = new Map();  /* isId → oynatma durumu (bellek) */
+  let ccBekleyenRol = null;      /* sonucu beklenen ve "çalışıyor" görünen çalışan */
+  function ccBekleyen(rol) {
+    if (ccBekleyenRol && ccBekleyenRol !== rol) { sahne.durum(ccBekleyenRol, 'bos'); mesgulYap([ccBekleyenRol], false); }
+    ccBekleyenRol = rol || null;
+    if (rol) { mesgulYap([rol], true); sahne.durum(rol, 'calisiyor'); }
+  }
+
+  async function ccIsVer(metin) {
+    if (!kopru || kopru.durum() !== 'hazir') { const e = new Error('Ajan Ofisi klasörü bağlı değil. Ayarlar’dan “Klasörü bağla”ya basın.'); e.kod = 'klasor'; throw e; }
+    const id = await veri.isOlustur({ metin, durum: 'sirada', motor: MOTOR_CC, olusturmaMs: Date.now(), oynatma: { plan: false, adim: 0, puan: false, bitti: false } });
+    await kopru.isYaz(id + '.json', ccIsDosyasi({ isId: id, tur: 'is', metin, kadro: durum.kadro(), ayar: durum.ayar() }));
+    olay({ tur: 'is', metin: 'Yeni iş Claude Code’a iletildi: ' + kisalt(metin, 70) });
+    kuyruk('İş tahtaya asıldı', async () => {
+      const gm = 'genel_mudur';
+      mesgulYap([gm], true);
+      try { await sahne.konus(gm, 'İşi aldım ve Claude Code ekibine ilettim. Ekip başlayınca herkesi toplantıya çağıracağım.', 3200); }
+      finally { mesgulYap([gm], false); }
+    });
+    bildir({ tur: 'cc-bekliyor', id });
+    return id;
+  }
+
+  /* Zamanlanmış / tek seferlik görevler (içerik, rakip, muhasebe, strateji, ofis raporu) için iş dosyası */
+  async function ccGorevIste(tur, { anahtar, ek } = {}) {
+    if (!kopru || kopru.durum() !== 'hazir') { const e = new Error('Ajan Ofisi klasörü bağlı değil.'); e.kod = 'klasor'; throw e; }
+    const ank = anahtar || (tur === 'rakip' ? isoHafta() : trTarih());
+    const id = tur + '-' + ank + (anahtar ? '' : '-' + Date.now().toString(36));
+    await kopru.isYaz(id + '.json', ccIsDosyasi({ isId: id, tur, anahtar: ank, kadro: durum.kadro(), ayar: durum.ayar(), ek }));
+    olay({ tur: 'is', rol: CC_TUR_ROL[tur], metin: (ZAMANLI_ISLER.find((z) => z.id === tur) || { ad: tur }).ad + ' Claude Code’a iletildi' });
+    return id;
+  }
+  /* Ofis açıkken vadesi gelen günlük/haftalık işleri Claude Code’a bırakır (bir kez) */
+  async function ccZamanKontrol(zaman) {
+    if (!kopru || kopru.durum() !== 'hazir') return;
+    for (const v of vadesiGelenler(zaman)) {
+      const z = (zaman || {})[v.id] || {};
+      if (z.istendi === v.anahtar) continue;
+      const ad = v.id + '-' + v.anahtar;
+      if (await kopru.dosyaVarMi('isler', ad + '.json')) continue;
+      const ek = v.id === 'muhasebe' ? { harcamaOzeti: harcamaOzeti(await veri.harcamaListesi(30)) } : null;
+      await ccGorevIste(v.id, { anahtar: v.anahtar, ek });
+      await veri.zamanIstendi(v.id, v.anahtar);
+    }
+  }
+
+  /* Sayfa, sonuclar\ klasöründe yeni/değişmiş dosya görünce çağırır */
+  function ccSonuc(ham, dosyaAdi) {
+    const s = ccSonucTemizle(ham);
+    if (!s) return false;
+    s.dosya = dosyaAdi;
+    ccSon.set(s.isId, s);
+    if (ccSirada.has(s.isId)) return true;
+    ccSirada.add(s.isId);
+    kuyruk('Claude Code: ' + (s.plan ? s.plan.baslik : (ZAMANLI_ISLER.find((z) => z.id === s.tur) || { ad: s.tur }).ad), async () => {
+      ccSirada.delete(s.isId);
+      const son = ccSon.get(s.isId);
+      if (son.tur === 'is') await ccIsOyna(son); else await ccNotOyna(son);
+    });
+    return true;
+  }
+
+  async function toplantiOyna(plan) {
+    const gm = 'genel_mudur'; const herkes = ROLLER.map((r) => r.id);
+    mesgulYap(herkes, true);
+    try {
+      await sahne.konus(gm, 'Ekip işe başladı. Herkes toplantı salonuna lütfen!', 2400);
+      sahne.tahta({ baslik: plan.baslik, adimlar: [] });
+      const yuru = [sahne.yuru(gm, K.tahtaOnu())]; let i = 0;
+      for (const r of ROLLER) if (r.id !== gm) yuru.push(sahne.yuru(r.id, K.sandalye(i++)));
+      await Promise.all(yuru);
+      sahne.tahta(plan);
+      await sahne.konus(gm, plan.konusma || ('Bugünkü işimiz: ' + plan.baslik + '.'), null);
+      for (const [k, a] of plan.adimlar.entries()) {
+        sahne.tahta(Object.assign({}, plan, { aktif: k }));
+        await sahne.konus(gm, (k + 1) + '. adım ' + calisan(a.rol).ad + ' (' + ROL[a.rol].ad + '): ' + kisalt(a.gorev, 130), null);
+        await sahne.konus(a.rol, rastgele(ONAYLAR), 1500);
+      }
+      await sahne.konus(gm, plan.adimlar.length > 1 ? 'Dosya sırayla elden ele geçecek. Herkes odasına, kolay gelsin!' : 'Herkes odasına, kolay gelsin!', 2200);
+      sahne.tahta(Object.assign({}, plan, { kart: false }));
+      await Promise.all(ROLLER.map((r) => sahne.yuru(r.id, K.masa(r.id))));
+    } finally { mesgulYap(herkes, false); }
+  }
+
+  async function ccIsOyna(s) {
+    const gm = 'genel_mudur', vt = 'viral_tahmincisi';
+    const kayitli = durum.isler().find((x) => x.id === s.isId) || null;
+    const st = ccDurumlar.get(s.isId) || Object.assign({ plan: false, adim: 0, puan: false, bitti: false }, (kayitli && kayitli.oynatma) || {});
+    ccDurumlar.set(s.isId, st);
+    if (st.bitti) { if (s.dosya) await kopru.arsivle(s.dosya).catch(() => {}); return; }
+    const metin = (kayitli && kayitli.metin) || '';
+    if (s.durum === 'hata') {
+      ccBekleyen(null);
+      st.bitti = true;
+      await isHatasi(s.isId, gm, new Error(s.hata || 'Claude Code işi tamamlayamadı.'), { asama: 'cc' });
+      await veri.isGuncelle(s.isId, { oynatma: st }).catch(() => {});
+      if (s.dosya) await kopru.arsivle(s.dosya).catch(() => {});
+      return;
+    }
+    let plan = st.plan ? ((kayitli && kayitli.plan) || s.plan) : s.plan;
+    if (!plan || !plan.adimlar || !plan.adimlar.length) return;            /* plan henüz yazılmadı */
+    if (!st.plan) {
+      await toplantiOyna(plan);
+      st.plan = true;
+      await veri.isGuncelle(s.isId, { plan, durum: 'calisiyor', oynatma: Object.assign({}, st), nabizMs: Date.now() });
+      bildir({ tur: 'plan', id: s.isId, plan });
+      ccBekleyen(plan.adimlar[0].rol);
+    }
+    let kayitlar = ((kayitli && kayitli.adimlar) || []).slice(0, st.adim);
+    while (st.adim < plan.adimlar.length && st.adim < s.adimlar.length) {
+      const k = st.adim, a = s.adimlar[k], rol = plan.adimlar[k].rol, c = calisan(rol);
+      ccBekleyen(null);
+      mesgulYap([rol], true);
+      sahne.durum(rol, 'calisiyor'); await sahne.bekle(2200); sahne.durum(rol, 'bos');
+      const kayitA = {
+        rol, ad: c.ad, no: c.no || 1, kademe: c.kademe | 0, gorev: plan.adimlar[k].gorev, cikti: a.cikti, teslimNotu: a.teslimNotu, kaynaklar: a.kaynaklar,
+        maliyet: 0, token: null, sureMs: a.sureSn * 1000, model: MOTOR_CC, effort: kademeBilgisi(c.kademe).effort, kesildi: false, bitisMs: Date.now()
+      };
+      kayitlar = kayitlar.slice(0, k).concat([kayitA]);
+      st.adim = k + 1;
+      await veri.isGuncelle(s.isId, { adimlar: kayitlar, oynatma: Object.assign({}, st), nabizMs: Date.now() });
+      veri.harcamaEkle({ rol, ad: c.ad, kademe: c.kademe | 0, model: MOTOR_CC, effort: kayitA.effort, giris: 0, cikis: 0, okuma: 0, yazma: 0, arama: 0, maliyet: 0, sureMs: kayitA.sureMs, isId: s.isId, tur: 'adim', hata: null, ay: ayAnahtari(), tsMs: Date.now(), motor: MOTOR_CC }).catch(() => {});
+      if (rol === 'model_fotografcisi') { const html = kodBlogu(a.cikti, 'html'); if (html) await veri.notEkle({ tur: 'model', rol, ad: c.ad, baslik: plan.baslik, icerik: a.cikti, html, isId: s.isId, maliyet: 0, kaynak: MOTOR_CC }); }
+      if (rol === 'video_editor') { const vp = videoPlaniAyir(a.cikti); if (vp) await veri.notEkle({ tur: 'video', rol, ad: c.ad, baslik: vp.baslik || plan.baslik, icerik: a.cikti, plan: vp, isId: s.isId, maliyet: 0, kaynak: MOTOR_CC }); }
+      olay({ tur: 'calisma', rol, metin: c.ad + ' (' + ROL[rol].ad + ') teslim etti' });
+      mesgulYap([rol], false);
+      const sonraki = plan.adimlar[k + 1];
+      await teslimEt(rol, sonraki ? sonraki.rol : gm, a.teslimNotu || (sonraki ? 'Benim kısmım hazır, dosya sende.' : 'İş tamamlandı, dosya sizde.'));
+      if (sonraki) ccBekleyen(sonraki.rol);
+    }
+    if (st.adim >= plan.adimlar.length && s.puan && !st.puan) {
+      ccBekleyen(null);
+      const puan = puanTemizle(s.puan, plan.adimlar.length);
+      mesgulYap([gm, vt], true);
+      try {
+        await sahne.konus(gm, calisan(vt).ad + ', bu işi puanlar mısın?', 2000);
+        await sahne.yuru(vt, K.masaOnu(gm)); sahne.dosya(vt, true);
+        await sahne.yuru(vt, K.masa(vt)); sahne.dosya(vt, false);
+        sahne.durum(vt, 'calisiyor'); await sahne.bekle(2400); sahne.durum(vt, 'bos');
+        st.puan = true; st.bitti = true;
+        await veri.isGuncelle(s.isId, { durum: 'tamam', puan, bitisMs: Date.now(), maliyet: 0, oynatma: Object.assign({}, st) });
+        sahne.dosya(vt, true);
+        await sahne.yuru(vt, K.masaOnu(gm)); sahne.dosya(vt, false);
+        const eksi = puan.eksiler.slice().sort((x, y) => y.puan_kaybi - x.puan_kaybi)[0];
+        await sahne.konus(vt, 'Puan: ' + puan.toplam + '/100. ' + kisalt(puan.ozet, 90) + (eksi ? ' En büyük eksi: ' + kisalt(eksi.neden, 70) + ' (−' + eksi.puan_kaybi + ').' : ''), null);
+        sahne.yuru(vt, K.masa(vt)).then(() => mesgulYap([vt], false));
+        await sahne.konus(gm, puan.toplam >= 80 ? 'Harika iş, herkese teşekkürler!' : puan.toplam >= 60 ? 'Fena değil, ama daha iyisini yapabiliriz.' : 'Bu iş beklentinin altında kaldı; nedenlerini konuşacağız.', 2400);
+      } finally { mesgulYap([gm], false); }
+      olay({ tur: 'puan', metin: plan.baslik + ' · ' + puan.toplam + '/100' });
+      bildir({ tur: 'is-bitti', id: s.isId, baslik: plan.baslik, puan: puan.toplam, maliyet: null });
+      try { await veri.kadroKaydet(kadroPuanIsle(durum.kadro(), kayitlar, puan)); } catch (e) { olay({ tur: 'hata', metin: 'Puanlar kadroya işlenemedi.' }); }
+      await tesvikTuru(kayitlar, puan);
+      await kadroGozdenGecir({ id: s.isId, adimlar: kayitlar, puan, olusturmaMs: Date.now() });
+      if (s.dosya) await kopru.arsivle(s.dosya).catch(() => {});
+    }
+  }
+
+  async function ccNotOyna(s) {
+    const rol = CC_TUR_ROL[s.tur]; if (!rol) return;
+    if (s.durum === 'hata') {
+      olay({ tur: 'hata', rol, metin: (s.hata || 'Görev yapılamadı') });
+      if (s.dosya) await kopru.arsivle(s.dosya).catch(() => {});
+      return;
+    }
+    if (s.durum !== 'tamam' || !s.not) return;          /* henüz bitmedi */
+    const c = calisan(rol);
+    mesgulYap([rol], true);
+    try {
+      sahne.durum(rol, 'calisiyor'); await sahne.bekle(2000); sahne.durum(rol, 'bos');
+      const ek = {};
+      await veri.notEkle(Object.assign({ tur: s.tur, rol, ad: c.ad, baslik: s.not.baslik || ((ZAMANLI_ISLER.find((z) => z.id === s.tur) || { ad: s.tur }).ad + ' · ' + trTarih()), icerik: s.not.icerik, kaynaklar: s.not.kaynaklar, maliyet: 0, kaynak: MOTOR_CC }, ek));
+      if (ZAMANLI_ISLER.some((z) => z.id === s.tur) && s.anahtar) await veri.zamanTamam(s.tur, s.anahtar).catch(() => {});
+      if (s.dosya) await kopru.arsivle(s.dosya).catch(() => {});
+    } finally { mesgulYap([rol], false); }
+    await panoyaAs(rol, s.tur === 'icerik' ? 'Bugünkü içerik notunuz panoda.' : s.tur === 'rakip' ? 'Haftalık rakip raporu panoya asıldı.' : s.tur === 'muhasebe' ? 'Muhasebe raporu panoda.' : s.tur === 'strateji' ? 'Hedeflerin için stratejini hazırladım, panoda.' : 'Ofis performans raporu panoda.');
+    bildir({ tur: 'not', baslik: s.not.baslik || '' });
+  }
+
   /* ------------------------------------------------ ofis içi sohbet döngüsü (olgu iddiası içermez) */
   let sohbetAcik = true;
   async function sohbetTuru() {
@@ -434,5 +617,23 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir }) {
     }
   })();
 
-  return { isVer, zamanKontrol, simdiCalistir, stratejiIste, ofisRaporuIste, mesgulMu, sohbet: (v) => { sohbetAcik = !!v; }, cagir };
+  /* Motor seçimi: ayar.motor 'claude-code' (varsayılan) ya da 'api' */
+  const ccMi = () => (durum.ayar().motor || MOTOR_CC) === MOTOR_CC;
+  return {
+    isVer: (metin) => (ccMi() ? ccIsVer(String(metin || '').trim()) : isVer(metin)),
+    zamanKontrol: (zaman) => (ccMi() ? ccZamanKontrol(zaman).catch(() => {}) : zamanKontrol(zaman)),
+    simdiCalistir: async (id) => {
+      if (!ccMi()) return simdiCalistir(id);
+      const ek = id === 'muhasebe' ? { harcamaOzeti: harcamaOzeti(await veri.harcamaListesi(30)) } : null;
+      return ccGorevIste(id, { ek });
+    },
+    stratejiIste: (h) => (ccMi() ? ccGorevIste('strateji', { ek: { hedefler: h } }) : stratejiIste(h)),
+    ofisRaporuIste: () => {
+      if (!ccMi()) return ofisRaporuIste();
+      const perf = performans(durum.isler(), durum.kadro());
+      const veriOzet = ROLLER.map((r) => { const x = perf[r.id]; const k = calisan(r.id); return { departman: r.ad, calisan: k.ad, unvan: unvan(r.id, k.kademe), katki: x.katki, ortPuan: x.ortPuan, iseGiristenBeriOrt: x.girisOrt, calismaDk: Math.round(x.sureSn / 60), durum: x.durum }; });
+      return ccGorevIste('ofis', { ek: { performans: veriOzet } });
+    },
+    ccSonuc, ccMi, mesgulMu, sohbet: (v) => { sohbetAcik = !!v; }, cagir
+  };
 }

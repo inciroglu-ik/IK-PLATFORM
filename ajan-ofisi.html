@@ -214,8 +214,9 @@ video.onizleme,canvas.onizleme{width:100%;border-radius:10px;background:#0d1a30;
     </div>
     <div class="cipler">
       <span class="cip" id="cip-durum"><span class="nokta"></span><span id="cip-durum-metin">Ofis açık</span></span>
-      <span class="cip">Bugün <b id="cip-bugun">$0</b></span>
-      <span class="cip">Bu ay <b id="cip-ay">$0</b> / <span id="cip-butce">$0</span> <span class="butce-cubuk"><i id="cip-butce-cubuk" style="width:0"></i></span></span>
+      <span class="cip" id="cip-beyin" hidden><span class="nokta"></span><span id="cip-beyin-metin">Beyin: Claude Code</span></span>
+      <span class="cip" id="cip-harcama-bugun">Bugün <b id="cip-bugun">$0</b></span>
+      <span class="cip" id="cip-harcama-ay">Bu ay <b id="cip-ay">$0</b> / <span id="cip-butce">$0</span> <span class="butce-cubuk"><i id="cip-butce-cubuk" style="width:0"></i></span></span>
     </div>
   </header>
   <nav class="sekmeler" role="tablist">
@@ -266,6 +267,7 @@ import * as beyin from './ortak/ajan-ofisi/beyin.js';
 import { akisKur } from './ortak/ajan-ofisi/akis.js';
 import { md, esc, guvenliUrl } from './ortak/ajan-ofisi/md.js';
 import { videoUret, planSuresi, desteklenenBicim, seslendir } from './ortak/ajan-ofisi/video.js';
+import { kopruKur } from './ortak/ajan-ofisi/kopru.js';
 
 const $ = (id) => document.getElementById(id);
 const para = (n) => '$' + (Number(n) || 0).toFixed((Number(n) || 0) < 1 ? 3 : 2);
@@ -279,7 +281,9 @@ const ACIK = { sekme: 'ofis', not: null, is: null, notFiltre: 'hepsi' };
 const TEST = !!window.__TEST;                       /* test kancaları yalnız yerel test düzeneğinde açılır */
 const AKTIF_DURUM = ['sirada', 'toplanti', 'calisiyor'];
 const NABIZ_SINIRI = 5 * 60 * 1000;
-const bayatMi = (is) => AKTIF_DURUM.indexOf(is.durum) >= 0 && Date.now() - (is.nabizMs || is.olusturmaMs || 0) > NABIZ_SINIRI;
+/* Claude Code işleri bekleyebilir (siz Claude Code'u açana kadar): yarıda kaldı sayılmaz */
+const bayatMi = (is) => is.motor !== K.MOTOR_CC && AKTIF_DURUM.indexOf(is.durum) >= 0 && Date.now() - (is.nabizMs || is.olusturmaMs || 0) > NABIZ_SINIRI;
+const ccMi = () => (S.ayar.motor || K.MOTOR_CC) === K.MOTOR_CC;
 if (TEST) window.__OFIS_LOG = [];
 
 /* ================================================================ giriş ve sahiplik */
@@ -309,6 +313,9 @@ const dur = () => new Promise(() => {});            /* modülü sessizce durduru
 try { sahip = await sahiplikDogrula(); } catch (e) { kilitle('Bağlantı kurulamadı: ' + (e.message || e)); await dur(); }
 if (!sahip) { kilitle(); await dur(); }
 $('uygulama').hidden = false;
+/* Claude Code köprüsü (Masaüstü\Ajan Ofisi klasörü) */
+const kopru = kopruKur();
+try { await kopru.baslat(); } catch (e) { /* izin/destek durumu seritte gösterilir */ }
 
 /* ================================================================ veri katmanı */
 const veri = {
@@ -338,7 +345,10 @@ const veri = {
     const r = yolDoc('zamanlama'); const s = await tx.get(r);
     const y = K.kilitBirak((s.exists() ? s.data() : {})[id], kilitId, kod);
     if (y) tx.set(r, { [id]: y }, { merge: true });
-  })
+  }),
+  /* Claude Code köprüsü: görev dosyası bırakıldı / not içe aktarıldı */
+  zamanIstendi: (id, anahtar) => setDoc(yolDoc('zamanlama'), { [id]: { istendi: anahtar } }, { merge: true }),
+  zamanTamam: (id, anahtar) => setDoc(yolDoc('zamanlama'), { [id]: { son: anahtar, bitisMs: Date.now(), kaynak: 'claude-code' } }, { merge: true })
 };
 const durum = {
   kadro: () => S.kadro, ayar: () => S.ayar, isler: () => S.isler, notlar: () => S.notlar,
@@ -368,6 +378,7 @@ function bildir(o) {
     bildirim('<b>İş tamamlandı</b><br>' + esc(o.baslik || '') + (o.puan != null ? ' · ' + o.puan + '/100' : '') + (o.maliyet != null ? ' · ' + para(o.maliyet) : ''));
   } else if (o.tur === 'hata') bildirim(esc(o.metin), true);
   else if (o.tur === 'not') bildirim('<b>Panoda yeni not</b><br>' + esc(o.baslik || ''));
+  else if (o.tur === 'cc-bekliyor') { bildirim('<b>İş Claude Code’a iletildi</b><br>VS Code’da Claude Code’a <b>ofis</b> yazın.'); sonucTara(); }
   else if (o.tur === 'kadro') bildirim('<b>Kadro değişikliği</b><br>' + esc(o.kayit.cikan) + ' ayrıldı · yerine ' + esc(o.kayit.giren) + ' (' + esc(K.unvan(o.kayit.rol, o.kayit.yeniKademe)) + ')');
   aktifIsCiz();
 }
@@ -376,9 +387,53 @@ function bildir(o) {
 let sahne = null, akis = null;
 function sahneyiKur() {
   sahne = sahneKur($('sahne'), { kadro: S.kadro, onAjanTik: ajanKartiAc, kayit });
-  akis = akisKur({ sahne, beyin, veri, durum, kayit, bildir });
-  if (TEST) window.__OFIS = { S, sahne, akis, veri, K };
+  akis = akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru });
+  if (TEST) window.__OFIS = { S, sahne, akis, veri, K, kopru };
+  setInterval(sonucTara, 4000);
 }
+
+/* ================================================================ Claude Code sonuç klasörünü tara */
+const GORULEN = new Map();          /* dosya adı → son değişme zamanı */
+let TARANIYOR = false;
+async function sonucTara() {
+  if (TARANIYOR || !akis || kopru.durum() !== 'hazir') return;
+  TARANIYOR = true;
+  try {
+    const l = await kopru.sonuclar();
+    for (const f of l) {
+      if (GORULEN.get(f.ad) === f.degisme) continue;
+      let j; try { j = JSON.parse(await f.metin()); } catch (e) { continue; }   /* yazımı süren dosya: sonraki turda */
+      GORULEN.set(f.ad, f.degisme);
+      akis.ccSonuc(j, f.ad);
+    }
+    S.bekleyenCC = (await kopru.bekleyenIsler()).length;
+  } catch (e) {
+    if (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError')) { await kopru.baslat().catch(() => {}); }
+  } finally { TARANIYOR = false; ustBilgi(); seritCiz(); }
+}
+async function klasorBagla(izin) {
+  try {
+    await (izin ? kopru.izinIste() : kopru.bagla());
+    seritCiz(); ustBilgi(); if (ACIK.sekme === 'ayarlar') cekmeceCiz();
+    if (kopru.durum() === 'hazir') { bildirim('<b>Klasör bağlandı</b><br>' + esc(kopru.klasorAdi())); akis && akis.zamanKontrol(S.zaman); sonucTara(); }
+  } catch (e) { if (e && e.name !== 'AbortError') bildirim('Klasör bağlanamadı: ' + esc(e.message || e), true); }
+}
+function seritCiz() {
+  const s = $('serit-anahtar');
+  let html = '';
+  if (ccMi()) {
+    const d = kopru.durum();
+    if (d === 'desteklenmiyor') html = '<span>Claude Code köprüsü için ofisi <b>Chrome</b> ya da <b>Edge</b> ile açın (bu tarayıcı klasör erişimini desteklemiyor).</span>';
+    else if (d === 'yok') html = '<span>Ekibin beyni <b>Claude Code</b>. İşlerin gidip geleceği <b>Masaüstü › Ajan Ofisi</b> klasörünü bir kez bağlayın.</span><button class="btn kucuk ana-btn" style="margin-left:auto" data-klasor="bagla">Klasörü bağla</button>';
+    else if (d === 'izin') html = '<span>Tarayıcı, <b>Ajan Ofisi</b> klasörüne erişim iznini yeniden soruyor.</span><button class="btn kucuk ana-btn" style="margin-left:auto" data-klasor="izin">İzin ver</button>';
+    else if (S.bekleyenCC) html = '<span><b>' + S.bekleyenCC + ' iş</b> Claude Code’u bekliyor. VS Code’da Claude Code’a <b>ofis</b> yazın; ekip çalışırken burada izleyebilirsiniz.</span>';
+  } else if (!S.anahtarlar.claude) {
+    html = '<span>Ekibin beyni Claude API seçili ama <b>API anahtarı</b> girilmemiş.</span><button class="btn kucuk ana-btn" style="margin-left:auto" data-ac="ayarlar">Ayarlar’ı aç</button>';
+  }
+  s.hidden = !html;
+  if (s.innerHTML !== html) s.innerHTML = html;
+}
+document.addEventListener('click', (e) => { const b = e.target.closest('[data-klasor]'); if (b) klasorBagla(b.dataset.klasor === 'izin'); });
 
 /* ================================================================ abonelikler */
 function hazirKontrol() {
@@ -390,14 +445,14 @@ function hazirKontrol() {
     window.__TEST_HAZIR = true;
   }
 }
-onSnapshot(yolDoc('ayar'), (s) => { S.ayar = Object.assign({ model: K.VARSAYILAN_MODEL, aylikButce: 20 }, s.exists() ? s.data() : {}); S.hazir.ayar = true; ustBilgi(); hazirKontrol(); if (ACIK.sekme === 'harcama') cekmeceCiz(); });
+onSnapshot(yolDoc('ayar'), (s) => { S.ayar = Object.assign({ model: K.VARSAYILAN_MODEL, aylikButce: 20, motor: K.MOTOR_CC }, s.exists() ? s.data() : {}); S.hazir.ayar = true; ustBilgi(); seritCiz(); hazirKontrol(); if (ACIK.sekme === 'harcama') cekmeceCiz(); });
 onSnapshot(yolDoc('anahtarlar'), (s) => {
   S.anahtarlar = s.exists() ? s.data() : {};
   const oncedenVar = beyin.anahtarVar();
   beyin.anahtarAyarla(S.anahtarlar.claude || '');
-  $('serit-anahtar').hidden = !!S.anahtarlar.claude;
+  seritCiz();
   S.hazir.anahtar = true; hazirKontrol();
-  if (!oncedenVar && beyin.anahtarVar() && S.hazir.ilkKontrol && akis) akis.zamanKontrol(S.zaman);   /* anahtar yeni girildi: eksik günlük işleri tamamla */
+  if (!oncedenVar && beyin.anahtarVar() && S.hazir.ilkKontrol && akis && !ccMi()) akis.zamanKontrol(S.zaman);   /* anahtar yeni girildi: eksik günlük işleri tamamla */
 });
 onSnapshot(yolDoc('kadro'), (s) => {
   if (!s.exists()) { const k = K.baslangicKadrosu(); for (const c of Object.values(k.calisanlar)) c.iseGirisMs = Date.now(); setDoc(yolDoc('kadro'), k); S.kadro = k; }
@@ -443,6 +498,13 @@ harcamaAbone();
 
 /* ================================================================ üst bilgi + aktif iş şeridi */
 function ustBilgi() {
+  const cc = ccMi();
+  $('cip-harcama-bugun').hidden = cc; $('cip-harcama-ay').hidden = cc; $('cip-beyin').hidden = !cc;
+  if (cc) {
+    const d = kopru.durum();
+    $('cip-beyin-metin').innerHTML = 'Beyin: <b>Claude Code</b>' + (d === 'hazir' ? (S.bekleyenCC ? ' · ' + S.bekleyenCC + ' iş bekliyor' : ' · klasör bağlı') : ' · klasör bağlı değil');
+    $('cip-beyin').classList.toggle('uyari', d !== 'hazir' || !!S.bekleyenCC);
+  }
   const ay = durum.ayHarcama(); const bugun = K.trTarih();
   const gun = S.harcama.filter((h) => h.tsMs && K.trTarih(new Date(h.tsMs)) === bugun).reduce((s, h) => s + (h.maliyet || 0), 0);
   const butce = Number(S.ayar.aylikButce) || 0;
@@ -454,6 +516,10 @@ function aktifIsCiz() {
   const kap = $('aktif-is');
   if (!is) { kap.hidden = true; return; }
   kap.hidden = false;
+  if (is.motor === K.MOTOR_CC && !is.plan) {
+    kap.innerHTML = '<span class="ai-baslik">' + esc('Yeni iş · ' + String(is.metin || '').slice(0, 60)) + '</span><span class="ai-adim simdi">Claude Code bekleniyor</span><span class="kart-alt">VS Code’da Claude Code’a <b>ofis</b> yazın; ekip başlayınca toplantı burada yapılır.</span>';
+    return;
+  }
   const adimlar = (is.plan && is.plan.adimlar) || [];
   const biten = (is.adimlar || []).length;
   kap.innerHTML = '<span class="ai-baslik">' + esc(is.plan ? is.plan.baslik : 'Yeni iş · ' + String(is.metin || '').slice(0, 50)) + '</span>' +
@@ -466,7 +532,8 @@ $('is-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const t = $('is-metin').value.trim();
   if (!t) return;
-  if (!beyin.anahtarVar()) { bildirim('Önce Ayarlar’dan Claude API anahtarını girin.', true); cekmeceAc('ayarlar'); return; }
+  if (ccMi() && kopru.durum() !== 'hazir') { bildirim('Önce <b>Ajan Ofisi</b> klasörünü bağlayın (üstteki şeritte “Klasörü bağla”).', true); return; }
+  if (!ccMi() && !beyin.anahtarVar()) { bildirim('Önce Ayarlar’dan Claude API anahtarını girin.', true); cekmeceAc('ayarlar'); return; }
   $('is-gonder').disabled = true;
   try { await akis.isVer(t); $('is-metin').value = ''; }
   catch (err) { bildirim('İş kaydedilemedi: ' + esc(err.message || err), true); }
@@ -594,7 +661,7 @@ function kadroCiz(ic) {
     '<div class="satir" style="margin:14px 0"><button class="btn" id="om-rapor">Ofis Müdürü’nden performans raporu iste</button></div>' +
     '<div class="bolum"><h3>İşe alım / çıkış geçmişi</h3>' + ((S.kadro.gecmis || []).length ? '<table class="tablo"><thead><tr><th>Tarih</th><th>Departman</th><th>Ayrılan</th><th>Gelen</th><th>Neden</th></tr></thead><tbody>' + S.kadro.gecmis.slice().reverse().map((g) => '<tr><td>' + tarihSaat(g.tarihMs) + '</td><td>' + esc(K.ROL[g.rol] ? K.ROL[g.rol].ad : g.rol) + '</td><td>' + esc(g.cikan) + ' (' + esc(K.kademeBilgisi(g.eskiKademe).ad) + ')</td><td>' + esc(g.giren) + ' (' + esc(K.kademeBilgisi(g.yeniKademe).ad) + ')</td><td>' + esc(g.neden) + '</td></tr>').join('') + '</tbody></table>' : '<div class="kart-alt">Henüz kimse işten çıkarılmadı.</div>') + '</div>';
   ic.querySelectorAll('[data-kisi]').forEach((t) => t.onclick = () => ajanKartiAc(t.dataset.kisi));
-  $('om-rapor').onclick = () => { if (!beyin.anahtarVar()) { bildirim('Önce Claude API anahtarını girin.', true); return; } akis.ofisRaporuIste(); bildirim('Ofis Müdürü raporu hazırlıyor; bitince Notlar’a düşecek.'); };
+  $('om-rapor').onclick = () => { if (!gorevHazirMi()) return; Promise.resolve(akis.ofisRaporuIste()).then(() => bildirim(ccMi() ? 'Rapor isteği Claude Code’a iletildi; Claude Code’a <b>ofis</b> yazın.' : 'Ofis Müdürü raporu hazırlıyor; bitince Notlar’a düşecek.')).catch((e) => bildirim(esc(e.message || e), true)); };
 }
 /* --- harcama */
 function harcamaCiz(ic) {
@@ -604,7 +671,8 @@ function harcamaCiz(ic) {
   const gunList = Object.entries(gunler).sort((a, b) => a[0] < b[0] ? -1 : 1).slice(-14); const maxG = Math.max(0.0001, ...gunList.map((g) => g[1]));
   const son = S.harcama.slice().sort((a, b) => (b.tsMs || 0) - (a.tsMs || 0)).slice(0, 15);
   const z = S.zaman.muhasebe || {};
-  ic.innerHTML = '<div class="bolum"><h3>Bu ay: ' + para(ay) + (butce ? ' / ' + para(butce) : '') + '</h3>' + (butce ? '<div class="cubuk"><i style="width:' + Math.min(100, ay / butce * 100).toFixed(1) + '%"></i></div><div class="kart-alt" style="margin-top:4px">Bütçe dolduğunda ofis yeni iş almaz; Ayarlar’dan değiştirebilirsiniz.</div>' : '<div class="kart-alt">Aylık bütçe sınırı yok.</div>') + '</div>' +
+  ic.innerHTML = (ccMi() ? '<div class="bolum" style="background:#f6f9fd"><h3>Claude Code aboneliğiyle çalışılıyor</h3><div class="kart-alt">Bu modda API harcaması yoktur (aşağıdaki maliyetler 0 görünür); kayıtlar adım sürelerini ve iş sayılarını izlemek için tutulur. Abonelik kullanım sınırınızı Claude uygulamasının ayarlarından görebilirsiniz.</div></div>' : '') +
+    '<div class="bolum"><h3>Bu ay: ' + para(ay) + (butce ? ' / ' + para(butce) : '') + '</h3>' + (butce ? '<div class="cubuk"><i style="width:' + Math.min(100, ay / butce * 100).toFixed(1) + '%"></i></div><div class="kart-alt" style="margin-top:4px">Bütçe dolduğunda ofis yeni iş almaz; Ayarlar’dan değiştirebilirsiniz.</div>' : '<div class="kart-alt">Aylık bütçe sınırı yok.</div>') + '</div>' +
     '<div class="bolum"><h3>Departman bazında</h3>' + (Object.keys(roller).length ? '<table class="tablo"><thead><tr><th>Departman</th><th>Çağrı</th><th>Girdi</th><th>Çıktı</th><th>Arama</th><th>Maliyet</th></tr></thead><tbody>' + Object.entries(roller).sort((a, b) => b[1].m - a[1].m).map(([r, x]) => '<tr><td>' + kisiEtiketi(r, (S.kadro.calisanlar[r] || {}).ad) + '</td><td>' + x.n + '</td><td>' + x.g.toLocaleString('tr-TR') + '</td><td>' + x.c.toLocaleString('tr-TR') + '</td><td>' + x.a + '</td><td><b>' + para(x.m) + '</b></td></tr>').join('') + '</tbody></table>' : '<div class="kart-alt">Bu ay henüz harcama yok.</div>') + '</div>' +
     (gunList.length ? '<div class="bolum"><h3>Günlük harcama</h3>' + gunList.map(([g, m]) => '<div class="kriter" style="grid-template-columns:90px 1fr 70px"><span>' + g.slice(5).split('-').reverse().join('.') + '</span><span class="c"><i style="width:' + (m / maxG * 100).toFixed(1) + '%"></i></span><b>' + para(m) + '</b></div>').join('') + '</div>' : '') +
     '<div class="bolum"><h3>Muhasebeci</h3><div class="kart-alt">3 günde bir rapor verir ve tasarruf ayarlarını uygular. Son rapor: ' + (z.son ? esc(z.son) : 'henüz yok') + '.</div>' +
@@ -614,8 +682,19 @@ function harcamaCiz(ic) {
   ic.querySelectorAll('[data-calistir]').forEach((b) => b.onclick = () => zamanliCalistir(b.dataset.calistir));
 }
 function zamanliCalistir(id) {
+  if (ccMi()) {
+    if (kopru.durum() !== 'hazir') { bildirim('Önce Ajan Ofisi klasörünü bağlayın.', true); return; }
+    Promise.resolve(akis.simdiCalistir(id)).then(() => { bildirim('Görev Claude Code’a iletildi. VS Code’da Claude Code’a <b>ofis</b> yazın.'); sonucTara(); }).catch((e) => bildirim(esc(e.message || e), true));
+    return;
+  }
   if (!beyin.anahtarVar()) { bildirim('Önce Claude API anahtarını girin.', true); return; }
   akis.simdiCalistir(id); bildirim('Görev sıraya alındı; bitince panoya not düşecek.');
+}
+/* Strateji / ofis raporu gibi tek seferlik istekler: motor ne olursa olsun ortak kontrol */
+function gorevHazirMi() {
+  if (ccMi()) { if (kopru.durum() !== 'hazir') { bildirim('Önce Ajan Ofisi klasörünü bağlayın.', true); return false; } return true; }
+  if (!beyin.anahtarVar()) { bildirim('Önce Claude API anahtarını girin.', true); return false; }
+  return true;
 }
 /* --- akış */
 function akisCiz(ic) {
@@ -632,8 +711,16 @@ function zamanTablosuCiz() {
 }
 function ayarlarCiz(ic) {
   const z = S.zaman || {};
+  const kd = kopru.durum();
+  const kdMetin = kd === 'hazir' ? '“' + kopru.klasorAdi() + '” bağlı' : kd === 'izin' ? 'izin gerekiyor' : kd === 'desteklenmiyor' ? 'bu tarayıcı desteklemiyor (Chrome/Edge)' : 'bağlı değil';
   ic.innerHTML =
-    '<div class="bolum"><h3>Claude bağlantısı (ekibin beyni)</h3>' +
+    '<div class="bolum"><h3>Ekibin beyni</h3>' +
+      '<label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="radio" name="a-motor" value="claude-code"' + (ccMi() ? ' checked' : '') + '><span><b>Claude Code</b> — aboneliğiniz, ayrı fatura yok</span></label>' +
+      '<div class="kart-alt" style="margin:2px 0 8px 24px">İşler <b>Masaüstü › Ajan Ofisi</b> klasörüne bırakılır. VS Code’da Claude Code’a <b>ofis</b> yazınca ekip çalışır; ofis açıksa toplantıyı, dosya teslimlerini ve puanlamayı canlı izlersiniz. Günlük/haftalık işler o günün ilk Claude Code oturumunda yapılır.</div>' +
+      '<div class="satir" style="margin-left:24px">Klasör: <b>' + esc(kdMetin) + '</b>' + (kd !== 'desteklenmiyor' ? ' <button class="btn kucuk" data-klasor="' + (kd === 'izin' ? 'izin' : 'bagla') + '">' + (kd === 'hazir' ? 'Başka klasör seç' : kd === 'izin' ? 'İzin ver' : 'Klasörü bağla') + '</button>' : '') + '</div>' +
+      '<label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;margin-top:12px"><input type="radio" name="a-motor" value="api"' + (!ccMi() ? ' checked' : '') + '><span><b>Claude API</b> — ayrı fatura; tam otomatik (06:00 işleri bilgisayar kapalıyken de yapılır)</span></label>' +
+    '</div>' +
+    '<div class="bolum"' + (ccMi() ? ' style="opacity:.6"' : '') + '><h3>Claude API bağlantısı' + (ccMi() ? ' (yalnız “Claude API” seçiliyse)' : '') + '</h3>' +
       '<div class="form-satir"><label for="a-claude">Claude API anahtarı</label><input class="girdi" id="a-claude" type="password" autocomplete="off" placeholder="' + (S.anahtarlar.claude ? 'Kayıtlı: ' + esc(maskele(S.anahtarlar.claude)) + ' (değiştirmek için yenisini yazın)' : 'sk-ant-…') + '"><div class="ac">platform.claude.com › API Keys’ten alınır. Yalnız sizin hesabınızda saklanır; ekip üyeleri ve İK ekibi göremez.</div></div>' +
       '<div class="form-satir"><label for="a-model">Model</label><select class="girdi" id="a-model">' + K.MODELLER.map((m) => '<option value="' + m.id + '"' + (S.ayar.model === m.id ? ' selected' : '') + '>' + esc(m.ad) + '</option>').join('') + '</select><div class="ac">Çalışanların “maaşı” bu modelin çalışma derinliğidir (low → max). Varsayılan Opus 5.5.</div></div>' +
       '<div class="form-satir"><label for="a-butce">Aylık bütçe (USD)</label><input class="girdi" id="a-butce" type="number" min="0" step="1" value="' + esc(S.ayar.aylikButce == null ? 20 : S.ayar.aylikButce) + '"><div class="ac">Bu ay bu tutara ulaşılınca ofis yeni iş almaz. 0 = sınırsız.</div></div>' +
@@ -643,8 +730,13 @@ function ayarlarCiz(ic) {
       '<div class="form-satir"><label for="a-el">ElevenLabs API anahtarı</label><input class="girdi" id="a-el" type="password" autocomplete="off" placeholder="' + (S.anahtarlar.elevenlabs ? 'Kayıtlı: ' + esc(maskele(S.anahtarlar.elevenlabs)) : 'elevenlabs.io › Profile › API Keys') + '"></div>' +
       '<div class="form-satir"><label for="a-ses">Ses kimliği (Voice ID)</label><input class="girdi" id="a-ses" value="' + esc(S.ayar.sesId || '') + '" placeholder="elevenlabs.io › Voices › sesin yanındaki ID"><div class="ac">Türkçe için “eleven_multilingual_v2” modeli kullanılır.</div></div>' +
       '<div class="satir"><button class="btn" id="a-el-kaydet">Kaydet</button><button class="btn" id="a-el-dene">Sesi dene</button></div><div class="durum-metin" id="a-el-durum"></div></div>' +
-    '<div class="bolum"><h3>Zamanlanmış işler</h3><div class="kart-alt">Her sabah 06:00’da GitHub Actions zamanlayıcısı bu işleri sizin anahtarınızla çalıştırır. Zamanlayıcı gecikirse ofisi açtığınızda sayfa eksik olanı kendisi tamamlar.</div><div id="a-zaman"></div></div>';
+    '<div class="bolum"><h3>Zamanlanmış işler</h3><div class="kart-alt">' + (ccMi() ? 'Claude Code modunda günlük içerik avı, haftalık rakip raporu ve 3 günlük muhasebe raporu o günün ilk Claude Code oturumunda yapılır; ofis açıksa vadesi gelen işi klasöre de bırakır. “Şimdi çalıştır” isteği Claude Code’a iletir.' : 'Her sabah 06:00’da GitHub Actions zamanlayıcısı bu işleri sizin anahtarınızla çalıştırır. Zamanlayıcı gecikirse ofisi açtığınızda sayfa eksik olanı kendisi tamamlar.') + '</div><div id="a-zaman"></div></div>';
   zamanTablosuCiz();
+  ic.querySelectorAll('input[name="a-motor"]').forEach((r) => r.onchange = async () => {
+    await veri.ayarGuncelle({ motor: r.value });
+    seritCiz(); ustBilgi(); cekmeceCiz();
+    bildirim(r.value === K.MOTOR_CC ? 'Ekibin beyni: <b>Claude Code</b>' : 'Ekibin beyni: <b>Claude API</b>');
+  });
   $('a-kaydet').onclick = async () => {
     const d = $('a-durum'); d.className = 'durum-metin';
     try {
@@ -663,8 +755,9 @@ function ayarlarCiz(ic) {
   $('a-hedef-kaydet').onclick = async () => {
     const h = $('a-hedef').value.trim();
     await veri.ayarGuncelle({ hedefler: h });
-    if (h && beyin.anahtarVar()) { akis.stratejiIste(h); bildirim('Mentalite Koçu stratejinizi hazırlıyor; bitince panoya asacak.'); }
-    else bildirim(h ? 'Hedefler kaydedildi. Strateji için Claude anahtarı gerekli.' : 'Hedefler temizlendi.');
+    if (!h) { bildirim('Hedefler temizlendi.'); return; }
+    if (!gorevHazirMi()) return;
+    Promise.resolve(akis.stratejiIste(h)).then(() => bildirim(ccMi() ? 'Strateji isteği Claude Code’a iletildi; Claude Code’a <b>ofis</b> yazın.' : 'Mentalite Koçu stratejinizi hazırlıyor; bitince panoya asacak.')).catch((e) => bildirim(esc(e.message || e), true));
   };
   $('a-el-kaydet').onclick = async () => {
     const d = $('a-el-durum');
