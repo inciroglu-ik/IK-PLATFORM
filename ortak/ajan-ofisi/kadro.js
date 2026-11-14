@@ -7,7 +7,7 @@
    Kişisel veri YOK: çalışan adları kurgusaldır.
    ============================================================================ */
 
-export const SURUM = '2026-11-14.2';
+export const SURUM = '2026-11-14.3';
 export const VARSAYILAN_MODEL = 'claude-opus-5-5';
 export const MODELLER = [
   { id: 'claude-opus-5-5', ad: 'Claude Opus 5.5 (önerilen)' },
@@ -179,6 +179,26 @@ export function baslangicKadrosu() {
   return { calisanlar, gecmis: [], surum: SURUM };
 }
 export function kademeBilgisi(k) { return KADEMELER[Math.max(0, Math.min(EN_UST_KADEME, k | 0))]; }
+/* Temsili maaş = kademe maaşı + pozisyona işlenmiş kalıcı ek (ofis sahibinin "maaş skalasına ekle" kararı) */
+export function maasHesap(c) { return kademeBilgisi(c && c.kademe).maas + Math.max(0, (c && c.maasEk) | 0); }
+/* Ofis sahibinin doğrudan kadro kararı: çalışanı çıkar, yerine daha üst kademeden (isteğe bağlı maaş ekiyle) yenisini al.
+   Saf fonksiyon: { yeniKadro, kayit, eski, yeni } ya da { hata }. Beklenen ad tutmazsa (kişi zaten değişmişse) kimse çıkarılmaz. */
+export function sahipKadroKarari(kadro, karar, simdiMs) {
+  const rol = karar && karar.rol;
+  if (!rol || !ROL[rol] || rol === 'genel_mudur') return { hata: 'Kadro kararı için geçerli bir departman yok.' };
+  const guncel = kadro && kadro.calisanlar ? kadro : baslangicKadrosu();
+  const eski = guncel.calisanlar[rol] || { ad: ROL[rol].baslangicAd, kademe: ROL[rol].baslangicKademe, no: 1 };
+  if (karar.ad && karar.ad !== eski.ad) return { hata: ROL[rol].ad + ' artık ' + eski.ad + '; ' + karar.ad + ' için verilen karar uygulanmadı.' };
+  const eskiKademe = eski.kademe | 0;
+  const yeniKademe = Math.min(EN_UST_KADEME, eskiKademe + Math.max(0, Math.min(2, karar.kademeArtis == null ? 1 : karar.kademeArtis | 0)));
+  const maasEk = Math.max(0, (eski.maasEk | 0) + Math.max(0, Math.min(50000, karar.maasEk | 0)));
+  const yeniAd = yeniAdSec(guncel, simdiMs);
+  const yeni = { ad: yeniAd, kademe: yeniKademe, no: (eski.no || 1) + 1, iseGirisMs: simdiMs, puanlar: [], maasEk };
+  const kayit = { tarihMs: simdiMs, rol, cikan: eski.ad, giren: yeniAd, ort: null, eskiKademe, yeniKademe, sahipKarari: true,
+    eskiMaas: maasHesap(eski), yeniMaas: maasHesap(yeni), neden: ('Ofis sahibinin kararı' + (karar.neden ? ': ' + karar.neden : '')).slice(0, 220) };
+  const yeniKadro = { calisanlar: Object.assign({}, guncel.calisanlar, { [rol]: yeni }), gecmis: (guncel.gecmis || []).concat([kayit]).slice(-60), surum: guncel.surum || SURUM };
+  return { yeniKadro, kayit, eski, yeni };
+}
 export function unvan(rolId, kademe) { const r = ROL[rolId]; return (kademeBilgisi(kademe).ad + ' ' + (r ? r.ad : rolId)).trim(); }
 export function yeniAdSec(kadro, tohum) {
   const kullanilan = new Set(Object.values((kadro && kadro.calisanlar) || {}).map((c) => c.ad));
@@ -649,7 +669,12 @@ export function ccSonucTemizle(j) {
     puan: j.puan && typeof j.puan === 'object' ? j.puan : null,
     not: j.not && typeof j.not === 'object' ? { baslik: kirp(j.not.baslik, 200), icerik: kirp(j.not.icerik, 100000), kaynaklar: ccKaynaklar(j.not.kaynaklar) } : null,
     anahtar: kirp(j.anahtar, 20), hata: kirp(j.hata, 500),
-    duzeltme: j.duzeltme === true, duzeltmeNotu: kirp(j.duzeltmeNotu, 300)
+    duzeltme: j.duzeltme === true, duzeltmeNotu: kirp(j.duzeltmeNotu, 300),
+    kadroKarari: j.kadroKarari && typeof j.kadroKarari === 'object' && ROL[j.kadroKarari.rol] && j.kadroKarari.rol !== 'genel_mudur'
+      ? { rol: j.kadroKarari.rol, ad: kirp(j.kadroKarari.ad, 30), neden: kirp(j.kadroKarari.neden, 200),
+          kademeArtis: Math.max(0, Math.min(2, Math.round(Number(j.kadroKarari.kademeArtis == null ? 1 : j.kadroKarari.kademeArtis) || 0))),
+          maasEk: Math.max(0, Math.min(50000, Math.round(Number(j.kadroKarari.maasEk) || 0))) }
+      : null
   };
 }
 

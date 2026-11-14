@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<meta name="surum" content="202611141837">
+<meta name="surum" content="202611141856">
 <title>Ajan Ofisi · İnciroğlu İK</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -587,6 +587,7 @@ function islerCiz(ic) {
     if (ACIK.is === is.id) {
       govde = '<div class="kart-govde"><div class="kart-alt" style="margin-bottom:8px"><b>İş:</b> ' + esc(is.metin) + '</div>';
       if (is.hata) govde += '<div class="teslim" style="background:#f8e9e8;border-color:#efcfcc;color:#7a2f2b">Hata: ' + esc(is.hata) + '</div>';
+      if (is.kadroKarari) { const g = is.kadroKarari; govde += '<div class="teslim">Kadro kararı: ' + esc(g.cikan) + ' (' + esc(K.unvan(g.rol, g.eskiKademe)) + ') ayrıldı, yerine ' + esc(g.giren) + ' (' + esc(K.unvan(g.rol, g.yeniKademe)) + ') geldi' + (Number(g.yeniMaas) > 0 ? ' · maaş ' + Number(g.yeniMaas).toLocaleString('tr-TR') + ' ₺' + (Number(g.eskiMaas) > 0 ? ' (önceki ' + Number(g.eskiMaas).toLocaleString('tr-TR') + ' ₺)' : '') : '') + '. ' + esc(g.neden || '') + '</div>'; }
       (is.adimlar || []).forEach((a, i) => {
         const kp = is.puan && is.puan.katkilar && is.puan.katkilar[i] ? is.puan.katkilar[i] : null;
         const html = a.rol === 'model_fotografcisi' ? K.kodBlogu(a.cikti, 'html') : '';
@@ -662,10 +663,10 @@ function kadroCiz(ic) {
   ic.innerHTML = '<div class="kart-alt" style="margin-bottom:10px">Ofis Müdürü her işten sonra Viral Tahmincisi’nin katkı puanlarını işler. Genel Müdür, işe girişinden beri en az ' + K.KOVMA_EN_AZ_KATKI + ' puanlı katkısı olup ortalaması ' + K.KOVMA_ESIGI + '’ın altında kalan çalışanı çıkarır ve yerine bir üst kademeden (daha yüksek maaşlı, daha derin çalışan) birini alır. Maaşlar temsilidir; asıl maliyet token harcamasıdır.</div>' +
     '<div style="overflow:auto"><table class="tablo"><thead><tr><th>Çalışan</th><th>Kademe · maaş (temsili)</th><th>Durum</th><th>İş</th><th>Ort. puan</th><th>Çalışma</th><th>Maliyet</th></tr></thead><tbody>' +
     K.ROLLER.map((r) => { const c = S.kadro.calisanlar[r.id] || {}; const x = perf[r.id]; const kb = K.kademeBilgisi(c.kademe);
-      return '<tr data-kisi="' + r.id + '" style="cursor:pointer"><td>' + kisiEtiketi(r.id, c.ad) + '</td><td>' + esc(kb.ad) + ' · ' + kb.maas.toLocaleString('tr-TR') + ' ₺</td><td><span class="etiket ' + (dEt[x.durum] || '') + '">' + x.durum + '</span></td><td>' + x.katki + '</td><td>' + (x.girisOrt != null ? x.girisOrt : x.ortPuan != null ? x.ortPuan : '—') + '</td><td>' + Math.round(x.sureSn / 60) + ' dk</td><td>' + para(x.maliyet) + '</td></tr>'; }).join('') +
+      return '<tr data-kisi="' + r.id + '" style="cursor:pointer"><td>' + kisiEtiketi(r.id, c.ad) + '</td><td>' + esc(kb.ad) + ' · ' + K.maasHesap(c).toLocaleString('tr-TR') + ' ₺</td><td><span class="etiket ' + (dEt[x.durum] || '') + '">' + x.durum + '</span></td><td>' + x.katki + '</td><td>' + (x.girisOrt != null ? x.girisOrt : x.ortPuan != null ? x.ortPuan : '—') + '</td><td>' + Math.round(x.sureSn / 60) + ' dk</td><td>' + para(x.maliyet) + '</td></tr>'; }).join('') +
     '</tbody></table></div>' +
     '<div class="satir" style="margin:14px 0"><button class="btn" id="om-rapor">Ofis Müdürü’nden performans raporu iste</button></div>' +
-    '<div class="bolum"><h3>İşe alım / çıkış geçmişi</h3>' + ((S.kadro.gecmis || []).length ? '<table class="tablo"><thead><tr><th>Tarih</th><th>Departman</th><th>Ayrılan</th><th>Gelen</th><th>Neden</th></tr></thead><tbody>' + S.kadro.gecmis.slice().reverse().map((g) => '<tr><td>' + tarihSaat(g.tarihMs) + '</td><td>' + esc(K.ROL[g.rol] ? K.ROL[g.rol].ad : g.rol) + '</td><td>' + esc(g.cikan) + ' (' + esc(K.kademeBilgisi(g.eskiKademe).ad) + ')</td><td>' + esc(g.giren) + ' (' + esc(K.kademeBilgisi(g.yeniKademe).ad) + ')</td><td>' + esc(g.neden) + '</td></tr>').join('') + '</tbody></table>' : '<div class="kart-alt">Henüz kimse işten çıkarılmadı.</div>') + '</div>';
+    '<div class="bolum"><h3>İşe alım / çıkış geçmişi</h3>' + ((S.kadro.gecmis || []).length ? '<table class="tablo"><thead><tr><th>Tarih</th><th>Departman</th><th>Ayrılan</th><th>Gelen</th><th>Neden</th></tr></thead><tbody>' + S.kadro.gecmis.slice().reverse().map((g) => '<tr><td>' + tarihSaat(g.tarihMs) + '</td><td>' + esc(K.ROL[g.rol] ? K.ROL[g.rol].ad : g.rol) + '</td><td>' + esc(g.cikan) + ' (' + esc(K.kademeBilgisi(g.eskiKademe).ad) + ')</td><td>' + esc(g.giren) + ' (' + esc(K.kademeBilgisi(g.yeniKademe).ad) + (Number(g.yeniMaas) > 0 ? ', ' + Number(g.yeniMaas).toLocaleString('tr-TR') + ' TL' : '') + ')</td><td>' + esc(g.neden) + '</td></tr>').join('') + '</tbody></table>' : '<div class="kart-alt">Henüz kimse işten çıkarılmadı.</div>') + '</div>';
   ic.querySelectorAll('[data-kisi]').forEach((t) => t.onclick = () => ajanKartiAc(t.dataset.kisi));
   $('om-rapor').onclick = () => { if (!gorevHazirMi()) return; Promise.resolve(akis.ofisRaporuIste()).then(() => bildirim(ccMi() ? 'Rapor isteği Claude Code’a iletildi; Claude Code’a <b>ofis</b> yazın.' : 'Ofis Müdürü raporu hazırlıyor; bitince Notlar’a düşecek.')).catch((e) => bildirim(esc(e.message || e), true)); };
 }
@@ -797,7 +798,7 @@ function ajanKartiAc(rol) {
   const son = [];
   for (const is of S.isler) (is.adimlar || []).forEach((st, i) => { if (st.rol === rol && son.length < 5) son.push({ baslik: is.plan ? is.plan.baslik : is.metin, puan: is.puan && is.puan.katkilar && is.puan.katkilar[i] ? is.puan.katkilar[i].puan : null, ms: st.bitisMs }); });
   modalAc(esc(c.ad) + ' · ' + esc(K.unvan(rol, c.kademe)),
-    '<div class="kisi-kart"><div class="avatar" style="background:' + r.renk + '">' + esc(r.harf) + '</div><div><div style="font-weight:600;color:var(--lacivert)">' + esc(r.ad) + ' · ' + esc(K.ODALAR[r.oda].ad) + '</div><div class="kart-alt">' + esc(r.gorev) + '</div><div class="kart-alt">Durum: ' + dMetin + ' · Maaş (temsili): ' + kb.maas.toLocaleString('tr-TR') + ' ₺ · Çalışma derinliği: ' + esc(kb.effort) + '</div></div></div>' +
+    '<div class="kisi-kart"><div class="avatar" style="background:' + r.renk + '">' + esc(r.harf) + '</div><div><div style="font-weight:600;color:var(--lacivert)">' + esc(r.ad) + ' · ' + esc(K.ODALAR[r.oda].ad) + '</div><div class="kart-alt">' + esc(r.gorev) + '</div><div class="kart-alt">Durum: ' + dMetin + ' · Maaş (temsili): ' + K.maasHesap(c).toLocaleString('tr-TR') + ' ₺ · Çalışma derinliği: ' + esc(kb.effort) + '</div></div></div>' +
     '<div class="metrikler"><div class="metrik"><span>Teslim edilen adım</span><b>' + x.katki + '</b></div><div class="metrik"><span>Ort. puan (işe girişten beri)</span><b>' + (x.girisOrt != null ? x.girisOrt : '—') + '</b></div><div class="metrik"><span>Toplam çalışma</span><b>' + Math.round(x.sureSn / 60) + ' dk</b></div><div class="metrik"><span>Maliyet</span><b>' + para(x.maliyet) + '</b></div></div>' +
     '<div class="bolum"><h3>Son işleri</h3>' + (son.length ? son.map((s) => '<div class="olay"><time>' + (s.ms ? new Date(s.ms).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' }) : '') + '</time><div style="flex:1">' + esc(s.baslik) + '</div>' + (s.puan != null ? '<span class="puan ' + puanSinifi(s.puan) + '">' + s.puan + '</span>' : '') + '</div>').join('') : '<div class="kart-alt">Henüz iş teslim etmedi.</div>') + '</div>');
 }

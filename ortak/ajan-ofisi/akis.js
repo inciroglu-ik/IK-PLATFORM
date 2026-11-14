@@ -9,7 +9,7 @@ import {
   planTemizle, puanTemizle, teslimNotuAyir, kodBlogu, videoPlaniAyir,
   vadesiGelenler, ZAMANLI_ISLER, trTarih, isoHafta, ayAnahtari, harcamaOzeti, zamanliSonuc,
   performans, kadroKararlari, kadroPuanIsle, SOHBETLER, ROL_SOHBETLERI, TESEKKURLER, ONAYLAR, sistemMetni,
-  azamiTahmin, VARSAYILAN_MODEL, MOTOR_CC, CC_TUR_ROL, ccIsDosyasi, ccSonucTemizle
+  azamiTahmin, VARSAYILAN_MODEL, MOTOR_CC, CC_TUR_ROL, ccIsDosyasi, ccSonucTemizle, maasHesap, sahipKadroKarari
 } from './kadro.js';
 
 const rastgele = (d) => d[Math.floor(Math.random() * d.length)];
@@ -275,29 +275,61 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
         const guncel = durum.kadro();
         const eski = guncel.calisanlar[k.rol];
         const yeniAd = yeniAdSec(guncel, Date.now());
-        const yeni = { ad: yeniAd, kademe: k.yeniKademe, no: (eski.no || 1) + 1, iseGirisMs: Date.now(), puanlar: [] };
-        const kayitG = { tarihMs: Date.now(), rol: k.rol, cikan: eski.ad, giren: yeniAd, ort: k.ort, eskiKademe: k.eskiKademe, yeniKademe: k.yeniKademe, neden: 'İşe girişten beri ortalama ' + ortMetni + ' (eşik 60)' };
+        const yeni = { ad: yeniAd, kademe: k.yeniKademe, no: (eski.no || 1) + 1, iseGirisMs: Date.now(), puanlar: [], maasEk: Math.max(0, eski.maasEk | 0) };
+        const kayitG = { tarihMs: Date.now(), rol: k.rol, cikan: eski.ad, giren: yeniAd, ort: k.ort, eskiKademe: k.eskiKademe, yeniKademe: k.yeniKademe, eskiMaas: maasHesap(eski), yeniMaas: maasHesap(yeni), neden: 'İşe girişten beri ortalama ' + ortMetni + ' (eşik 60)' };
         const yeniKadro = { calisanlar: Object.assign({}, guncel.calisanlar, { [k.rol]: yeni }), gecmis: (guncel.gecmis || []).concat([kayitG]).slice(-60), surum: guncel.surum || 'eski' };
         try { await veri.kadroKaydet(yeniKadro); }
         catch (e) { await sahne.konus(gm, 'Kadro kaydı yapılamadı (' + beyin.hataMetni(e) + '); kararı erteliyorum.', 2600); mesgulYap([k.rol], false); continue; }
-        await sahne.konus(gm, k.ad + ', işe girdiğinden beri ortalaman ' + ortMetni + '; beklentimiz en az 60. Yollarımızı ayırıyoruz. Emeğin için teşekkürler.', null);
-        await sahne.konus(k.rol, 'Anlıyorum. Ekibe başarılar dilerim.', 1800);
-        sahne.kutu(k.rol, true);
-        await sahne.yuru(k.rol, K.giris());
-        sahne.kutu(k.rol, false); sahne.gizle(k.rol, true);
-        olay({ tur: 'kadro', metin: eski.ad + ' ayrıldı, yerine ' + yeniAd + ' (' + unvan(k.rol, k.yeniKademe) + ') geldi' });
-        bildir({ tur: 'kadro', kayit: kayitG });
-        sahne.isimGuncelle(k.rol, yeniAd, k.yeniKademe);
-        sahne.isinlan(k.rol, K.giris()); sahne.gizle(k.rol, false);
-        await sahne.yuru(k.rol, K.masaOnu(k.rol));
-        const kb = kademeBilgisi(k.yeniKademe);
-        await sahne.konus(k.rol, 'Merhaba, ben ' + yeniAd + '. Yeni ' + unvan(k.rol, k.yeniKademe) + ' olarak başlıyorum. Daha derin çalışacağım (' + kb.effort + ').', null);
-        await sahne.konus(gm, 'Hoş geldin ' + yeniAd + '. Masan hazır.', 1800);
-        await sahne.yuru(k.rol, K.masa(k.rol));
+        await degisimOyna(k.rol, kayitG, k.ad + ', işe girdiğinden beri ortalaman ' + ortMetni + '; beklentimiz en az 60. Yollarımızı ayırıyoruz. Emeğin için teşekkürler.', 'Hoş geldin ' + yeniAd + '. Masan hazır.');
         mesgulYap([k.rol], false);
       }
       await sahne.yuru(gm, K.masa(gm));
     } finally { mesgulYap([gm], false); }
+  }
+
+  /* Çıkış + işe giriş sahnesi (kadro kaydı ÖNCE yazılmış olmalı). GM çalışanın masasının önünde. */
+  async function degisimOyna(rol, kayit, ayrilikMetni, hosgeldinMetni) {
+    const gm = 'genel_mudur';
+    await sahne.konus(gm, ayrilikMetni, null);
+    await sahne.konus(rol, 'Anlıyorum. Ekibe başarılar dilerim.', 1800);
+    sahne.kutu(rol, true);
+    await sahne.yuru(rol, K.giris());
+    sahne.kutu(rol, false); sahne.gizle(rol, true);
+    olay({ tur: 'kadro', metin: kayit.cikan + ' ayrıldı, yerine ' + kayit.giren + ' (' + unvan(rol, kayit.yeniKademe) + ') geldi' });
+    bildir({ tur: 'kadro', kayit });
+    sahne.isimGuncelle(rol, kayit.giren, kayit.yeniKademe);
+    sahne.isinlan(rol, K.giris()); sahne.gizle(rol, false);
+    await sahne.yuru(rol, K.masaOnu(rol));
+    const kb = kademeBilgisi(kayit.yeniKademe);
+    await sahne.konus(rol, 'Merhaba, ben ' + kayit.giren + '. Yeni ' + unvan(rol, kayit.yeniKademe) + ' olarak başlıyorum. ' + (kayit.yeniKademe > kayit.eskiKademe ? 'Daha derin çalışacağım (' + kb.effort + ').' : 'Çalışma derinliğim: ' + kb.effort + '.'), null);
+    await sahne.konus(gm, hosgeldinMetni, 2400);
+    await sahne.yuru(rol, K.masa(rol));
+  }
+
+  /* Ofis sahibinin doğrudan kadro kararı (Claude Code sonucu: kadroKarari) */
+  async function ccKadroKarari(s, st) {
+    const gm = 'genel_mudur', k = s.kadroKarari;
+    st.bitti = true;
+    const r = sahipKadroKarari(durum.kadro(), k, Date.now());
+    const arsiv = async () => { if (s.dosya) await kopru.arsivle(s.dosya).catch(() => {}); };
+    if (r.hata) { await isHatasi(s.isId, gm, new Error(r.hata), { asama: 'cc' }); await veri.isGuncelle(s.isId, { oynatma: Object.assign({}, st) }).catch(() => {}); await arsiv(); return; }
+    /* Önce kayıt: yazılamazsa kimse çıkarılmaz */
+    try { await veri.kadroKaydet(r.yeniKadro); }
+    catch (e) { st.bitti = false; await isHatasi(s.isId, gm, new Error('Kadro kaydı yapılamadı: ' + beyin.hataMetni(e)), { asama: 'cc' }); await arsiv(); return; }
+    const baslik = 'Kadro kararı: ' + ROL[k.rol].ad;
+    await veri.isGuncelle(s.isId, { durum: 'tamam', plan: { baslik, konusma: '', adimlar: [] }, kadroKarari: r.kayit, bitisMs: Date.now(), maliyet: 0, oynatma: Object.assign({}, st) }).catch(() => {});
+    const tl = (n) => Number(n).toLocaleString('tr-TR') + ' TL';
+    mesgulYap([gm, k.rol], true);
+    try {
+      await sahne.konus(gm, 'Ofis sahibinden kadro talimatı geldi.', 2200);
+      await sahne.yuru(gm, K.masaOnu(k.rol));
+      await degisimOyna(k.rol, r.kayit,
+        r.eski.ad + ', ' + (k.neden ? kisalt(k.neden, 110) + ' ' : '') + 'Ofis sahibinin kararıyla yollarımızı ayırıyoruz. Emeğin için teşekkürler.',
+        'Hoş geldin ' + r.yeni.ad + '. Maaşın ' + tl(r.kayit.yeniMaas) + (r.kayit.yeniMaas > r.kayit.eskiMaas ? ' (önceki ' + tl(r.kayit.eskiMaas) + ')' : '') + '. Beklentimiz kurumsal, bilgi veren, görselle desteklenmiş işler.');
+      await sahne.yuru(gm, K.masa(gm));
+    } finally { mesgulYap([gm, k.rol], false); }
+    olay({ tur: 'kadro', metin: baslik + ' · ' + r.kayit.cikan + ' → ' + r.kayit.giren + ' · ' + tl(r.kayit.yeniMaas) });
+    await arsiv();
   }
 
   /* ------------------------------------------------ zamanlanmış işler (sayfa açıkken telafi) */
@@ -477,6 +509,7 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
       return;
     }
     const metin = (kayitli && kayitli.metin) || '';
+    if (s.kadroKarari && s.durum === 'tamam') { ccBekleyen(null); await ccKadroKarari(s, st); return; }
     if (s.durum === 'hata') {
       ccBekleyen(null);
       st.bitti = true;
