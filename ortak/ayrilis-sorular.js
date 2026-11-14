@@ -23,7 +23,7 @@ export const FAKTORLER = [
   { k: 'yonetici', ad: 'Yönetici ile anlaşmazlık' },
   { k: 'arkadas', ad: 'Çalışma arkadaşları ile ilgili sorunlar' },
   { k: 'egitimYetersiz', ad: 'Eğitim olanaklarının yetersizliği' },
-  { k: 'odul', ad: 'Ödüllendirmenin yetersizliği' },
+  { k: 'odul', ad: 'Yan hak' },   /* 14.11.2026'ya kadar "Ödüllendirmenin yetersizliği"; anahtar (odul) ve eski cevaplar aynı */
   { k: 'isYuku', ad: 'İş yükünün fazlalığı' },
   { k: 'saat', ad: 'Çalışma saatleri' },
   { k: 'sektor', ad: 'Sektör değişikliği' },
