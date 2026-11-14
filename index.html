@@ -17,14 +17,14 @@
 <link rel="stylesheet" href="pano/pano.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
-<meta name="version" content="202611141200">
+<meta name="version" content="202611141300">
 <script>/* Eski PWA service worker kayıtlarını ve önbellekleri temizle (klasik panodaki satırlarla aynı) */
 if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister();});}).catch(function(){});}
 if('caches' in window){caches.keys().then(function(k){k.forEach(function(c){caches.delete(c);});}).catch(function(){});}
 /* Güncel sürüm kontrolü (klasik panodaki mekanizma): telefon önbellekten eski bir kopya gösteriyorsa sunucudaki dosyanın
    sürümü (meta version) farklı çıkar ve sayfa önbelleğe takılmayan bir adresle yeniden yüklenir. Oturum başına bir kez.
    Yeni sürüm yayınlarken yukarıdaki meta version ile buradaki değeri BİRLİKTE artırın. */
-(function(){var v='202611141200';try{if(sessionStorage.getItem('ikv2_kontrol'))return;sessionStorage.setItem('ikv2_kontrol','1');
+(function(){var v='202611141300';try{if(sessionStorage.getItem('ikv2_kontrol'))return;sessionStorage.setItem('ikv2_kontrol','1');
 fetch(location.pathname+'?_taze='+Date.now(),{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){var m=t.match(/name="version"\s+content="(\d+)"/);if(m&&m[1]&&m[1]!==v){location.replace(location.pathname+'?_cb='+Date.now()+location.hash);}}).catch(function(){});}catch(e){}})();</script>
 </head>
 <!--
@@ -159,11 +159,12 @@ async function veriDosyasiYukle(f) {
   if (!confirm(et + ' verisi yüklenecek. Panoyu açan tüm yetkililer bu veriyi görecek. Devam edilsin mi?')) return;
   /* Ayrılış anketi: yeni pakette olup ŞU ANKİ panoda (paket + elle girilen hareketler) olmayan çıkışlar.
      Yalnız son 60 günün çıkışları (eski bir düzeltme yüzünden aylar önce ayrılana bağlantı açılmasın). */
-  let yeniCikislar = [], yeniGirisler = [];
+  let yeniCikislar = [], yeniGirisler = [], yeniPersonel = [];
   try {
     if (PAKET && B && B.D && Array.isArray(B.D.ayrilanlar)) {
       const eski = B.D.ayrilanlar;
       const yD = H.uygula({ D: o.D, MONTHLY_HC: o.MONTHLY_HC, etiket: o.etiket }, HAREKETLER).D;
+      yeniPersonel = yD.normal || [];
       const yeni = yD.ayrilanlar || [];
       const sinir = new Date(); sinir.setDate(sinir.getDate() - 60);
       yeniCikislar = yeni.filter((a) => a && AB.anketGerekir(a.neden, a.dept) && (AB.tarihCoz(a.tarih) || 0) >= sinir
@@ -185,8 +186,8 @@ async function veriDosyasiYukle(f) {
   }
   if (yeniCikislar.length > 15 && !confirm(yeniCikislar.length + ' yeni çıkış için ayrılış anketi bağlantısı oluşturulacak. Bu sayı beklenenden fazla; yine de oluşturulsun mu?')) yeniCikislar = [];
   if (yeniGirisler.length > 15 && !confirm(yeniGirisler.length + ' yeni başlayan için oryantasyon formu açılacak. Bu sayı beklenenden fazla; yine de açılsın mı?')) yeniGirisler = [];
-  const ory = yeniGirisler.length ? await oryantasyonBaslat(yeniGirisler.map((a) => ({ ad: a.ad, dept: a.dept, unvan: a.unvan, tarih: a.tarih })), 'haftalık rapor') : [];
-  const oryNot = ory.length ? ory.length + ' yeni başlayan için oryantasyon formu açıldı (' + ory.map((x) => x.ad).join(', ') + '); İK’ya e-posta gönderilecek.' : '';
+  const ory = yeniGirisler.length ? await oryantasyonBaslat(yeniGirisler.map((a) => ({ ad: a.ad, dept: a.dept, unvan: a.unvan, tarih: a.tarih })), 'haftalık rapor', yeniPersonel) : [];
+  const oryNot = ory.length ? ory.length + ' yeni başlayan için oryantasyon formu açıldı (' + ory.map((x) => x.ad).join(', ') + '); ' + oryEpostaNotu(ory) : '';
   const sonuc = yeniCikislar.length ? await anketBaglantilari(yeniCikislar.map((a) => ({ ad: a.ad, dept: a.dept, unvan: a.unvan, tarih: a.tarih })), 'haftalık rapor') : [];
   if (sonuc.length) {
     anketPenceresi(sonuc, { baslik: 'Veri yüklendi · ayrılış anketi bağlantıları hazır', aciklama: et + ' · ' + sonuc.length + ' yeni çıkış için bağlantı' + (oryNot ? ' · ' + oryNot : '') + ' (pencere kapanınca pano yenilenir)', kapaninca: () => location.reload() });
@@ -658,15 +659,19 @@ function anketPenceresi(sonuc, { baslik, aciklama, kapaninca } = {}) {
    Satış / servis danışmanı ya da satış / servis müdürü işe başlayınca (haftalık veri yüklemesinde yeni gelen ya da
    elle girilen işe giriş) unvanın ana formundan kişi formu açılır (oryantasyonKisiler, durum "hazırlanacak") ve
    ik@inciroglu.com.tr adresine "formu hazırlayınız" e-postası sıraya alınır (epostaKuyrugu → GitHub Actions → Gmail).
-   Aynı kişi için (±10 gün) ikinci form açılmaz. */
-async function oryantasyonBaslat(kisiler, kaynak) {
+   Danışman işe başladıysa aynı departmanın satış / servis müdürüne de "ekibinize katıldı" bilgi e-postası gider
+   (müdür: personel listesinden unvan + departman; adres: Oryantasyon sayfasında yüklenen e-posta listesi).
+   Aynı kişi için (±10 gün) ikinci form açılmaz. personel: aktif personel [{ ad, dept, unvan }] (müdürü bulmak için) */
+async function oryantasyonBaslat(kisiler, kaynak, personel) {
   if (!IK || !kisiler || !kisiler.length) return [];
-  let mevcut = [];
+  let mevcut = [], epostalar = [];
   const anaForm = new Map();
   try {
     mevcut = (await getDocs(collection(db, 'oryantasyonKisiler'))).docs.map((d) => Object.assign({ id: d.id }, d.data()));
     (await getDocs(collection(db, 'oryantasyonFormlari'))).docs.forEach((d) => anaForm.set(d.id, d.data()));
   } catch (e) { console.warn('Oryantasyon formları okunamadı', e); return []; }
+  try { const s = await getDoc(doc(db, 'oryantasyonAyar', 'epostalar')); if (s.exists() && Array.isArray(s.data().liste)) epostalar = s.data().liste; }
+  catch (e) { console.warn('E-posta listesi okunamadı (müdür bildirimi atlanır)', e); }
   const sonuc = [];
   for (const k of kisiler) {
     const kod = KS.otomatikUnvanKodu(k.unvan), ana = kod ? anaForm.get(kod) : null;
@@ -683,12 +688,25 @@ async function oryantasyonBaslat(kisiler, kaynak) {
       const e = KS.yeniBaslayanEpostasi({ ad, unvan, dept, iseGiris, sayfa: new URL('oryantasyon.html#/kisi/' + ref.id, location.href).href });
       wb.set(doc(collection(db, 'epostaKuyrugu')), Object.assign(KS.kuyrukKaydi({ kime: KS.IK_EPOSTA, kimeAd: 'İnsan Kaynakları', konu: e.konu, html: e.html, kaynak: 'oryantasyon-yeni', ilgili: 'oryantasyonKisiler/' + ref.id }),
         { olusturma: serverTimestamp(), olusturan: AD }));
+      /* marka müdürü bilgisi (yalnız danışman; e-postası listede olan müdürlere) */
+      const mudurler = KS.markaMudurleri(personel, { ad, dept: k.dept, unvan: k.unvan }).map((m) => ({ ad: O.trBaslik(m), eposta: KS.epostaBul(epostalar, m) }));
+      mudurler.filter((m) => m.eposta).forEach((m) => {
+        const me = KS.mudurBilgiEpostasi({ mudur: m.ad, ad, unvan, dept, iseGiris });
+        wb.set(doc(collection(db, 'epostaKuyrugu')), Object.assign(KS.kuyrukKaydi({ kime: m.eposta, kimeAd: m.ad, konu: me.konu, html: me.html, kaynak: 'oryantasyon-mudur', ilgili: 'oryantasyonKisiler/' + ref.id }),
+          { olusturma: serverTimestamp(), olusturan: AD }));
+      });
       await wb.commit();
       mevcut.push({ id: ref.id, ad, iseGiris });
-      sonuc.push({ id: ref.id, ad, unvan });
+      sonuc.push({ id: ref.id, ad, unvan, mudur: mudurler.filter((m) => m.eposta).map((m) => m.ad), mudurAdressiz: mudurler.filter((m) => !m.eposta).map((m) => m.ad) });
     } catch (e) { console.warn('Oryantasyon formu açılamadı', e); }
   }
   return sonuc;
+}
+/** Bildirim metni: kime e-posta gidecek (İK + bulunan müdürler; adresi listede olmayan müdür ayrıca belirtilir) */
+function oryEpostaNotu(ory) {
+  const mudur = [...new Set(ory.flatMap((x) => x.mudur || []))], adressiz = [...new Set(ory.flatMap((x) => x.mudurAdressiz || []))];
+  return 'İK’ya' + (mudur.length ? ' ve ' + mudur.join(', ') + ' (müdür)' : '') + ' e-posta gönderilecek.'
+    + (adressiz.length ? ' ' + adressiz.join(', ') + ' için e-posta adresi listede yok.' : '');
 }
 /** Elle girilen işe giriş geri alınınca, ondan otomatik açılmış ve henüz hazırlanmamış oryantasyon formu silinir;
     İK'ya giden "formu hazırlayınız" e-postası henüz gönderilmediyse iptal edilir */
@@ -934,8 +952,8 @@ function girisFormu(kap) {
       O.bildirim(ev.ad + ' — işe giriş kaydedildi; pano güncellendi.');
       /* Satış / servis danışmanı ya da satış / servis müdürü → kişiye özel oryantasyon formu açılır, ik@ adresine bildirilir */
       if ((ev.liste || 'normal') === 'normal' && KS.otomatikUnvanKodu(ev.unvan)) {
-        const ory = await oryantasyonBaslat([{ ad: ev.ad, dept: ev.dept, unvan: ev.unvan, tarih: ev.tarih }], 'personel hareketi');
-        if (ory.length) O.bildirim(ev.ad + ' için oryantasyon formu açıldı (Oryantasyon Formları sayfasında “Hazırlanacak”); İK’ya e-posta gönderilecek.');
+        const ory = await oryantasyonBaslat([{ ad: ev.ad, dept: ev.dept, unvan: ev.unvan, tarih: ev.tarih }], 'personel hareketi', (B && B.D && B.D.normal) || []);
+        if (ory.length) O.bildirim(ev.ad + ' için oryantasyon formu açıldı (Oryantasyon Formları sayfasında “Hazırlanacak”); ' + oryEpostaNotu(ory));
       }
     } catch (e) {
       console.error('Hareket kaydedilemedi', e);

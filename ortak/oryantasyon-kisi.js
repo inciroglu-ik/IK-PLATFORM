@@ -118,8 +118,27 @@ export function yeniBaslayanEpostasi({ ad, unvan, dept, iseGiris, sayfa }) {
     + (sayfa ? '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:6px;"><tr><td style="background:#1b3a5e;padding:9px 16px;' + FONT + 'font-size:13px;font-weight:bold;"><a href="' + esc(sayfa) + '" style="color:#ffffff;text-decoration:none;">Oryantasyon formunu aç &rarr;</a></td></tr></table>' : '');
   return { konu: 'Yeni başlayan · ' + ad + ' (' + unvan + ') · oryantasyon formu hazırlanacak', html: kabuk('Yeni başlayan personel', ad + ' · ' + unvan, govde) };
 }
-/** E-posta kuyruğu kaydı (kural: epostaKuyrugu — alanlar ve sınırlar burada ve kuralda aynı) */
+/** Yeni başlayan danışmanın marka müdürü(leri): aynı departmanda Satış Müdürü (satış danışmanı için) ya da Servis Müdürü
+    (servis danışmanı için). Müdür işe başladığında otomatik müdür bildirimi yok (direktörlerin markası veride yok).
+    liste: aktif personel [{ ad, dept, unvan }] → müdür adları */
+export function markaMudurleri(liste, kisi) {
+  const kod = otomatikUnvanKodu(kisi && kisi.unvan);
+  const re = kod === 'satis-danismani' ? /\bsatis muduru\b/ : kod === 'servis-danismani' ? /\bservis muduru\b/ : null;
+  if (!re || !kisi.dept) return [];
+  const d = katla(kisi.dept), kendi = katla(kisi.ad), gor = new Set();
+  return (liste || []).filter((p) => p && p.ad && katla(p.dept) === d && re.test(katla(p.unvan)) && !OTOMATIK_DISI.test(katla(p.unvan)) && katla(p.ad) !== kendi)
+    .map((p) => String(p.ad).trim()).filter((a) => { const k = katla(a); if (gor.has(k)) return false; gor.add(k); return true; });
+}
+/** Marka müdürüne: "X isimli çalışma arkadaşımız Y pozisyonunda ekibinize katılmıştır; oryantasyon formu İK tarafından hazırlanıyor" */
+export function mudurBilgiEpostasi({ mudur, ad, unvan, dept, iseGiris }) {
+  const govde = '<p style="margin:0 0 12px 0;">Sayın ' + esc(mudur) + ',</p>'
+    + '<p style="margin:0 0 12px 0;">' + (iseGiris ? '<b>' + esc(F.tarihGoster(iseGiris)) + '</b> tarihinde ' : '') + '<b>' + esc(ad) + '</b> isimli çalışma arkadaşımız <b>' + esc(unvan) + '</b> pozisyonunda' + (dept ? ' (' + esc(dept) + ')' : '') + ' ekibinize katılmıştır.</p>'
+    + '<p style="margin:0 0 12px 0;">Kişiye özel oryantasyon formu İnsan Kaynakları tarafından hazırlanmaktadır. Oryantasyonda sorumlu olarak seçildiğiniz konular, tarih ve saatleriyle birlikte ayrıca e-postayla bildirilecektir.</p>'
+    + '<p style="margin:0;">Yeni çalışma arkadaşımızın ilk günlerinde ekibe uyumu için desteğinizi rica ederiz.</p>';
+  return { konu: 'Ekibinize katılım · ' + ad + ' (' + unvan + ')', html: kabuk('Ekibinize yeni katılım', ad + ' · ' + unvan, govde) };
+}
+/** E-posta kuyruğu kaydı (kural: epostaKuyrugu — alanlar ve sınırlar burada ve kuralda aynı; görünen adda @ , ; " olamaz) */
 export function kuyrukKaydi({ kime, kimeAd, konu, html, kaynak, ilgili }) {
-  return { kime: String(kime).trim().toLowerCase(), kimeAd: String(kimeAd || '').replace(/[<>]/g, ' ').slice(0, 120), konu: String(konu || '').replace(/[<>]/g, ' ').slice(0, 200),
+  return { kime: String(kime).trim().toLowerCase(), kimeAd: String(kimeAd || '').replace(/[<>@,;"]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120), konu: String(konu || '').replace(/[<>]/g, ' ').slice(0, 200),
     html: String(html || '').slice(0, 60000), kaynak: kaynak || 'oryantasyon', ilgili: String(ilgili || '').slice(0, 120), durum: 'bekliyor' };
 }
