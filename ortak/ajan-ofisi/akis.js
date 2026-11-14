@@ -471,7 +471,11 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
     const kayitli = durum.isler().find((x) => x.id === s.isId) || null;
     const st = ccDurumlar.get(s.isId) || Object.assign({ plan: false, adim: 0, puan: false, bitti: false }, (kayitli && kayitli.oynatma) || {});
     ccDurumlar.set(s.isId, st);
-    if (st.bitti) { if (s.dosya) await kopru.arsivle(s.dosya).catch(() => {}); return; }
+    if (st.bitti) {
+      if (s.duzeltme && s.puan && kayitli) await ccPuanDuzelt(s, kayitli);
+      if (s.dosya) await kopru.arsivle(s.dosya).catch(() => {});
+      return;
+    }
     const metin = (kayitli && kayitli.metin) || '';
     if (s.durum === 'hata') {
       ccBekleyen(null);
@@ -537,6 +541,37 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
       await kadroGozdenGecir({ id: s.isId, adimlar: kayitlar, puan, olusturmaMs: Date.now() });
       if (s.dosya) await kopru.arsivle(s.dosya).catch(() => {});
     }
+  }
+
+  /* Bitmiş işin puanını düzeltir (ofis sahibinin geri bildirimiyle): iş kaydı + çalışanların puan geçmişi */
+  async function ccPuanDuzelt(s, kayitli) {
+    const gm = 'genel_mudur', vt = 'viral_tahmincisi';
+    const adimlar = kayitli.adimlar || [];
+    const yeni = puanTemizle(s.puan, adimlar.length);
+    const eski = kayitli.puan || null;
+    if (eski && eski.toplam === yeni.toplam && kayitli.puanDuzeltmeMs) return;
+    await veri.isGuncelle(s.isId, { puan: yeni, ilkPuan: eski, puanDuzeltmeMs: Date.now(), puanDuzeltmeNotu: kisalt(s.duzeltmeNotu || '', 300) });
+    const kd = durum.kadro(); const calisanlar = {};
+    for (const [r, c] of Object.entries(kd.calisanlar || {})) calisanlar[r] = Object.assign({}, c, { puanlar: Array.isArray(c.puanlar) ? c.puanlar.slice() : [] });
+    adimlar.forEach((a, i) => {
+      const c = calisanlar[a.rol]; const yk = yeni.katkilar[i] ? yeni.katkilar[i].puan : null;
+      if (!c || yk == null || c.ad !== a.ad || (c.no || 1) !== (a.no || 1)) return;
+      const ek = eski && eski.katkilar && eski.katkilar[i] ? eski.katkilar[i].puan : null;
+      const yer = ek == null ? -1 : c.puanlar.lastIndexOf(ek);
+      if (yer >= 0) c.puanlar[yer] = yk; else c.puanlar.push(yk);
+    });
+    try { await veri.kadroKaydet(Object.assign({}, kd, { calisanlar })); } catch (e) { olay({ tur: 'hata', metin: 'Düzeltilen puanlar kadroya işlenemedi.' }); }
+    const baslik = (kayitli.plan && kayitli.plan.baslik) || 'İş';
+    mesgulYap([gm, vt], true);
+    try {
+      await sahne.yuru(vt, K.masaOnu(gm));
+      await sahne.konus(vt, 'Puan düzeltmesi: “' + kisalt(baslik, 50) + '” ' + (eski ? eski.toplam : '—') + ' → ' + yeni.toplam + '. ' + kisalt(s.duzeltmeNotu || yeni.ozet, 110), null);
+      await sahne.konus(gm, 'Teşekkürler Melis. Ölçütümüz artık bu; kurumsal ve bilgi veren iş olmadan yüksek puan yok.', 3000);
+      sahne.yuru(vt, K.masa(vt));
+    } finally { mesgulYap([gm, vt], false); }
+    olay({ tur: 'puan', metin: baslik + ' · puan düzeltildi: ' + (eski ? eski.toplam : '—') + ' → ' + yeni.toplam });
+    bildir({ tur: 'puan-duzeltme', baslik, eski: eski ? eski.toplam : null, yeni: yeni.toplam });
+    await kadroGozdenGecir({ id: s.isId, adimlar, puan: yeni, olusturmaMs: kayitli.olusturmaMs || Date.now() });
   }
 
   async function ccNotOyna(s) {

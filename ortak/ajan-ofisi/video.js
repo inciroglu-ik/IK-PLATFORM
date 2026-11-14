@@ -1,9 +1,16 @@
 /* ============================================================================
    AJAN OFİSİ · VİDEO STÜDYOSU — Video Editörünün sahne planını tuvale çizer,
    ElevenLabs ile seslendirir ve MediaRecorder ile video dosyası üretir (build yok).
+   Kurumsal çerçeve: üst marka bandı + sahne sayacı, alt altyazı (seslendirme metni),
+   bilgi veren görsel sahneler: form ekranı, akış şeması, rol tablosu, karşılaştırma.
    ============================================================================ */
 const VW = 1920, VH = 1080;
-const RENK = { lacivert: '#16294a', koyu: '#0d1a30', pirinc: '#b08d57', acikPirinc: '#d9bf8f', beyaz: '#ffffff', gri: '#c9d3e0' };
+const R = {
+  lacivert: '#16294a', koyu: '#0d1a30', orta: '#1f3a66', acik: '#2c4f86', pirinc: '#b08d57', acikPirinc: '#d9bf8f',
+  beyaz: '#ffffff', gri: '#c9d3e0', soluk: '#8b98ad', zemin: '#f3f5f8', cizgi: '#d9e0ea', metin: '#1b2433', yesil: '#2f7a53', sari: '#b7832f', kirmizi: '#a8423d'
+};
+const SANS = 'Inter, "Segoe UI", sans-serif', SERIF = '"Source Serif 4", Georgia, serif';
+const UST_BANT = 96, ALT_PAY = 170;       /* içerik alanı: UST_BANT .. VH-ALT_PAY */
 
 /* ---------------------------------------------------------------- ses önbelleği (IndexedDB, isteğe bağlı) */
 function idb() {
@@ -39,78 +46,281 @@ export async function seslendir(metin, { anahtar, sesId }) {
 
 /* ---------------------------------------------------------------- çizim yardımcıları */
 function sar(ctx, metin, maxW) {
-  const kelimeler = String(metin || '').split(/\s+/); const satirlar = []; let s = '';
+  const kelimeler = String(metin || '').split(/\s+/).filter(Boolean); const satirlar = []; let s = '';
   for (const k of kelimeler) { const d = s ? s + ' ' + k : k; if (ctx.measureText(d).width > maxW && s) { satirlar.push(s); s = k; } else s = d; }
   if (s) satirlar.push(s);
   return satirlar;
 }
+function kisalt(ctx, metin, maxW) {
+  let s = String(metin || ''); if (ctx.measureText(s).width <= maxW) return s;
+  while (s.length > 1 && ctx.measureText(s + '…').width > maxW) s = s.slice(0, -1);
+  return s + '…';
+}
 const yumusak = (t) => t < 0 ? 0 : t > 1 ? 1 : 1 - Math.pow(1 - t, 3);
+function kutu(ctx, x, y, w, h, r, dolgu, cizgi, kalinlik) {
+  ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  if (dolgu) { ctx.fillStyle = dolgu; ctx.fill(); }
+  if (cizgi) { ctx.strokeStyle = cizgi; ctx.lineWidth = kalinlik || 2; ctx.stroke(); }
+}
+function yazi(ctx, metin, x, y, font, renk, hiza) { ctx.font = font; ctx.fillStyle = renk; ctx.textAlign = hiza || 'left'; ctx.fillText(metin, x, y); }
+function tik(ctx, x, y, s, renk) { ctx.save(); ctx.strokeStyle = renk; ctx.lineWidth = s * 0.18; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(x - s * 0.4, y); ctx.lineTo(x - s * 0.1, y + s * 0.3); ctx.lineTo(x + s * 0.45, y - s * 0.35); ctx.stroke(); ctx.restore(); }
+function ok(ctx, x1, y, x2, renk) { ctx.save(); ctx.strokeStyle = renk; ctx.fillStyle = renk; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2 - 14, y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x2, y); ctx.lineTo(x2 - 18, y - 10); ctx.lineTo(x2 - 18, y + 10); ctx.closePath(); ctx.fill(); ctx.restore(); }
+
+/* ---------------------------------------------------------------- kurumsal çerçeve */
 function arkaPlan(ctx, t) {
-  const g = ctx.createLinearGradient(0, 0, VW, VH); g.addColorStop(0, RENK.koyu); g.addColorStop(1, RENK.lacivert);
+  const g = ctx.createLinearGradient(0, 0, VW, VH); g.addColorStop(0, R.koyu); g.addColorStop(1, R.lacivert);
   ctx.fillStyle = g; ctx.fillRect(0, 0, VW, VH);
-  ctx.save(); ctx.globalAlpha = 0.07; ctx.strokeStyle = RENK.acikPirinc; ctx.lineWidth = 2;
-  for (let i = 0; i < 7; i++) { const r = 260 + i * 120 + Math.sin(t * 0.3 + i) * 18; ctx.beginPath(); ctx.arc(VW * 0.86, VH * 0.18, r, 0, Math.PI * 2); ctx.stroke(); }
+  ctx.save(); ctx.globalAlpha = 0.06; ctx.strokeStyle = R.acikPirinc; ctx.lineWidth = 2;
+  for (let i = 0; i < 6; i++) { const r = 300 + i * 130 + Math.sin(t * 0.25 + i) * 14; ctx.beginPath(); ctx.arc(VW * 0.9, VH * 0.12, r, 0, Math.PI * 2); ctx.stroke(); }
   ctx.restore();
 }
-function ustBant(ctx) {
-  ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fillRect(0, 0, VW, 86);
-  ctx.fillStyle = RENK.pirinc; ctx.fillRect(120, 40, 46, 6);
-  ctx.font = '600 26px Inter, "Segoe UI", sans-serif'; ctx.fillStyle = RENK.gri; ctx.textBaseline = 'middle';
-  ctx.fillText('İNCİROĞLU OTOMOTİV  ·  İNSAN KAYNAKLARI', 186, 44);
+function ustBant(ctx, plan, i, n) {
+  ctx.fillStyle = 'rgba(8,16,30,.55)'; ctx.fillRect(0, 0, VW, UST_BANT);
+  ctx.fillStyle = R.pirinc; ctx.fillRect(0, UST_BANT - 3, VW, 3);
+  kutu(ctx, 96, 26, 44, 44, 8, null, R.acikPirinc, 2.5);
+  yazi(ctx, 'İ', 118, 58, '700 28px ' + SERIF, R.acikPirinc, 'center');
+  ctx.textBaseline = 'alphabetic';
+  yazi(ctx, 'İNCİROĞLU OTOMOTİV', 160, 46, '700 22px ' + SANS, R.beyaz);
+  yazi(ctx, 'İnsan Kaynakları', 160, 72, '500 18px ' + SANS, R.gri);
+  ctx.font = '500 22px ' + SANS; const bas = kisalt(ctx, plan.baslik || '', 900);
+  yazi(ctx, bas, VW - 260, 56, '500 22px ' + SANS, R.gri, 'right');
+  kutu(ctx, VW - 220, 30, 124, 40, 20, 'rgba(255,255,255,.08)', 'rgba(217,191,143,.6)', 2);
+  yazi(ctx, String(i + 1).padStart(2, '0') + ' / ' + String(n).padStart(2, '0'), VW - 158, 58, '700 20px ' + SANS, R.acikPirinc, 'center');
+}
+function altyazi(ctx, metin, lt, sure) {
+  if (!metin) return;
+  const a = Math.min(yumusak(lt / 0.5), 1 - yumusak((lt - (sure - 0.4)) / 0.4));
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a;
+  ctx.font = '500 34px ' + SANS;
+  const sat = sar(ctx, metin, 1500).slice(0, 2);
+  const h = 30 + sat.length * 46;
+  const y0 = VH - 64 - h;
+  kutu(ctx, 190, y0, VW - 380, h, 14, 'rgba(8,16,30,.72)', null);
+  ctx.fillStyle = R.pirinc; ctx.fillRect(190, y0 + 14, 5, h - 28);
+  sat.forEach((s, k) => yazi(ctx, s, VW / 2, y0 + 50 + k * 46, '500 34px ' + SANS, R.beyaz, 'center'));
+  ctx.restore();
 }
 function ilerlemeCiz(ctx, oran) {
-  ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(120, VH - 70, VW - 240, 6);
-  ctx.fillStyle = RENK.pirinc; ctx.fillRect(120, VH - 70, (VW - 240) * oran, 6);
+  ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(0, VH - 10, VW, 10);
+  ctx.fillStyle = R.pirinc; ctx.fillRect(0, VH - 10, VW * oran, 10);
 }
+function bolumBasligi(ctx, s, x, y, kay, genislik) {
+  if (s.ust) yazi(ctx, s.ust.toLocaleUpperCase('tr'), x, y + kay, '700 26px ' + SANS, R.acikPirinc);
+  ctx.font = '600 56px ' + SERIF; ctx.fillStyle = R.beyaz; ctx.textAlign = 'left';
+  const sat = sar(ctx, s.baslik, genislik || 1600).slice(0, 2);
+  sat.forEach((x2, i) => ctx.fillText(x2, x, y + 66 + i * 64 + kay));
+  return y + 66 + sat.length * 64;
+}
+
+/* ---------------------------------------------------------------- sahneler */
 function sahneCiz(ctx, s, lt, sure) {
-  const giris = yumusak(lt / 0.8); const cikis = 1 - yumusak((lt - (sure - 0.5)) / 0.5);
-  ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(giris, cikis));
-  const kay = (1 - giris) * 40;
-  ctx.textBaseline = 'alphabetic';
+  const giris = yumusak(lt / 0.7); const cikis = 1 - yumusak((lt - (sure - 0.45)) / 0.45);
+  const gor = Math.max(0, Math.min(giris, cikis)); const kay = (1 - giris) * 36;
+  ctx.save(); ctx.globalAlpha = gor; ctx.textBaseline = 'alphabetic';
+  const adimA = (i, gecikme, aralik) => Math.min(yumusak((lt - gecikme - i * aralik) / 0.5), cikis);
+
   if (s.tur === 'baslik' || s.tur === 'kapanis') {
-    ctx.textAlign = 'center';
-    if (s.ust) { ctx.font = '600 34px Inter, "Segoe UI", sans-serif'; ctx.fillStyle = RENK.acikPirinc; ctx.fillText(s.ust.toLocaleUpperCase('tr'), VW / 2, 420 + kay); }
-    ctx.font = '600 92px "Source Serif 4", Georgia, serif'; ctx.fillStyle = RENK.beyaz;
-    sar(ctx, s.baslik, 1500).slice(0, 3).forEach((sat, i) => ctx.fillText(sat, VW / 2, 540 + i * 108 + kay));
-    ctx.fillStyle = RENK.pirinc; ctx.fillRect(VW / 2 - 60, 470 + kay, 120, 5);
-    if (s.tur === 'kapanis' && s.maddeler && s.maddeler[0]) { ctx.font = '400 36px Inter, "Segoe UI", sans-serif'; ctx.fillStyle = RENK.gri; ctx.fillText(s.maddeler[0], VW / 2, 860 + kay); }
+    if (s.ust) yazi(ctx, s.ust.toLocaleUpperCase('tr'), VW / 2, 400 + kay, '700 32px ' + SANS, R.acikPirinc, 'center');
+    ctx.fillStyle = R.pirinc; ctx.fillRect(VW / 2 - 70, 430 + kay, 140, 5);
+    ctx.font = '600 96px ' + SERIF; ctx.fillStyle = R.beyaz; ctx.textAlign = 'center';
+    sar(ctx, s.baslik, 1500).slice(0, 2).forEach((x, i) => ctx.fillText(x, VW / 2, 540 + i * 108 + kay));
+    (s.maddeler || []).slice(0, 3).forEach((m, i) => { ctx.globalAlpha = adimA(i, 0.6, 0.3); yazi(ctx, m, VW / 2, 720 + i * 50, '500 34px ' + SANS, R.gri, 'center'); });
   } else if (s.tur === 'rakam') {
-    ctx.textAlign = 'left';
-    ctx.font = '700 260px "Source Serif 4", Georgia, serif'; ctx.fillStyle = RENK.pirinc; ctx.fillText(s.rakam || '—', 140, 520 + kay);
-    ctx.font = '600 64px "Source Serif 4", Georgia, serif'; ctx.fillStyle = RENK.beyaz;
-    sar(ctx, s.baslik, 1500).slice(0, 2).forEach((sat, i) => ctx.fillText(sat, 150, 650 + i * 76 + kay));
-    ctx.font = '400 36px Inter, "Segoe UI", sans-serif'; ctx.fillStyle = RENK.gri;
-    (s.maddeler || []).slice(0, 3).forEach((m, i) => { const a = yumusak((lt - 0.8 - i * 0.5) / 0.6); ctx.globalAlpha = Math.min(a, cikis); ctx.fillText('— ' + m, 150, 840 + i * 52); });
-  } else if (s.tur === 'ekran') {
-    ctx.textAlign = 'left';
-    if (s.ust) { ctx.font = '600 30px Inter, "Segoe UI", sans-serif'; ctx.fillStyle = RENK.acikPirinc; ctx.fillText(s.ust.toLocaleUpperCase('tr'), 140, 230 + kay); }
-    ctx.font = '600 66px "Source Serif 4", Georgia, serif'; ctx.fillStyle = RENK.beyaz;
-    sar(ctx, s.baslik, 720).slice(0, 4).forEach((sat, i) => ctx.fillText(sat, 140, 320 + i * 78 + kay));
-    const x0 = 960, y0 = 190, w = 820, h = 640, a = yumusak((lt - 0.3) / 0.9);
-    ctx.globalAlpha = Math.min(a, cikis);
-    ctx.fillStyle = '#f4f6fa'; ctx.fillRect(x0, y0 + (1 - a) * 30, w, h);
-    ctx.fillStyle = RENK.lacivert; ctx.fillRect(x0, y0 + (1 - a) * 30, w, 64);
-    ctx.fillStyle = RENK.pirinc; ctx.fillRect(x0 + 24, y0 + 26 + (1 - a) * 30, 120, 12);
-    for (let i = 0; i < 3; i++) { ctx.fillStyle = '#ffffff'; ctx.fillRect(x0 + 24 + i * 262, y0 + 92 + (1 - a) * 30, 244, 120); ctx.fillStyle = i === 1 ? RENK.pirinc : RENK.lacivert; ctx.fillRect(x0 + 44 + i * 262, y0 + 130 + (1 - a) * 30, 110, 34); }
-    for (let i = 0; i < 8; i++) { const bh = 60 + ((i * 53) % 220) * yumusak((lt - 0.8 - i * 0.08) / 0.6); ctx.fillStyle = i % 3 === 1 ? RENK.pirinc : '#5d7aa3'; ctx.fillRect(x0 + 60 + i * 90, y0 + h - 40 - bh + (1 - a) * 30, 54, bh); }
-    ctx.globalAlpha = Math.min(giris, cikis);
-    ctx.font = '400 32px Inter, "Segoe UI", sans-serif'; ctx.fillStyle = RENK.gri;
-    (s.maddeler || []).slice(0, 3).forEach((m, i) => ctx.fillText('— ' + m, 140, 700 + i * 50));
-  } else {
-    ctx.textAlign = 'left';
-    if (s.ust) { ctx.font = '600 32px Inter, "Segoe UI", sans-serif'; ctx.fillStyle = RENK.acikPirinc; ctx.fillText(s.ust.toLocaleUpperCase('tr'), 140, 260 + kay); }
-    ctx.font = '600 76px "Source Serif 4", Georgia, serif'; ctx.fillStyle = RENK.beyaz;
-    const sat = sar(ctx, s.baslik, 1620).slice(0, 2);
-    sat.forEach((x, i) => ctx.fillText(x, 140, 360 + i * 88 + kay));
-    const y = 360 + sat.length * 88 + 40;
-    ctx.font = '400 44px Inter, "Segoe UI", sans-serif';
-    (s.maddeler || []).slice(0, 5).forEach((m, i) => {
-      const a = yumusak((lt - 0.7 - i * 0.55) / 0.5); ctx.globalAlpha = Math.min(a, cikis);
-      ctx.fillStyle = RENK.pirinc; ctx.fillRect(146, y + i * 86 - 22, 16, 16);
-      ctx.fillStyle = RENK.beyaz; ctx.fillText(m, 190 + (1 - a) * 30, y + i * 86);
+    yazi(ctx, s.rakam || '—', 160, 560 + kay, '700 280px ' + SERIF, R.pirinc);
+    ctx.font = '700 280px ' + SERIF; const w = ctx.measureText(s.rakam || '—').width;
+    ctx.font = '600 60px ' + SERIF; ctx.fillStyle = R.beyaz; ctx.textAlign = 'left';
+    sar(ctx, s.baslik, 1500 - w).slice(0, 2).forEach((x, i) => ctx.fillText(x, 200 + w, 400 + i * 72 + kay));
+    (s.maddeler || []).slice(0, 3).forEach((m, i) => { ctx.globalAlpha = adimA(i, 0.7, 0.4); tik(ctx, 222 + w, 520 + i * 60, 28, R.acikPirinc); yazi(ctx, m, 260 + w, 532 + i * 60, '500 36px ' + SANS, R.gri); });
+  } else if (s.tur === 'form') {
+    /* sol: kısa anlatım · sağ: oryantasyon formu ekranı (gerçek sütun yapısı) */
+    /* sol maddeler: satır sayısına göre dizilir (sarılan madde alttakinin üstüne binmez) */
+    let my = bolumBasligi(ctx, s, 110, 170, kay, 500) + 40;
+    (s.maddeler || []).slice(0, 4).forEach((m, i) => {
+      ctx.font = '500 30px ' + SANS; const sat = sar(ctx, m, 470).slice(0, 2);
+      ctx.globalAlpha = adimA(i, 0.6, 0.35);
+      ctx.fillStyle = R.pirinc; ctx.fillRect(114, my - 13, 12, 12);
+      sat.forEach((x, k) => yazi(ctx, x, 142, my + k * 36, '500 30px ' + SANS, R.beyaz));
+      my += sat.length * 36 + 24;
     });
+    ctx.globalAlpha = gor;
+    const fx = 660, fy = 140 + kay * 0.5, fw = 1160;
+    const bas = (s.sutunlar && s.sutunlar.length ? s.sutunlar : ['Sıra', 'Konu', 'Kapsam', 'Sorumlu', 'Tarih', 'Saat', 'Süre']).slice(0, 7);
+    const satirlar = (s.satirlar || []).slice(0, 8);
+    const huc = (r, i) => String(Array.isArray(r) && r[i] != null ? r[i] : '');
+    const secmeliMi = (i) => /tarih|saat|süre|sorumlu/i.test(bas[i] || '');
+    const F_BAS = '700 20px ' + SANS, F_HUC = '500 20px ' + SANS, F_SIRA = '700 20px ' + SANS, F_CIP = '600 19px ' + SANS;
+    /* sütun genişliği içeriğe göre: kısa sütunlar (sıra/tarih/saat/süre/sorumlu) tam görünür, kalan genişlik konu/kapsam'a */
+    const iw = fw - 56;
+    const dogal = bas.map((b, i) => {
+      ctx.font = F_BAS; let w = ctx.measureText(b).width;
+      satirlar.forEach((r) => { const d = huc(r, i); if (!d) return; ctx.font = secmeliMi(i) ? F_CIP : (i === 0 ? F_SIRA : F_HUC); w = Math.max(w, ctx.measureText(d).width + (secmeliMi(i) ? 30 : 0)); });
+      return w + 22;
+    });
+    const genisler = bas.map((b, i) => i).filter((i) => /konu|kapsam|açıklama|aciklama|içerik|icerik/i.test(bas[i]));
+    const esnek = genisler.length ? genisler : bas.map((b, i) => i);
+    const sabit = bas.map((b, i) => i).filter((i) => esnek.indexOf(i) < 0);
+    const gen = dogal.map((w, i) => (sabit.indexOf(i) >= 0 ? Math.min(w, 240) : w));
+    const sabitTop = sabit.reduce((a, i) => a + gen[i], 0), esnekTop = esnek.reduce((a, i) => a + gen[i], 0) || 1;
+    let kalan = iw - sabitTop; const asgari = 150 * esnek.length;
+    if (kalan < asgari && sabitTop > 0) { const k = (iw - asgari) / sabitTop; sabit.forEach((i) => { gen[i] *= k; }); kalan = asgari; }
+    const esnekOran = esnek.map((i) => gen[i]);
+    esnek.forEach((i, j) => { gen[i] = kalan * esnekOran[j] / esnekTop; });
+    const xs = []; let ax = fx + 28; for (const w of gen) { xs.push(ax); ax += w; } xs.push(fx + 28 + iw);
+    /* uzun hücre iki satıra sarılır; satır yüksekliği buna göre */
+    const satirSar = (d, w) => { ctx.font = F_HUC; const l = sar(ctx, d, w); return l.length <= 2 ? l : [l[0], kisalt(ctx, l.slice(1).join(' '), w)]; };
+    let iki = satirlar.some((r) => bas.some((b, i) => !secmeliMi(i) && i > 0 && satirSar(huc(r, i), xs[i + 1] - xs[i] - 16).length > 1));
+    const hy = fy + 80, ry0 = hy + 56;
+    const etiketAlan = s.vurgu && s.vurgu.etiket ? 74 : 0;
+    let sh = iki ? 80 : 64;
+    const sigan = Math.floor((880 - etiketAlan - 24 - ry0) / Math.max(1, satirlar.length));
+    if (sigan < sh) { sh = Math.max(52, sigan); if (sh < 72) iki = false; }
+    const fh = ry0 - fy + satirlar.length * sh + 16 + etiketAlan;
+    kutu(ctx, fx, fy, fw, fh, 16, R.zemin, null);
+    kutu(ctx, fx, fy, fw, 64, 16, R.lacivert, null); ctx.fillStyle = R.lacivert; ctx.fillRect(fx, fy + 40, fw, 24);
+    ctx.fillStyle = R.pirinc; ctx.fillRect(fx, fy + 62, fw, 3);
+    yazi(ctx, kisaltF(ctx, s.ekranBaslik || 'Oryantasyon Formu', fw - 260, '600 26px ' + SANS), fx + 28, fy + 42, '600 26px ' + SANS, R.beyaz);
+    yazi(ctx, 'İK Portalı', fx + fw - 28, fy + 42, '500 20px ' + SANS, R.acikPirinc, 'right');
+    kutu(ctx, fx + 20, hy, fw - 40, 46, 8, '#e4e9f1', null);
+    bas.forEach((b, i) => yazi(ctx, kisaltF(ctx, b, xs[i + 1] - xs[i] - 16, F_BAS), xs[i] + 8, hy + 30, F_BAS, R.lacivert));
+    satirlar.forEach((r, k) => {
+      ctx.globalAlpha = adimA(k, 0.5, 0.18);
+      const ry = ry0 + k * sh, cy = ry + (sh - 8) / 2;
+      kutu(ctx, fx + 20, ry, fw - 40, sh - 8, 8, R.beyaz, R.cizgi, 1.5);
+      bas.forEach((b, i) => {
+        const deger = huc(r, i); if (!deger) return;
+        const cw = xs[i + 1] - xs[i] - 16;
+        if (secmeliMi(i)) {
+          ctx.font = F_CIP; const tw = Math.min(cw + 8, ctx.measureText(deger).width + 26);
+          kutu(ctx, xs[i] + 4, cy - 16, tw, 32, 16, '#eef2f8', '#c9d3e0', 1.2);
+          yazi(ctx, kisaltF(ctx, deger, tw - 22, F_CIP), xs[i] + 16, cy + 7, F_CIP, R.orta);
+        } else if (i === 0) yazi(ctx, kisaltF(ctx, deger, cw, F_SIRA), xs[i] + 8, cy + 7, F_SIRA, R.metin);
+        else {
+          const l = iki ? satirSar(deger, cw) : [kisaltF(ctx, deger, cw, F_HUC)];
+          l.forEach((t, q) => yazi(ctx, t, xs[i] + 8, (l.length > 1 ? cy - 5 : cy + 7) + q * 24, F_HUC, R.metin));
+        }
+      });
+    });
+    ctx.globalAlpha = gor;
+    if (s.vurgu && satirlar.length) {
+      const nab = 0.6 + 0.4 * Math.sin(lt * 4);
+      const sutunVar = Number.isInteger(s.vurgu.sutun) && s.vurgu.sutun < bas.length;
+      ctx.save(); ctx.globalAlpha = Math.min(gor, yumusak((lt - 1.4) / 0.5)) * nab;
+      if (sutunVar) { const i = s.vurgu.sutun; kutu(ctx, xs[i] - 4, hy - 6, xs[i + 1] - xs[i] + 8, ry0 - hy + satirlar.length * sh + 2, 10, null, R.pirinc, 5); }
+      if (Number.isInteger(s.vurgu.satir) && s.vurgu.satir < satirlar.length) { const ry = ry0 + s.vurgu.satir * sh; kutu(ctx, fx + 14, ry - 6, fw - 28, sh + 4, 10, null, R.pirinc, 5); }
+      ctx.restore();
+      if (s.vurgu.etiket) {
+        /* not etiketi: vurgulanan sütunun hemen altında, oku sütunu gösterir */
+        ctx.globalAlpha = Math.min(gor, yumusak((lt - 1.6) / 0.5));
+        ctx.font = '700 22px ' + SANS; const tw = ctx.measureText(s.vurgu.etiket).width + 40;
+        const ey = ry0 + satirlar.length * sh + 14;
+        const cx = sutunVar ? (xs[s.vurgu.sutun] + xs[s.vurgu.sutun + 1]) / 2 : fx + fw - 40 - tw / 2;
+        const ex = Math.max(fx + 20, Math.min(fx + fw - 20 - tw, cx - tw / 2));
+        ctx.fillStyle = R.pirinc; ctx.beginPath(); ctx.moveTo(cx, ey); ctx.lineTo(cx - 11, ey + 13); ctx.lineTo(cx + 11, ey + 13); ctx.closePath(); ctx.fill();
+        kutu(ctx, ex, ey + 12, tw, 42, 21, R.pirinc, null);
+        yazi(ctx, s.vurgu.etiket, ex + tw / 2, ey + 41, '700 22px ' + SANS, R.beyaz, 'center');
+      }
+    }
+  } else if (s.tur === 'akis') {
+    const ust = bolumBasligi(ctx, s, 160, 170, kay, 1600);
+    const ad = (s.adimlar || []).slice(0, 5); const n = Math.max(1, ad.length);
+    const gw = Math.min(330, (1600 - (n - 1) * 90) / n), bosluk = n > 1 ? (1600 - n * gw) / (n - 1) : 0;
+    const F_B = '700 30px ' + SANS, F_A = '500 23px ' + SANS;
+    /* açıklama, başlığın bittiği satırdan başlar; kartlar eşit yükseklikte, dikeyde ortalı */
+    const sat = ad.map((a) => { ctx.font = F_B; const b = sar(ctx, a.baslik, gw - 44).slice(0, 2); ctx.font = F_A; return { b, t: sar(ctx, a.alt, gw - 44).slice(0, 3) }; });
+    const h = Math.max(220, ...sat.map((x) => (x.t.length ? 140 + x.t.length * 28 : 120) + x.b.length * 36));
+    const y = Math.max(ust + 50, (ust + 880 - h) / 2);
+    ad.forEach((a, i) => {
+      const x = 160 + i * (gw + bosluk); const al = adimA(i, 0.5, 0.55);
+      ctx.globalAlpha = al;
+      kutu(ctx, x, y, gw, h, 18, 'rgba(255,255,255,.07)', i === n - 1 ? R.pirinc : 'rgba(217,191,143,.45)', 2.5);
+      ctx.beginPath(); ctx.arc(x + 52, y + 56, 30, 0, Math.PI * 2); ctx.fillStyle = i === n - 1 ? R.pirinc : R.acik; ctx.fill();
+      yazi(ctx, String(i + 1), x + 52, y + 67, '700 30px ' + SANS, R.beyaz, 'center');
+      sat[i].b.forEach((t, k) => yazi(ctx, t, x + 24, y + 132 + k * 36, F_B, R.beyaz));
+      const ay = y + 138 + sat[i].b.length * 36;
+      sat[i].t.forEach((t, k) => yazi(ctx, t, x + 24, ay + k * 28, F_A, R.gri));
+      if (i < n - 1) { ctx.globalAlpha = Math.min(al, adimA(i, 0.8, 0.55)); ok(ctx, x + gw + 12, y + h / 2, x + gw + bosluk - 12, R.acikPirinc); }
+    });
+  } else if (s.tur === 'tablo') {
+    bolumBasligi(ctx, s, 160, 160, kay, 1600);
+    const sut = (s.sutunlar || []).slice(0, 6); const sat = (s.satirlar || []).slice(0, 6);
+    const tx = 160, ty = 380, ilk = 520, cw = Math.min(260, (VW - 320 - ilk) / Math.max(1, sut.length)), rh = 74;
+    kutu(ctx, tx, ty, ilk + cw * sut.length, 64 + rh * sat.length, 16, 'rgba(255,255,255,.06)', 'rgba(217,191,143,.35)', 2);
+    sut.forEach((c, i) => { ctx.font = '700 22px ' + SANS; sar(ctx, c, cw - 20).slice(0, 2).forEach((t, k) => yazi(ctx, t, tx + ilk + i * cw + cw / 2, ty + 30 + k * 24, '700 22px ' + SANS, R.acikPirinc, 'center')); });
+    sat.forEach((r, k) => {
+      ctx.globalAlpha = adimA(k, 0.5, 0.4);
+      const ry = ty + 64 + k * rh;
+      ctx.fillStyle = k % 2 ? 'rgba(255,255,255,.03)' : 'rgba(255,255,255,.07)'; ctx.fillRect(tx + 2, ry, ilk + cw * sut.length - 4, rh);
+      yazi(ctx, kisaltF(ctx, r.ad, ilk - 40, '600 28px ' + SANS), tx + 28, ry + 47, '600 28px ' + SANS, R.beyaz);
+      (r.degerler || []).slice(0, sut.length).forEach((d, i) => {
+        const cx = tx + ilk + i * cw + cw / 2;
+        if (d === true) tik(ctx, cx, ry + rh / 2, 34, '#6fd29a');
+        else if (d === false || d === '' || d == null) { ctx.fillStyle = 'rgba(201,211,224,.45)'; ctx.fillRect(cx - 14, ry + rh / 2 - 2, 28, 4); }
+        else yazi(ctx, kisaltF(ctx, String(d), cw - 20, '600 22px ' + SANS), cx, ry + 46, '600 22px ' + SANS, R.acikPirinc, 'center');
+      });
+    });
+  } else if (s.tur === 'karsilastirma') {
+    bolumBasligi(ctx, s, 160, 160, kay, 1600);
+    [['sol', 160, 'rgba(255,255,255,.05)', R.soluk], ['sag', 990, 'rgba(176,141,87,.14)', R.pirinc]].forEach(([k, x, dolgu, kenar], j) => {
+      const p = s[k] || {}; const a = adimA(j, 0.5, 0.6); ctx.globalAlpha = a;
+      kutu(ctx, x, 360, 770, 470, 18, dolgu, kenar, 2.5);
+      yazi(ctx, (p.baslik || (j ? 'Şimdi' : 'Eskiden')).toLocaleUpperCase('tr'), x + 40, 420, '700 28px ' + SANS, j ? R.acikPirinc : R.gri);
+      (p.maddeler || []).slice(0, 4).forEach((m, i) => {
+        ctx.globalAlpha = Math.min(a, adimA(i, 0.9 + j * 0.6, 0.3));
+        if (j) tik(ctx, x + 56, 488 + i * 84, 30, '#6fd29a'); else { ctx.fillStyle = R.soluk; ctx.fillRect(x + 42, 486 + i * 84, 28, 4); }
+        ctx.font = '500 30px ' + SANS; sar(ctx, m, 620).slice(0, 2).forEach((t, q) => yazi(ctx, t, x + 96, 498 + i * 84 + q * 34, '500 30px ' + SANS, R.beyaz));
+      });
+    });
+  } else if (s.tur === 'ekran') {
+    const y = bolumBasligi(ctx, s, 140, 170, kay, 720);
+    (s.maddeler || []).slice(0, 3).forEach((m, i) => { ctx.globalAlpha = adimA(i, 0.6, 0.4); tik(ctx, 160, y + 50 + i * 60, 26, R.acikPirinc); yazi(ctx, m, 196, y + 60 + i * 60, '500 32px ' + SANS, R.gri); });
+    const x0 = 960, y0 = 160, w = 820, h = 640, a = yumusak((lt - 0.3) / 0.9);
+    ctx.globalAlpha = Math.min(a, cikis);
+    kutu(ctx, x0, y0 + (1 - a) * 30, w, h, 16, R.zemin, null);
+    kutu(ctx, x0, y0 + (1 - a) * 30, w, 64, 16, R.lacivert, null);
+    for (let i = 0; i < 3; i++) { kutu(ctx, x0 + 24 + i * 262, y0 + 92 + (1 - a) * 30, 244, 120, 10, R.beyaz, R.cizgi, 1.5); }
+    for (let i = 0; i < 8; i++) { const bh = 60 + ((i * 53) % 220) * yumusak((lt - 0.8 - i * 0.08) / 0.6); ctx.fillStyle = i % 3 === 1 ? R.pirinc : '#5d7aa3'; ctx.fillRect(x0 + 60 + i * 90, y0 + h - 40 - bh + (1 - a) * 30, 54, bh); }
+  } else {
+    /* madde: 1-4 madde ikonlu kartlar halinde yan yana; 5 madde numaralı satır kartları */
+    const ust = bolumBasligi(ctx, s, 160, 170, kay, 1600);
+    const md = (s.maddeler || []).slice(0, 5); const n = md.length;
+    if (n && n <= 4) {
+      const gw = (1600 - (n - 1) * 40) / n, F = '500 32px ' + SANS;
+      ctx.font = F; const sat = md.map((m) => sar(ctx, m, gw - 72).slice(0, 4));
+      const h = 170 + Math.max(...sat.map((x) => x.length)) * 42;
+      const y = Math.max(ust + 60, (ust + 880 - h) / 2);
+      md.forEach((m, i) => {
+        const x = 160 + i * (gw + 40); const a = adimA(i, 0.6, 0.45); ctx.globalAlpha = a; const yy = y + (1 - a) * 24;
+        kutu(ctx, x, yy, gw, h, 18, 'rgba(255,255,255,.07)', 'rgba(217,191,143,.45)', 2.5);
+        ctx.beginPath(); ctx.arc(x + 72, yy + 74, 34, 0, Math.PI * 2); ctx.fillStyle = R.pirinc; ctx.fill();
+        tik(ctx, x + 72, yy + 76, 30, R.beyaz);
+        sat[i].forEach((t, k) => yazi(ctx, t, x + 36, yy + 160 + k * 42, F, R.beyaz));
+      });
+    } else if (n) {
+      const rh = 84, y = Math.max(ust + 40, (ust + 880 - (n * rh + (n - 1) * 14)) / 2);
+      md.forEach((m, i) => {
+        const a = adimA(i, 0.6, 0.4); ctx.globalAlpha = a; const ry = y + i * (rh + 14);
+        kutu(ctx, 160 + (1 - a) * 30, ry, 1600, rh, 14, 'rgba(255,255,255,.07)', 'rgba(217,191,143,.35)', 2);
+        ctx.beginPath(); ctx.arc(214 + (1 - a) * 30, ry + rh / 2, 26, 0, Math.PI * 2); ctx.fillStyle = R.pirinc; ctx.fill();
+        yazi(ctx, String(i + 1), 214 + (1 - a) * 30, ry + rh / 2 + 10, '700 26px ' + SANS, R.beyaz, 'center');
+        yazi(ctx, kisaltF(ctx, m, 1440, '500 32px ' + SANS), 266 + (1 - a) * 30, ry + rh / 2 + 11, '500 32px ' + SANS, R.beyaz);
+      });
+    }
   }
   ctx.restore();
+}
+function kisaltF(ctx, metin, maxW, font) { ctx.font = font; return kisalt(ctx, metin, maxW); }
+
+/* Tek kare çizimi (önizleme / test): plan, zaman (sn) */
+export function kareCiz(ctx, plan, sureler, baslar, t, top) {
+  const sahneler = plan.sahneler;
+  let i = 0; while (i < sahneler.length - 1 && t >= baslar[i + 1]) i++;
+  arkaPlan(ctx, Math.max(0, t));
+  if (t >= 0) sahneCiz(ctx, sahneler[i], t - baslar[i], sureler[i]);
+  ustBant(ctx, plan, i, sahneler.length);
+  if (t >= 0) altyazi(ctx, sahneler[i].seslendirme, t - baslar[i], sureler[i]);
+  ilerlemeCiz(ctx, Math.max(0, Math.min(1, t / top)));
+  return i;
 }
 
 /* ---------------------------------------------------------------- oynatma / kayıt */
@@ -137,9 +347,9 @@ export async function videoUret({ plan, tuval, ses, kayit, ilerleme, iptal }) {
     }
     tamponlar.push(tampon);
   }
-  const sureler = sahneler.map((s, i) => Math.max(s.sure, tamponlar[i] ? tamponlar[i].duration + 0.7 : 0));
+  const sureler = sahneler.map((s, i) => Math.max(s.sure, tamponlar[i] ? tamponlar[i].duration + 0.9 : 0));
   const baslar = []; let top = 0; for (const d of sureler) { baslar.push(top); top += d; }
-  try { await document.fonts.load('600 92px "Source Serif 4"'); await document.fonts.load('600 30px Inter'); } catch (e) { /* yedek font */ }
+  try { await document.fonts.load('600 96px "Source Serif 4"'); await document.fonts.load('600 30px Inter'); } catch (e) { /* yedek font */ }
 
   let kaydedici = null, parcalar = [], bicim = '';
   const hedef = actx.createMediaStreamDestination();
@@ -160,17 +370,14 @@ export async function videoUret({ plan, tuval, ses, kayit, ilerleme, iptal }) {
     if (!b || !sesli) return;
     const kaynak = actx.createBufferSource(); kaynak.buffer = b;
     kaynak.connect(actx.destination); kaynak.connect(hedef);
-    kaynak.start(t0 + baslar[i] + 0.35);
+    kaynak.start(t0 + baslar[i] + 0.4);
   });
   if (kaydedici) kaydedici.start(500);
   await new Promise((coz) => {
     function kare() {
       const t = saatAl() - t0;
       if ((iptal && iptal()) || t >= top) { coz(); return; }
-      let i = 0; while (i < sahneler.length - 1 && t >= baslar[i + 1]) i++;
-      arkaPlan(ctx, Math.max(0, t)); ustBant(ctx);
-      if (t >= 0) sahneCiz(ctx, sahneler[i], t - baslar[i], sureler[i]);
-      ilerlemeCiz(ctx, Math.max(0, Math.min(1, t / top)));
+      kareCiz(ctx, plan, sureler, baslar, t, top);
       ilerleme && ilerleme({ asama: 'oynat', t: Math.max(0, t), top });
       requestAnimationFrame(kare);
     }

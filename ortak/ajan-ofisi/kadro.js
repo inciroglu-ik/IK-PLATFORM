@@ -7,7 +7,7 @@
    Kişisel veri YOK: çalışan adları kurgusaldır.
    ============================================================================ */
 
-export const SURUM = '2026-11-14.1';
+export const SURUM = '2026-11-14.2';
 export const VARSAYILAN_MODEL = 'claude-opus-5-5';
 export const MODELLER = [
   { id: 'claude-opus-5-5', ad: 'Claude Opus 5.5 (önerilen)' },
@@ -116,7 +116,7 @@ export const ROLLER = [
     gorev: 'Sistemlerin 1–1,5 dakikalık tanıtım videosunu hazırlar, ElevenLabs ile seslendirir.',
     atanabilir: true, arama: 0, okuma: 0,
     beceri: '60–90 saniyelik tanıtım videosu senaryosu ve sahne planı (seslendirmeli)',
-    sistem: 'Sen Video Editörüsün. Sistemler için 60–90 saniyelik tanıtım videosunun senaryosunu ve sahne planını hazırlarsın; video tarayıcıda otomatik çizilir ve ElevenLabs ile seslendirilir. Çıktı: iki-üç cümlelik açıklama ve ardından ```json bloğunda tam olarak şu yapı: {"baslik":"…","sahneler":[{"tur":"baslik|madde|rakam|ekran|kapanis","ust":"küçük üst başlık","baslik":"büyük metin","maddeler":["…"],"rakam":"%40","seslendirme":"bu sahnede okunacak metin","sure":8}]}. Toplam 60–90 saniye, 6–10 sahne; seslendirme doğal konuşma dilinde ve sahne süresine sığar (saniyede en fazla 2,3 kelime). Rakam uydurma; bilinmeyen rakam yerine nitel ifade kullan.'
+    sistem: 'Sen Video Editörüsün. Sistemler için 60–90 saniyelik KURUMSAL ve BİLGİ VEREN tanıtım videosunun senaryosunu ve sahne planını hazırlarsın; video tarayıcıda otomatik çizilir (üstte marka bandı ve sahne sayacı, altta seslendirmenin altyazısı kendiliğinden eklenir) ve ElevenLabs ile seslendirilir. Video yalnız yazı ve madde listesi OLMAZ: sahnelerin en az yarısı görsel olmalı ve sistemin GERÇEK içeriğini göstermeli. Sahne türleri: "baslik", "kapanis", "madde", "rakam" (yalnız gerçek sayı), "form" (sistem ekranı: ekranBaslik, sutunlar[], satirlar[[hücreler]] gerçek madde örnekleri, vurgu {sutun|satir, etiket}), "akis" (adimlar[{baslik, alt}] en çok 5, iş akışı), "tablo" (sutunlar[], satirlar[{ad, degerler[true|false|"metin"]}], ör. rol-yetki tablosu), "karsilastirma" (sol{baslik, maddeler}, sag{baslik, maddeler}: eskiden/şimdi). Her sahnede ust, baslik, seslendirme, sure. Çıktı: iki-üç cümlelik açıklama ve ardından ```json bloğunda {"baslik":"…","sahneler":[…]}. Toplam 60–90 saniye, 7–10 sahne; seslendirme doğal konuşma dilinde, sahne süresine sığar (saniyede en fazla 2,3 kelime). Rakam ve örnek veri uydurma; form satırlarında gerçek formdaki konuları kullan, kişi adı yerine unvan yaz.'
   },
   {
     id: 'reklam_kreatifcisi', ad: 'Reklam Kreatifçisi', oda: 'kreatif', renk: '#c07a3a', harf: 'RK', baslangicAd: 'Bora', baslangicKademe: 1,
@@ -386,21 +386,39 @@ export function kodBlogu(metin, dil) {
   const m = re.exec(String(metin || ''));
   return m ? m[1].trim() : '';
 }
+export const VIDEO_SAHNE_TURLERI = ['baslik', 'madde', 'rakam', 'ekran', 'kapanis', 'form', 'akis', 'tablo', 'karsilastirma'];
+const vMetin = (v, n) => String(v == null ? '' : v).slice(0, n);
+const vListe = (l, adet, n) => (Array.isArray(l) ? l.slice(0, adet).map((x) => vMetin(x, n)) : []);
 export function videoPlaniAyir(metin) {
   const j = kodBlogu(metin, 'json');
   if (!j) return null;
   try {
     const p = JSON.parse(j);
     if (!p || !Array.isArray(p.sahneler) || !p.sahneler.length) return null;
-    p.sahneler = p.sahneler.slice(0, 14).map((s) => ({
-      tur: ['baslik', 'madde', 'rakam', 'ekran', 'kapanis'].indexOf(s.tur) >= 0 ? s.tur : 'madde',
-      ust: String(s.ust || '').slice(0, 60), baslik: String(s.baslik || '').slice(0, 120),
-      maddeler: Array.isArray(s.maddeler) ? s.maddeler.slice(0, 5).map((x) => String(x).slice(0, 90)) : [],
-      rakam: String(s.rakam || '').slice(0, 12), seslendirme: String(s.seslendirme || '').slice(0, 600),
-      sure: Math.max(3, Math.min(20, Number(s.sure) || 7))
-    }));
-    p.baslik = String(p.baslik || 'Tanıtım').slice(0, 100);
-    return p;
+    const sahneler = p.sahneler.filter((s) => s && typeof s === 'object').slice(0, 14).map((s) => {
+      const tur = VIDEO_SAHNE_TURLERI.indexOf(s.tur) >= 0 ? s.tur : 'madde';
+      const o = {
+        tur, ust: vMetin(s.ust, 60), baslik: vMetin(s.baslik, 120), maddeler: vListe(s.maddeler, 5, 90),
+        rakam: vMetin(s.rakam, 12), seslendirme: vMetin(s.seslendirme, 600), sure: Math.max(3, Math.min(20, Number(s.sure) || 7))
+      };
+      if (tur === 'form') {
+        o.ekranBaslik = vMetin(s.ekranBaslik, 60);
+        o.sutunlar = vListe(s.sutunlar, 7, 24);
+        o.satirlar = (Array.isArray(s.satirlar) ? s.satirlar : []).slice(0, 8).map((r) => vListe(r, 7, 48));
+        if (s.vurgu && typeof s.vurgu === 'object') o.vurgu = { sutun: Number.isInteger(s.vurgu.sutun) ? s.vurgu.sutun : null, satir: Number.isInteger(s.vurgu.satir) ? s.vurgu.satir : null, etiket: vMetin(s.vurgu.etiket, 40) };
+      } else if (tur === 'akis') {
+        o.adimlar = (Array.isArray(s.adimlar) ? s.adimlar : []).slice(0, 5).map((a) => ({ baslik: vMetin(a && a.baslik, 32), alt: vMetin(a && a.alt, 70) }));
+      } else if (tur === 'tablo') {
+        o.sutunlar = vListe(s.sutunlar, 6, 24);
+        o.satirlar = (Array.isArray(s.satirlar) ? s.satirlar : []).slice(0, 6).map((r) => ({ ad: vMetin(r && r.ad, 40), degerler: (Array.isArray(r && r.degerler) ? r.degerler : []).slice(0, 6).map((d) => (d === true || d === false ? d : vMetin(d, 20))) }));
+      } else if (tur === 'karsilastirma') {
+        const yan = (x) => ({ baslik: vMetin(x && x.baslik, 30), maddeler: vListe(x && x.maddeler, 4, 70) });
+        o.sol = yan(s.sol); o.sag = yan(s.sag);
+      }
+      return o;
+    });
+    if (!sahneler.length) return null;
+    return { baslik: vMetin(p.baslik || 'Tanıtım', 100), sahneler };
   } catch (e) { return null; }
 }
 export function planTemizle(p) {
@@ -630,7 +648,8 @@ export function ccSonucTemizle(j) {
     })),
     puan: j.puan && typeof j.puan === 'object' ? j.puan : null,
     not: j.not && typeof j.not === 'object' ? { baslik: kirp(j.not.baslik, 200), icerik: kirp(j.not.icerik, 100000), kaynaklar: ccKaynaklar(j.not.kaynaklar) } : null,
-    anahtar: kirp(j.anahtar, 20), hata: kirp(j.hata, 500)
+    anahtar: kirp(j.anahtar, 20), hata: kirp(j.hata, 500),
+    duzeltme: j.duzeltme === true, duzeltmeNotu: kirp(j.duzeltmeNotu, 300)
   };
 }
 

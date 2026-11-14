@@ -378,6 +378,7 @@ function bildir(o) {
     bildirim('<b>İş tamamlandı</b><br>' + esc(o.baslik || '') + (o.puan != null ? ' · ' + o.puan + '/100' : '') + (o.maliyet != null ? ' · ' + para(o.maliyet) : ''));
   } else if (o.tur === 'hata') bildirim(esc(o.metin), true);
   else if (o.tur === 'not') bildirim('<b>Panoda yeni not</b><br>' + esc(o.baslik || ''));
+  else if (o.tur === 'puan-duzeltme') bildirim('<b>Puan düzeltildi</b><br>' + esc(o.baslik || '') + ' · ' + (o.eski == null ? '—' : o.eski) + ' → ' + o.yeni);
   else if (o.tur === 'cc-bekliyor') { bildirim('<b>İş Claude Code’a iletildi</b><br>VS Code’da Claude Code’a <b>ofis</b> yazın.'); sonucTara(); }
   else if (o.tur === 'kadro') bildirim('<b>Kadro değişikliği</b><br>' + esc(o.kayit.cikan) + ' ayrıldı · yerine ' + esc(o.kayit.giren) + ' (' + esc(K.unvan(o.kayit.rol, o.kayit.yeniKademe)) + ')');
   aktifIsCiz();
@@ -407,6 +408,8 @@ async function sonucTara() {
       akis.ccSonuc(j, f.ad);
     }
     S.bekleyenCC = (await kopru.bekleyenIsler()).length;
+    /* Sayfanın sürümünü klasöre bildir (Claude Code, eski sayfaya yeni özellik göndermemek için okur) */
+    if (!S.durumYazMs || Date.now() - S.durumYazMs > 60000) { S.durumYazMs = Date.now(); kopru.kokYaz('ofis-durum.json', JSON.stringify({ surum: K.SURUM, zamanMs: Date.now() })).catch(() => {}); }
   } catch (e) {
     if (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError')) { await kopru.baslat().catch(() => {}); }
   } finally { TARANIYOR = false; ustBilgi(); seritCiz(); }
@@ -622,8 +625,10 @@ function galeriCiz(ic) {
   ic.querySelectorAll('[data-buyut]').forEach((b) => b.onclick = () => { const n = S.notlar.find((x) => x.id === b.dataset.buyut); if (!n) return; modalAc(esc(n.baslik), mockupHtml(n.html)); requestAnimationFrame(() => mockupOlcekle($('modal'))); });
 }
 /* --- videolar */
+/* Videonun tam planı notun kendi metninden yeniden okunur (eski sürümün içe aktarırken kırptığı görsel sahneler geri gelir) */
+function videoPlani(n) { return K.videoPlaniAyir(n.icerik || '') || n.plan; }
 function videolarCiz(ic) {
-  const liste = S.notlar.filter((n) => n.tur === 'video' && n.plan);
+  const liste = S.notlar.filter((n) => n.tur === 'video' && n.plan).map((n) => Object.assign({}, n, { plan: videoPlani(n) }));
   const sesVar = !!(S.anahtarlar.elevenlabs && S.ayar.sesId);
   const bicim = desteklenenBicim();
   ic.innerHTML = '<div class="kart-alt" style="margin-bottom:10px">' + (sesVar ? 'Seslendirme: ElevenLabs bağlı.' : 'Seslendirme kapalı: Ayarlar’dan ElevenLabs anahtarı ve ses kimliği girerseniz videolar seslendirilir.') + ' Kayıt biçimi: ' + (bicim ? esc(bicim.split(';')[0]) : 'desteklenmiyor') + '.</div>' +
@@ -632,7 +637,8 @@ function videolarCiz(ic) {
   ic.querySelectorAll('[data-izle],[data-kaydet]').forEach((b) => b.onclick = () => videoAc(b.dataset.izle || b.dataset.kaydet, !!b.dataset.kaydet));
 }
 async function videoAc(id, kaydet) {
-  const n = S.notlar.find((x) => x.id === id); if (!n) return;
+  const n0 = S.notlar.find((x) => x.id === id); if (!n0) return;
+  const n = Object.assign({}, n0, { plan: videoPlani(n0) });
   const ses = S.anahtarlar.elevenlabs && S.ayar.sesId ? { anahtar: S.anahtarlar.elevenlabs, sesId: S.ayar.sesId } : null;
   modalAc(esc(n.plan.baslik), '<canvas class="onizleme" id="video-tuval"></canvas><div class="durum-metin" id="video-durum">Hazırlanıyor…</div><div id="video-indir" style="margin-top:10px"></div>');
   let iptal = false; MODAL_KAPANINCA = () => { iptal = true; };

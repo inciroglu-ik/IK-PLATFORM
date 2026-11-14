@@ -69,6 +69,8 @@ export function kopruKur() {
       return durum;
     },
     async isYaz(ad, veri) { await yaz('isler', guvenliAd(ad), JSON.stringify(veri, null, 2)); },
+    /* Klasör köküne küçük durum dosyası (ör. ofis-durum.json: sayfanın sürümü; Claude Code okur) */
+    async kokYaz(ad, metin) { const f = await kok.getFileHandle(guvenliAd(ad), { create: true }); const w = await f.createWritable(); await w.write(metin); await w.close(); },
     async dosyaVarMi(klasor, ad) { try { const d = await alt(klasor); await d.getFileHandle(guvenliAd(ad)); return true; } catch (e) { return false; } },
     async bekleyenIsler() {
       const d = await alt('isler'); const l = [];
@@ -90,7 +92,10 @@ export function kopruKur() {
       const d = await alt('sonuclar');
       let metin = '';
       try { metin = await (await (await d.getFileHandle(ad)).getFile()).text(); } catch (e) { return; }
-      await yaz('islenen', new Date().toISOString().slice(0, 10) + '_' + guvenliAd(ad), metin);
+      /* aynı gün aynı adla ikinci sonuç (ör. puan düzeltmesi) öncekinin üzerine yazmasın: saat eki */
+      const simdi = new Date().toISOString(); let hedef = simdi.slice(0, 10) + '_' + guvenliAd(ad);
+      if (await this.dosyaVarMi('islenen', hedef)) hedef = simdi.slice(0, 10) + '_' + simdi.slice(11, 19).replace(/:/g, '') + '_' + guvenliAd(ad);
+      await yaz('islenen', hedef, metin);
       try { await d.removeEntry(ad); } catch (e) { /* zaten yok */ }
     }
   };
