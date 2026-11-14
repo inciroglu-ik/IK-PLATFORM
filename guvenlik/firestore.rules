@@ -112,12 +112,21 @@ service cloud.firestore {
     }
 
     // hesaplar/{hid}: kişi başına bir kayıt (ad, tc, roller, kapsam, aktiflik, kod özeti).
+    // Ajan Ofisi sahibinin hesabı (ve oturum bağı) sahip kaydı oluştuktan sonra yalnız sahibin kendisince değiştirilebilir:
+    // başka bir İK kullanıcısı bu hesaba yeni aktivasyon kodu üretemez, uid'sini/rolünü değiştiremez, silemez.
+    // "olusturan: kurulum" işareti yalnız tek seferlik kurulumda konur; İK sonradan hiçbir hesaba veremez.
+    function sahipVar() { return exists(yol('ajanOfisi', 'sahip')); }
+    function sahipKorumasi(h) { return !sahipVar() || h != get(yol('ajanOfisi', 'sahip')).data.hid || (gecerli() && benimHid() == h); }
+    function kurulumIsaretiKorunur() {
+      return request.resource.data.get('olusturan', '') != 'kurulum'
+        || (resource != null && resource.data.get('olusturan', '') == 'kurulum');
+    }
     match /hesaplar/{h} {
       allow get: if ik() || (gecerli() && benimHid() == h);
       allow list: if ik();
-      allow create: if ikHesapYazimi(h) || kurulumHesabi(h);
-      allow update: if ikHesapYazimi(h) || aktivasyon(h);
-      allow delete: if ik();
+      allow create: if (ikHesapYazimi(h) && kurulumIsaretiKorunur() && sahipKorumasi(h)) || kurulumHesabi(h);
+      allow update: if (ikHesapYazimi(h) && kurulumIsaretiKorunur() && sahipKorumasi(h)) || aktivasyon(h);
+      allow delete: if ik() && sahipKorumasi(h);
     }
 
     // uidBag/{uid}: Firebase oturumu ↔ hesap bağı. Yalnız oturum sahibi, yalnız geçerli kodla kurar.
@@ -140,7 +149,8 @@ service cloud.firestore {
         && existsAfter(yol('hesaplar', request.resource.data.hid))
         && getAfter(yol('hesaplar', request.resource.data.hid)).data.uid == u
         && (kodlaBag(request.resource.data) || kurulumVar());
-      allow update, delete: if ik();
+      allow update: if ik() && sahipKorumasi(resource.data.hid) && sahipKorumasi(request.resource.data.hid);
+      allow delete: if ik() && sahipKorumasi(resource.data.hid);
     }
 
     // kurulum/tek: tek seferlik kurulum kaydı (yalnız süre içinde, doğru kodla, YALNIZ BİR KEZ oluşturulabilir).
@@ -626,6 +636,34 @@ service cloud.firestore {
       allow get, list: if ik() || (gecerli() && resource.data.hid == benimHid());
       allow create, update: if yonetim() && oryDuzenlemeGecerli(id);
       allow delete: if ik() || (gecerli() && resource.data.hid == benimHid());
+    }
+
+    // ====================================================== AJAN OFİSİ (14.11.2026) — YALNIZ OFİS SAHİBİ
+    // Sahip: kurulum koduyla açılmış İK hesabı. İlk açılışta ajanOfisi/sahip {hid} BİR KEZ oluşturulur;
+    // sonra değiştirilemez ve silinemez. Diğer tüm ofis verisi (ayar, Claude/ElevenLabs anahtarları, kadro,
+    // işler, notlar, harcama, zamanlama) yalnız bu hesabın GÜNCEL oturumuna açıktır: İK ekibi, direktör,
+    // müdürler dahil başka hiç kimse okuyamaz, yazamaz. (Zamanlayıcı yönetici yetkisiyle çalışır, kurala tabi değildir.)
+    function ofisSahibi() {
+      return gecerli() && exists(yol('ajanOfisi', 'sahip')) && get(yol('ajanOfisi', 'sahip')).data.hid == benimHid();
+    }
+    function ofisSahibiOlabilir() {
+      return gecerli() && hesap().roller.hasAny(['ik'])
+        && (hesap().get('olusturan', '') == 'kurulum' || request.auth.uid == get(yol('kurulum', 'tek')).data.uid);
+    }
+    match /ajanOfisi/sahip {
+      allow get: if ofisSahibi();
+      allow create: if ofisSahibiOlabilir()
+        && request.resource.data.keys().hasOnly(['hid', 'olusturma'])
+        && request.resource.data.hid == benimHid()
+        && request.resource.data.olusturma == request.time;
+    }
+    match /ajanOfisi/{belge} {
+      allow read, write: if belge != 'sahip' && ofisSahibi();
+    }
+    // Alt koleksiyonlar (ajanOfisi/ofis/isler/…). {kol} zorunlu: rules_version 2'de {alt=**} sıfır parçayla da
+    // eşleştiği için ajanOfisi/sahip belgesinin kendisi bu kurala GİRMEMELİ (aksi halde sahip kaydı değiştirilebilirdi).
+    match /ajanOfisi/{belge}/{kol}/{alt=**} {
+      allow read, write: if belge != 'sahip' && ofisSahibi();
     }
   }
 }
