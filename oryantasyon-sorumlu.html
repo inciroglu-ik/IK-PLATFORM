@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Oryantasyon Planı · İnciroğlu Otomotiv</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0f1b2d">
+<link rel="icon" href="icon-192.png" sizes="192x192">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="pano/kokpit.css">
+<style>
+/* Oryantasyon planı — sorumlunun e-postadaki kişiye özel bağlantıyla açtığı sayfa (giriş gerektirmez).
+   Planın tamamı görünür; yalnız sorumlunun kendi satırlarında Tarih / Saat / Süre / Not düzenlenir. */
+html { background: var(--yuzey-sayfa); }
+body { margin: 0; min-height: 100vh; color: var(--metin-1); font-family: var(--font-sans); -webkit-text-size-adjust: 100%; }
+.bant { background: var(--kokpit-dokusu), var(--kokpit-gradyan); color: var(--metin-ters-1); padding: 22px 16px 64px; }
+.bant-ic, .govde { max-width: 980px; margin: 0 auto; }
+.marka { display: flex; align-items: center; gap: 12px; }
+.marka-isaret { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 1px rgba(191,205,226,.22); font-family: var(--font-serif); font-weight: 600; font-size: 17px; color: #fff; flex: none; }
+.marka b { display: block; font-size: 14px; font-weight: 600; letter-spacing: .01em; }
+.marka small { display: block; font-size: 12px; color: var(--metin-ters-3); margin-top: 1px; }
+.bant h1 { font-family: var(--font-serif); font-weight: 600; font-size: clamp(24px, 5.4vw, 32px); line-height: 1.2; margin: 26px 0 8px; color: #fff; }
+.bant p { margin: 0; color: var(--metin-ters-2); font-size: 15px; line-height: 1.6; }
+.bant-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 12px; font-size: 13px; color: var(--metin-ters-3); }
+.bant-meta b { color: var(--metin-ters-1); font-weight: 600; }
+.govde { padding: 0 16px 120px; margin-top: -40px; position: relative; }
+.kart { background: var(--yuzey-kart); border-radius: 18px; box-shadow: var(--gol-2); border: 1px solid var(--cizgi-1); padding: 20px; margin-bottom: 16px; }
+.kart h2 { font-family: var(--font-serif); font-size: 19px; font-weight: 600; color: var(--metin-marka); margin: 0 0 4px; }
+.giris-metni { font-size: 15px; line-height: 1.65; color: var(--metin-2); margin: 0; }
+.giris-metni b { color: var(--metin-1); }
+.ust-arac { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--cizgi-1); }
+.secmeli { display: inline-flex; background: var(--n-100); border-radius: 12px; padding: 3px; gap: 3px; }
+.secmeli button { all: unset; cursor: pointer; padding: 8px 14px; border-radius: 9px; font-size: 13.5px; font-weight: 600; color: var(--metin-2); }
+.secmeli button[aria-pressed="true"] { background: #fff; color: var(--metin-marka); box-shadow: var(--gol-1); }
+.secmeli button:focus-visible { box-shadow: var(--odak-halkasi); }
+.ilerleme-ozet { font-size: 13.5px; color: var(--metin-2); font-weight: 600; }
+.ilerleme-ozet b { color: var(--metin-1); }
+.bolum-baslik { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 6px 0 12px; }
+.bolum-baslik small { font-size: 12.5px; color: var(--metin-3); font-weight: 600; }
+.madde { border: 1px solid var(--cizgi-1); border-radius: 14px; padding: 14px 16px; margin-top: 10px; background: var(--yuzey-kart); }
+.madde.benim { border-color: var(--pir-300); box-shadow: inset 4px 0 0 var(--pir-500); background: linear-gradient(0deg, #fff, #fff), var(--pir-50); }
+.madde-ust { display: flex; gap: 12px; align-items: flex-start; }
+.no { flex: none; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--n-100); color: var(--metin-2); font-weight: 700; font-size: 13px; }
+.madde.benim .no { background: var(--pir-600); color: #fff; }
+.madde-baslik { min-width: 0; flex: 1; }
+.madde-baslik b { display: block; font-size: 15px; line-height: 1.4; }
+.madde-baslik p { margin: 4px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--metin-2); }
+.sorumlu-satir { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; font-size: 12.5px; color: var(--metin-3); }
+.cip { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--n-100); color: var(--metin-2); }
+.cip.ben { background: var(--pir-100, #f3e6c8); color: var(--pir-800, #6b4d14); }
+.cip.sizin { background: var(--pir-600); color: #fff; }
+.alanlar { display: grid; grid-template-columns: 1.1fr .8fr .8fr 2fr; gap: 10px 12px; margin-top: 12px; padding-left: 42px; }
+.alan span { display: block; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--metin-3); margin-bottom: 4px; }
+.alan .deger { font-size: 14px; color: var(--metin-1); min-height: 20px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.alan .deger.bos { color: var(--metin-4, #9aa3b2); }
+input[type=date], select, textarea { width: 100%; box-sizing: border-box; font: inherit; font-size: 14.5px; color: var(--metin-1); border: 1px solid var(--cizgi-2); border-radius: 10px; padding: 9px 11px; background: #fff; }
+select { appearance: auto; height: 42px; }
+input[type=date] { height: 42px; }
+textarea { min-height: 42px; height: 42px; resize: vertical; line-height: 1.45; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--pir-500); box-shadow: var(--odak-halkasi); }
+.degisti input, .degisti select, .degisti textarea { border-color: var(--uy-400, #e0a63a); background: var(--uy-50, #fff8e6); }
+.kaydet-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: rgba(255,255,255,.96); backdrop-filter: blur(6px); border-top: 1px solid var(--cizgi-1); padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); }
+.kaydet-ic { max-width: 980px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.kaydet-durum { font-size: 13.5px; color: var(--metin-2); font-weight: 500; }
+.kaydet-durum.uyari { color: var(--uy-700); font-weight: 600; }
+.kaydet-durum.ok { color: var(--ok-700); font-weight: 600; }
+.btn-kaydet { height: 46px; padding: 0 22px; font-size: 15px; font-weight: 600; border-radius: 12px; }
+.btn-kaydet[disabled] { opacity: .55; cursor: default; }
+.durum { text-align: center; padding: 34px 22px; }
+.durum-ikon { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 14px; background: var(--uy-50); color: var(--uy-700); box-shadow: inset 0 0 0 1px var(--uy-200); }
+.durum-ikon svg { width: 30px; height: 30px; }
+.durum h2 { font-size: 22px; margin-bottom: 8px; }
+.durum p { color: var(--metin-2); font-size: 15px; line-height: 1.65; margin: 0 auto; max-width: 480px; }
+.yukleniyor { text-align: center; padding: 40px 20px; color: var(--metin-3); font-size: 14px; }
+.yukleniyor i { display: block; width: 34px; height: 34px; margin: 0 auto 12px; border-radius: 50%; border: 3px solid var(--n-150); border-top-color: var(--pir-600); animation: don 0.9s linear infinite; }
+@keyframes don { to { transform: rotate(360deg); } }
+.dipnot { font-size: 12.5px; color: var(--metin-3); line-height: 1.6; text-align: center; margin-top: 18px; }
+[hidden] { display: none !important; }
+@media (max-width: 760px) {
+  .alanlar { grid-template-columns: 1fr 1fr; padding-left: 0; }
+  .alan.not { grid-column: 1 / -1; }
+  .kart { padding: 16px 14px; border-radius: 16px; }
+  .madde { padding: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<header class="bant">
+  <div class="bant-ic">
+    <div class="marka"><span class="marka-isaret" aria-hidden="true">İ</span><div><b>İnciroğlu Otomotiv</b><small>İnsan Kaynakları</small></div></div>
+    <h1 id="baslik">Oryantasyon planı</h1>
+    <p id="giris">Bağlantınız denetleniyor…</p>
+    <div class="bant-meta" id="bantMeta"></div>
+  </div>
+</header>
+<main class="govde" id="govde">
+  <div class="kart yukleniyor" id="yukleniyor"><i></i>Plan yükleniyor…</div>
+</main>
+<div class="kaydet-bar" id="kaydetBar" hidden>
+  <div class="kaydet-ic"><span class="kaydet-durum" id="kaydetDurum" role="status" aria-live="polite"></span>
+    <button class="btn btn-pirinc btn-kaydet" id="kaydetBtn" type="button" disabled>Değişiklikleri kaydet</button></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import { initializeFirestore, doc, getDoc, getDocs, collection, writeBatch, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import * as F from "./ortak/oryantasyon-fark.js";
+import { girdiTemizle, yetkiAnahtariGecerli, satirDolu, zamanMs, GIRDI_NOT_SINIRI } from "./ortak/oryantasyon-kisi.js";
+
+/* Bağlantı: oryantasyon-sorumlu.html#y_<32 onaltılık>. Anahtar adresin # bölümünde durur (sunucuya gönderilmez).
+   Güvenlik kuralı (guvenlik/firestore.rules → oryantasyonYetki): bu anahtarla yalnız bu kayıt okunur; girdiler satır
+   başına ayrı kayda (oryGirdi/{madde}) yazılır ve yalnız kayıttaki "satirlar" (sorumlunun kendi satırları) için,
+   yalnız izinli biçimlerle (tarih, 15 dakikalık saat, listedeki süre, ≤500 karakter not) kabul edilir. */
+const app = initializeApp({
+  apiKey: "AIzaSyCWlB0nU-ETZxuo9xa6gG4VMYVu09P3fnE",
+  authDomain: "yetenek-havuzu.firebaseapp.com",
+  projectId: "yetenek-havuzu",
+  storageBucket: "yetenek-havuzu.firebasestorage.app",
+  messagingSenderId: "714642441227",
+  appId: "1:714642441227:web:bf49ac51367c6d9437b30e"
+}, "oryantasyon-sorumlu");
+const db = initializeFirestore(app, { experimentalForceLongPolling: true });
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const katla = (s) => String(s || '').toLocaleLowerCase('tr').normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/ı/g, 'i').replace(/[^a-z0-9]+/g, ' ').trim();
+const el = (etiket, oz, ...cocuk) => { const e = document.createElement(etiket); Object.entries(oz || {}).forEach(([k, v]) => { if (v == null || v === false) return; if (k === 'text') e.textContent = v; else if (k === 'html') e.innerHTML = v; else if (k === 'class') e.className = v; else e.setAttribute(k, v === true ? '' : v); }); cocuk.flat().forEach((c) => { if (c != null) e.append(c instanceof Node ? c : document.createTextNode(String(c))); }); return e; };
+const IKON_UYARI = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12.5"/><circle cx="12" cy="16" r=".6" fill="currentColor"/></svg>';
+const saatYaz = (d) => d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+const anahtar = (location.hash || '').replace(/^#/, '').trim();
+const ref = yetkiAnahtariGecerli(anahtar) ? doc(db, 'oryantasyonYetki', anahtar) : null;
+let VERI = null;              /* bağlantı kaydı (canlı) */
+let GIRDILER = {};            /* kendi kaydedilmiş satır girdilerim: madde → { termin, saat, sure, aciklama, zaman } (canlı) */
+const CALISMA = new Map();    /* kendi satırlarım: id → { termin, saat, sure, aciklama } (ekrandaki hâl) */
+let KIRLI = false, KAYDEDILIYOR = false, YALNIZ_BENIM = false, SON_KAYIT = null;
+
+function durumGoster(baslik, metin) {
+  $('giris').textContent = 'İnciroğlu Otomotiv · İnsan Kaynakları'; $('bantMeta').textContent = ''; $('kaydetBar').hidden = true;
+  const k = el('section', { class: 'kart durum', role: 'alert' });
+  k.innerHTML = '<div class="durum-ikon">' + IKON_UYARI + '</div><h2>' + esc(baslik) + '</h2><p>' + esc(metin) + '</p>';
+  $('govde').replaceChildren(k);
+  window.__SORUMLU_DURUM = 'hata';
+}
+const GECERSIZ = ['Bağlantı geçersiz ya da kapatılmış', 'Bu oryantasyon bağlantısı geçersiz ya da artık kullanılmıyor (örneğin plandaki konularınız değişmiş olabilir). İnsan Kaynakları ile iletişime geçebilirsiniz.'];
+
+/* kendi satırımın kaydedilmiş değeri: planın son eşitlenmesinden SONRA girdiğim değer varsa o; yoksa plandaki değer
+   (İK'nın yazdığı ya da ortak satırda başka sorumlunun daha yeni girdisi — plan görünümü İK ekranında eşitlenir) */
+const benimSatir = (id) => (VERI.satirlar || []).indexOf(id) >= 0;
+function baslangic(m) {
+  const g = GIRDILER[m.id], gz = g ? zamanMs(g.zaman) : 0, esitleme = zamanMs(VERI.guncelleme);
+  return g && (!gz || !esitleme || gz >= esitleme) ? girdiTemizle(g) : girdiTemizle({ termin: m.termin, saat: m.saat, sure: m.sure, aciklama: m.aciklama });
+}
+const ayni = (a, b) => a.termin === b.termin && a.saat === b.saat && a.sure === b.sure && a.aciklama === b.aciklama;
+function maddeler() { const r = []; ((VERI.gorunum && VERI.gorunum.bolumler) || []).forEach((b) => (b.maddeler || []).forEach((m) => r.push(m))); return r; }
+
+function secim(secenekler, deger, bos, etiket, yaz) {
+  const s = el('select', { 'aria-label': etiket });
+  s.append(el('option', { value: '', text: bos }));
+  if (deger && secenekler.indexOf(deger) < 0) s.append(el('option', { value: deger, text: deger }));
+  secenekler.forEach((v) => s.append(el('option', { value: v, text: v })));
+  s.value = deger || '';
+  s.addEventListener('change', () => yaz(s.value));
+  return s;
+}
+function alanKutusu(etiket, icerik, sinif) { return el('div', { class: 'alan' + (sinif ? ' ' + sinif : '') }, el('span', { text: etiket }), icerik); }
+function degerYaz(v) { return el('div', { class: 'deger' + (v ? '' : ' bos'), text: v || '—' }); }
+
+function maddeCiz(m, no) {
+  const benim = benimSatir(m.id);
+  const kap = el('article', { class: 'madde' + (benim ? ' benim' : ''), 'data-madde': m.id });
+  const sorumlular = F.sorumlular(m.sorumlu);
+  kap.append(el('div', { class: 'madde-ust' }, el('span', { class: 'no', text: String(no) }),
+    el('div', { class: 'madde-baslik' }, el('b', { text: m.plan || '—' }), m.kapsam ? el('p', { text: m.kapsam }) : null,
+      el('div', { class: 'sorumlu-satir' }, benim ? el('span', { class: 'cip sizin', text: 'Sizin konunuz' }) : null,
+        sorumlular.length ? 'Sorumlu:' : null, ...sorumlular.map((a) => el('span', { class: 'cip' + (katla(a) === katla(VERI.ad) ? ' ben' : ''), text: a }))))));
+  const alanlar = el('div', { class: 'alanlar' });
+  if (benim) {
+    const ilk = baslangic(m);
+    const c = CALISMA.get(m.id) || Object.assign({}, ilk);
+    CALISMA.set(m.id, c);
+    const isaret = () => { kap.classList.toggle('degisti', !ayni(c, ilk)); durumGuncelle(); };
+    const t = el('input', { type: 'date', 'aria-label': 'Tarih', value: c.termin || null });
+    t.addEventListener('change', () => { c.termin = t.value || ''; isaret(); });
+    const ac = el('textarea', { 'aria-label': 'Not', maxlength: String(GIRDI_NOT_SINIRI), rows: '1', placeholder: 'İsteğe bağlı not' }); ac.value = c.aciklama || '';
+    ac.addEventListener('input', () => { c.aciklama = F.temiz(ac.value, GIRDI_NOT_SINIRI); isaret(); });
+    alanlar.append(alanKutusu('Tarih', t), alanKutusu('Saat', secim(F.SAATLER, c.saat, 'Saat seçin', 'Saat', (v) => { c.saat = v; isaret(); })),
+      alanKutusu('Süre', secim(F.SURELER, c.sure, 'Süre seçin', 'Süre', (v) => { c.sure = v; isaret(); })), alanKutusu('Not', ac, 'not'));
+    kap.classList.toggle('degisti', !ayni(c, ilk));
+  } else {
+    alanlar.append(alanKutusu('Tarih', degerYaz(F.tarihGoster(m.termin))), alanKutusu('Saat', degerYaz(m.saat)), alanKutusu('Süre', degerYaz(m.sure)), alanKutusu('Not', degerYaz(m.aciklama), 'not'));
+  }
+  kap.append(alanlar);
+  return kap;
+}
+
+function ciz() {
+  const k = VERI.kisi || {};
+  $('baslik').textContent = 'Oryantasyon planı · ' + (k.ad || '');
+  $('giris').textContent = [k.unvan, k.dept].filter(Boolean).join(' · ') || 'Yeni başlayan çalışma arkadaşımız';
+  $('bantMeta').replaceChildren(...[k.iseGiris ? el('span', { html: 'İşe giriş: <b>' + esc(F.tarihGoster(k.iseGiris)) + '</b>' }) : null, el('span', { html: 'Sorumlu: <b>' + esc(VERI.ad) + '</b>' })].filter(Boolean));
+  const tum = maddeler(), benimler = tum.filter((m) => benimSatir(m.id));
+  /* kaydedilmiş değerlere göre (İK listesindeki "Sorumlu doldurma" ile aynı tanım) */
+  const dolu = benimler.filter((m) => satirDolu(baslangic(m))).length;
+  const giris = el('section', { class: 'kart' },
+    el('p', { class: 'giris-metni', html: 'Sayın <b>' + esc(VERI.ad) + '</b>, bu oryantasyon planında size ait <b>' + benimler.length + ' konu</b> var (işaretli satırlar). '
+      + 'Bu konuların <b>tarih, saat ve süresini</b> siz belirleyiniz; isterseniz not ekleyebilirsiniz. Diğer konuları bilgi amaçlı görürsünüz, değiştiremezsiniz.' }),
+    el('div', { class: 'ust-arac' },
+      (() => { const s = el('div', { class: 'secmeli', role: 'group', 'aria-label': 'Görünüm' });
+        [['Tüm plan', false], ['Yalnız benim konularım', true]].forEach(([ad, v]) => { const b = el('button', { type: 'button', 'aria-pressed': String(YALNIZ_BENIM === v), text: ad }); b.addEventListener('click', () => { YALNIZ_BENIM = v; ciz(); }); s.append(b); });
+        return s; })(),
+      el('span', { class: 'ilerleme-ozet', html: 'Tarih ve saati girilen: <b>' + dolu + ' / ' + benimler.length + '</b>' })));
+  const parcalar = [giris];
+  let no = 0;
+  ((VERI.gorunum && VERI.gorunum.bolumler) || []).forEach((b) => {
+    const ms = b.maddeler || [];
+    const gorunen = [];
+    ms.forEach((m) => { no++; if (!YALNIZ_BENIM || benimSatir(m.id)) gorunen.push(maddeCiz(m, no)); });
+    if (!gorunen.length) return;
+    const benimSay = ms.filter((m) => benimSatir(m.id)).length;
+    parcalar.push(el('section', { class: 'kart' }, el('div', { class: 'bolum-baslik' }, el('h2', { text: b.ad || 'Oryantasyon' }), el('small', { text: ms.length + ' konu' + (benimSay ? ' · ' + benimSay + ' sizin' : '') })), ...gorunen));
+  });
+  parcalar.push(el('p', { class: 'dipnot', text: 'Girdiğiniz bilgiler İnsan Kaynakları’nın oryantasyon formuna işlenir. Oryantasyonu verdikten sonra basılı formdaki ilgili satırı imzalamanızı rica ederiz. Bağlantı size özeldir; lütfen paylaşmayınız.' }));
+  $('govde').replaceChildren(...parcalar);
+  $('kaydetBar').hidden = !benimler.length;
+  durumGuncelle();
+  window.__SORUMLU_DURUM = 'hazir';
+}
+
+function degisenler() {
+  return maddeler().filter((m) => benimSatir(m.id) && CALISMA.has(m.id) && !ayni(CALISMA.get(m.id), baslangic(m)));
+}
+function durumGuncelle(mesaj, tur) {
+  const d = degisenler().length;
+  KIRLI = d > 0;
+  const b = $('kaydetBtn'); b.disabled = !KIRLI || KAYDEDILIYOR;
+  const s = $('kaydetDurum');
+  const varsayilan = KIRLI ? d + ' konuda kaydedilmemiş değişiklik var'
+    : SON_KAYIT ? 'Kaydedildi · ' + saatYaz(SON_KAYIT) + ' · İnsan Kaynakları’na iletildi' : 'Kendi konularınızın tarih ve saatini seçip kaydedin';
+  s.className = 'kaydet-durum' + (tur ? ' ' + tur : (KIRLI ? ' uyari' : SON_KAYIT ? ' ok' : ''));
+  s.textContent = mesaj || varsayilan;
+}
+
+async function kaydet() {
+  if (KAYDEDILIYOR || !KIRLI) return;
+  KAYDEDILIYOR = true; durumGuncelle('Kaydediliyor…');
+  /* satır başına ayrı kayıt (yalnız değişen kendi satırlarım; zaman sunucu saati). Kural her satırda bağlantı kaydını
+     okuduğundan toplu yazım 10 satırlık parçalara bölünür (Firestore'un istek başına okuma sınırı). */
+  const yeni = {}, parcalar = [];
+  degisenler().forEach((m, i) => { if (i % 10 === 0) parcalar.push(writeBatch(db)); const v = girdiTemizle(CALISMA.get(m.id)); yeni[m.id] = v;
+    parcalar[parcalar.length - 1].set(doc(db, 'oryantasyonYetki', anahtar, 'oryGirdi', m.id), Object.assign({}, v, { zaman: serverTimestamp() })); });
+  try {
+    for (const wb of parcalar) await wb.commit();
+    GIRDILER = Object.assign({}, GIRDILER); Object.keys(yeni).forEach((id) => { GIRDILER[id] = Object.assign({}, yeni[id], { zaman: null }); });
+    KAYDEDILIYOR = false; CALISMA.clear(); SON_KAYIT = new Date();
+    ciz();
+  } catch (e) {
+    KAYDEDILIYOR = false;
+    durumGuncelle(e && e.code === 'permission-denied' ? 'Kaydedilemedi: bağlantınız kapatılmış ya da konularınız değişmiş. Sayfayı yenileyin.' : 'Kaydedilemedi: internet bağlantınızı kontrol edip tekrar deneyin.', 'uyari');
+    $('kaydetBtn').disabled = false;
+  }
+}
+$('kaydetBtn').addEventListener('click', kaydet);
+window.addEventListener('beforeunload', (e) => { if (KIRLI) { e.preventDefault(); e.returnValue = ''; } });
+
+async function yukle() {
+  if (!ref) { durumGoster(GECERSIZ[0], GECERSIZ[1]); return; }
+  let snap;
+  try {
+    snap = await Promise.race([getDoc(ref), new Promise((_, r) => setTimeout(() => r(Object.assign(new Error('zaman aşımı'), { code: 'zaman' })), 20000))]);
+  } catch (e) {
+    if (e && e.code === 'permission-denied') { durumGoster(GECERSIZ[0], GECERSIZ[1]); return; }
+    durumGoster('Bağlantı kurulamadı', 'İnternet bağlantınızı kontrol edip sayfayı yenileyin.');
+    return;
+  }
+  if (!snap.exists() || snap.data().durum !== 'acik') { durumGoster(GECERSIZ[0], GECERSIZ[1]); return; }
+  VERI = snap.data();
+  try { const g = await getDocsGirdi(); GIRDILER = g; } catch (e) { /* girdiler okunamazsa plan değerleri gösterilir */ }
+  ciz();
+  /* canlı: İK planı güncellerse (ya da diğer sorumluların girdileri işlenirse) ekran yenilenir; kaydedilmemiş girdiler korunur.
+     Bağlantı kapatılırsa (okuma reddi) kaydedilmemiş değişiklik yoksa "geçersiz" ekranı gösterilir. */
+  const kapandi = () => { if (!KIRLI) durumGoster(GECERSIZ[0], GECERSIZ[1]); };
+  onSnapshot(ref, (s) => {
+    if (!s.exists() || s.data().durum !== 'acik') { kapandi(); return; }
+    VERI = s.data();
+    if (KAYDEDILIYOR || KIRLI) return;      /* kaydedilmemiş girdiler varken ekran yeniden çizilmez */
+    ciz();
+  }, kapandi);
+  onSnapshot(collection(db, 'oryantasyonYetki', anahtar, 'oryGirdi'), (s) => {
+    const g = {}; s.docs.forEach((d) => { g[d.id] = d.data(); }); GIRDILER = g;
+    if (KAYDEDILIYOR || KIRLI) return;
+    ciz();
+  }, () => { /* bağlantı kaydı dinleyicisi durumu gösterir */ });
+}
+/* ilk açılışta kendi girdilerim (tek seferlik okuma; sonrası canlı) */
+async function getDocsGirdi() {
+  const s = await getDocs(collection(db, 'oryantasyonYetki', anahtar, 'oryGirdi'));
+  const g = {}; s.docs.forEach((d) => { g[d.id] = d.data(); }); return g;
+}
+yukle();
+window.__SORUMLU = { veri: () => VERI, girdiler: () => GIRDILER, calisma: () => CALISMA };
+</script>
+</body>
+</html>

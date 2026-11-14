@@ -110,6 +110,8 @@ button.oy-kisi-cip.kaldir:hover { background: #fdf3f1; border-color: #e0a7a0; co
 .oy-bildirim-liste { display: grid; gap: 6px; }
 .oy-bildirim-satir { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 8px 10px; border: 1px solid var(--cizgi-1); border-radius: 10px; cursor: pointer; }
 .oy-bildirim-satir.eksik { opacity: .75; cursor: default; }
+.oy-sorumlu-girdi { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 4px 10px; border-radius: 999px; background: var(--lac-50, #eef3f9); color: var(--lac-700, #1b3a5e); font-size: 12px; }
+.oy-sorumlu-girdi .ikon { width: 14px; height: 14px; }
 .oy-bildirim-satir input { width: 16px; height: 16px; accent-color: var(--pir-500); }
 .oy-bildirim-ad { display: grid; gap: 1px; min-width: 0; }
 .oy-bildirim-ad b { font-size: 13.5px; }
@@ -207,7 +209,7 @@ button.oy-kisi-cip.kaldir:hover { background: #fdf3f1; border-color: #e0a7a0; co
 </div>
 
 <script type="module">
-import { doc, getDoc, getDocs, setDoc, updateDoc, writeBatch, collection, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { doc, getDoc, getDocs, setDoc, updateDoc, writeBatch, collection, collectionGroup, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { db, kimlikBaslat, cikisYap, adBasliklari } from "./ortak/kimlik.js";
 import * as O from "./pano/ortak.js";
 import * as F from "./ortak/oryantasyon-fark.js";
@@ -248,6 +250,17 @@ let ILK_ANA = false, ILK_DUZ = false, ILK_KISI = false;
 const KISI = new Map();         /* kişiye özel oryantasyon formları (yalnız İK) — oryantasyonKisiler/{id} */
 let EPOSTALAR = [];             /* çalışan e-posta listesi (yalnız İK) — oryantasyonAyar/epostalar */
 let BASARISIZ = new Set();      /* gönderilemeyen / iptal edilen e-posta kayıtlarının kimlikleri (yalnız İK) — epostaKuyrugu */
+const YETKI = new Map();        /* sorumlu doldurma bağlantıları (yalnız İK) — oryantasyonYetki/{y_…} */
+const GIRDI = new Map();        /* bağlantı → { maddeKimligi: girdi } — oryantasyonYetki/{y_…}/oryGirdi/{madde} (koleksiyon grubu) */
+/** Kişi formunun bağlantıları (her birine kendi satır girdileri eklenmiş: girdiler) */
+const kisiYetkileri = (kisiId) => [...YETKI.values()].filter((y) => y.kisiId === kisiId).map((y) => Object.assign({}, y, { girdiler: GIRDI.get(y.id) || {} }));
+const yetkiBul = (kisiId, anahtar) => kisiYetkileri(kisiId).find((y) => y.anahtar === anahtar) || null;
+/** Satır → { termin, saat, sure, aciklama } (İK'nın sorumlu satırında değişiklik yapıp yapmadığını anlamak için) */
+function satirDegerleri(form) {
+  const r = new Map();
+  ((form && form.bolumler) || []).forEach((b) => (b.maddeler || []).forEach((m) => r.set(m.id, { termin: m.termin || '', saat: m.saat || '', sure: m.sure || '', aciklama: m.aciklama || '' })));
+  return r;
+}
 const unvanAdi = (kod) => (F.UNVANLAR.find((u) => u.kod === kod) || {}).ad || (ANA.get(kod) || {}).unvan || kod;
 /* Rol bazlı görünürlük (13.11.2026): satış müdürü → satış danışmanı + satış müdürü formları; servis müdürü → servis
    danışmanı + servis müdürü; direktör ve İK → hepsi; idari müdür / departman müdürü → hepsi (değiştirilmedi).
@@ -382,7 +395,12 @@ function kisiBolumu(kok) {
       { k: 'durum', ad: 'Durum', bicim: (v) => O.el('span', { class: 'cip ' + (v === 'hazirlanacak' ? 'cip-uy' : 'cip-ok'), text: v === 'hazirlanacak' ? 'Hazırlanacak' : 'Hazırlandı' }) },
       { k: '_bild', ad: 'Sorumlu bildirimi', siralanamaz: true, bicim: (v, r) => { const kisiler = [...KS.sorumluGorevleri(r.form).entries()].filter(([ad]) => sorumluKisiMi(ad)), b = r.bildirimler || {};
         /* "bildirildi" = görevleri o günden beri değişmemiş ve e-postası gönderilemez / iptal olmamış (bildirim penceresiyle aynı ölçü) */
-        return kisiler.length ? kisiler.filter(([ad, g]) => KS.bildirimDurumu(b[KS.adAnahtari(ad)], KS.gorevImzasi(g), BASARISIZ) === 'ayni').length + ' / ' + kisiler.length + ' sorumlu' : '—'; } },
+        return kisiler.length ? kisiler.filter(([ad, g]) => KS.bildirimDurumu(b[KS.adAnahtari(ad)], KS.gorevImzasi(g), BASARISIZ) === 'ayni' && yetkiBul(r.id, KS.adAnahtari(ad))).length + ' / ' + kisiler.length + ' sorumlu' : '—'; } },
+      /* bağlantısı olan sorumluların konularından tarihi ve saati girilmiş olanlar (sorumlu sayfasındaki sayaçla aynı tanım: KS.satirDolu) */
+      { k: '_doldur', ad: 'Sorumlu doldurma', siralanamaz: true, bicim: (v, r) => { const ys = kisiYetkileri(r.id); if (!ys.length) return '—';
+        const sahipli = new Set(); ys.forEach((y) => KS.sahipSatirlari(r.form, y.ad).forEach((id) => sahipli.add(id)));
+        const etkin = KS.etkinForm(r.form, ys).form, dolu = etkin.bolumler.flatMap((b) => b.maddeler).filter((m) => sahipli.has(m.id) && KS.satirDolu(m)).length;
+        return sahipli.size ? dolu + ' / ' + sahipli.size + ' konu' : '—'; } },
       { k: 'kaynak', ad: 'Açılış', bicim: (v) => v || '—' },
       { k: '_islem', ad: '', siralanamaz: true, bicim: (v, r) => O.el('div', { class: 'oy-islem' }, O.el('a', { class: 'btn btn-pirinc', href: '#/kisi/' + r.id, html: O.ikon('dosya') + 'Formu aç' }),
         O.el('button', { class: 'btn btn-hayalet oy-kisi-sil', type: 'button', title: 'Bu kişinin oryantasyon formunu sil', 'aria-label': 'Formu sil', html: IK_SIL, on: { click: (e) => kisiSil(r, e.currentTarget) } })) }
@@ -440,8 +458,14 @@ async function kisiSil(r, dugme) {
     for (let deneme = 0; ; deneme++) {
       try {
         const bekleyen = (await getDocs(query(collection(db, 'epostaKuyrugu'), where('ilgili', '==', 'oryantasyonKisiler/' + r.id)))).docs.filter((d) => d.data().durum === 'bekliyor');
+        /* sorumlu doldurma bağlantıları da silinir (bağlantılar artık açılmaz) */
+        const yetkiler = (await getDocs(query(collection(db, 'oryantasyonYetki'), where('kisiId', '==', r.id)))).docs;
+        const girdiler = [];
+        for (const y of yetkiler) (await getDocs(collection(db, 'oryantasyonYetki', y.id, 'oryGirdi'))).docs.forEach((g) => girdiler.push([y.id, g.id]));
         const wb = writeBatch(db);
         bekleyen.forEach((d) => wb.update(doc(db, 'epostaKuyrugu', d.id), { durum: 'iptal' }));
+        girdiler.forEach(([y, g]) => wb.delete(doc(db, 'oryantasyonYetki', y, 'oryGirdi', g)));
+        yetkiler.forEach((d) => wb.delete(doc(db, 'oryantasyonYetki', d.id)));
         wb.delete(doc(db, 'oryantasyonKisiler', r.id));
         await wb.commit();
         iptal = bekleyen.length; break;
@@ -584,8 +608,11 @@ function duzenleyiciAc(kok, mod, kodVeyaId) {
   const ana = ANA.get(kod);
   if (!ED || ED.mod !== mod || (mod === 'kisi' ? ED.kisiId !== kodVeyaId : ED.kod !== kod)) {
     if (mod === 'kisi') {
-      ED = { mod, kod, kisiId: kodVeyaId, calisma: F.formuDuzenle(kisi.form), taban: F.formuDuzenle(kisi.taban), tabanSurum: Number(kisi.tabanSurum) || 0, kayit: kisi, kirli: false,
-        bilgi: { ad: kisi.ad || '', dept: kisi.dept || '', pozisyon: kisi.pozisyon || unvanAdi(kod), iseGiris: kisi.iseGiris || '', yonetici: kisi.yonetici || '' } };
+      /* sorumluların kendi satırlarına girdiği tarih / saat / süre / not forma uygulanır (etkin form) */
+      const etkin = KS.etkinForm(kisi.form, kisiYetkileri(kodVeyaId));
+      ED = { mod, kod, kisiId: kodVeyaId, calisma: F.formuDuzenle(etkin.form), taban: F.formuDuzenle(kisi.taban), tabanSurum: Number(kisi.tabanSurum) || 0, kayit: kisi, kirli: false,
+        bilgi: { ad: kisi.ad || '', dept: kisi.dept || '', pozisyon: kisi.pozisyon || unvanAdi(kod), iseGiris: kisi.iseGiris || '', yonetici: kisi.yonetici || '' },
+        girdiBilgi: etkin.bilgi, etkinIlk: satirDegerleri(etkin.form) };
     } else if (mod === 'mudur') {
       const k = benimKayit(kod);
       ED = k
@@ -804,6 +831,9 @@ function maddeEl(b, m, mi, fark) {
     izgara.append(a);
   });
   kap.append(izgara);
+  /* kişi formu: bu satırın tarih / saat / süre / notunu sorumlu kendi bağlantısından girdiyse */
+  const gb = ED && ED.mod === 'kisi' && ED.girdiBilgi ? ED.girdiBilgi.get(m.id) : null;
+  if (gb) kap.append(O.el('div', { class: 'oy-sorumlu-girdi', html: O.ikon('kisi') + '<span>Son girişi yapan: <b>' + O.esc(gb.ad) + '</b>' + (gb.zaman ? ' · ' + O.esc(new Date(gb.zaman).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })) : '') + '</span>' }));
   return kap;
 }
 /* ---- Seçmeli alanlar (elle yazılmaz): Tarih → takvim · Saat → 15 dakikada bir · Süre → seçenek · Sorumlu → aktif personel (aramalı) */
@@ -1046,6 +1076,51 @@ const yetkiHatasi = (e) => !!(e && e.code === 'permission-denied');
 /* Sorumlu alanındaki değer bir kişi mi? (aktif personel ya da e-posta listesinde adı geçen) — ana formdan gelen
    "Satış Müdürü / Finans" gibi unvan yazıları kişi sayılmaz, bildirim listesine ve sorumlu sayısına girmez */
 const sorumluKisiMi = (ad) => { const a = KS.adAnahtari(ad); return PERSONEL.some((p) => KS.adAnahtari(p.ad) === a) || !!KS.epostaBul(EPOSTALAR, ad); };
+/* Sorumlu bağlantılarını kişi formuyla eşitler (yalnız İK, sayfa açıkken): her bağlantının satırları (formda o kişinin
+   sorumlu olduğu satırlar), planın tamamının görünümü (sorumluların girdileri uygulanmış — böylece her sorumlu diğerlerinin
+   girdiğini de görür) ve kişi bilgisi güncellenir. Sorumlu formdan tamamen çıkarıldıysa bağlantı kapanır.
+   Değişmeyen kayda yazılmaz (anahtar sırasından bağımsız karşılaştırma; yazma döngüsü olmaz). */
+const ESITLE_ZAMAN = new Map();
+function yetkiEsitleSirala(kisiId) {
+  if (!IK || !kisiId) return;
+  clearTimeout(ESITLE_ZAMAN.get(kisiId));
+  ESITLE_ZAMAN.set(kisiId, setTimeout(() => { ESITLE_ZAMAN.delete(kisiId); yetkiEsitle(kisiId).catch((e) => console.warn('Sorumlu bağlantıları eşitlenemedi', e)); }, 700));
+}
+const kisiBilgisi = (kisi) => ({ ad: O.trBaslik(kisi.ad || ''), unvan: kisi.pozisyon || kisi.unvan || unvanAdi(kisi.kod), dept: kisi.dept || '', iseGiris: kisi.iseGiris || '' });
+async function yetkiEsitle(kisiId, yeni) {
+  /* yeni: az önce kaydedilen form ve kişi bilgisi (canlı dinleyici henüz getirmemiş olabilir) */
+  const kayitli = KISI.get(kisiId), ys = kisiYetkileri(kisiId);
+  if (!kayitli || !ys.length) return;
+  const kisi = Object.assign({}, kayitli, yeni || {});
+  const gorunum = KS.gorunumYap(KS.etkinForm(kisi.form, ys).form), bilgi = kisiBilgisi(kisi);
+  const wb = writeBatch(db); let n = 0;
+  ys.forEach((y) => {
+    const satirlar = KS.sahipSatirlari(kisi.form, y.ad), durum = satirlar.length ? 'acik' : 'kapali';
+    /* artık bu sorumlunun olmayan satırların eski girdileri silinir (satır geri verilirse eski değer geri gelmesin) */
+    Object.keys(y.girdiler || {}).filter((id) => satirlar.indexOf(id) < 0).forEach((id) => { wb.delete(doc(db, 'oryantasyonYetki', y.id, 'oryGirdi', id)); n++; });
+    if (KS.kanonik(y.satirlar || []) === KS.kanonik(satirlar) && KS.kanonik(y.gorunum || {}) === KS.kanonik(gorunum) && KS.kanonik(y.kisi || {}) === KS.kanonik(bilgi) && y.durum === durum) return;
+    wb.update(doc(db, 'oryantasyonYetki', y.id), { satirlar, gorunum, kisi: bilgi, durum, guncelleme: serverTimestamp() }); n++;
+  });
+  if (n) await wb.commit();
+}
+/* İK, sorumlunun girdiği bir satırı kendisi değiştirdiyse İK'nın değeri o satırın girdisine de yazılır ("ik" işaretiyle;
+   yoksa sorumlunun eski girdisi forma yeniden uygulanırdı). Satır başına ayrı kayıt: İK'nın dokunmadığı satırlar ve
+   sorumlunun bu sırada girdiği yeni değerler ezilmez. */
+async function ikDuzeltmeleri(ed, form) {
+  const ys = kisiYetkileri(ed.kisiId); if (!ys.length || !ed.etkinIlk) return;
+  const simdi = satirDegerleri(form);
+  const wb = writeBatch(db); let n = 0;
+  ys.forEach((y) => {
+    (y.satirlar || []).forEach((id) => {
+      if (!(y.girdiler || {})[id]) return;
+      const once = ed.etkinIlk.get(id), son = simdi.get(id);
+      if (!once || !son || KS.kanonik(once) === KS.kanonik(son)) return;
+      wb.set(doc(db, 'oryantasyonYetki', y.id, 'oryGirdi', id), Object.assign(KS.girdiTemizle(son), { zaman: serverTimestamp(), ik: true })); n++;
+    });
+  });
+  if (n) await wb.commit();
+}
+const sorumluBaglantisi = (tok) => new URL('oryantasyon-sorumlu.html#' + tok, location.href).href;
 /* Kişi formu kaydından sonra: her sorumluya kendi görevlerini içeren e-posta. Daha önce aynı görev listesiyle bildirilen
    sorumluya yeniden gönderilmez (görevleri değiştiyse "güncelleme" olarak gönderilir). E-posta adresi yüklenen listeden bulunur. */
 function sorumluBildirimi(kisiId, form, bilgi) {
@@ -1056,14 +1131,17 @@ function sorumluBildirimi(kisiId, form, bilgi) {
   const roller = tum.filter(([ad]) => !sorumluKisiMi(ad)).map(([ad]) => ad);
   const satirlar = tum.filter(([ad]) => sorumluKisiMi(ad)).map(([ad, gorevler]) => {
     const anahtar = KS.adAnahtari(ad), imza = KS.gorevImzasi(gorevler), o = onceki[anahtar];
-    return { ad, anahtar, gorevler, imza, eposta: KS.epostaBul(EPOSTALAR, ad), durum: KS.bildirimDurumu(o, imza, BASARISIZ) };
+    /* bildirilmiş ama doldurma bağlantısı olmayan (bağlantı özelliğinden önce bildirilen) sorumluya bağlantı gönderilmeli */
+    const durum = o && !yetkiBul(kisiId, anahtar) ? 'baglanti' : KS.bildirimDurumu(o, imza, BASARISIZ);
+    return { ad, anahtar, gorevler, imza, eposta: KS.epostaBul(EPOSTALAR, ad), durum };
   });
   if (!satirlar.length) { O.bildirim(roller.length ? 'Sorumlu olarak kişi seçilmemiş (yalnız unvan yazılı); e-posta gönderilmedi. Maddelerde sorumluyu personel listesinden seçin.' : 'Formda seçilmiş oryantasyon sorumlusu yok; e-posta gönderilmedi.'); return; }
   const kutular = new Map();
   const liste = O.el('div', { class: 'oy-bildirim-liste' }, ...satirlar.map((s) => {
     const kutu = O.el('input', { type: 'checkbox', 'data-sorumlu': s.ad }); kutu.checked = !!s.eposta && s.durum !== 'ayni'; kutu.disabled = !s.eposta;
     kutular.set(s.anahtar, kutu);
-    const cip = s.durum === 'yeni' ? ['cip-bilgi', 'Yeni'] : s.durum === 'degisti' ? ['cip-uy', 'Görevleri değişti'] : s.durum === 'hata' ? ['cip-ht', 'Önceki e-posta gönderilemedi'] : ['cip-ok', 'Daha önce bildirildi'];
+    const cip = s.durum === 'yeni' ? ['cip-bilgi', 'Yeni'] : s.durum === 'degisti' ? ['cip-uy', 'Görevleri değişti'] : s.durum === 'hata' ? ['cip-ht', 'Önceki e-posta gönderilemedi']
+      : s.durum === 'baglanti' ? ['cip-uy', 'Doldurma bağlantısı gönderilmedi'] : ['cip-ok', 'Daha önce bildirildi'];
     return O.el('label', { class: 'oy-bildirim-satir' + (s.eposta ? '' : ' eksik') }, kutu,
       O.el('span', { class: 'oy-bildirim-ad' }, O.el('b', { text: s.ad }), O.el('small', { text: s.eposta || 'E-posta adresi bulunamadı — e-posta listesini yükleyin' })),
       O.el('span', { class: 'oy-bildirim-say', text: s.gorevler.length + ' konu' }), O.el('span', { class: 'cip ' + cip[0], text: cip[1] }));
@@ -1072,7 +1150,7 @@ function sorumluBildirimi(kisiId, form, bilgi) {
   const gonder = O.el('button', { class: 'btn btn-pirinc', type: 'button', html: O.ikon('onay') + '<span>Seçilenlere e-posta gönder</span>' });
   pencereAc('Oryantasyon sorumlularına bildirim', [
     O.el('div', { class: 'modal-ust' }, O.el('div', null, O.el('h3', { text: 'Oryantasyon sorumlularına bildirim' }),
-      O.el('p', { text: O.trBaslik(bilgi.ad) + ' · ' + unvan + ' — her sorumluya, kendisine düşen konuları (tarih, saat, süre) içeren e-posta gider.' }))),
+      O.el('p', { text: O.trBaslik(bilgi.ad) + ' · ' + unvan + ' — her sorumluya kendi konularını ve kişiye özel bağlantıyı içeren e-posta gider; sorumlu planın tamamını görür, yalnız kendi konularının tarih, saat, süre ve notunu doldurur.' }))),
     O.el('div', { class: 'modal-govde' }, liste,
       eksik ? O.el('p', { class: 'oy-bilgi uyari', style: 'margin-top:10px', text: eksik + ' sorumlunun e-posta adresi listede yok. “Kişi formları” bölümündeki “E-posta listesi” ile çalışan e-posta listesini yükleyin; sonra formu yeniden kaydederek bildirebilirsiniz.' }) : null,
       roller.length ? O.el('p', { class: 'oy-bilgi oy-bildirim-rol', style: 'margin-top:10px', text: roller.length + ' sorumlu aktif personel listesinde yok (' + roller.slice(0, 3).join(' · ') + (roller.length > 3 ? ' …' : '') + '); bunlara e-posta gitmez. Çoğu ana formdan gelen unvan yazısıdır — sorumluyu personel listesinden seçip yeniden kaydederseniz bildirilir.' }) : null,
@@ -1085,8 +1163,22 @@ function sorumluBildirimi(kisiId, form, bilgi) {
     try {
       const wb = writeBatch(db);
       const yeniBildirim = Object.assign({}, onceki);
+      /* sorumlu doldurma bağlantısı: varsa aynısı, yoksa yeni (planın görünümü sorumluların girdileri uygulanmış hâli) */
+      const varolan = kisiYetkileri(kisiId);
+      const gorunum = KS.gorunumYap(KS.etkinForm(form, varolan).form);
+      const kb = kisiBilgisi(Object.assign({}, kayit, { ad: bilgi.ad, dept: bilgi.dept, pozisyon: bilgi.pozisyon, iseGiris: bilgi.iseGiris }));
       secilen.forEach((s) => {
-        const e = KS.sorumluEpostasi({ sorumlu: s.ad, kisi: O.trBaslik(bilgi.ad), unvan, dept: bilgi.dept, iseGiris: bilgi.iseGiris, gorevler: s.gorevler, guncelleme: s.durum === 'degisti' });
+        let tok = (yetkiBul(kisiId, s.anahtar) || {}).id;
+        const satirlar = KS.sahipSatirlari(form, s.ad), durum = satirlar.length ? 'acik' : 'kapali';
+        if (!tok) {
+          tok = KS.yetkiAnahtariUret();
+          wb.set(doc(db, 'oryantasyonYetki', tok), { kisiId, ad: F.temiz(s.ad, 80), anahtar: s.anahtar, kisi: kb, satirlar, gorunum, durum,
+            olusturma: serverTimestamp(), guncelleme: serverTimestamp() });
+        } else {
+          /* var olan bağlantı: e-postayla aynı anda güncel satırlar / plan / açık durumu yazılır (kapalıysa yeniden açılır) */
+          wb.update(doc(db, 'oryantasyonYetki', tok), { satirlar, gorunum, kisi: kb, durum, guncelleme: serverTimestamp() });
+        }
+        const e = KS.sorumluEpostasi({ sorumlu: s.ad, kisi: O.trBaslik(bilgi.ad), unvan, dept: bilgi.dept, iseGiris: bilgi.iseGiris, gorevler: s.gorevler, guncelleme: s.durum === 'degisti', baglanti: sorumluBaglantisi(tok) });
         const q = doc(collection(db, 'epostaKuyrugu'));
         wb.set(q, Object.assign(KS.kuyrukKaydi({ kime: s.eposta, kimeAd: s.ad, konu: e.konu, html: e.html, kaynak: 'oryantasyon-sorumlu', ilgili: 'oryantasyonKisiler/' + kisiId }),
           { olusturma: serverTimestamp(), olusturan: HESAP.ad || '' }));
@@ -1096,6 +1188,7 @@ function sorumluBildirimi(kisiId, form, bilgi) {
       wb.update(doc(db, 'oryantasyonKisiler', kisiId), { bildirimler: yeniBildirim, guncelleme: serverTimestamp(), guncelleyen: HESAP.ad || '' });
       await wb.commit();
       pencereKapat();
+      yetkiEsitleSirala(kisiId);
       O.bildirim(secilen.length + ' sorumluya e-posta sıraya alındı; birkaç dakika içinde gönderilir');
     } catch (e) { gonder.disabled = false; alert('E-posta sıraya alınamadı: ' + (yetkiHatasi(e) ? 'yetki reddedildi (güvenlik kuralı yayınlanmamış olabilir).' : (e && e.message) || 'bilinmeyen hata')); }
   });
@@ -1122,9 +1215,14 @@ async function kaydet(degisiklikYok) {
       await updateDoc(doc(db, 'oryantasyonKisiler', ed.kisiId), {
         form, ad: F.temiz(O.trBaslik(bl.ad), 80), dept: F.temiz(bl.dept, 80), pozisyon: F.temiz(bl.pozisyon, 120), iseGiris: KS.isoTarih(bl.iseGiris), yonetici: F.temiz(bl.yonetici, 120),
         tabanSurum: ed.tabanSurum, taban: F.formuDuzenle(ed.taban), durum: 'hazirlandi', guncelleme: serverTimestamp(), guncelleyen: HESAP.ad || '' });
+      /* İK'nın sorumlu satırlarında yaptığı düzeltmeler sorumlunun bağlantısına da yazılır */
+      try { await ikDuzeltmeleri(ed, form); } catch (e) { console.warn('Sorumlu girdileri güncellenemedi', e); }
       if ((ed.rev || 0) !== rev) { taslakYaz(ed, true); kayitSirasindaDegisti(ed); return; }
       ed.kirli = false; taslakSil(ed);
       O.bildirim('Kişi formu kaydedildi');
+      /* sorumlu bağlantıları hemen eşitlenir (sekme kapatılsa da formdan çıkarılan sorumlunun bağlantısı kapanır) */
+      try { await yetkiEsitle(ed.kisiId, { form, ad: F.temiz(O.trBaslik(bl.ad), 80), dept: F.temiz(bl.dept, 80), pozisyon: F.temiz(bl.pozisyon, 120), iseGiris: KS.isoTarih(bl.iseGiris) }); }
+      catch (e) { console.warn('Sorumlu bağlantıları eşitlenemedi', e); }
       sorumluBildirimi(ed.kisiId, form, Object.assign({}, bl));
       return;
     }
@@ -1516,6 +1614,7 @@ onSnapshot(IK ? collection(db, 'oryantasyonDuzenlemeleri') : query(collection(db
 if (IK) {
   onSnapshot(collection(db, 'oryantasyonKisiler'), (snap) => {
     KISI.clear(); snap.docs.forEach((d) => KISI.set(d.id, Object.assign({ id: d.id }, d.data())));
+    KISI.forEach((k, id) => { if (kisiYetkileri(id).length) yetkiEsitleSirala(id); });
     ILK_KISI = true; guncellendi();
   }, (e) => { console.warn('Kişi formları okunamadı', e); ILK_KISI = true; guncellendi(); });
   onSnapshot(doc(db, 'oryantasyonAyar', 'epostalar'), (s) => { EPOSTALAR = s.exists() && Array.isArray(s.data().liste) ? s.data().liste : []; guncellendi(); }, (e) => console.warn('E-posta listesi okunamadı', e));
@@ -1523,8 +1622,21 @@ if (IK) {
   onSnapshot(query(collection(db, 'epostaKuyrugu'), where('durum', 'in', ['hata', 'iptal'])), (snap) => {
     BASARISIZ = new Set(snap.docs.map((d) => d.id)); guncellendi();
   }, (e) => console.warn('E-posta kuyruğu okunamadı', e));
+  /* sorumlu doldurma bağlantıları: sorumlu bir şey girince form ekranı yenilenir ve diğer sorumluların görünümü eşitlenir */
+  onSnapshot(collection(db, 'oryantasyonYetki'), (snap) => {
+    YETKI.clear(); snap.docs.forEach((d) => YETKI.set(d.id, Object.assign({ id: d.id }, d.data())));
+    new Set([...YETKI.values()].map((y) => y.kisiId)).forEach(yetkiEsitleSirala);
+    guncellendi();
+  }, (e) => console.warn('Sorumlu bağlantıları okunamadı', e));
+  /* sorumluların satır girdileri (her bağlantının oryGirdi alt koleksiyonu, tek sorguda) */
+  onSnapshot(collectionGroup(db, 'oryGirdi'), (snap) => {
+    GIRDI.clear();
+    snap.docs.forEach((d) => { const p = d.ref.path.split('/'); if (p[0] !== 'oryantasyonYetki') return; const y = p[1]; if (!GIRDI.has(y)) GIRDI.set(y, {}); GIRDI.get(y)[d.id] = d.data(); });
+    new Set([...YETKI.values()].map((y) => y.kisiId)).forEach(yetkiEsitleSirala);
+    guncellendi();
+  }, (e) => console.warn('Sorumlu girdileri okunamadı', e));
 }
-window.__ORY = { ana: () => ANA, duz: () => DUZ, ed: () => ED, kisi: () => KISI, eposta: () => EPOSTALAR };
+window.__ORY = { ana: () => ANA, duz: () => DUZ, ed: () => ED, kisi: () => KISI, eposta: () => EPOSTALAR, yetki: () => YETKI };
 </script>
 </body>
 </html>

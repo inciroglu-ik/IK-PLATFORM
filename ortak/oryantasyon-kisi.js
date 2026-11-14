@@ -62,8 +62,76 @@ export function sorumluGorevleri(form) {
   }));
   return m;
 }
-/** Bir sorumlunun görev listesinin özeti (değişti mi? karşılaştırması için) */
-export const gorevImzasi = (liste) => JSON.stringify((liste || []).map((g) => [g.plan, g.kapsam, g.termin, g.saat, g.sure]));
+/** Bir sorumlunun görev listesinin özeti (değişti mi? karşılaştırması için). Tarih / saat / süreyi sorumlu kendisi
+    doldurduğundan imzaya girmez: yalnız konu (gün planı + kapsam) değişince yeniden bildirilir. */
+export const gorevImzasi = (liste) => JSON.stringify((liste || []).map((g) => [g.plan, g.kapsam]));
+
+/* ---------------------------------------------------------------- sorumlu doldurma bağlantısı (oryantasyonYetki/{y_…})
+   Her sorumluya kişiye özel bağlantı: oryantasyon-sorumlu.html#y_<32 onaltılık>. Kayıtta formun tamamı (gorunum)
+   ve sorumlunun kendi satırları (satirlar) durur (yalnız İK yazar). Sorumlu kendi satırlarının Tarih / Saat / Süre /
+   Not değerlerini satır başına ayrı kayda yazar: oryantasyonYetki/{y_…}/oryGirdi/{maddeKimligi} (kural: yalnız kendi
+   satırı, yalnız izinli biçimler, zaman sunucu saati). İK ekranı girdileri forma uygular. */
+export const GIRDI_NOT_SINIRI = 500;
+/** Satır "dolduruldu" sayılır: tarihi ve saati var (liste sütunu, sorumlu sayfası sayacı aynı tanımı kullanır) */
+export const satirDolu = (m) => !!(m && m.termin && m.saat);
+export const yetkiAnahtariGecerli = (t) => /^y_[0-9a-f]{32}$/.test(String(t || ''));
+export function yetkiAnahtariUret() {
+  const b = new Uint8Array(16); crypto.getRandomValues(b);
+  return 'y_' + Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
+}
+/** Sorumlunun girdiği değerler — yalnız geçerli biçimler alınır (kural iç değerleri denetleyemez, burada temizlenir) */
+export function girdiTemizle(g) {
+  g = g || {};
+  return {
+    termin: /^\d{4}-\d{2}-\d{2}$/.test(String(g.termin || '')) ? g.termin : '',
+    saat: F.SAATLER.indexOf(g.saat) >= 0 ? g.saat : '',
+    sure: F.SURELER.indexOf(g.sure) >= 0 ? g.sure : '',
+    aciklama: F.temiz(g.aciklama || '', GIRDI_NOT_SINIRI)
+  };
+}
+/** Zaman → milisaniye (Firestore zaman damgası, {seconds}, ISO metin) */
+export const zamanMs = (z) => {
+  if (!z) return 0;
+  if (typeof z.toMillis === 'function') return z.toMillis();
+  if (typeof z.seconds === 'number') return z.seconds * 1000 + Math.floor((z.nanoseconds || 0) / 1e6);
+  const t = Date.parse(z); return isNaN(t) ? 0 : t;
+};
+/** Bir satırın sahibi mi? (satırın sorumluları arasında bu ad var mı — harf duyarsız) */
+export const satirSahibi = (madde, ad) => F.sorumlular(madde && madde.sorumlu).some((a) => katla(a) === katla(ad));
+/** Sorumlunun formdaki satırları (madde kimlikleri) */
+export function sahipSatirlari(form, ad) {
+  const r = [];
+  ((form && form.bolumler) || []).forEach((b) => (b.maddeler || []).forEach((m) => { if (satirSahibi(m, ad)) r.push(m.id); }));
+  return r;
+}
+/** Etkin form: kişi formu + sorumluların kendi satırlarına girdiği değerler (satır şu an o sorumlunun ise; birden çok
+    sorumlu girdiyse en son girilen). bilgi: satır → { ad, zaman } (ekranda "sorumlu girdi" etiketi için) */
+export function etkinForm(form, yetkiler) {
+  const f = JSON.parse(JSON.stringify(form || { alanlar: [], bolumler: [] }));
+  const bilgi = new Map();
+  (f.bolumler || []).forEach((b) => (b.maddeler || []).forEach((m) => {
+    let son = null;
+    (yetkiler || []).forEach((y) => {
+      if (!y || (y.satirlar || []).indexOf(m.id) < 0 || !satirSahibi(m, y.ad)) return;
+      const g = y.girdiler && y.girdiler[m.id]; if (!g) return;
+      const z = zamanMs(g.zaman);
+      if (!son || z > son.z) son = { g, z, ad: g.ik ? 'İnsan Kaynakları' : y.ad };
+    });
+    if (son) { Object.assign(m, girdiTemizle(son.g)); bilgi.set(m.id, { ad: son.ad, zaman: son.z }); }
+  }));
+  return { form: f, bilgi };
+}
+/** Sorumlu sayfasında gösterilen görünüm (formun tamamı; yalnız gerekli alanlar) */
+export function gorunumYap(form) {
+  return { bolumler: ((form && form.bolumler) || []).map((b) => ({ ad: b.ad || '', maddeler: (b.maddeler || []).map((m) => ({
+    id: m.id, plan: m.plan || '', kapsam: m.kapsam || '', sorumlu: m.sorumlu || '', termin: m.termin || '', saat: m.saat || '', sure: m.sure || '', aciklama: m.aciklama || '' })) })) };
+}
+/** Anahtar sırasından bağımsız karşılaştırma metni (Firestore haritaları farklı sırayla döndürebilir) */
+export function kanonik(v) {
+  if (Array.isArray(v)) return '[' + v.map(kanonik).join(',') + ']';
+  if (v && typeof v === 'object') return '{' + Object.keys(v).sort().map((k) => JSON.stringify(k) + ':' + kanonik(v[k])).join(',') + '}';
+  return JSON.stringify(v === undefined ? null : v);
+}
 /** Önceki bildirimin durumu: yok → 'yeni' · e-postası gönderilemedi / iptal → 'hata' · görevleri değişti → 'degisti' · aynı → 'ayni'
     (basarisiz: gönderilemeyen ya da iptal edilen kuyruk kayıtlarının kimlikleri) */
 export function bildirimDurumu(onceki, imza, basarisiz) {
@@ -94,7 +162,7 @@ function kabuk(baslik, altBaslik, govde) {
 }
 const ilkAd = (ad) => { const p = String(ad || '').trim().split(/\s+/); return p[0] ? p[0].charAt(0).toLocaleUpperCase('tr') + p[0].slice(1) : ''; };
 /** Sorumluya: "X isimli kişi Y pozisyonunda işe başlamıştır; aşağıdaki konularda oryantasyon sorumlusu olarak seçildiniz" */
-export function sorumluEpostasi({ sorumlu, kisi, unvan, dept, iseGiris, gorevler, guncelleme }) {
+export function sorumluEpostasi({ sorumlu, kisi, unvan, dept, iseGiris, gorevler, guncelleme, baglanti }) {
   const satir = (g, i) => '<tr><td style="padding:8px 10px;border-bottom:1px solid #e4e8ee;' + FONT + 'font-size:13px;color:#66707f;" valign="top">' + (i + 1) + '</td>'
     + '<td style="padding:8px 10px;border-bottom:1px solid #e4e8ee;' + FONT + 'font-size:13px;color:#151a23;" valign="top"><b>' + esc(g.plan) + '</b>' + (g.kapsam ? '<br><span style="color:#4f5868;">' + esc(g.kapsam) + '</span>' : '') + '</td>'
     + '<td style="padding:8px 10px;border-bottom:1px solid #e4e8ee;' + FONT + 'font-size:13px;color:#151a23;white-space:nowrap;" valign="top">' + esc(F.tarihGoster(g.termin) || '—') + '</td>'
@@ -104,8 +172,11 @@ export function sorumluEpostasi({ sorumlu, kisi, unvan, dept, iseGiris, gorevler
   const govde = '<p style="margin:0 0 12px 0;">Sayın ' + esc(sorumlu) + ',</p>'
     + '<p style="margin:0 0 12px 0;">' + (iseGiris ? esc(F.tarihGoster(iseGiris)) + ' tarihinde ' : '') + '<b>' + esc(kisi) + '</b> isimli çalışma arkadaşımız <b>' + esc(unvan) + '</b> pozisyonunda' + (dept ? ' (' + esc(dept) + ')' : '') + ' işe başlamıştır. '
     + 'Kendisine verilecek aşağıdaki konularda <b>oryantasyon sorumlusu</b> olarak seçildiniz.' + (guncelleme ? ' <i>(Oryantasyon planında sizinle ilgili güncelleme yapıldı; güncel liste aşağıdadır.)</i>' : '') + '</p>'
+    + (baglanti ? '<p style="margin:0 0 12px 0;">Bu konuların <b>tarih, saat ve süresini</b> aşağıdaki bağlantıdan siz belirleyiniz. Aynı sayfada oryantasyon planının tamamını da görebilirsiniz; yalnız kendi konularınızı düzenleyebilirsiniz.</p>' : '')
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #d8dde5;border-collapse:collapse;"><tr>' + bas('#') + bas('Konu') + bas('Tarih') + bas('Saat') + bas('Süre') + '</tr>'
     + gorevler.map(satir).join('') + '</table>'
+    + (baglanti ? '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:16px;"><tr><td style="background:#1b3a5e;padding:11px 18px;' + FONT + 'font-size:14px;font-weight:bold;"><a href="' + esc(baglanti) + '" style="color:#ffffff;text-decoration:none;">Oryantasyon planını aç ve kendi konularımı doldur &rarr;</a></td></tr></table>'
+      + '<p style="margin:8px 0 0 0;font-size:12px;color:#66707f;">Bağlantı size özeldir, lütfen başkasıyla paylaşmayınız.</p>' : '')
     + '<p style="margin:14px 0 0 0;">Oryantasyonu verdikten sonra formdaki ilgili satırı imzalamanızı rica ederiz. Sorularınız için İnsan Kaynakları ile iletişime geçebilirsiniz.</p>';
   return { konu: 'Oryantasyon sorumluluğu · ' + kisi + ' (' + unvan + ')', html: kabuk('Oryantasyon sorumluluğu', kisi + ' · ' + unvan, govde) };
 }

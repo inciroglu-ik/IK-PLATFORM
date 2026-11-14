@@ -517,6 +517,53 @@ service cloud.firestore {
         && request.resource.data.bildirimler is map
         && request.resource.data.guncelleme == request.time;
     }
+    // SORUMLU DOLDURMA BAĞLANTISI (oryantasyon-sorumlu.html#y_<32 onaltılık>): her oryantasyon sorumlusuna kişiye özel,
+    // giriş gerektirmeyen bağlantı. Belge kimliği gizli anahtardır (tahmin edilemez, listelenemez). Bağlantı kaydını
+    // (planın tamamı = gorunum, sorumlunun satırları = satirlar) yalnız İK yazar; sorumlu yalnız okur (kayıt "acik" ise).
+    // Sorumlu YALNIZ kendi satırlarının girdisini yazar: oryantasyonYetki/{t}/oryGirdi/{maddeKimligi} — madde kayıttaki
+    // "satirlar" listesinde olmalı; alanlar yalnız Tarih (YYYY-AA-GG) / Saat (15 dakikalık) / Süre (listeden) / Not (≤500),
+    // zaman SUNUCU saati. "ik" işareti (İK düzeltmesi) yalnız İK yazar. Silme yalnız İK. Kapalı bağlantı açılmaz, yazılmaz.
+    function oryYetkiAnahtari(t) { return t.matches('y_[0-9a-f]{32}'); }
+    function oryYetkiAlanlari() { return ['kisiId', 'ad', 'anahtar', 'kisi', 'satirlar', 'gorunum', 'durum', 'olusturma', 'guncelleme']; }
+    function oryYetkiIk() {
+      return request.resource.data.keys().hasOnly(oryYetkiAlanlari())
+        && request.resource.data.kisiId is string && request.resource.data.kisiId.size() <= 60
+        && metin(request.resource.data.ad, 80)
+        && request.resource.data.satirlar is list && request.resource.data.satirlar.size() <= 200
+        && request.resource.data.gorunum is map && request.resource.data.kisi is map
+        && request.resource.data.durum in ['acik', 'kapali'];
+    }
+    function oryYetkiKaydi(t) { return get(/databases/$(database)/documents/oryantasyonYetki/$(t)).data; }
+    // Sorumlu kendi satırına yazıyor mu: bağlantı açık ve madde bağlantının satırlarında (kayıt bir kez okunur)
+    function oryGirdiSorumlu(t, m) {
+      let y = oryYetkiKaydi(t);
+      return y.durum == 'acik' && m in y.satirlar;
+    }
+    function oryGirdiGecerli() {
+      return request.resource.data.keys().hasOnly(['termin', 'saat', 'sure', 'aciklama', 'zaman', 'ik'])
+        && request.resource.data.keys().hasAll(['termin', 'saat', 'sure', 'aciklama', 'zaman'])
+        && request.resource.data.termin is string && (request.resource.data.termin == '' || request.resource.data.termin.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}'))
+        && request.resource.data.saat is string && (request.resource.data.saat == '' || request.resource.data.saat.matches('([01][0-9]|2[0-3]):(00|15|30|45)'))
+        && request.resource.data.sure in ['', '30 dk', '1 saat', '2 saat', '4 saat', '8 saat', '2 gün', '3 gün']
+        && metin(request.resource.data.aciklama, 500)
+        && request.resource.data.zaman == request.time;
+    }
+    match /oryantasyonYetki/{t} {
+      allow get: if ik() || (oryYetkiAnahtari(t) && resource.data.durum == 'acik');
+      allow list, delete: if ik();
+      allow create, update: if ik() && oryYetkiAnahtari(t) && oryYetkiIk();
+      match /oryGirdi/{m} {
+        allow get, list: if ik() || (oryYetkiAnahtari(t) && oryYetkiKaydi(t).durum == 'acik');
+        allow create, update: if oryGirdiGecerli() && (
+          (ik() && (!('ik' in request.resource.data) || request.resource.data.ik == true))
+          || (oryYetkiAnahtari(t) && !('ik' in request.resource.data) && oryGirdiSorumlu(t, m)));
+        allow delete: if ik();
+      }
+    }
+    // İK: tüm bağlantıların satır girdileri tek sorguyla (koleksiyon grubu "oryGirdi")
+    match /{yol=**}/oryGirdi/{m} {
+      allow read: if ik();
+    }
     // E-POSTA KUYRUĞU: İK yazar (durum "bekliyor"); gönderimi GitHub Actions görevi yapar (ise-alim-sureci deposu,
     // scripts/eposta-kuyrugu.js, yönetici hesabıyla — kural dışı). Yalnız şirket alan adına (@inciroglu.com.tr) gönderilir.
     // İK bekleyen e-postayı iptal edebilir; gönderilmiş kayıt değiştirilemez.
