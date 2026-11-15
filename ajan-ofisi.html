@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<meta name="surum" content="202611141920">
+<meta name="surum" content="202611151448">
 <title>Ajan Ofisi · İnciroğlu İK</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -647,9 +647,9 @@ async function videoAc(id, kaydet) {
   let iptal = false; MODAL_KAPANINCA = () => { iptal = true; };
   try {
     const sonuc = await videoUret({ plan: n.plan, tuval: $('video-tuval'), ses, kayit: kaydet, iptal: () => iptal,
-      ilerleme: (p) => { const d = $('video-durum'); if (!d) return; d.textContent = p.asama === 'ses' ? 'Seslendiriliyor (' + (p.i + 1) + '/' + p.n + ')…' : (kaydet ? 'Kaydediliyor… ' : 'Oynatılıyor… ') + Math.floor(p.t) + ' / ' + Math.round(p.top) + ' sn'; } });
+      ilerleme: (p) => { const d = $('video-durum'); if (!d) return; d.textContent = p.asama === 'ses' ? 'Seslendiriliyor (' + (p.i + 1) + '/' + p.n + ')…' : (kaydet ? 'Kaydediliyor… ' : 'Oynatılıyor… ') + Math.floor(p.t) + ' / ' + Math.round(p.top) + ' sn' + (kaydet ? ' · kayıt bitene kadar bu sekmede kalın' : ''); } });
     if (iptal) return;
-    $('video-durum').textContent = kaydet ? 'Video hazır (' + Math.round(sonuc.sure) + ' sn).' : 'Önizleme bitti.';
+    $('video-durum').textContent = kaydet ? 'Video hazır (' + Math.round(sonuc.dosyaSure || sonuc.sure) + ' sn).' : 'Önizleme bitti.';
     $('video-durum').className = 'durum-metin ok';
     if (sonuc.blob) {
       const uz = sonuc.bicim.indexOf('mp4') >= 0 ? 'mp4' : 'webm';

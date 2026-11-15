@@ -391,11 +391,149 @@ export function kareCiz(ctx, plan, sureler, baslar, t, top) {
   return i;
 }
 
+/* ---------------------------------------------------------------- MP4 süre düzeltmesi
+   Chrome MediaRecorder MP4'ü parçalı (fMP4) yazar ve başlıktaki süre alanlarına yalnız ilk parçanın süresini koyar;
+   Windows oynatıcıları ve Gezgin videoyu ~1 sn sanar. Kayıt bitince her izin gerçek örnek sürelerini (moof/trun)
+   toplayıp mvhd / tkhd / mdhd süre alanlarına yazar. Başka bayta dokunmaz (boyut ve ofsetler aynı kalır);
+   bir şey anlaşılamazsa dosyayı olduğu gibi döndürür. Dönüş: { buf, sureSn } */
+export function mp4SureDuzelt(buf) {
+  try {
+    const d = new DataView(buf), u8 = new Uint8Array(buf), N = buf.byteLength;
+    const tip = (p) => String.fromCharCode(u8[p + 4], u8[p + 5], u8[p + 6], u8[p + 7]);
+    const KAP = { moov: 1, trak: 1, mdia: 1, minf: 1, stbl: 1, mvex: 1, moof: 1, traf: 1, edts: 1, dinf: 1 };
+    const kutular = [];
+    const gez = (bas, son, ust) => {
+      let p = bas;
+      while (p + 8 <= son) {
+        let s = d.getUint32(p), bas2 = 8;
+        if (s === 1) { s = Number(d.getBigUint64(p + 8)); bas2 = 16; } else if (s === 0) s = son - p;
+        if (s < 8 || p + s > son) break;
+        const k = { tip: tip(p), p, s, ust }; kutular.push(k);
+        if (KAP[k.tip]) gez(p + bas2, p + s, k);
+        p += s;
+      }
+    };
+    gez(0, N, null);
+    const altlar = (k, t) => kutular.filter((x) => x.ust === k && x.tip === t);
+    const v = (p) => u8[p + 8];
+    const mvhd = kutular.find((x) => x.tip === 'mvhd'); if (!mvhd) return { buf, sureSn: null };
+    const tsFilm = v(mvhd.p) === 1 ? d.getUint32(mvhd.p + 28) : d.getUint32(mvhd.p + 20);
+    if (!tsFilm) return { buf, sureSn: null };
+    /* izler: track_ID → { tkhd, mdhd, ts, son } */
+    const izler = {};
+    for (const trak of kutular.filter((x) => x.tip === 'trak')) {
+      const tkhd = altlar(trak, 'tkhd')[0]; const mdia = altlar(trak, 'mdia')[0]; const mdhd = mdia && altlar(mdia, 'mdhd')[0];
+      if (!tkhd || !mdhd) continue;
+      const id = v(tkhd.p) === 1 ? d.getUint32(tkhd.p + 28) : d.getUint32(tkhd.p + 20);
+      const ts = v(mdhd.p) === 1 ? d.getUint32(mdhd.p + 28) : d.getUint32(mdhd.p + 20);
+      izler[id] = { tkhd, mdhd, ts, son: 0, varsayilan: 0 };
+    }
+    for (const trex of kutular.filter((x) => x.tip === 'trex')) { const iz = izler[d.getUint32(trex.p + 12)]; if (iz) iz.varsayilan = d.getUint32(trex.p + 20); }
+    /* parçalar: tfdt (başlangıç) + trun örnek süreleri */
+    for (const traf of kutular.filter((x) => x.tip === 'traf')) {
+      const tfhd = altlar(traf, 'tfhd')[0]; if (!tfhd) continue;
+      const tf = d.getUint32(tfhd.p + 8) & 0xFFFFFF; const iz = izler[d.getUint32(tfhd.p + 12)]; if (!iz) continue;
+      let q = tfhd.p + 16; if (tf & 0x01) q += 8; if (tf & 0x02) q += 4;
+      const varsayilan = tf & 0x08 ? d.getUint32(q) : iz.varsayilan;
+      const tfdt = altlar(traf, 'tfdt')[0];
+      let t = tfdt ? (v(tfdt.p) === 1 ? Number(d.getBigUint64(tfdt.p + 12)) : d.getUint32(tfdt.p + 12)) : iz.son;
+      for (const trun of altlar(traf, 'trun')) {
+        const fl = d.getUint32(trun.p + 8) & 0xFFFFFF, n = d.getUint32(trun.p + 12);
+        let r = trun.p + 16; if (fl & 0x001) r += 4; if (fl & 0x004) r += 4;
+        for (let i = 0; i < n; i++) {
+          if (r > trun.p + trun.s) break;
+          t += fl & 0x100 ? d.getUint32(r) : varsayilan;
+          r += ((fl & 0x100) ? 4 : 0) + ((fl & 0x200) ? 4 : 0) + ((fl & 0x400) ? 4 : 0) + ((fl & 0x800) ? 4 : 0);
+        }
+      }
+      iz.son = Math.max(iz.son, t);
+    }
+    const yaz = (k, ofs1, ofs0, deger) => { if (v(k.p) === 1) d.setBigUint64(k.p + ofs1, BigInt(Math.round(deger))); else d.setUint32(k.p + ofs0, Math.min(0xFFFFFFFF, Math.round(deger))); };
+    let filmSon = 0;
+    for (const iz of Object.values(izler)) {
+      if (!iz.son || !iz.ts) continue;
+      const filmBirim = iz.son / iz.ts * tsFilm;
+      yaz(iz.mdhd, 32, 24, iz.son);
+      yaz(iz.tkhd, 36, 28, filmBirim);
+      filmSon = Math.max(filmSon, filmBirim);
+    }
+    if (!filmSon) return { buf, sureSn: null };
+    yaz(mvhd, 32, 24, filmSon);
+    return { buf, sureSn: filmSon / tsFilm };
+  } catch (e) { return { buf, sureSn: null }; }
+}
+
 /* ---------------------------------------------------------------- oynatma / kayıt */
 export function desteklenenBicim() {
   const adaylar = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm'];
   if (typeof MediaRecorder === 'undefined') return '';
   return adaylar.find((m) => { try { return MediaRecorder.isTypeSupported(m); } catch (e) { return false; } }) || '';
+}
+
+/* ---------------------------------------------------------------- hızlı ve eksiksiz kayıt (WebCodecs + mp4-muxer)
+   Kareler gerçek zamanlı yakalanmaz: her kare tam 1/30 sn aralıkla tek tek çizilip kodlanır, ses tek izde karıştırılır,
+   süresi doğru yazılmış standart (parçasız, fastStart) MP4 çıkar. Kare atlanmaz, sekme değişse de etkilenmez. */
+const MP4_MUXER = 'https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.2/build/mp4-muxer.mjs';
+const FPS = 30, SES_HZ = 44100;
+async function hizliKayitAyari(sesVar) {
+  if (typeof VideoEncoder === 'undefined' || typeof VideoFrame === 'undefined') return null;
+  let video = null;
+  for (const codec of ['avc1.640028', 'avc1.4d0028', 'avc1.420028']) {
+    const c = { codec, width: VW, height: VH, bitrate: 4000000, bitrateMode: 'variable', framerate: FPS };
+    try { if ((await VideoEncoder.isConfigSupported(c)).supported) { video = c; break; } } catch (e) { /* sıradaki */ }
+  }
+  if (!video) return null;
+  let ses = null;
+  if (sesVar) {
+    if (typeof AudioEncoder === 'undefined' || typeof AudioData === 'undefined' || typeof OfflineAudioContext === 'undefined') return null;
+    const c = { codec: 'mp4a.40.2', sampleRate: SES_HZ, numberOfChannels: 1, bitrate: 128000 };
+    try { if ((await AudioEncoder.isConfigSupported(c)).supported) ses = c; } catch (e) { /* yok */ }
+    if (!ses) return null;                 /* ses kaybolmasın: eski (gerçek zamanlı) yönteme dönülür */
+  }
+  return { video, ses };
+}
+async function hizliKayit({ plan, tuval, tamponlar, sureler, baslar, top, ayar, ilerleme, iptal }) {
+  const { Muxer, ArrayBufferTarget } = await import(MP4_MUXER);
+  const muxer = new Muxer({
+    target: new ArrayBufferTarget(),
+    video: { codec: 'avc', width: VW, height: VH, frameRate: FPS },
+    audio: ayar.ses ? { codec: 'aac', numberOfChannels: 1, sampleRate: SES_HZ } : undefined,
+    fastStart: 'in-memory', firstTimestampBehavior: 'offset'
+  });
+  let hata = null;
+  const venc = new VideoEncoder({ output: (ch, meta) => muxer.addVideoChunk(ch, meta), error: (e) => { hata = e; } });
+  venc.configure(ayar.video);
+  if (ayar.ses) {
+    /* seslendirmeler, gerçek zamanlı oynatmadaki gibi sahne başından 0,4 sn sonra başlar */
+    const oac = new OfflineAudioContext(1, Math.ceil(top * SES_HZ), SES_HZ);
+    tamponlar.forEach((b, i) => { if (!b) return; const k = oac.createBufferSource(); k.buffer = b; k.connect(oac.destination); k.start(baslar[i] + 0.4); });
+    const karisim = (await oac.startRendering()).getChannelData(0);
+    const aenc = new AudioEncoder({ output: (ch, meta) => muxer.addAudioChunk(ch, meta), error: (e) => { hata = e; } });
+    aenc.configure(ayar.ses);
+    for (let o = 0; o < karisim.length; o += SES_HZ) {
+      const n = Math.min(SES_HZ, karisim.length - o);
+      const ad = new AudioData({ format: 'f32-planar', sampleRate: SES_HZ, numberOfFrames: n, numberOfChannels: 1, timestamp: Math.round(o / SES_HZ * 1e6), data: karisim.slice(o, o + n) });
+      aenc.encode(ad); ad.close();
+    }
+    await aenc.flush(); aenc.close();
+  }
+  const ctx = tuval.getContext('2d');
+  const kareSay = Math.ceil(top * FPS), adim = 1e6 / FPS;
+  for (let i = 0; i < kareSay; i++) {
+    if (hata) throw hata;
+    if (iptal && iptal()) { try { venc.close(); } catch (e) { /* kapalı */ } return null; }
+    const t = i / FPS;
+    kareCiz(ctx, plan, sureler, baslar, t, top);
+    const kare = new VideoFrame(tuval, { timestamp: Math.round(i * adim), duration: Math.round(adim) });
+    venc.encode(kare, { keyFrame: i % (FPS * 2) === 0 }); kare.close();
+    /* kodlayıcı kuyruğu dolmasın; ekran ve ilerleme yazısı arada güncellensin */
+    while (venc.encodeQueueSize > 8) await new Promise((r) => setTimeout(r, 4));
+    if (i % 6 === 0) { ilerleme && ilerleme({ asama: 'oynat', t, top }); await new Promise((r) => setTimeout(r, 0)); }
+  }
+  await venc.flush(); venc.close();
+  if (hata) throw hata;
+  muxer.finalize();
+  return new Blob([muxer.target.buffer], { type: 'video/mp4' });
 }
 
 /* plan: {baslik, sahneler[]}; ses: {anahtar, sesId} | null; kayit: true ise Blob döner */
@@ -420,7 +558,20 @@ export async function videoUret({ plan, tuval, ses, kayit, ilerleme, iptal }) {
   try { await document.fonts.load('600 96px "Source Serif 4"'); await document.fonts.load('600 30px Inter'); } catch (e) { /* yedek font */ }
   await gorselleriYukle(plan);
 
-  let kaydedici = null, parcalar = [], bicim = '';
+  /* Dosya üretimi: önce hızlı ve eksiksiz yol (kare kare kodlama); desteklenmezse gerçek zamanlı kayda dönülür */
+  if (kayit) {
+    let ayar = null;
+    try { ayar = await hizliKayitAyari(tamponlar.some(Boolean)); } catch (e) { ayar = null; }
+    if (ayar) {
+      try {
+        const blob = await hizliKayit({ plan, tuval, tamponlar, sureler, baslar, top, ayar, ilerleme, iptal });
+        try { await actx.close(); } catch (e) { /* kapalı */ }
+        return { blob, bicim: 'video/mp4', sure: top, sesli: !!ayar.ses, dosyaSure: blob ? top : null, yontem: 'kare-kare' };
+      } catch (e) { console.warn('Kare kare kayıt yapılamadı, gerçek zamanlı kayda dönülüyor', e); }
+    }
+  }
+
+  let kaydedici = null, parcalar = [], bicim = '', dosyaSure = null;
   const hedef = actx.createMediaStreamDestination();
   if (kayit) {
     bicim = desteklenenBicim();
@@ -456,8 +607,12 @@ export async function videoUret({ plan, tuval, ses, kayit, ilerleme, iptal }) {
   if (kaydedici) {
     await new Promise((coz) => { kaydedici.onstop = coz; kaydedici.stop(); });
     blob = new Blob(parcalar, { type: bicim.split(';')[0] });
+    /* MP4 başlığındaki süreyi gerçek süreyle düzelt (yoksa Windows videoyu ~1 sn gösterir) */
+    if (bicim.indexOf('mp4') >= 0) {
+      try { const r = mp4SureDuzelt(await blob.arrayBuffer()); if (r.sureSn) { blob = new Blob([r.buf], { type: 'video/mp4' }); dosyaSure = r.sureSn; } } catch (e) { /* düzeltilemezse ham dosya */ }
+    }
   }
   try { await actx.close(); } catch (e) { /* kapalı */ }
-  return { blob, bicim, sure: top, sesli };
+  return { blob, bicim, sure: top, sesli, dosyaSure, yontem: kayit ? 'gercek-zamanli' : 'onizleme' };
 }
 export function planSuresi(plan) { return (plan && plan.sahneler ? plan.sahneler : []).reduce((s, x) => s + (Number(x.sure) || 0), 0); }
