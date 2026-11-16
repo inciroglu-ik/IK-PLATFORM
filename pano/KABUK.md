@@ -11,7 +11,7 @@ Bağlayıcı: `tasarim-2026/BRIEF_IK.md`. Şablon sayfa: `pano/sayfa-genel.js` (
 | `pano/ortak.js` | Ortak kitaplık (aşağıda). |
 | `pano/sayfa-<ad>.js` | Her sekme bir modül. |
 
-**Dosya adları kabukta kayıtlı (`pano.html` → `SAYFALAR`)**: `ov`→`sayfa-genel.js` · `ay`→`sayfa-ayrilanlar.js` · `ia`→`sayfa-isealim.js` · `tv`→`sayfa-turnover.js` · `iz`→`sayfa-izin.js` · `mes`→`sayfa-mesai.js` · `arb`→`sayfa-arabuluculuk.js` · `rp`→`sayfa-rapor.js`. Dosya yoksa ya da hata verirse kabuk "Sayfa hazırlanıyor" yer tutucusu gösterir. Pano çökmez.
+**Dosya adları kabukta kayıtlı (`pano.html` → `SAYFALAR`)**: `ov`→`sayfa-genel.js` · `oz`→`sayfa-ozet.js` (Yönetici Özeti, 16.11.2026: 1600×900 tek sayfa, PNG/baskı; `ozet.bolum_mevcut` ve isteğe bağlı `ozet.stajyer_elle` okur) · `ay`→`sayfa-ayrilanlar.js` · `ia`→`sayfa-isealim.js` · `tv`→`sayfa-turnover.js` · `iz`→`sayfa-izin.js` · `mes`→`sayfa-mesai.js` · `arb`→`sayfa-arabuluculuk.js` · `rp`→`sayfa-rapor.js`. Dosya yoksa ya da hata verirse kabuk "Sayfa hazırlanıyor" yer tutucusu gösterir. Pano çökmez.
 
 Yasaklar: Firebase/kimlik import etmek, `index.html` ya da `kokpit.css` dosyasına dokunmak, iş kuralı eşiği uydurmak (kaynak yoksa eşik/renk bandı yok), ozet metriklerini (turnover %, simülasyon, istenen %, kıdem) yeniden hesaplamak. Veri metni `innerHTML`'e yalnız `O.esc()` ile girer.
 
