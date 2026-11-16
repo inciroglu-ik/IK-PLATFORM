@@ -190,10 +190,14 @@ function grafikKutu(kap, { baslik, aciklama, lejant = [] }) {
     O.el('div', {}, O.el('div', { class: 'oz-kutu-baslik', text: baslik }), O.el('div', { class: 'oz-kutu-alt', html: aciklama })),
     O.el('div', { class: 'oz-lejant' }, ...lejant.map(([ad, renk]) => O.el('span', {}, O.el('i', { style: { background: renk } }), ad))));
   const gk = O.el('div', { class: 'oz-grafik' });
-  const c = O.el('canvas', { role: 'img', 'aria-label': baslik });
-  gk.append(c);
   kutu.append(ust, gk);
   kap.append(kutu);
+  /* 16.11 canlı hata: tuval CSS transform ile ölçeklendiği için Chart.js'in kendi ölçümü (getBoundingClientRect)
+     ÖLÇEKLİ boyutu okuyor; pencere boyutu değişince grafik kutudan taşıyor ya da küçülüyor. Çözüm: boyut sabit,
+     düzen boyutundan (clientWidth/Height transform'dan etkilenmez) ve responsive:false. Tuval zaten sabit 1600×900. */
+  const w = Math.max(200, gk.clientWidth || 720), h = Math.max(120, gk.clientHeight || 250);
+  const c = O.el('canvas', { role: 'img', 'aria-label': baslik, width: String(w), height: String(h), style: { width: w + 'px', height: h + 'px', display: 'block' } });
+  gk.append(c);
   return c;
 }
 function grafiklerCiz(t, M) {
@@ -201,7 +205,7 @@ function grafiklerCiz(t, M) {
   t.append(s);
   const R = O.RENK, yildiz = (m) => O.ayKisa(m) + (M.ayDevam && m === M.sonAy ? '*' : '');
   const ortak = (ekX) => ({
-    animation: false, devicePixelRatio: Math.max(2, window.devicePixelRatio || 1), layout: { padding: { top: 20, left: 4, right: 4 } },
+    animation: false, responsive: false, maintainAspectRatio: false, devicePixelRatio: Math.max(2, window.devicePixelRatio || 1), layout: { padding: { top: 20, left: 4, right: 4 } },
     scales: { x: O.eksenX(Object.assign({ ticks: { font: { size: 12 } } }, ekX)), y: O.eksenY({ display: false, grace: '10%' }) },
     plugins: { tooltip: { callbacks: { label: (it) => it.dataset.label + ': ' + O.sayi(it.raw) } } }
   });
@@ -211,7 +215,7 @@ function grafiklerCiz(t, M) {
   const ay12 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
   const yilEtiketi = (yil, renk) => ({ display: (ctx) => ctx.dataset.data[ctx.dataIndex] !== null && ctx.dataset.data[ctx.dataIndex] !== undefined,
     anchor: 'start', align: 'bottom', offset: 5, clamp: false, clip: false, color: renk, font: { family: 'Inter', size: 11, weight: '700' }, formatter: () => yil });
-  O.grafik(c1, { type: 'bar', data: { labels: ay12.map(yildiz), datasets: [
+  const g1 = O.grafik(c1, { type: 'bar', data: { labels: ay12.map(yildiz), datasets: [
     { label: '2025', data: ay12.map((m) => M.hc25[m - 1] ?? null), backgroundColor: R.y2025, maxBarThickness: 22, categoryPercentage: 0.8, barPercentage: 0.88,
       datalabels: { labels: { deger: O.etiket.ust({ secim: 'hepsi', boyut: 10.5, renk: R.n500 }), yil: yilEtiketi('25', R.n500) } } },
     { label: '2026', data: ay12.map((m) => M.hc26[m - 1] ?? null), backgroundColor: R.y2026, maxBarThickness: 22, categoryPercentage: 0.8, barPercentage: 0.88,
@@ -219,10 +223,17 @@ function grafiklerCiz(t, M) {
   ] }, options: ortak({ ticks: { font: { size: 12, weight: '600' }, padding: 22 } }) });
   /* 2 — 2026 aylık giriş ve çıkış (Turnover sayfasıyla aynı kaynaklar) */
   const c2 = grafikKutu(s, { baslik: '2026 aylık giriş ve çıkış', aciklama: 'Kişi sayısı, V.İ. hariç · girişler işe alım listesinden, çıkışlar turnover tablosundan', lejant: [['Giriş', R.giris], ['Çıkış', R.cikis]] });
-  O.grafik(c2, { type: 'bar', data: { labels: M.aylar.map(yildiz), datasets: [
+  const g2 = O.grafik(c2, { type: 'bar', data: { labels: M.aylar.map(yildiz), datasets: [
     { label: 'Giriş', data: M.girisAy, backgroundColor: R.giris, maxBarThickness: 22, categoryPercentage: 0.8, barPercentage: 0.88, datalabels: O.etiket.ust({ secim: 'hepsi', boyut: 11, renk: R.giris }) },
     { label: 'Çıkış', data: M.cikisAy, backgroundColor: R.cikis, maxBarThickness: 22, categoryPercentage: 0.8, barPercentage: 0.88, datalabels: O.etiket.ust({ secim: 'hepsi', boyut: 11, renk: R.cikis }) }
   ] }, options: ortak() });
+  /* responsive:false + animasyonsuz grafik tek seferde çizilir; Inter henüz yüklenmediyse değer etiketleri yedek (serif)
+     yazıyla kalır. Yazı tipi yüklenince bir kez yeniden çiz (sayfa değiştiyse grafik yok edilmiştir: ctx null). */
+  if (document.fonts && document.fonts.load) {
+    Promise.all(['600 11px Inter', '700 11px Inter', '400 12px Inter'].map((f) => document.fonts.load(f)))
+      .then(() => [g1, g2].forEach((g) => { try { if (g && g.ctx) g.update('none'); } catch (e) { /* sayfa kapandı */ } }))
+      .catch(() => { /* yazı tipi yüklenemezse sistem yazısı kalır */ });
+  }
 }
 
 function panellerCiz(t, M) {
