@@ -577,17 +577,35 @@ service cloud.firestore {
     // E-POSTA KUYRUĞU: İK yazar (durum "bekliyor"); gönderimi GitHub Actions görevi yapar (ise-alim-sureci deposu,
     // scripts/eposta-kuyrugu.js, yönetici hesabıyla — kural dışı). Yalnız şirket alan adına (@inciroglu.com.tr) gönderilir.
     // İK bekleyen e-postayı iptal edebilir; gönderilmiş kayıt değiştirilemez.
+    // Personel talebi e-postası (16.11.2026): İK dışında talep zincirindeki kişi de yazabilir, ama YALNIZ aynı toplu
+    // yazmada talebin durumunu geçerli biçimde değiştirirken (talep.sonBildirim bu kayda döner ve daha önce dönmüyordu)
+    // ve YALNIZ sıradaki onaylayıcının talepte kayıtlı (talepAyar/zincir ile birebir) adresine. Her geçiş en fazla bir e-posta.
+    // İÇERİK İSTEMCİDEN GELMEZ: konu ve gövde boş yazılır; gönderici (scripts/eposta-kuyrugu.js) talep kaydından kendi
+    // şablonuyla üretir (sablon: 'direktor' | 'ik'). Böylece kimse İK adresinden serbest içerikli e-posta gönderemez.
+    function ptEposta(id, y) {
+      let tYol = yol('personelTalepFormlari', y.ilgili);
+      let t = getAfter(tYol).data;
+      return gecerli()
+        && y.kaynak == 'personel-talebi'
+        && y.ilgili.matches('[A-Za-z0-9]{1,40}')
+        && y.konu == '' && y.html == '' && y.olusturan == hesap().ad
+        && y.sablon in ['direktor', 'ik'] && y.sablon == t.durum
+        && t.sonBildirim == id
+        && (!exists(tYol) || get(tYol).data.sonBildirim != id)
+        && y.kime == t.zincir[y.sablon].eposta;
+    }
     match /epostaKuyrugu/{id} {
       allow read: if ik();
-      allow create: if ik()
-        && request.resource.data.keys().hasOnly(['kime', 'kimeAd', 'konu', 'html', 'kaynak', 'ilgili', 'durum', 'olusturma', 'olusturan'])
+      allow create: if request.resource.data.keys().hasOnly(['kime', 'kimeAd', 'konu', 'html', 'kaynak', 'ilgili', 'durum', 'olusturma', 'olusturan', 'sablon'])
+        && (!('sablon' in request.resource.data) || request.resource.data.sablon in ['direktor', 'ik'])
         && request.resource.data.kime is string && request.resource.data.kime.matches('[a-z0-9._%+-]+@inciroglu[.]com[.]tr')
         && metin(request.resource.data.kimeAd, 120) && !request.resource.data.kimeAd.matches('.*[@,;"].*')
         && metin(request.resource.data.konu, 200)
         && request.resource.data.html is string && request.resource.data.html.size() <= 60000
         && metin(request.resource.data.kaynak, 40) && metin(request.resource.data.ilgili, 120) && metin(request.resource.data.olusturan, 120)
         && request.resource.data.durum == 'bekliyor'
-        && request.resource.data.olusturma == request.time;
+        && request.resource.data.olusturma == request.time
+        && (ik() || ptEposta(id, request.resource.data));
       allow update: if ik() && resource.data.durum == 'bekliyor' && request.resource.data.durum == 'iptal'
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['durum']);
       allow delete: if false;
@@ -636,6 +654,243 @@ service cloud.firestore {
       allow get, list: if ik() || (gecerli() && resource.data.hid == benimHid());
       allow create, update: if yonetim() && oryDuzenlemeGecerli(id);
       allow delete: if ik() || (gecerli() && resource.data.hid == benimHid());
+    }
+
+    // ====================================================== PERSONEL TALEPLERİ + AÇIK POZİSYONLAR (16.11.2026)
+    // Sayfa: personel-talep.html · seçenek listeleri ve alan adları: ortak/personel-talep.js (BİREBİR aynı olmalı).
+    // Akış: talep eden yönetici → departman direktörü → İK Direktörü → CEO. Direktör ve İK Direktörü kendi hesaplarıyla
+    // karar verir. CEO sisteme girmez: kararını İK (İK rolü ya da talebin İK Direktörü) işaretler.
+    // KİŞİ KİMLİĞİ: bu modülde hesap kimliği (hid = TC özeti) HİÇBİR belgeye yazılmaz (TC'ye geri çevrilebilir). Her yönetim
+    // hesabına İK bir kez rastgele "talep kimliği" (pid, 128 bit) verir: talepKimlik/{hid} = {pid}. Kişi yalnız kendi
+    // kaydını okur. Talep, zincir, onay ve görünürlük (pidler) bu kimlikle tutulur.
+    // Talebi yalnız İK ve "pidler" dizisindekiler (talep eden, direktör, İK Direktörü) görür. Onay zinciri talepAyar/zincir
+    // kaydıyla birebir olmalıdır (talep eden direktörü ya da e-posta adresini değiştiremez). Onay kayıtlarında ad hesaptan,
+    // zaman sunucudan doğrulanır. Geçmiş yalnız sonuna ekleme yapılarak büyür. Silme yok.
+    match /talepKimlik/{h} {
+      allow get: if ik() || (gecerli() && benimHid() == h);
+      allow list: if ik();
+      allow create: if ik()
+        && request.resource.data.keys().hasOnly(['pid', 'olusturma'])
+        && request.resource.data.pid is string && request.resource.data.pid.matches('p[0-9a-f]{32}')
+        && request.resource.data.olusturma == request.time;
+      allow update, delete: if false;
+    }
+    function ptBen() { return get(yol('talepKimlik', benimHid())).data.pid; }
+    function ptPid(v) { return v is string && v.matches('p[0-9a-f]{32}'); }
+    function ptAyar() { return get(yol('talepAyar', 'zincir')).data; }
+    function ptKisiGecerli(k) {
+      return k is map && k.keys().hasOnly(['pid', 'ad', 'eposta']) && k.keys().hasAll(['pid', 'ad', 'eposta'])
+        && (k.pid == '' || ptPid(k.pid)) && metin(k.ad, 120)
+        && (k.eposta == '' || (k.eposta is string && k.eposta.matches('[a-z0-9._%+-]+@inciroglu[.]com[.]tr')));
+    }
+    function ptAyarGecerli(y) {
+      return y.keys().hasOnly(['departmanlar', 'ikDirektor', 'ceo', 'guncelleme', 'guncelleyen'])
+        && y.departmanlar is map && y.departmanlar.size() <= 150
+        && ptKisiGecerli(y.ikDirektor) && ptPid(y.ikDirektor.pid)
+        && y.ceo is map && y.ceo.keys().hasOnly(['ad']) && metin(y.ceo.ad, 120) && y.ceo.ad.size() > 0
+        && y.guncelleme == request.time && metin(y.guncelleyen, 120);
+    }
+    match /talepAyar/{b} {
+      allow get: if yonetim();
+      allow create, update: if ik() && b == 'zincir' && ptAyarGecerli(request.resource.data);
+      allow delete: if false;
+    }
+    function ptTarih(v) { return v is string && v.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}'); }
+    function ptTutar(v) { return v is number && v >= 0 && v <= 100000000; }
+    function ptListe(v, liste) { return v is list && v.size() >= 1 && v.size() <= liste.size() && v.hasOnly(liste); }
+    function ptFormAlanlari() {
+      return ['tarih', 'pozisyon', 'deneyim', 'mezuniyet', 'cinsiyet', 'beklentiler', 'sertifikalar', 'adayAd', 'adayYok',
+              'gorevTanimi', 'nedenler', 'yerineKim', 'yerineCikis', 'aciklama', 'icAday', 'devam', 'devamAciklama', 'riskler',
+              'riskAciklama', 'ucretYonetici', 'butceYillik', 'butceKullanilan', 'marka', 'markaDayanak'];
+    }
+    // Kullanıcı kararı: formdaki HER bilgi eksiksiz girilir (marka dayanağı yalnız "Zorunluluk yok" seçilince boş kalabilir)
+    function ptFormGecerli(f) {
+      return f is map && f.keys().hasOnly(ptFormAlanlari()) && f.keys().hasAll(ptFormAlanlari())
+        && ptTarih(f.tarih)
+        && metin(f.pozisyon, 120) && f.pozisyon.size() > 0
+        && metin(f.deneyim, 300) && f.deneyim.size() > 0
+        && metin(f.mezuniyet, 200) && f.mezuniyet.size() > 0
+        && f.cinsiyet in ['Fark etmez', 'Kadın', 'Erkek']
+        && metin(f.beklentiler, 2000) && f.beklentiler.size() > 0
+        && metin(f.sertifikalar, 500) && f.sertifikalar.size() > 0
+        && f.adayYok is bool && metin(f.adayAd, 120) && (f.adayYok || f.adayAd.size() > 0)
+        && metin(f.gorevTanimi, 4000) && f.gorevTanimi.size() >= 20
+        && ptListe(f.nedenler, ['Ek kadro', 'İş hacmi artışı', 'Yeni kadro açılması', 'Personel yedekleme', 'Organizasyonel revizyon', 'Yerine alım'])
+        && metin(f.yerineKim, 300) && (f.yerineCikis == '' || ptTarih(f.yerineCikis))
+        && (!('Yerine alım' in f.nedenler) || (f.yerineKim.size() > 0 && f.yerineCikis.size() > 0))
+        && metin(f.aciklama, 4000) && f.aciklama.size() >= 20
+        && f.icAday in ['İç aday değerlendirilebilir', 'İç aday talebi yoktur', 'Geliştirilebilir iç aday değerlendirilebilir']
+        && f.devam in ['Sürdürülebilir', 'Kısa vadede sürdürülebilir', 'Sürdürülemez']
+        && metin(f.devamAciklama, 1000) && (f.devam != 'Sürdürülemez' || f.devamAciklama.size() > 0)
+        && ptListe(f.riskler, ['İş kaybı', 'Müşteri memnuniyeti', 'Kalite etkisi'])
+        && metin(f.riskAciklama, 2000) && f.riskAciklama.size() > 0
+        && ptTutar(f.ucretYonetici) && ptTutar(f.butceYillik) && ptTutar(f.butceKullanilan)
+        && f.marka in ['Zorunlu kadro', 'Tavsiye edilen kadro', 'Zorunluluk yok']
+        && metin(f.markaDayanak, 1000) && (f.marka == 'Zorunluluk yok' || f.markaDayanak.size() > 0);
+    }
+    // Zincir ve görünürlük: departman, direktör, İK Direktörü ve CEO ayardaki kayıtla birebir; pidler bunlardan türetilir
+    function ptZincirGecerli(y) {
+      let a = ptAyar();
+      return y.depKey is string && y.depKey in a.departmanlar
+        && y.departman == a.departmanlar[y.depKey].ad
+        && y.bolum == a.departmanlar[y.depKey].bolum
+        && y.zincir is map && y.zincir.keys().hasOnly(['direktor', 'ik', 'ceo'])
+        && y.zincir.direktor == a.departmanlar[y.depKey].direktor
+        && y.zincir.ik == a.ikDirektor
+        && y.zincir.ceo == a.ceo
+        && ptKisiGecerli(y.zincir.direktor) && ptPid(y.zincir.direktor.pid)
+        && y.pidler == [y.talepEden.pid, y.zincir.direktor.pid, y.zincir.ik.pid];
+    }
+    function ptOnayKaydi(k, adina) {
+      return k is map && k.keys().hasOnly(['karar', 'not', 'ad', 'pid', 'zaman', 'adina'])
+        && k.keys().hasAll(['karar', 'not', 'ad', 'pid', 'zaman', 'adina'])
+        && metin(k.not, 1000) && k.pid == ptBen() && k.ad == hesap().ad
+        && k.zaman == request.time && k.adina == adina;
+    }
+    // Başlangıç: direktör onayına gider; talebi departmanın direktörü açtıysa direktör imzası atılmış olarak İK'ya gider
+    function ptBaslangic(y) {
+      return y.onaylar is map && (
+        (y.durum == 'direktor' && y.onaylar.size() == 0)
+        || (y.durum == 'ik' && y.zincir.direktor.pid == ptBen() && y.onaylar.keys().hasOnly(['direktor'])
+            && ptOnayKaydi(y.onaylar.direktor, false) && y.onaylar.direktor.karar == 'onay'));
+    }
+    function ptOlayGecerli(e) {
+      return e is map && e.keys().hasOnly(['zaman', 'kim', 'olay', 'not']) && e.zaman is int
+        && e.kim == hesap().ad && metin(e.olay, 200) && e.olay.size() > 0 && metin(e.not, 1000);
+    }
+    function ptGecmisEk(o, s) {
+      return s.gecmis is list && s.gecmis.size() == o.gecmis.size() + 1 && s.gecmis.size() <= 300
+        && s.gecmis == o.gecmis.concat([s.gecmis[o.gecmis.size()]])
+        && ptOlayGecerli(s.gecmis[o.gecmis.size()]);
+    }
+    function ptAlanlar() {
+      return ['no', 'durum', 'depKey', 'departman', 'bolum', 'form', 'ikDeg', 'talepEden', 'zincir', 'pidler', 'onaylar',
+              'gecmis', 'surum', 'olusturma', 'guncelleme', 'sonBildirim'];
+    }
+    function ptYeniTalep(y) {
+      return y.keys().hasOnly(ptAlanlar()) && y.keys().hasAll(ptAlanlar())
+        && metin(y.no, 20) && y.no.size() > 0
+        && y.talepEden is map && y.talepEden.keys().hasOnly(['pid', 'ad', 'unvan'])
+        && ptPid(ptBen()) && y.talepEden.pid == ptBen() && y.talepEden.ad == hesap().ad && metin(y.talepEden.unvan, 120)
+        && ptFormGecerli(y.form) && ptZincirGecerli(y) && ptBaslangic(y)
+        && y.ikDeg is map && y.ikDeg.size() == 0 && y.surum == 1
+        && y.olusturma == request.time && y.guncelleme == request.time
+        && y.gecmis is list && y.gecmis.size() == 1 && ptOlayGecerli(y.gecmis[0])
+        && y.sonBildirim is string && y.sonBildirim.size() <= 40;
+    }
+    function ptIkYetkili(o) { return ik() || o.zincir.ik.pid == ptBen(); }
+    function ptDegisen(o, s, izinli) { return s.diff(o).affectedKeys().hasOnly(izinli); }
+    function ptGecisler() {
+      return {
+        'direktor': { 'onay': 'ik', 'revize': 'revize', 'red': 'reddedildi' },
+        'ik': { 'onay': 'ceo', 'revize': 'revize', 'red': 'reddedildi' },
+        'ceo': { 'onay': 'onaylandi', 'revize': 'revize', 'erteleme': 'ertelendi', 'red': 'reddedildi' }
+      };
+    }
+    // Karar: yalnız o aşamanın kişisi, yalnız kendi onay kaydını yazar; ret / revize / erteleme gerekçesiz olmaz
+    function ptKararOnay(o, s, asama, kararlar, adina) {
+      return s.onaylar is map && s.onaylar.diff(o.onaylar).affectedKeys().hasOnly([asama])
+        && ptOnayKaydi(s.onaylar[asama], adina)
+        && s.onaylar[asama].karar in kararlar
+        && (s.onaylar[asama].karar == 'onay' || s.onaylar[asama].not.size() > 0)
+        && s.durum == ptGecisler()[asama][s.onaylar[asama].karar];
+    }
+    function ptKarar(o, s) {
+      return (o.durum == 'direktor' && o.zincir.direktor.pid == ptBen()
+              && ptDegisen(o, s, ['durum', 'onaylar', 'gecmis', 'guncelleme', 'sonBildirim'])
+              && ptKararOnay(o, s, 'direktor', ['onay', 'revize', 'red'], false))
+        || (o.durum == 'ik' && o.zincir.ik.pid == ptBen()
+              && ptDegisen(o, s, ['durum', 'onaylar', 'ikDeg', 'gecmis', 'guncelleme'])
+              && ptKararOnay(o, s, 'ik', ['onay', 'revize', 'red'], false)
+              && ((s.onaylar.ik.karar != 'onay' && s.ikDeg == o.ikDeg)
+                  || (s.onaylar.ik.karar == 'onay' && s.ikDeg.keys().hasOnly(['ucretIk', 'kadroUygun'])
+                      && s.ikDeg.keys().hasAll(['ucretIk', 'kadroUygun']) && ptTutar(s.ikDeg.ucretIk) && s.ikDeg.kadroUygun is bool)))
+        || (o.durum == 'ceo' && ptIkYetkili(o)
+              && ptDegisen(o, s, ['durum', 'onaylar', 'gecmis', 'guncelleme'])
+              && ptKararOnay(o, s, 'ceo', ['onay', 'revize', 'erteleme', 'red'], true));
+    }
+    // Revize istenen talebi talep eden düzeltip yeniden gönderir: zincir güncel ayardan, onaylar baştan
+    function ptYenidenGonder(o, s) {
+      return o.durum == 'revize' && o.talepEden.pid == ptBen()
+        && ptDegisen(o, s, ['durum', 'depKey', 'departman', 'bolum', 'form', 'ikDeg', 'zincir', 'pidler', 'onaylar', 'gecmis',
+                            'surum', 'guncelleme', 'sonBildirim'])
+        && ptFormGecerli(s.form) && ptZincirGecerli(s) && ptBaslangic(s)
+        && s.ikDeg is map && s.ikDeg.size() == 0 && s.surum == o.surum + 1
+        && s.sonBildirim is string && s.sonBildirim.size() <= 40;
+    }
+    function ptIptal(o, s) {
+      return s.durum == 'iptal' && ptDegisen(o, s, ['durum', 'gecmis', 'guncelleme'])
+        && s.gecmis[o.gecmis.size()].not.size() > 0
+        && ((o.talepEden.pid == ptBen() && o.durum in ['direktor', 'revize'])
+            || (ptIkYetkili(o) && o.durum in ['direktor', 'ik', 'ceo', 'revize', 'ertelendi']));
+    }
+    function ptCeoyaGeriAl(o, s) {
+      return ptIkYetkili(o) && o.durum == 'ertelendi' && s.durum == 'ceo'
+        && ptDegisen(o, s, ['durum', 'onaylar', 'gecmis', 'guncelleme'])
+        && s.onaylar.diff(o.onaylar).affectedKeys().hasOnly(['ceo']) && !('ceo' in s.onaylar);
+    }
+    // Zincir yenileme (İK): yalnız henüz imzalanmamış aşamalar değişebilir (imza atanın adı ve görünürlüğü korunur)
+    function ptZincirYenile(o, s) {
+      return ik() && o.durum in ['direktor', 'ik', 'ceo']
+        && ptDegisen(o, s, ['zincir', 'pidler', 'gecmis', 'guncelleme'])
+        && ptZincirGecerli(s)
+        && (o.durum == 'direktor' || s.zincir.direktor == o.zincir.direktor)
+        && (o.durum != 'ceo' || s.zincir.ik == o.zincir.ik);
+    }
+    function ptGuncelleme(o, s) {
+      return s.keys().hasOnly(ptAlanlar()) && s.keys().hasAll(ptAlanlar())
+        && s.guncelleme == request.time && ptGecmisEk(o, s)
+        && (ptKarar(o, s) || ptYenidenGonder(o, s) || ptIptal(o, s) || ptCeoyaGeriAl(o, s) || ptZincirYenile(o, s));
+    }
+    match /personelTalepFormlari/{id} {
+      allow get, list: if ik() || (gecerli() && ptBen() in resource.data.pidler);
+      allow create: if yonetim() && ptYeniTalep(request.resource.data);
+      allow update: if gecerli() && ptGuncelleme(resource.data, request.resource.data);
+      allow delete: if false;
+    }
+    // Açık pozisyon: CEO onayı işaretlendiği işlemde talepten birebir açılır (ya da İK talepsiz ekler); durumunu İK yönetir.
+    function apAlanlar() {
+      return ['talepId', 'no', 'pozisyon', 'departman', 'bolum', 'depKey', 'durum', 'kaynak', 'pidler', 'ikPid', 'talepEdenAd',
+              'direktorAd', 'kanallar', 'ikNot', 'alinanKisi', 'baslama', 'acilis', 'guncelleme', 'kapanis', 'gecmis'];
+    }
+    function apGecerli(y) {
+      return y.keys().hasOnly(apAlanlar())
+        && metin(y.talepId, 40) && metin(y.no, 20) && metin(y.pozisyon, 120) && y.pozisyon.size() > 0
+        && metin(y.departman, 60) && metin(y.bolum, 20) && metin(y.depKey, 120)
+        && y.durum in ['acik', 'ilanda', 'gorusme', 'teklif', 'dolduruldu', 'iptal']
+        && y.kaynak in ['talep', 'elle'] && y.pidler is list && y.pidler.size() <= 3 && (y.ikPid == '' || ptPid(y.ikPid))
+        && metin(y.talepEdenAd, 120) && metin(y.direktorAd, 120)
+        && y.kanallar is list && y.kanallar.hasOnly(['Kariyer.net', 'LinkedIn', 'Şirket içi duyuru', 'Referans', 'Distribütör / marka portalı', 'Diğer'])
+        && metin(y.ikNot, 2000) && metin(y.alinanKisi, 120) && (y.baslama == '' || ptTarih(y.baslama))
+        && y.acilis is timestamp && y.guncelleme == request.time
+        && (!('kapanis' in y) || y.kapanis is timestamp)
+        && y.gecmis is list && y.gecmis.size() >= 1 && y.gecmis.size() <= 300;
+    }
+    function apTalepten(id) {
+      let o = get(yol('personelTalepFormlari', id)).data;
+      let t = getAfter(yol('personelTalepFormlari', id)).data;
+      let y = request.resource.data;
+      return o.durum == 'ceo' && t.durum == 'onaylandi' && ptIkYetkili(o)
+        && y.talepId == id && y.no == t.no && y.pozisyon == t.form.pozisyon && y.departman == t.departman
+        && y.bolum == t.bolum && y.depKey == t.depKey && y.durum == 'acik'
+        && y.pidler == t.pidler && y.ikPid == t.zincir.ik.pid
+        && y.talepEdenAd == t.talepEden.ad && y.direktorAd == t.zincir.direktor.ad
+        && y.kanallar.size() == 0 && y.ikNot == '' && y.alinanKisi == '' && y.baslama == '' && !('kapanis' in y)
+        && y.acilis == request.time && y.gecmis.size() == 1 && ptOlayGecerli(y.gecmis[0]);
+    }
+    match /acikPozisyonlar/{id} {
+      allow get, list: if ik() || (gecerli() && ptBen() in resource.data.pidler);
+      allow create: if gecerli() && apGecerli(request.resource.data)
+        && ((request.resource.data.kaynak == 'elle' && ik() && request.resource.data.talepId == ''
+             && request.resource.data.pidler.size() == 0 && request.resource.data.ikPid == ''
+             && request.resource.data.acilis == request.time)
+            || (request.resource.data.kaynak == 'talep' && apTalepten(id)));
+      allow update: if gecerli() && apGecerli(request.resource.data)
+        && (ik() || resource.data.ikPid == ptBen())
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['durum', 'kanallar', 'ikNot', 'alinanKisi', 'baslama',
+                                                                              'guncelleme', 'kapanis', 'gecmis'])
+        && (request.resource.data.gecmis == resource.data.gecmis || ptGecmisEk(resource.data, request.resource.data));
+      allow delete: if false;
     }
 
     // ====================================================== AJAN OFİSİ (14.11.2026) — YALNIZ OFİS SAHİBİ

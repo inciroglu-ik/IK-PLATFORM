@@ -1,0 +1,1454 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Personel Talepleri · İnciroğlu Otomotiv</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0f1b2d">
+<link rel="icon" href="pano/amblem.svg" type="image/svg+xml">
+<link rel="icon" href="pano/amblem-192.png" sizes="192x192">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="pano/kokpit.css">
+<link rel="stylesheet" href="pano/pano.css">
+<style>
+/* Personel Talepleri + Açık Pozisyonlar — İK Portalı kutucukları. Kabuk ve bileşenler İK Dashboard ile ortaktır. */
+body.talep .ust-marka { display: flex; }
+.pt-sekmeler { display: flex; gap: 4px; border-bottom: 1px solid var(--cizgi-2); margin: 0 0 18px; overflow-x: auto; scrollbar-width: none; }
+.pt-sekmeler a { position: relative; display: inline-flex; align-items: center; gap: 8px; padding: 11px 14px; font-size: 14px; font-weight: 500; color: var(--metin-2); text-decoration: none; white-space: nowrap; }
+.pt-sekmeler a:hover { color: var(--metin-1); }
+.pt-sekmeler a.secili { color: var(--metin-marka); font-weight: 600; }
+.pt-sekmeler a.secili::after { content: ''; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; border-radius: 2px; background: var(--pir-500); }
+.pt-sekmeler .ikon { width: 16px; height: 16px; }
+.pt-sayi { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--pir-500); color: #fff; font-size: 11.5px; font-weight: 700; display: inline-grid; place-items: center; }
+.pt-sayi.sonuk { background: var(--n-150); color: var(--metin-2); }
+.pt-arac { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0 0 16px; }
+.pt-arac .bosluk { margin-left: auto; }
+.pt-arac .btn { height: 38px; }
+.pt-bilgi { background: var(--lac-50); border: 1px solid var(--lac-100); border-radius: 12px; padding: 12px 14px; font-size: 13.5px; color: var(--metin-2); line-height: 1.6; margin: 0 0 16px; }
+.pt-bilgi.uyari { background: var(--uy-50); border-color: var(--uy-200); color: var(--uy-700); }
+.pt-bilgi.hata { background: var(--ht-50); border-color: var(--ht-200); color: var(--ht-700); }
+.pt-bilgi b { color: inherit; }
+.pt-bilgi a { color: inherit; font-weight: 600; }
+/* durum çipi */
+.pt-durum { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.pt-durum::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .85; }
+.pt-durum.bekliyor { background: var(--pir-100); color: var(--pir-800); }
+.pt-durum.onay { background: var(--ok-100); color: var(--ok-700); }
+.pt-durum.revize { background: var(--uy-100); color: var(--uy-700); }
+.pt-durum.red { background: var(--ht-100); color: var(--ht-700); }
+.pt-durum.kapali { background: var(--ey-100); color: var(--ey-600); }
+/* bekleyen listesi */
+.pt-bekleyen { display: grid; gap: 10px; }
+.pt-bekleyen-satir { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 14px; border: 1px solid var(--cizgi-1); border-radius: 12px; background: #fff; text-decoration: none; color: inherit; transition: border-color .15s, box-shadow .15s; }
+.pt-bekleyen-satir:hover { border-color: var(--pir-300); box-shadow: var(--gol-1); }
+.pt-bekleyen-satir b { font-size: 15px; color: var(--metin-1); display: block; }
+.pt-bekleyen-satir small { font-size: 12.5px; color: var(--metin-3); }
+.pt-bekleyen-satir .btn { height: 34px; pointer-events: none; }
+/* aşama şeridi */
+.pt-serit { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; position: relative; }
+.pt-adim { position: relative; display: grid; justify-items: center; text-align: center; gap: 4px; padding: 0 6px; min-width: 0; }
+.pt-adim::before { content: ''; position: absolute; top: 15px; left: -50%; right: 50%; height: 2px; background: var(--n-200); z-index: 0; }
+.pt-adim:first-child::before { display: none; }
+.pt-adim.tamam::before, .pt-adim.red::before, .pt-adim.revize::before, .pt-adim.sirada::before { background: var(--pir-400); }
+.pt-nokta { position: relative; z-index: 1; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: #fff; border: 2px solid var(--n-200); color: var(--n-400); font-size: 13px; font-weight: 700; }
+.pt-nokta .ikon { width: 15px; height: 15px; }
+.pt-adim.tamam .pt-nokta { background: var(--pir-500); border-color: var(--pir-500); color: #fff; }
+.pt-adim.sirada .pt-nokta { border-color: var(--pir-500); color: var(--pir-600); box-shadow: 0 0 0 5px var(--pir-100); }
+.pt-adim.red .pt-nokta { background: var(--ht-600); border-color: var(--ht-600); color: #fff; }
+.pt-adim.revize .pt-nokta { background: var(--uy-500); border-color: var(--uy-500); color: #fff; }
+.pt-adim-ad { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--metin-3); }
+.pt-adim-kisi { font-size: 13px; font-weight: 600; color: var(--metin-1); overflow-wrap: anywhere; }
+.pt-adim-durum { font-size: 12px; color: var(--metin-3); }
+.pt-adim.sirada .pt-adim-durum { color: var(--pir-700); font-weight: 600; }
+.pt-adim.red .pt-adim-durum { color: var(--ht-700); font-weight: 600; }
+.pt-adim.revize .pt-adim-durum { color: var(--uy-700); font-weight: 600; }
+.pt-mini { display: inline-flex; gap: 4px; align-items: center; }
+.pt-mini i { width: 9px; height: 9px; border-radius: 50%; background: var(--n-200); display: inline-block; }
+.pt-mini i.tamam { background: var(--pir-500); }
+.pt-mini i.sirada { background: #fff; box-shadow: inset 0 0 0 2px var(--pir-500); }
+.pt-mini i.red { background: var(--ht-600); }
+.pt-mini i.revize { background: var(--uy-500); }
+/* form */
+.pt-form { display: grid; gap: 16px; }
+.pt-kart { border: 1px solid var(--cizgi-1); border-radius: 16px; background: var(--yuzey-kart, #fff); box-shadow: var(--gol-1); overflow: hidden; }
+.pt-kart-ust { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; padding: 13px 18px; background: var(--n-50); border-bottom: 1px solid var(--cizgi-1); }
+.pt-kart-ust h3 { margin: 0; font-family: var(--font-serif); font-size: 17px; font-weight: 600; color: var(--metin-marka); }
+.pt-kart-ust small { font-size: 12.5px; color: var(--metin-3); }
+.pt-kart-ust .sag { margin-left: auto; }
+.pt-kart-govde { padding: 16px 18px 18px; }
+.pt-izgara { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px 16px; }
+.pt-alan { display: grid; gap: 6px; min-width: 0; grid-column: span 2; align-content: start; }
+.pt-alan.s3 { grid-column: span 3; } .pt-alan.s4 { grid-column: span 4; } .pt-alan.s6 { grid-column: 1 / -1; }
+.pt-etiket { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--metin-3); display: flex; gap: 6px; align-items: center; }
+.pt-etiket .zorunlu { color: var(--ht-600); }
+.pt-girdi { width: 100%; box-sizing: border-box; font: inherit; font-size: 14px; line-height: 1.45; color: var(--metin-1); border: 1px solid var(--cizgi-2); border-radius: 10px; padding: 8px 11px; background: #fff; min-height: 40px; }
+textarea.pt-girdi { resize: vertical; min-height: 84px; }
+select.pt-girdi { cursor: pointer; }
+.pt-girdi:focus { outline: none; border-color: var(--pir-500); box-shadow: var(--odak-halkasi); }
+.pt-girdi[disabled] { background: var(--n-50); color: var(--metin-3); }
+.pt-tl { position: relative; }
+.pt-tl .pt-girdi { padding-right: 38px; text-align: right; font-variant-numeric: tabular-nums; }
+.pt-tl::after { content: 'TL'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 12px; font-weight: 600; color: var(--metin-3); pointer-events: none; }
+.pt-ipucu { font-size: 12px; color: var(--metin-3); line-height: 1.45; }
+.pt-hata { font-size: 12.5px; color: var(--ht-700); font-weight: 500; }
+.pt-alan.hatali .pt-girdi, .pt-alan.hatali .pt-secenekler { border-color: var(--ht-500); box-shadow: 0 0 0 3px var(--ht-100); border-radius: 10px; }
+.pt-secenekler { display: flex; flex-wrap: wrap; gap: 8px; border: 1px solid transparent; }
+.pt-secenekler.dikey { display: grid; }
+.pt-secenek { display: inline-flex; align-items: center; gap: 9px; padding: 8px 12px; border: 1px solid var(--cizgi-2); border-radius: 10px; background: #fff; cursor: pointer; font-size: 13.5px; color: var(--metin-1); line-height: 1.35; user-select: none; }
+.pt-secenek:hover { border-color: var(--pir-300); }
+.pt-secenek input { width: 17px; height: 17px; margin: 0; accent-color: var(--pir-500); flex: none; }
+.pt-secenek.secili { border-color: var(--pir-500); background: var(--pir-50); box-shadow: inset 0 0 0 1px var(--pir-500); }
+.pt-iki { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.pt-alt-baslik { font-size: 13px; font-weight: 700; color: var(--metin-1); margin: 4px 0 8px; }
+.pt-grup { display: grid; gap: 10px; padding: 0 0 16px; margin: 0 0 16px; border-bottom: 1px dashed var(--cizgi-2); }
+.pt-grup:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: 0; }
+.pt-salt { font-size: 12.5px; color: var(--metin-3); background: var(--n-50); border: 1px dashed var(--cizgi-2); border-radius: 10px; padding: 9px 11px; }
+.pt-alt-cubuk { position: sticky; bottom: 0; z-index: 25; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 12px 14px; margin-top: 4px; background: rgba(255,255,255,.97); backdrop-filter: blur(6px); border: 1px solid var(--cizgi-1); border-radius: 14px; box-shadow: 0 -6px 24px rgba(15,27,45,.08); }
+.pt-alt-cubuk .not { font-size: 12.5px; color: var(--metin-3); margin-right: auto; min-width: 0; }
+.pt-alt-cubuk .not b { color: var(--ht-700); }
+.pt-alt-cubuk .btn { height: 40px; }
+/* zincir önizleme / imzalar */
+.pt-imzalar { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.pt-imza { border: 1px solid var(--cizgi-1); border-radius: 12px; padding: 11px 12px; background: #fff; display: grid; gap: 4px; align-content: start; min-height: 92px; }
+.pt-imza .ad { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--metin-3); }
+.pt-imza b { font-size: 14px; color: var(--metin-1); overflow-wrap: anywhere; }
+.pt-imza small { font-size: 12px; color: var(--metin-3); line-height: 1.4; overflow-wrap: anywhere; }
+.pt-imza .karar { font-size: 12.5px; font-weight: 600; }
+.pt-imza.tamam { border-color: var(--pir-200); background: var(--pir-50); }
+.pt-imza.tamam .karar { color: var(--pir-700); }
+.pt-imza.red { border-color: var(--ht-200); background: var(--ht-50); } .pt-imza.red .karar { color: var(--ht-700); }
+.pt-imza.revize { border-color: var(--uy-200); background: var(--uy-50); } .pt-imza.revize .karar { color: var(--uy-700); }
+.pt-imza.sirada { border-color: var(--pir-400); box-shadow: 0 0 0 3px var(--pir-100); }
+.pt-imza .eksik { color: var(--ht-700); }
+/* görüntüleme */
+.pt-ozet-bas { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 0 0 14px; }
+.pt-ozet-bas h2 { margin: 0; font-family: var(--font-serif); font-size: 22px; font-weight: 600; color: var(--metin-marka); }
+.pt-ozet-bas .no { font-size: 12.5px; font-weight: 700; color: var(--metin-3); letter-spacing: .05em; }
+.pt-dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 18px; margin: 0; }
+.pt-dl > div { min-width: 0; }
+.pt-dl dt { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--metin-3); margin: 0 0 3px; }
+.pt-dl dd { margin: 0; font-size: 14px; color: var(--metin-1); line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.pt-dl .genis { grid-column: 1 / -1; }
+.pt-dl .iki { grid-column: span 2; }
+.pt-isaret { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.pt-isaret span { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--metin-3); }
+.pt-isaret span i { width: 15px; height: 15px; border-radius: 4px; border: 1.5px solid var(--n-300); display: inline-grid; place-items: center; font-style: normal; font-size: 11px; font-weight: 700; }
+.pt-isaret span.var { color: var(--metin-1); font-weight: 600; }
+.pt-isaret span.var i { background: var(--pir-500); border-color: var(--pir-500); color: #fff; }
+.pt-detay { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; align-items: start; }
+.pt-detay > aside { position: sticky; top: 12px; display: grid; gap: 14px; }
+.pt-karar { border: 1px solid var(--pir-300); border-radius: 16px; background: #fff; box-shadow: 0 10px 30px -12px rgba(29,79,140,.35); overflow: hidden; }
+.pt-karar-ust { background: linear-gradient(135deg, var(--lac-800), var(--lac-600)); color: #fff; padding: 14px 16px; }
+.pt-karar-ust small { display: block; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: #c8d6ea; }
+.pt-karar-ust b { font-family: var(--font-serif); font-size: 18px; font-weight: 600; }
+.pt-karar-govde { padding: 14px 16px 16px; display: grid; gap: 12px; }
+.pt-karar .pt-secenek { width: 100%; box-sizing: border-box; }
+.pt-karar .pt-secenek.onay.secili { border-color: var(--pir-500); background: var(--pir-50); }
+.pt-karar .pt-secenek.red.secili { border-color: var(--ht-500); background: var(--ht-50); box-shadow: inset 0 0 0 1px var(--ht-500); }
+.pt-karar .pt-secenek.revize.secili, .pt-karar .pt-secenek.erteleme.secili { border-color: var(--uy-500); background: var(--uy-50); box-shadow: inset 0 0 0 1px var(--uy-500); }
+.pt-onay-kutu { display: flex; gap: 9px; align-items: flex-start; font-size: 13px; color: var(--metin-2); line-height: 1.45; cursor: pointer; }
+.pt-onay-kutu input { width: 17px; height: 17px; margin: 1px 0 0; accent-color: var(--pir-500); flex: none; }
+.pt-karar .btn { height: 42px; justify-content: center; }
+.pt-yan-kart { border: 1px solid var(--cizgi-1); border-radius: 14px; background: #fff; padding: 14px 16px; display: grid; gap: 10px; }
+.pt-yan-kart h4 { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--metin-3); }
+.pt-yan-kart .btn { justify-content: flex-start; height: 38px; }
+.pt-gecmis { display: grid; gap: 0; }
+.pt-olay { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 10px; position: relative; padding: 0 0 14px; }
+.pt-olay::before { content: ''; position: absolute; left: 6px; top: 14px; bottom: 0; width: 2px; background: var(--n-150); }
+.pt-olay:last-child::before { display: none; }
+.pt-olay i { width: 14px; height: 14px; border-radius: 50%; background: var(--pir-500); margin-top: 3px; box-shadow: 0 0 0 3px var(--pir-100); }
+.pt-olay b { font-size: 13.5px; color: var(--metin-1); font-weight: 600; display: block; }
+.pt-olay small { font-size: 12px; color: var(--metin-3); }
+.pt-olay p { margin: 4px 0 0; font-size: 13px; color: var(--metin-2); white-space: pre-wrap; overflow-wrap: anywhere; background: var(--n-50); border-radius: 8px; padding: 6px 9px; }
+/* ayar */
+.pt-ayar-tablo { width: 100%; border-collapse: collapse; }
+.pt-ayar-tablo th { text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--metin-3); padding: 8px 8px; border-bottom: 1px solid var(--cizgi-2); }
+.pt-ayar-tablo td { padding: 7px 8px; border-bottom: 1px solid var(--cizgi-1); vertical-align: middle; }
+.pt-ayar-tablo td.dep b { font-size: 13.5px; color: var(--metin-1); }
+.pt-ayar-tablo td.dep small { display: block; font-size: 12px; color: var(--metin-3); }
+.pt-ayar-tablo .pt-girdi { min-height: 36px; padding: 6px 9px; font-size: 13.5px; }
+.pt-ayar-tablo tr.eksik td { background: var(--ht-50); }
+.pt-ayar-tablo .btn { height: 34px; padding: 0 10px; }
+/* modal */
+.pt-modal-ort { position: fixed; inset: 0; z-index: 200; background: rgba(9,12,17,.48); display: grid; place-items: center; padding: 16px; }
+.pt-modal { width: min(560px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: #fff; border-radius: 16px; box-shadow: 0 30px 80px rgba(9,12,17,.4); }
+.pt-modal-ust { padding: 16px 18px 6px; } .pt-modal-ust h3 { margin: 0; font-family: var(--font-serif); font-size: 19px; color: var(--metin-marka); }
+.pt-modal-govde { padding: 8px 18px 6px; display: grid; gap: 12px; font-size: 14px; color: var(--metin-2); line-height: 1.55; }
+.pt-modal-alt { padding: 12px 18px 16px; display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.pt-modal-alt .btn { height: 38px; }
+/* yazdırma */
+#baski { display: none; }
+@media (max-width: 1100px) { .pt-detay { grid-template-columns: minmax(0, 1fr); } .pt-detay > aside { position: static; order: -1; } }
+@media (max-width: 900px) {
+  .pt-izgara { grid-template-columns: repeat(2, minmax(0, 1fr)); } .pt-alan, .pt-alan.s3, .pt-alan.s4 { grid-column: span 2; } .pt-alan.s1y { grid-column: span 1; }
+  .pt-iki { grid-template-columns: minmax(0, 1fr); } .pt-dl { grid-template-columns: repeat(2, minmax(0, 1fr)); } .pt-dl .iki { grid-column: 1 / -1; }
+  .pt-imzalar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .pt-dl { grid-template-columns: minmax(0, 1fr); } .pt-imzalar { grid-template-columns: minmax(0, 1fr); }
+  .pt-serit .pt-adim-kisi { font-size: 11.5px; } .pt-serit .pt-adim-durum { font-size: 11px; } .pt-adim-ad { font-size: 9.5px; }
+  .pt-kart-govde { padding: 14px 13px 15px; } .pt-alt-cubuk .btn { flex: 1 1 auto; justify-content: center; }
+  .pt-bekleyen-satir { grid-template-columns: minmax(0, 1fr); }
+}
+@media print {
+  @page { size: A4 portrait; margin: 11mm 12mm; }
+  body > *:not(#baski) { display: none !important; }
+  html, body { background: #fff !important; }
+  #baski { display: block !important; }
+}
+#baski { font-family: Inter, Arial, sans-serif; color: #111; font-size: 10.5pt; }
+#baski .b-ust { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #16294a; padding-bottom: 6px; }
+#baski .b-marka { font-size: 15pt; font-weight: 700; color: #16294a; letter-spacing: -.01em; } #baski .b-marka span { font-weight: 400; }
+#baski .b-tarih { font-size: 9.5pt; text-align: right; line-height: 1.5; }
+#baski h1 { text-align: center; font-family: 'Source Serif 4', Georgia, serif; font-weight: 600; font-size: 19pt; margin: 10px 0 2px; color: #16294a; letter-spacing: .02em; }
+#baski h2 { font-size: 9.5pt; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #16294a; margin: 10px 0 5px; border-bottom: 1px solid #c9d3e2; padding-bottom: 2px; }
+#baski .b-izgara { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px 8px; }
+#baski .b-kutu { background: #eef1f5; border-radius: 8px; padding: 4px 8px; min-height: 22px; break-inside: avoid; }
+#baski .b-kutu i { display: block; font-style: italic; font-size: 7.5pt; color: #555; text-transform: uppercase; letter-spacing: .03em; }
+#baski .b-kutu span { font-size: 9.5pt; white-space: pre-wrap; overflow-wrap: anywhere; }
+#baski .b-kutu.genis { grid-column: 1 / -1; }
+#baski .b-sec { display: flex; flex-wrap: wrap; gap: 2px 14px; font-size: 9.5pt; }
+#baski .b-sec span::before, #baski .b-k { content: ''; display: inline-block; box-sizing: border-box; width: 9pt; height: 9pt; border: 1px solid #444; border-radius: 2px; margin-right: 4px; vertical-align: -1px; font-size: 7pt; line-height: 7.5pt; text-align: center; font-weight: 700; }
+#baski .b-sec span.var::before, #baski .b-k.var { content: '✓'; background: #16294a; border-color: #16294a; color: #fff; }
+#baski .b-k.var::after { content: '✓'; }
+#baski .b-sec span.var { font-weight: 700; }
+#baski .b-iki { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+#baski .b-iki > div { border-right: 1px solid #c9d3e2; padding-right: 12px; } #baski .b-iki > div:last-child { border-right: 0; padding-right: 0; }
+#baski .b-alt { font-size: 9.5pt; font-weight: 700; font-style: italic; margin: 6px 0 2px; }
+#baski .b-metin { font-size: 9.5pt; white-space: pre-wrap; overflow-wrap: anywhere; }
+#baski .b-imza { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 4px; }
+#baski .b-imza > div { border: 1px solid #c9d3e2; border-radius: 8px; padding: 6px 7px; min-height: 62px; font-size: 8.5pt; line-height: 1.4; break-inside: avoid; }
+#baski .b-imza b { display: block; font-size: 7.5pt; text-transform: uppercase; letter-spacing: .04em; color: #16294a; margin-bottom: 2px; }
+#baski .b-dip { margin-top: 10px; font-size: 7.5pt; color: #555; border-top: 1px solid #c9d3e2; padding-top: 4px; }
+</style>
+</head>
+<!--
+  Personel Talepleri + Açık Pozisyonlar (İK Portalı) — 16.11.2026
+  Akış: talep eden yönetici (müdür / yönetici / şef) → departman direktörü → İK Direktörü → CEO. Direktör ve İK Direktörü
+  İK Portalı girişiyle kendi hesaplarıyla onaylar (e-postadaki bağlantı formu açar). Direktöre ve İK Direktörüne otomatik
+  e-posta gider (epostaKuyrugu → ise-alim-sureci GitHub Actions). CEO sisteme girmez, e-posta almaz: kararını İK (İK rolü
+  ya da talebin İK Direktörü) "CEO onay verdi / reddetti / erteledi / revize istedi" diye işaretler (kullanıcı kararı 16.11).
+  CEO onayı işaretlenince talep acikPozisyonlar koleksiyonunda kendiliğinden açık pozisyon olur (Açık Pozisyonlar: ONAYLI);
+  süreçteki talepler orada ONAY AŞAMASINDA, reddedilenler ONAYLI DEĞİL görünür.
+  Koleksiyonlar: personelTalepFormlari, acikPozisyonlar, talepAyar/zincir. Kurallar: guvenlik/firestore.rules → PERSONEL TALEPLERİ.
+  Seçenek listeleri ve form alanları: ortak/personel-talep.js (kuralla birebir).
+-->
+<body class="talep">
+<div class="acilis" id="acilis" role="status" aria-live="polite">
+  <div class="acilis-ic">
+    <span class="amblem buyuk" role="img" aria-label="İnciroğlu Otomotiv İK amblemi"></span>
+    <div class="acilis-baslik">Personel Talepleri</div>
+    <div class="acilis-metin" id="acilisMetin">Oturum denetleniyor…</div>
+    <div class="acilis-cubuk"><i></i></div>
+  </div>
+</div>
+<div class="ana">
+  <div class="ust-alan kokpit">
+    <header class="ust-bant">
+      <div class="ic ust-ic">
+        <div class="ust-marka"><span class="amblem" role="img" aria-label="İnciroğlu Otomotiv İK amblemi"></span></div>
+        <div class="uyg-ad"><span id="ustBaslik">Personel Talepleri</span><small id="ustAlt">İnsan Kaynakları</small></div>
+        <div class="ust-sag" id="ustSag"></div>
+      </div>
+    </header>
+    <div id="kaputYuva"></div>
+  </div>
+  <main class="ic icerik" id="icerik"></main>
+</div>
+<div id="baski" aria-hidden="true"></div>
+
+<script type="module">
+import { doc, getDoc, getDocs, setDoc, writeBatch, runTransaction, collection, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { db, kimlikBaslat, cikisYap, adBasliklari } from "./ortak/kimlik.js";
+import * as O from "./pano/ortak.js";
+import * as T from "./ortak/personel-talep.js";
+
+const $ = (id) => document.getElementById(id);
+const acilisMetni = (t) => { const e = $('acilis'); if (e) { const m = $('acilisMetin'); if (m) m.textContent = t; } };
+const acilisGizle = () => { const a = $('acilis'); if (a) { a.classList.add('gizle'); setTimeout(() => a.remove(), 600); } };
+const SVG = (yol) => '<svg class="ikon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + yol + '</svg>';
+const IK_TIK = SVG('<path d="m5 12.5 4.2 4.2L19 7"/>');
+const IK_CARPI = SVG('<path d="M6 6l12 12M18 6 6 18"/>');
+const IK_DONUS = SVG('<path d="M4 9h11a5 5 0 0 1 0 10H9"/><path d="m8 5-4 4 4 4"/>');
+const IK_SAAT = SVG('<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>');
+const IK_EKLE = SVG('<path d="M12 5v14M5 12h14"/>');
+const IK_GERI = SVG('<path d="M15 6l-6 6 6 6"/>');
+const IK_YAZDIR = SVG('<path d="M7 9V4.5h10V9"/><rect x="4" y="9" width="16" height="7.5" rx="1.5"/><path d="M7 14h10v5.5H7z"/>');
+const IK_TALEP = SVG('<rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M9 8h6M9 12h6M9 16h3.5"/>');
+const IK_POZ = SVG('<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M3 13h18"/>');
+const IK_ZINCIR = SVG('<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="12" r="2.5"/><circle cx="6" cy="18" r="2.5"/><path d="M8.3 7.2l7.4 3.6M8.3 16.8l7.4-3.6"/>');
+const IK_POSTA = SVG('<rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="m4 7 8 6 8-6"/>');
+
+/* ============================================================== OTURUM */
+const ROLLER = ['ik', 'direktor', 'satis_mudur', 'servis_mudur', 'idari_mudur', 'mudur'];
+const ROL_ADI = { ik: 'İnsan Kaynakları', direktor: 'Direktör', satis_mudur: 'Satış Müdürü', servis_mudur: 'Servis Müdürü', idari_mudur: 'İdari Müdür', mudur: 'Departman Müdürü' };
+const OTURUM = await kimlikBaslat({ uygulama: 'Personel Talepleri', roller: ROLLER });
+const HESAP = OTURUM.hesap;
+const HID = OTURUM.hid;
+const IK = HESAP.roller.indexOf('ik') >= 0;
+const HAM_AD = String(HESAP.ad || '');            /* kuraldaki hesap().ad ile birebir (onay ve geçmiş kayıtlarına bu yazılır) */
+const AD = adBasliklari(HAM_AD);
+const ANA_ROL = ROLLER.find((r) => HESAP.roller.indexOf(r) >= 0) || '';
+const ROL_AD = ROL_ADI[ANA_ROL] || ANA_ROL;
+acilisMetni('Talepler yükleniyor…');
+
+/* ============================================================== DURUM */
+let AYAR = null, AYAR_HAZIR = false, AYAR_HATA = null;
+const TALEP = new Map(); let TALEP_HAZIR = false, TALEP_HATA = null;
+const POZ = new Map(); let POZ_HAZIR = false, POZ_HATA = null;
+let PERSONEL = [];
+let HESAPLAR = null;            /* yalnız İK, onay zinciri ayarı için: [{pid, ad, roller}] (hesap kimliği hid ekranda/kayıtta kullanılmaz) */
+/* TALEP KİMLİĞİ (pid): hesap kimliği (hid = TC özeti, TC'ye geri çevrilebilir) bu modülde HİÇBİR belgeye yazılmaz.
+   Her yönetim hesabına İK bir kez rastgele kimlik verir: talepKimlik/{hid} = { pid }. Kişi yalnız kendi kaydını okur. */
+let PID = '';
+const yeniPid = () => 'p' + Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, '0')).join('');
+/** İK: aktif yönetim hesaplarından talep kimliği olmayanlara kimlik verir; HESAPLAR listesini kurar */
+async function talepKimlikleriHazirla() {
+  const [hs, ks] = await Promise.all([getDocs(collection(db, 'hesaplar')), getDocs(collection(db, 'talepKimlik'))]);
+  const pidler = new Map(); ks.forEach((d) => { const p = d.data() && d.data().pid; if (p) pidler.set(d.id, p); });
+  const yazilacak = [], l = [];
+  hs.forEach((d) => {
+    const x = d.data() || {}; const roller = Array.isArray(x.roller) ? x.roller.slice() : [];
+    if (x.aktif === false || !roller.some((r) => r !== 'calisan')) return;
+    let p = pidler.get(d.id);
+    if (!p) { p = yeniPid(); yazilacak.push([d.id, p]); }
+    l.push({ pid: p, ad: String(x.ad || ''), roller, _h: d.id });
+  });
+  /* tek tek yazılır: aynı anda sayfayı açan başka bir İK kullanıcısı kimliği önce verdiyse (kural güncellemeye izin
+     vermez) yalnız o kayıt düşer; sonra gerçek kimlikler yeniden okunur */
+  if (yazilacak.length) {
+    await Promise.allSettled(yazilacak.map(([h, p]) => setDoc(doc(db, 'talepKimlik', h), { pid: p, olusturma: serverTimestamp() })));
+    const ks2 = await getDocs(collection(db, 'talepKimlik'));
+    const gercek = new Map(); ks2.forEach((d) => { const p = d.data() && d.data().pid; if (p) gercek.set(d.id, p); });
+    l.forEach((x) => { if (gercek.has(x._h)) x.pid = gercek.get(x._h); });
+  }
+  l.splice(0, l.length, ...l.filter((x) => /^p[0-9a-f]{32}$/.test(x.pid)));
+  const ben = l.find((x) => x._h === HID); if (ben) PID = ben.pid;
+  l.forEach((x) => { delete x._h; });
+  HESAPLAR = l.sort((a, b) => O.trKarsilastir(a.ad, b.ad));
+  return yazilacak.length;
+}
+try {
+  if (IK) await talepKimlikleriHazirla();
+  if (!PID) { const s = await getDoc(doc(db, 'talepKimlik', HID)); if (s.exists() && /^p[0-9a-f]{32}$/.test(String(s.data().pid || ''))) PID = s.data().pid; }
+} catch (e) { console.warn('Talep kimliği okunamadı', e); }
+let ED = null;                  /* açık form: { mod:'yeni'|'duzenle', id, form, depKey, denendi } */
+let AY = null;                  /* açık onay zinciri düzenleyicisi (İK) */
+let MESGUL = false;
+const KARAR_TASLAK = new Map(); /* talep kimliği → { karar, not, ucretIk, kadroUygun, onay } (ekran yenilense de kaybolmaz) */
+const EPOSTA_DURUM = new Map(); /* yalnız İK: kuyruk kimliği → durum */
+const SUZ = { talep: 'hepsi', poz: 'acik' };
+
+/* ============================================================== YARDIMCILAR */
+const git = (h) => { if (location.hash === h) ciz(); else location.hash = h; };
+const kisiAd = (ad) => T.trBaslik(ad || '');
+const olay = (metin, not) => ({ zaman: Date.now(), kim: HAM_AD, olay: T.temiz(metin, 200), not: T.temiz(not || '', T.SINIR.not) });
+const sirala = (a, b) => ((T.zamanCoz(b.guncelleme) || T.zamanCoz(b.olusturma) || 0) - (T.zamanCoz(a.guncelleme) || T.zamanCoz(a.olusturma) || 0));
+const talepler = () => [...TALEP.values()].sort(sirala);
+const pozisyonlar = () => [...POZ.values()].sort((a, b) => (T.zamanCoz(b.acilis) || 0) - (T.zamanCoz(a.acilis) || 0));
+const depAdi = (t) => String(t.departman || '') + (t.bolum ? ' · ' + t.bolum : '');
+/** Sıra bu oturumdaki kişide mi? (direktör ve İK Direktörü aşaması; CEO kararını İK işaretler, aşağıda) */
+function siraBende(t) {
+  const z = t.zincir || {};
+  return (t.durum === 'direktor' && z.direktor && z.direktor.pid === PID)
+    || (t.durum === 'ik' && z.ik && z.ik.pid === PID);
+}
+/** İK yetkisi bu talepte: İK rolü ya da talebin İK Direktörü (kural: ptIkYetkili) */
+const ikYetkili = (t) => IK || !!(t && t.zincir && t.zincir.ik && t.zincir.ik.pid === PID);
+/** CEO kararı işaretlenebilir mi? (CEO sisteme girmez; İK "CEO onay verdi" der) */
+const ceoIsaretlenebilir = (t) => t.durum === 'ceo' && ikYetkili(t);
+const talepEdenBenim = (t) => t.talepEden && t.talepEden.pid === PID;
+const durumCip = (d, poz) => { const x = (poz ? T.POZ_DURUM : T.DURUM)[d] || { ad: d || '—', sinif: 'kapali' }; return O.el('span', { class: 'pt-durum ' + x.sinif, text: x.ad }); };
+function asamaDurumu(t, kod) {
+  const o = (t.onaylar || {})[kod];
+  if (kod === 'talep') return { sinif: 'tamam', metin: 'Talebi oluşturdu' };
+  if (o && o.karar) {
+    const s = o.karar === 'onay' ? 'tamam' : o.karar === 'red' ? 'red' : 'revize';
+    return { sinif: s, metin: T.KARAR_SONUC[o.karar] + (o.adina ? ' (İK işaretledi)' : ''), zaman: o.zaman };
+  }
+  if (t.durum === kod) return { sinif: 'sirada', metin: kod === 'ceo' ? 'CEO kararı bekleniyor' : 'Onay bekleniyor' };
+  if (t.durum === 'iptal') return { sinif: '', metin: 'İptal edildi' };
+  return { sinif: '', metin: T.surecteMi(t.durum) ? 'Sırada' : '—' };
+}
+/** İmza kutusundaki ad: kararı veren kişinin KENDİ kaydı (zincir sonradan değişse de imza atanın adı görünür);
+    CEO kararını İK işaretlediyse CEO'nun adı (işaretleyen ayrıca yazılır); karar yoksa zincirdeki kişi */
+function imzaAdi(t, kod) {
+  if (kod === 'talep') return (t.talepEden || {}).ad || '';
+  const o = (t.onaylar || {})[kod];
+  if (o && o.karar && !o.adina && o.ad) return o.ad;
+  return ((t.zincir || {})[kod] || {}).ad || '';
+}
+/** Alan sırasından bağımsız derin eşitlik (Firestore haritaları alfabetik sırayla döndürür) */
+const sirali = (v) => (Array.isArray(v) ? v.map(sirali) : v && typeof v === 'object' ? Object.keys(v).sort().reduce((o, k) => (o[k] = sirali(v[k]), o), {}) : v);
+const esitDerin = (a, b) => JSON.stringify(sirali(a)) === JSON.stringify(sirali(b));
+/** Onay zinciri güncellenebilir mi? (kural: ptZincirYenile — imzalanmış aşamanın kişisi değişmez) */
+function zincirYenilenebilir(t, z) {
+  if (!z || !T.surecteMi(t.durum) || esitDerin(z, t.zincir)) return false;
+  if (t.durum !== 'direktor' && !esitDerin(z.direktor, t.zincir.direktor)) return false;
+  if (t.durum === 'ceo' && !esitDerin(z.ik, t.zincir.ik)) return false;
+  return true;
+}
+function taslaklariSil() {
+  try { Object.keys(localStorage).filter((k) => k.startsWith('pt-taslak-v1|' + PID + '|')).forEach((k) => localStorage.removeItem(k)); } catch (e) { /* yok */ }
+}
+function seritEl(t) {
+  const s = O.el('div', { class: 'pt-serit', role: 'list', 'aria-label': 'Onay aşamaları' });
+  T.ASAMALAR.forEach((a, i) => {
+    const d = asamaDurumu(t, a.kod);
+    const kisi = imzaAdi(t, a.kod);
+    const zaman = a.kod === 'talep' ? t.olusturma : d.zaman;
+    const nokta = d.sinif === 'tamam' ? IK_TIK : d.sinif === 'red' ? IK_CARPI : d.sinif === 'revize' ? IK_DONUS : d.sinif === 'sirada' ? IK_SAAT : String(i + 1);
+    s.append(O.el('div', { class: 'pt-adim ' + d.sinif, role: 'listitem' },
+      O.el('span', { class: 'pt-nokta', html: nokta }),
+      O.el('span', { class: 'pt-adim-ad', text: a.kisa }),
+      O.el('span', { class: 'pt-adim-kisi', text: kisiAd(kisi) || '—' }),
+      O.el('span', { class: 'pt-adim-durum', text: d.metin + (zaman ? ' · ' + T.zamanTR(zaman, false) : '') })));
+  });
+  return s;
+}
+function miniSerit(t) {
+  const m = O.el('span', { class: 'pt-mini', title: T.durumAdi(t.durum) });
+  T.ASAMALAR.forEach((a) => m.append(O.el('i', { class: asamaDurumu(t, a.kod).sinif })));
+  return m;
+}
+/** Bu oturumun unvanı: aktif personel listesinden (yoksa rol adı) */
+function benimKaydim() { const a = T.adAnahtari(HAM_AD); return PERSONEL.find((p) => T.adAnahtari(p.ad) === a) || null; }
+const benimUnvan = () => T.temiz((benimKaydim() || {}).unvan || ROL_AD, 120);
+/** E-posta kuyruğu kaydı. İÇERİK YAZILMAZ (konu ve gövde boş): gönderici (ise-alim-sureci scripts/eposta-kuyrugu.js)
+    talep kaydından kendi şablonuyla üretir (scripts/personel-talep-eposta.js). Kural: ptEposta. */
+function epostaKaydi(tur, t, id) {
+  const z = t.zincir[tur];
+  return {
+    kime: z.eposta, kimeAd: T.temiz(kisiAd(z.ad), 120).replace(/[@,;"]/g, ' '), konu: '', html: '', sablon: tur,
+    kaynak: 'personel-talebi', ilgili: id, durum: 'bekliyor', olusturma: serverTimestamp(), olusturan: HAM_AD
+  };
+}
+function hataMetni(e) {
+  const k = (e && e.code) || '';
+  if (k === 'permission-denied') return 'Yetkiniz yok ya da güvenlik kuralı henüz yayınlanmamış. İnsan Kaynakları ile görüşün.';
+  if (k === 'unavailable' || k === 'deadline-exceeded') return 'Bağlantı kurulamadı. İnternet bağlantınızı kontrol edip yeniden deneyin.';
+  return (e && e.message) || 'Beklenmeyen bir hata oluştu.';
+}
+
+/* ---------------------------------------------------- modal */
+function modal({ baslik, govde, dugmeler = [] }) {
+  const ort = O.el('div', { class: 'pt-modal-ort', role: 'dialog', 'aria-modal': 'true', 'aria-label': baslik });
+  const kutu = O.el('div', { class: 'pt-modal' }, O.el('div', { class: 'pt-modal-ust' }, O.el('h3', { text: baslik })), O.el('div', { class: 'pt-modal-govde' }, govde));
+  const alt = O.el('div', { class: 'pt-modal-alt' });
+  const kapat = () => { ort.remove(); document.removeEventListener('keydown', tus); };
+  const tus = (e) => { if (e.key === 'Escape') kapat(); };
+  dugmeler.forEach((d) => alt.append(O.el('button', { class: 'btn ' + (d.sinif || ''), type: 'button', html: d.html || O.esc(d.metin), on: { click: () => d.tikla ? d.tikla(kapat) : kapat() } })));
+  kutu.append(alt); ort.append(kutu);
+  ort.addEventListener('click', (e) => { if (e.target === ort) kapat(); });
+  document.addEventListener('keydown', tus);
+  document.body.append(ort);
+  const ilk = kutu.querySelector('textarea, input, select'); if (ilk) setTimeout(() => ilk.focus(), 30);
+  return { kapat, kutu };
+}
+
+/* ============================================================== VERİ */
+const tq = IK ? collection(db, 'personelTalepFormlari') : query(collection(db, 'personelTalepFormlari'), where('pidler', 'array-contains', PID));
+const pq = IK ? collection(db, 'acikPozisyonlar') : query(collection(db, 'acikPozisyonlar'), where('pidler', 'array-contains', PID));
+let ZAMANLAYICI = null;
+function guncellendi() {
+  if (!(AYAR_HAZIR && TALEP_HAZIR && POZ_HAZIR)) return;
+  acilisGizle();
+  clearTimeout(ZAMANLAYICI);
+  ZAMANLAYICI = setTimeout(() => {
+    /* açık formdaki yazılanlar kaybolmasın: form ve ayar ekranı canlı veriyle yeniden çizilmez */
+    const r = rota();
+    if ((r.sayfa === 'yeni' || r.sayfa === 'duzenle') && ED) return;
+    if (r.sayfa === 'ayar' && AY) return;
+    ciz();
+  }, 60);
+}
+onSnapshot(doc(db, 'talepAyar', 'zincir'), (s) => { AYAR = s.exists() ? s.data() : null; AYAR_HAZIR = true; guncellendi(); },
+  (e) => { AYAR_HATA = e; AYAR_HAZIR = true; guncellendi(); });
+if (IK || PID) {
+  onSnapshot(tq, (qs) => { TALEP.clear(); qs.forEach((d) => TALEP.set(d.id, Object.assign({}, d.data(), { id: d.id }))); TALEP_HAZIR = true; TALEP_HATA = null; guncellendi(); },
+    (e) => { TALEP_HATA = e; TALEP_HAZIR = true; guncellendi(); });
+  onSnapshot(pq, (qs) => { POZ.clear(); qs.forEach((d) => POZ.set(d.id, Object.assign({}, d.data(), { id: d.id }))); POZ_HAZIR = true; POZ_HATA = null; guncellendi(); },
+    (e) => { POZ_HATA = e; POZ_HAZIR = true; guncellendi(); });
+} else { TALEP_HAZIR = POZ_HAZIR = true; }        /* talep kimliği yok: liste okunmaz (kural reddeder), ekranda açıklama çıkar */
+getDoc(doc(db, 'oryantasyonAyar', 'personel')).then((s) => { if (s.exists() && Array.isArray(s.data().liste)) { PERSONEL = s.data().liste; guncellendi(); } }).catch(() => {});
+
+/* ============================================================== YÖNLENDİRME */
+function rota() {
+  const h = (location.hash || '').replace(/\?.*$/, '').replace(/^#\/?/, '');
+  const p = h.split('/').filter(Boolean);
+  let id = p[1] || ''; try { id = decodeURIComponent(id); } catch (e) { id = ''; }
+  return { sayfa: p[0] || 'talepler', id };
+}
+window.addEventListener('hashchange', () => {
+  if (MESGUL) return;
+  if (ED) { taslakYaz(true); ED = null; }
+  AY = null;
+  ciz();
+  window.scrollTo(0, 0);
+});
+
+/* ============================================================== ÜST BANT + SEKMELER */
+function ustBantKur(baslik) {
+  $('ustBaslik').textContent = baslik;
+  const sag = $('ustSag'); sag.textContent = '';
+  const bas = AD.split(/\s+/).filter(Boolean);
+  sag.append(O.el('div', { class: 'kisi' }, O.el('span', { class: 'avatar', text: ((bas[0] || '?')[0] + ((bas[bas.length - 1] || ' ')[0] || '')).toLocaleUpperCase('tr') }),
+    O.el('div', { class: 'kisi-ad' }, O.el('div', { text: AD }), O.el('span', { class: 'rozet', text: ROL_AD }))));
+  if (window.top === window.self) sag.append(O.el('button', { class: 'btn btn-koyu', type: 'button', html: O.ikon('cikis') + '<span class="etk">Çıkış</span>', on: { click: () => { taslaklariSil(); cikisYap('cikis'); } } }));
+}
+function sekmeler(kok, secili) {
+  const bekleyen = talepler().filter(siraBende).length;
+  const acik = pozisyonlar().filter((p) => T.pozAcikMi(p.durum)).length;
+  const s = O.el('nav', { class: 'pt-sekmeler', 'aria-label': 'Bölümler' },
+    O.el('a', { href: '#/talepler', class: secili === 'talepler' ? 'secili' : null, html: IK_TALEP + 'Personel Talepleri' + (bekleyen ? ' <span class="pt-sayi" title="Onayınızı bekleyen">' + bekleyen + '</span>' : '') }),
+    O.el('a', { href: '#/pozisyonlar', class: secili === 'pozisyonlar' ? 'secili' : null, html: IK_POZ + 'Açık Pozisyonlar <span class="pt-sayi sonuk">' + acik + '</span>' }),
+    IK ? O.el('a', { href: '#/ayar', class: secili === 'ayar' ? 'secili' : null, html: IK_ZINCIR + 'Onay Zinciri' + (AYAR ? '' : ' <span class="pt-sayi">!</span>') }) : null);
+  kok.append(s);
+}
+function yuklemeHatasi(kok) {
+  if (!IK && !PID) kok.append(O.el('div', { class: 'pt-bilgi uyari', html: '<b>Hesabınız bu bölüm için henüz hazırlanmadı.</b> İnsan Kaynakları bu sayfayı açtığında hesabınıza talep kimliği kendiliğinden verilir. Birkaç dakika sonra sayfayı yenileyin; sürerse İnsan Kaynakları ile görüşün.' }));
+  const h = TALEP_HATA || POZ_HATA || AYAR_HATA;
+  if (!h) return;
+  kok.append(O.el('div', { class: 'pt-bilgi hata', html: '<b>Veriler okunamadı.</b> ' + O.esc(hataMetni(h)) + ' <br>Güvenlik kuralı yeni yayınlandıysa birkaç dakika sonra sayfayı yenileyin.' }));
+}
+
+/* ============================================================== ÇİZİM */
+function ciz() {
+  const r = rota();
+  O.grafikleriTemizle();
+  const kok = O.el('section', { class: 'pg on', id: 'p-talep' });
+  $('icerik').replaceChildren(kok);
+  if (r.sayfa === 'yeni') formSayfasi(kok, 'yeni');
+  else if (r.sayfa === 'duzenle' && TALEP.get(r.id)) formSayfasi(kok, 'duzenle', r.id);
+  else if (r.sayfa === 'talep' && r.id) talepSayfasi(kok, r.id);
+  else if (r.sayfa === 'pozisyonlar') pozisyonlarSayfasi(kok);
+  else if (r.sayfa === 'pozisyon' && POZ.get(r.id)) pozisyonSayfasi(kok, r.id);
+  else if (r.sayfa === 'ayar' && IK) ayarSayfasi(kok);
+  else {
+    if (r.sayfa !== 'talepler') history.replaceState(null, '', '#/talepler');
+    taleplerSayfasi(kok);
+  }
+  window.__TEST_HAZIR = true;
+}
+
+/* ---------------------------------------------------- 1) TALEPLER */
+function taleplerSayfasi(kok) {
+  ustBantKur('Personel Talepleri');
+  const liste = talepler();
+  const bekleyen = liste.filter(siraBende);
+  const ceoBekleyen = liste.filter(ceoIsaretlenebilir);
+  const surecte = liste.filter((t) => T.surecteMi(t.durum)).length;
+  const onaylanan = liste.filter((t) => t.durum === 'onaylandi').length;
+  const geri = liste.filter((t) => ['revize', 'ertelendi', 'reddedildi'].includes(t.durum)).length;
+  O.kaput(kok, {
+    ustEtiket: 'İnsan Kaynakları · Kadro', baslik: 'Personel Talepleri',
+    ozetHtml: IK
+      ? 'Yöneticilerin açtığı personel talepleri <b>direktör → İK Direktörü → CEO</b> sırasıyla onaylanır; CEO onayıyla talep kendiliğinden <b>açık pozisyon</b> olur.'
+      : 'Ekibiniz için personel talebi oluşturun; talep <b>direktörünüze</b> e-postayla iletilir, ardından İK Direktörü ve CEO onayına gider. Sıra size geldiğinde talepler burada görünür.',
+    meta: [{ ikon: 'kisi', html: O.esc(AD) + ' · ' + O.esc(ROL_AD) }, { ikon: 'dosya', html: '<b>' + liste.length + '</b> talep' }]
+  });
+  sekmeler(kok, 'talepler');
+  yuklemeHatasi(kok);
+  if (!AYAR) kok.append(O.el('div', { class: 'pt-bilgi uyari', html: IK ? '<b>Onay zinciri henüz tanımlanmadı.</b> Talep açılabilmesi için önce <a href="#/ayar">Onay Zinciri</a> sekmesinden departman direktörlerini, İK Direktörünü ve CEO’yu kaydedin.' : '<b>Talep oluşturma henüz açılmadı.</b> İnsan Kaynakları onay zincirini tanımladığında yeni talep oluşturabileceksiniz.' }));
+  const arac = O.el('div', { class: 'pt-arac' });
+  arac.append(O.el('span', { class: 'bosluk' }));
+  arac.append(O.el('a', { class: 'btn btn-pirinc', href: '#/yeni', html: IK_EKLE + '<span>Yeni personel talebi</span>' }));
+  kok.append(arac);
+  O.kpiSatiri(kok, [
+    { etiket: 'Onayınızı bekleyen', deger: bekleyen.length, ikon: 'zil', alt: bekleyen.length ? 'karar vermeniz gereken talep' : 'bekleyen karar yok', renk: 'var(--pir-500)' },
+    { etiket: 'Onay sürecinde', deger: surecte, ikon: 'saat', alt: ceoBekleyen.length ? ceoBekleyen.length + ' talepte CEO kararı işaretlenecek' : 'direktör, İK Direktörü ya da CEO’da' },
+    { etiket: 'Onaylanan', deger: onaylanan, ikon: 'onay', alt: 'açık pozisyona dönüştü', renk: 'var(--ok-500)' },
+    { etiket: 'Revize · ertelenen · ret', deger: geri, ikon: 'donus', alt: 'düzeltme ya da karar bekleyen', renk: 'var(--uy-500)' }
+  ], { kolon: 4 });
+  if (bekleyen.length) {
+    O.akisBaslik(kok, { no: '01', baslik: 'Onayınızı bekleyen talepler', aciklama: 'Talebi açıp formu inceleyin, sağdaki onay alanından kararınızı verin' });
+    const b = O.el('div', { class: 'pt-bekleyen' });
+    bekleyen.forEach((t) => b.append(bekleyenSatir(t, 'İncele ve karar ver')));
+    kok.append(b);
+  }
+  const revizeBenim = liste.filter((t) => t.durum === 'revize' && talepEdenBenim(t));
+  if (revizeBenim.length) {
+    O.akisBaslik(kok, { no: bekleyen.length ? '02' : '01', baslik: 'Düzeltmeniz istenen talepler', aciklama: 'Notu okuyun, formu düzeltip yeniden gönderin' });
+    const b = O.el('div', { class: 'pt-bekleyen' });
+    revizeBenim.forEach((t) => b.append(bekleyenSatir(t, 'Düzelt ve yeniden gönder', '#/duzenle/' + t.id)));
+    kok.append(b);
+  }
+  if (ceoBekleyen.length) {
+    O.akisBaslik(kok, { baslik: 'CEO kararı işaretlenecek talepler', aciklama: 'CEO sisteme girmez; kararını aldığınızda talebi açıp “CEO onay verdi” (ya da ret / erteleme / revize) olarak işaretleyin' });
+    const b = O.el('div', { class: 'pt-bekleyen' });
+    ceoBekleyen.forEach((t) => b.append(bekleyenSatir(t, 'CEO kararını işaretle')));
+    kok.append(b);
+  }
+  O.akisBaslik(kok, { baslik: 'Tüm talepler', aciklama: IK ? 'Bütün departmanlar' : 'Oluşturduğunuz ya da onay zincirinde bulunduğunuz talepler' });
+  const suzSecenek = [['hepsi', 'Tümü'], ['surecte', 'Onay sürecinde'], ['onaylandi', 'Onaylanan'], ['geri', 'Revize / ertelenen'], ['kapali', 'Reddedilen / iptal']];
+  const sec = O.el('select', { class: 'girdi', 'aria-label': 'Duruma göre süz', style: { width: 'auto' }, on: { change: (e) => { SUZ.talep = e.target.value; ciz(); } } },
+    ...suzSecenek.map(([k, a]) => O.el('option', { value: k, selected: SUZ.talep === k ? true : null, text: a })));
+  const suz = (t) => SUZ.talep === 'hepsi' || (SUZ.talep === 'surecte' && T.surecteMi(t.durum)) || (SUZ.talep === 'onaylandi' && t.durum === 'onaylandi')
+    || (SUZ.talep === 'geri' && ['revize', 'ertelendi'].includes(t.durum)) || (SUZ.talep === 'kapali' && ['reddedildi', 'iptal'].includes(t.durum));
+  const satirlar = liste.filter(suz).map((t) => ({
+    id: t.id, no: t.no || '', tarih: (t.form && t.form.tarih) || '', dep: depAdi(t), poz: (t.form && t.form.pozisyon) || '', eden: kisiAd(t.talepEden && t.talepEden.ad),
+    durum: T.durumAdi(t.durum), _t: t
+  }));
+  const kart = O.kart(O.izgara(kok), { baslik: 'Talepler', aciklama: satirlar.length + ' kayıt', sinif: 's12' });
+  O.tablo(kart.govde, {
+    sutunlar: [
+      { k: 'no', ad: 'No', sinif: 'ad-hucre' },
+      { k: 'tarih', ad: 'Tarih', tip: 'metin', bicim: (v) => T.tarihTR(v) || '—', siralamaDegeri: (r) => r.tarih },
+      { k: 'dep', ad: 'Departman' }, { k: 'poz', ad: 'Pozisyon' }, { k: 'eden', ad: 'Talep eden' },
+      { k: 'durum', ad: 'Durum', bicim: (v, r) => durumCip(r._t.durum) },
+      { k: 'serit', ad: 'Aşamalar', siralanamaz: true, bicim: (v, r) => miniSerit(r._t) }
+    ],
+    satirlar, sayfaBoyu: 15, ara: true, araYer: 'Talep no, departman, pozisyon, kişi…', araAlanlari: ['no', 'dep', 'poz', 'eden', 'durum'],
+    aracEk: sec, satirTikla: (r) => git('#/talep/' + r.id),
+    bos: { baslik: liste.length ? 'Bu süzgece uyan talep yok' : 'Henüz talep yok', metin: liste.length ? '' : '“Yeni personel talebi” ile ilk talebi oluşturabilirsiniz.' }
+  });
+  O.notlar(kok, [
+    'Onay sırası: talep eden yönetici → departman direktörü → İnsan Kaynakları Direktörü → CEO. Direktör ve İK Direktörü onayı İK Portalı girişiyle, kişinin kendi hesabıyla verilir; CEO kararını İnsan Kaynakları işaretler.',
+    'Dört aşamadan onaylı geçen talep Açık Pozisyonlar’a ONAYLI olarak düşer; onay sürecindekiler ONAY AŞAMASINDA, reddedilenler ONAYLI DEĞİL görünür.',
+    'Talep oluşturulduğunda direktöre, direktör onayladığında İK Direktörüne otomatik e-posta gider. E-postalar en geç birkaç dakika içinde gönderilir.',
+    'Revize istenen talep, talep eden tarafından düzeltilip yeniden gönderilir; onay sırası baştan başlar, önceki tur geçmişte kalır.',
+    'Ücret ve bütçe bilgileri e-postalarda yer almaz; yalnız portalda, talebi görmeye yetkili kişilere görünür.'
+  ]);
+}
+function bekleyenSatir(t, dugme, hedef) {
+  const f = t.form || {};
+  return O.el('a', { class: 'pt-bekleyen-satir', href: hedef || '#/talep/' + t.id },
+    O.el('div', {}, O.el('b', { text: (f.pozisyon || '—') + ' · ' + depAdi(t) }),
+      O.el('small', { text: (t.no || '') + ' · ' + kisiAd(t.talepEden && t.talepEden.ad) + ' · ' + (T.tarihTR(f.tarih) || '') + ' · ' + T.durumAdi(t.durum) })),
+    O.el('span', { class: 'btn btn-lacivert', text: dugme }));
+}
+
+/* ---------------------------------------------------- 2) FORM (yeni / düzelt) */
+/* cihazdaki taslak anahtarı talep kimliğiyle (hesap kimliği tarayıcıya da yazılmaz); kimlik yoksa taslak tutulmaz */
+const TASLAK_ANAHTAR = (mod, id) => 'pt-taslak-v1|' + PID + '|' + mod + '|' + (id || '');
+function taslakYaz(hemen) {
+  if (!ED || !ED.kirli || !PID) return;
+  const yaz = () => { try { localStorage.setItem(TASLAK_ANAHTAR(ED.mod, ED.id), JSON.stringify({ form: ED.form, depKey: ED.depKey, zaman: Date.now() })); } catch (e) { /* özel pencere */ } };
+  if (hemen) yaz(); else { clearTimeout(taslakYaz.z); taslakYaz.z = setTimeout(yaz, 400); }
+}
+function taslakOku(mod, id) { try { return JSON.parse(localStorage.getItem(TASLAK_ANAHTAR(mod, id)) || 'null'); } catch (e) { return null; } }
+function taslakSil(mod, id) { try { localStorage.removeItem(TASLAK_ANAHTAR(mod, id)); } catch (e) { /* yok */ } }
+/** Varsayılan departman: personel listesindeki departman + unvandaki satış/servis ipucu */
+function varsayilanDep() {
+  const k = benimKaydim(); if (!k || !AYAR) return '';
+  const adaylar = Object.keys(AYAR.departmanlar || {}).filter((key) => T.katla(AYAR.departmanlar[key].ad) === T.katla(k.dept));
+  if (adaylar.length === 1) return adaylar[0];
+  const u = T.katla(k.unvan);
+  const b = /servis|hasar|teknisyen|mekanik/.test(u) ? 'servis' : /satis/.test(u) ? 'satis' : '';
+  const x = adaylar.filter((key) => T.katla(AYAR.departmanlar[key].bolum) === b);
+  return x.length === 1 ? x[0] : '';
+}
+function departmanSecenekleri() {
+  return Object.keys((AYAR && AYAR.departmanlar) || {}).map((k) => ({ k, d: AYAR.departmanlar[k] }))
+    .sort((a, b) => O.trKarsilastir(a.d.bolum + a.d.ad, b.d.bolum + b.d.ad));
+}
+function formSayfasi(kok, mod, id) {
+  const t = id ? TALEP.get(id) : null;
+  if (mod === 'duzenle' && !(t && t.durum === 'revize' && talepEdenBenim(t))) { git('#/talep/' + id); return; }
+  ustBantKur(mod === 'yeni' ? 'Yeni Personel Talebi' : 'Talebi Düzelt');
+  if (!ED || ED.mod !== mod || ED.id !== (id || null)) {
+    const taslak = taslakOku(mod, id);
+    const taban = mod === 'duzenle' ? { form: JSON.parse(JSON.stringify(t.form)), depKey: t.depKey } : { form: T.formBos(), depKey: varsayilanDep() };
+    ED = { mod, id: id || null, form: Object.assign(T.formBos(), taban.form), depKey: taban.depKey, kirli: false, denendi: false, taslakVar: !!taslak, taslak };
+    if (mod === 'yeni') ED.form.tarih = T.bugunISO();
+  }
+  O.kaput(kok, {
+    ustEtiket: 'Personel Talepleri', baslik: mod === 'yeni' ? 'Yeni personel talebi' : 'Talebi düzelt ve yeniden gönder',
+    ozetHtml: mod === 'yeni'
+      ? 'Formdaki <b>her alan zorunludur</b>. Gönderdiğinizde talep departmanınızın direktörüne e-postayla iletilir; direktör onaylarsa İK Direktörüne, ardından CEO’ya gider.'
+      : 'Onaylayanın notuna göre formu düzeltin. Yeniden gönderdiğinizde onay sırası <b>direktörden yeniden başlar</b>.',
+    meta: [{ ikon: 'kisi', html: 'Talep eden: <b>' + O.esc(AD) + '</b> · ' + O.esc(benimUnvan()) }, { ikon: 'takvim', html: 'Tarih: <b>' + T.tarihTR(ED.form.tarih) + '</b>' }]
+  });
+  const geri = O.el('div', { class: 'pt-arac' }, O.el('a', { class: 'btn btn-hayalet', href: mod === 'duzenle' ? '#/talep/' + id : '#/talepler', html: IK_GERI + '<span>' + (mod === 'duzenle' ? 'Talebe dön' : 'Taleplere dön') + '</span>' }));
+  kok.append(geri);
+  if (!AYAR) { kok.append(O.el('div', { class: 'pt-bilgi uyari', html: '<b>Onay zinciri henüz tanımlanmadı.</b> İnsan Kaynakları zinciri kaydedene kadar talep gönderilemez; formu doldurabilirsiniz, bu cihazda saklanır.' })); }
+  if (mod === 'duzenle') {
+    const son = ['ceo', 'ik', 'direktor'].map((a) => (t.onaylar || {})[a]).find((o) => o && o.karar === 'revize');
+    if (son) kok.append(O.el('div', { class: 'pt-bilgi uyari', html: '<b>Revize notu (' + O.esc(kisiAd(son.ad)) + '):</b> ' + O.esc(son.not || '') }));
+  }
+  if (ED.taslakVar && ED.taslak) {
+    const tb = O.el('div', { class: 'pt-bilgi', html: '<b>Bu cihazda kaydedilmiş bir taslağınız var</b> (' + T.zamanTR(ED.taslak.zaman) + '). ' });
+    tb.append(O.el('button', { class: 'btn', type: 'button', text: 'Taslağı geri yükle', style: { marginLeft: '6px', height: '32px' }, on: { click: () => { ED.form = Object.assign(T.formBos(), ED.taslak.form); if (ED.taslak.depKey) ED.depKey = ED.taslak.depKey; if (mod === 'yeni') ED.form.tarih = T.bugunISO(); ED.taslakVar = false; ED.kirli = true; ciz(); } } }),
+      O.el('button', { class: 'btn btn-hayalet', type: 'button', text: 'Sil', style: { marginLeft: '4px', height: '32px' }, on: { click: () => { taslakSil(mod, id); ED.taslakVar = false; ciz(); } } }));
+    kok.append(tb);
+  }
+  const hatalar = ED.denendi ? formHatalari() : [];
+  const hataVar = (k) => hatalar.find((h) => h.alan === k);
+  const form = O.el('div', { class: 'pt-form' });
+  kok.append(form);
+  const f = ED.form;
+  const degisti = (k, v, yeniden) => { f[k] = v; ED.kirli = true; taslakYaz(); if (yeniden || ED.denendi) { const y = window.scrollY; ciz(); window.scrollTo(0, y); } };
+  /* alan oluşturucular */
+  const alan = (k, etiket, girdi, { s = '', ipucu = '', zorunlu = true } = {}) => {
+    const h = hataVar(k);
+    return O.el('label', { class: 'pt-alan ' + s + (h ? ' hatali' : ''), 'data-alan': k },
+      O.el('span', { class: 'pt-etiket', html: O.esc(etiket) + (zorunlu ? ' <span class="zorunlu" aria-hidden="true">*</span>' : '') }),
+      girdi, ipucu ? O.el('span', { class: 'pt-ipucu', text: ipucu }) : null, h ? O.el('span', { class: 'pt-hata', text: h.mesaj }) : null);
+  };
+  const metinG = (k, ph, n, liste) => O.el('input', { class: 'pt-girdi', type: 'text', value: f[k] || '', placeholder: ph || '', maxlength: n || 200, list: liste || null, on: { input: (e) => degisti(k, e.target.value), change: (e) => degisti(k, e.target.value, ED.denendi) } });
+  const uzunG = (k, ph, n, satir) => { const x = O.el('textarea', { class: 'pt-girdi', placeholder: ph || '', maxlength: n || 2000, rows: satir || 3, on: { input: (e) => degisti(k, e.target.value), change: (e) => degisti(k, e.target.value, ED.denendi) } }); x.value = f[k] || ''; return x; };
+  const tlG = (k) => O.el('span', { class: 'pt-tl' }, O.el('input', { class: 'pt-girdi', type: 'text', inputmode: 'decimal', value: f[k] === null || f[k] === undefined ? '' : String(f[k]).replace('.', ','), placeholder: '0', on: { input: (e) => degisti(k, e.target.value), change: (e) => { const n = T.sayiCoz(e.target.value); degisti(k, isFinite(n) ? n : e.target.value, true); } } }));
+  const secG = (k, secenekler, bos) => O.el('select', { class: 'pt-girdi', on: { change: (e) => degisti(k, e.target.value, true) } }, O.el('option', { value: '', text: bos || 'Seçin…' }), ...secenekler.map((x) => O.el('option', { value: x, text: x, selected: f[k] === x ? true : null })));
+  const coklu = (k, secenekler, dikey) => {
+    const kap = O.el('div', { class: 'pt-secenekler' + (dikey ? ' dikey' : ''), role: 'group' });
+    secenekler.forEach((x) => { const sec = (f[k] || []).includes(x);
+      kap.append(O.el('label', { class: 'pt-secenek' + (sec ? ' secili' : '') }, O.el('input', { type: 'checkbox', checked: sec ? true : null, on: { change: (e) => { const l = new Set(f[k] || []); if (e.target.checked) l.add(x); else l.delete(x); degisti(k, secenekler.filter((s) => l.has(s)), true); } } }), O.el('span', { text: x }))); });
+    return kap;
+  };
+  const tekli = (k, secenekler, dikey) => {
+    const kap = O.el('div', { class: 'pt-secenekler' + (dikey ? ' dikey' : ''), role: 'radiogroup' });
+    secenekler.forEach((x) => { const sec = f[k] === x;
+      kap.append(O.el('label', { class: 'pt-secenek' + (sec ? ' secili' : '') }, O.el('input', { type: 'radio', name: 'pt-' + k, checked: sec ? true : null, on: { change: () => degisti(k, x, true) } }), O.el('span', { text: x }))); });
+    return kap;
+  };
+  const grupAlan = (k, etiket, icerik, ek) => { const h = hataVar(k); return O.el('div', { class: 'pt-alan s6' + (h ? ' hatali' : ''), 'data-alan': k }, O.el('span', { class: 'pt-etiket', html: O.esc(etiket) + ' <span class="zorunlu" aria-hidden="true">*</span>' }), icerik, ek || null, h ? O.el('span', { class: 'pt-hata', text: h.mesaj }) : null); };
+  const kartK = (baslik, alt, govde, sag) => O.el('section', { class: 'pt-kart' }, O.el('header', { class: 'pt-kart-ust' }, O.el('h3', { text: baslik }), alt ? O.el('small', { text: alt }) : null, sag ? O.el('span', { class: 'sag' }, sag) : null), O.el('div', { class: 'pt-kart-govde' }, govde));
+  const unvanlar = [...new Set(PERSONEL.map((p) => p.unvan).filter(Boolean))].sort(O.trKarsilastir);
+  form.append(O.el('datalist', { id: 'ptUnvanlar' }, ...unvanlar.map((u) => O.el('option', { value: u }))),
+    O.el('datalist', { id: 'ptPersonel' }, ...PERSONEL.map((p) => O.el('option', { value: p.ad, label: [p.unvan, p.dept].filter(Boolean).join(' · ') }))),
+    O.el('datalist', { id: 'ptMezuniyet' }, ...T.MEZUNIYET_ONERI.map((u) => O.el('option', { value: u }))));
+
+  /* A) İSTENİLEN POZİSYON BİLGİLERİ */
+  const depSec = O.el('select', { class: 'pt-girdi', on: { change: (e) => { ED.depKey = e.target.value; ED.kirli = true; taslakYaz(); const y = window.scrollY; ciz(); window.scrollTo(0, y); } } },
+    O.el('option', { value: '', text: AYAR ? 'Departman seçin…' : 'Onay zinciri tanımlı değil' }),
+    ...departmanSecenekleri().map(({ k, d }) => O.el('option', { value: k, text: d.ad + ' · ' + d.bolum, selected: ED.depKey === k ? true : null })));
+  const depHata = ED.denendi && !ED.depKey;
+  const g1 = O.el('div', { class: 'pt-izgara' },
+    alan('pozisyon', 'Pozisyon adı', metinG('pozisyon', 'ör. Satış Danışmanı', T.SINIR.pozisyon, 'ptUnvanlar')),
+    O.el('label', { class: 'pt-alan' + (depHata ? ' hatali' : ''), 'data-alan': 'depKey' }, O.el('span', { class: 'pt-etiket', html: 'Birim / bölüm <span class="zorunlu">*</span>' }), depSec,
+      O.el('span', { class: 'pt-ipucu', text: 'Onaylayacak direktör bu seçime göre belirlenir.' }), depHata ? O.el('span', { class: 'pt-hata', text: 'Departmanı seçin.' }) : null),
+    alan('deneyim', 'Deneyim', metinG('deneyim', 'ör. En az 2 yıl otomotiv satışı', T.SINIR.deneyim)),
+    alan('mezuniyet', 'Mezuniyet bilgisi', metinG('mezuniyet', 'ör. Lisans · İşletme', T.SINIR.mezuniyet, 'ptMezuniyet')),
+    alan('cinsiyet', 'Cinsiyet', secG('cinsiyet', T.CINSIYET)),
+    alan('sertifikalar', 'Gerekli sertifikalar', metinG('sertifikalar', 'ör. B sınıfı ehliyet · gerekmiyorsa “Yok”', T.SINIR.sertifikalar)),
+    alan('beklentiler', 'Beklentiler', uzunG('beklentiler', 'Adaydan beklenen yetkinlik, nitelik ve davranışlar', T.SINIR.beklentiler, 3), { s: 's3' }),
+    (() => {
+      const h = hataVar('adayAd');
+      const yok = O.el('label', { class: 'pt-onay-kutu', style: { marginTop: '2px' } }, O.el('input', { type: 'checkbox', checked: f.adayYok ? true : null, on: { change: (e) => degisti('adayYok', e.target.checked, true) } }), O.el('span', { text: 'Önerilen aday yok' }));
+      const g = metinG('adayAd', f.adayYok ? '—' : 'Önerdiğiniz adayın adı soyadı', T.SINIR.adayAd, 'ptPersonel');
+      if (f.adayYok) g.disabled = true;
+      return O.el('div', { class: 'pt-alan s3' + (h ? ' hatali' : ''), 'data-alan': 'adayAd' }, O.el('span', { class: 'pt-etiket', html: 'İsim soyisim (önerilen aday) <span class="zorunlu">*</span>' }), g, yok,
+        O.el('span', { class: 'pt-ipucu', text: 'Pozisyon için düşündüğünüz bir aday varsa yazın; yoksa kutuyu işaretleyin.' }), h ? O.el('span', { class: 'pt-hata', text: h.mesaj }) : null);
+    })(),
+    alan('gorevTanimi', 'Görev tanımı', uzunG('gorevTanimi', 'Pozisyonun temel görev ve sorumlulukları', T.SINIR.gorevTanimi, 4), { s: 's6' }));
+  form.append(kartK('İstenilen pozisyon bilgileri', 'Formun üst bölümü', g1));
+
+  /* B) TALEP NEDENİ + AÇIKLAMA */
+  const yerine = (f.nedenler || []).includes('Yerine alım');
+  const g2 = O.el('div', { class: 'pt-izgara' },
+    grupAlan('nedenler', 'Talep nedeni (birden fazla seçilebilir)', coklu('nedenler', T.NEDENLER)),
+    yerine ? alan('yerineKim', 'Kimin yerine', metinG('yerineKim', 'Ayrılan kişinin adı soyadı (ve unvanı)', T.SINIR.yerineKim, 'ptPersonel'), { s: 's4' }) : null,
+    yerine ? alan('yerineCikis', 'Çıkış tarihi', O.el('input', { class: 'pt-girdi', type: 'date', value: f.yerineCikis || '', on: { change: (e) => degisti('yerineCikis', e.target.value, true) } })) : null,
+    alan('aciklama', 'Alım talebinin detaylı açıklaması', uzunG('aciklama', 'Talep eden yönetici yazacaktır: neden şimdi, hangi iş yükü, beklenen katkı…', T.SINIR.aciklama, 5), { s: 's6' }));
+  form.append(kartK('Talep nedeni', 'Yerine alımda kimin yerine olduğunu ve çıkış tarihini yazın', g2));
+
+  /* C) DEĞERLENDİRME (iki sütun, kâğıt formdaki gibi) */
+  const kalan = T.butceKalan(T.formTemizle(f));
+  const sol = O.el('div', {},
+    O.el('div', { class: 'pt-grup' }, grupAlan('icAday', 'İç aday değerlendirmesi', tekli('icAday', T.IC_ADAY, true))),
+    O.el('div', { class: 'pt-grup' }, O.el('div', { class: 'pt-alt-baslik', text: 'Talep edilen ücret' }),
+      O.el('div', { class: 'pt-izgara' }, alan('ucretYonetici', 'Yönetici önerisi (aylık brüt)', tlG('ucretYonetici'), { s: 's3' }),
+        O.el('div', { class: 'pt-alan s3' }, O.el('span', { class: 'pt-etiket', text: 'İnsan Kaynakları önerisi' }), O.el('div', { class: 'pt-salt', text: 'İK Direktörü onay sırasında doldurur' })))),
+    O.el('div', { class: 'pt-grup' }, O.el('div', { class: 'pt-alt-baslik', text: 'Bütçe durumu' }),
+      O.el('div', { class: 'pt-izgara' }, alan('butceYillik', 'İlgili birim bütçesi (yıllık)', tlG('butceYillik')), alan('butceKullanilan', 'Kullanılan (bugüne kadar)', tlG('butceKullanilan')),
+        O.el('div', { class: 'pt-alan' }, O.el('span', { class: 'pt-etiket', text: 'Kalan bütçe' }), O.el('div', { class: 'pt-salt', style: { textAlign: 'right', fontWeight: '600', color: kalan !== null && kalan < 0 ? 'var(--ht-700)' : 'var(--metin-1)' }, text: kalan === null ? 'otomatik hesaplanır' : T.tl(kalan) })))),
+    O.el('div', { class: 'pt-grup' }, O.el('div', { class: 'pt-alt-baslik', text: 'İnsan Kaynakları değerlendirmesi' }), O.el('div', { class: 'pt-salt', text: 'Kadro planına uygunluk — İK Direktörü onay sırasında işaretler' })));
+  const sag = O.el('div', {},
+    O.el('div', { class: 'pt-grup' }, grupAlan('devam', 'Eksik personel ile devam edilebilirlik analizi', tekli('devam', T.DEVAM, true)),
+      f.devam === 'Sürdürülemez' ? alan('devamAciklama', 'Sürdürülemez — açıklama', uzunG('devamAciklama', 'Neden sürdürülemez?', T.SINIR.devamAciklama, 2), { s: 's6' }) : null),
+    O.el('div', { class: 'pt-grup' }, grupAlan('riskler', 'Pozisyon alınmazsa oluşacak riskler', coklu('riskler', T.RISKLER)),
+      alan('riskAciklama', 'Açıklama (zorunlu alan)', uzunG('riskAciklama', 'Risklerin somut etkisi', T.SINIR.riskAciklama, 3), { s: 's6' })),
+    O.el('div', { class: 'pt-grup' }, grupAlan('marka', 'Distribütör / marka zorunluluğu', tekli('marka', T.MARKA, true)),
+      alan('markaDayanak', 'Dayanak', uzunG('markaDayanak', 'Marka yazısı, denetim, KPI, sözleşme maddesi vb.', T.SINIR.markaDayanak, 2), { s: 's6', zorunlu: f.marka !== 'Zorunluluk yok', ipucu: f.marka === 'Zorunluluk yok' ? 'Zorunluluk yoksa boş bırakılabilir.' : '' })));
+  form.append(kartK('Değerlendirme', 'İç aday, ücret, bütçe, devam edilebilirlik, riskler ve marka zorunluluğu', O.el('div', { class: 'pt-iki' }, sol, sag)));
+
+  /* D) ONAY AKIŞI ÖNİZLEMESİ */
+  const z = ED.depKey ? T.zincirKur(AYAR, ED.depKey) : null;
+  const ek = ED.depKey ? T.zincirEksikleri(z) : { engel: [], uyari: [] };
+  const benDir = z && z.direktor && z.direktor.pid === PID;
+  const imza = (baslik, ad, alt, sinif) => O.el('div', { class: 'pt-imza ' + (sinif || '') }, O.el('span', { class: 'ad', text: baslik }), O.el('b', { text: ad || '—' }), alt ? O.el('small', { html: alt }) : null);
+  const epostaNot = (x) => !x || !x.pid ? '<span class="eksik">tanımlı değil</span>' : x.eposta ? 'e-posta ile bildirilir' : '<span class="eksik">e-posta adresi yok</span>';
+  const zg = O.el('div', { class: 'pt-imzalar' },
+    imza('Talep eden', AD, O.esc(benimUnvan()) + '<br>Gönderince imzalanır', 'tamam'),
+    imza('Onay veren direktör', z ? kisiAd(z.direktor.ad) : 'Departman seçin', z ? (benDir ? 'Talebi siz oluşturduğunuz için otomatik onaylanır' : epostaNot(z.direktor)) : ''),
+    imza('İK Direktörü', z ? kisiAd(z.ik.ad) : '', z ? epostaNot(z.ik) : ''),
+    imza('CEO', z ? kisiAd(z.ceo.ad) : '', z ? 'Kararını İnsan Kaynakları işaretler' : ''));
+  const zk = O.el('div', {}, zg);
+  ek.engel.forEach((m) => zk.append(O.el('div', { class: 'pt-bilgi hata', style: { margin: '12px 0 0' }, text: m + ' İnsan Kaynakları ile görüşün.' })));
+  ek.uyari.forEach((m) => zk.append(O.el('div', { class: 'pt-bilgi uyari', style: { margin: '12px 0 0' }, text: m })));
+  form.append(kartK('Onay akışı', 'Gönderdiğinizde bu sırayla onaya gider', zk));
+
+  /* alt çubuk */
+  const not = O.el('span', { class: 'not', html: hatalar.length || depHata ? '<b>' + (hatalar.length + (depHata ? 1 : 0)) + ' alan eksik ya da hatalı.</b> Kırmızı işaretli alanları tamamlayın.' : 'Taslağınız bu cihazda otomatik saklanır.' });
+  const gonder = O.el('button', { class: 'btn btn-pirinc', type: 'button', html: IK_POSTA + '<span>' + (mod === 'yeni' ? (benDir ? 'Talebi oluştur ve İK Direktörüne gönder' : 'Talebi oluştur ve direktöre gönder') : 'Düzelt ve yeniden gönder') + '</span>', on: { click: () => gonderTikla(gonder) } });
+  kok.append(O.el('div', { class: 'pt-alt-cubuk' }, not, O.el('a', { class: 'btn', href: mod === 'duzenle' ? '#/talep/' + id : '#/talepler', text: 'Vazgeç' }), gonder));
+}
+function formHatalari() { return T.formDogrula(ED.form); }
+async function gonderTikla(btn) {
+  if (MESGUL) return;
+  if (!PID) { modal({ baslik: 'Talep gönderilemiyor', govde: O.el('div', { text: 'Hesabınız bu bölüm için henüz hazırlanmadı (talep kimliği yok). İnsan Kaynakları sayfayı açtığında kendiliğinden hazırlanır; formunuz bu cihazda saklandı.' }), dugmeler: [{ metin: 'Tamam', sinif: 'btn-lacivert' }] }); return; }
+  ED.denendi = true;
+  const hatalar = formHatalari();
+  const z = ED.depKey ? T.zincirKur(AYAR, ED.depKey) : null;
+  const ek = T.zincirEksikleri(z);
+  if (hatalar.length || !ED.depKey || ek.engel.length) {
+    ciz();
+    const ilk = document.querySelector('.pt-alan.hatali') || document.querySelector('.pt-bilgi.hata');
+    if (ilk) { ilk.scrollIntoView({ behavior: 'smooth', block: 'center' }); const g = ilk.querySelector('input, textarea, select'); if (g) setTimeout(() => g.focus({ preventScroll: true }), 350); }
+    if (!hatalar.length && ED.depKey && ek.engel.length) O.bildirim(ek.engel[0]);
+    return;
+  }
+  MESGUL = true; btn.disabled = true; btn.querySelector('span').textContent = 'Gönderiliyor…';
+  try {
+    const id = await talepGonder();
+    taslakSil(ED.mod, ED.id);
+    ED = null; MESGUL = false;
+    O.bildirim('Talep gönderildi.');
+    git('#/talep/' + id);
+  } catch (e) {
+    MESGUL = false; btn.disabled = false; btn.querySelector('span').textContent = 'Yeniden dene';
+    console.error(e);
+    modal({ baslik: 'Talep gönderilemedi', govde: O.el('div', { text: hataMetni(e) + ' Formunuz bu cihazda saklandı.' }), dugmeler: [{ metin: 'Tamam', sinif: 'btn-lacivert' }] });
+  }
+}
+/** Yeni talep ya da revize sonrası yeniden gönderim (kural: personelTalepFormlari create / ptYenidenGonder) */
+async function talepGonder() {
+  const f = T.formTemizle(ED.form);
+  const dep = AYAR.departmanlar[ED.depKey];
+  const z = T.zincirKur(AYAR, ED.depKey);
+  const benDir = z.direktor.pid === PID;
+  const durum = benDir ? 'ik' : 'direktor';
+  const onaylar = benDir ? { direktor: { karar: 'onay', not: 'Talebi departmanın direktörü oluşturdu.', ad: HAM_AD, pid: PID, zaman: serverTimestamp(), adina: false } } : {};
+  const alici = benDir ? 'ik' : 'direktor';
+  const eposta = T.epostaGecerli(z[alici].eposta);
+  const qref = eposta ? doc(collection(db, 'epostaKuyrugu')) : null;
+  const temel = { durum, depKey: ED.depKey, departman: dep.ad, bolum: dep.bolum, form: f, ikDeg: {}, zincir: z, pidler: T.pidler(PID, z), onaylar };
+  if (ED.mod === 'yeni') {
+    const ref = doc(collection(db, 'personelTalepFormlari'));
+    const t = Object.assign({ no: T.talepNo(ref.id) }, temel, {
+      talepEden: { pid: PID, ad: HAM_AD, unvan: benimUnvan() },
+      gecmis: [olay(benDir ? 'Talep oluşturuldu; direktör onayı verilerek İK Direktörüne gönderildi' : 'Talep oluşturuldu ve direktöre gönderildi')],
+      surum: 1, olusturma: serverTimestamp(), guncelleme: serverTimestamp(), sonBildirim: qref ? qref.id : ''
+    });
+    const b = writeBatch(db);
+    b.set(ref, t);
+    if (qref) b.set(qref, epostaKaydi(alici, t, ref.id));
+    await b.commit();
+    return ref.id;
+  }
+  const ref = doc(db, 'personelTalepFormlari', ED.id);
+  await runTransaction(db, async (tx) => {
+    const s = await tx.get(ref);
+    if (!s.exists()) throw new Error('Talep bulunamadı.');
+    const o = s.data();
+    if (o.durum !== 'revize' || !o.talepEden || o.talepEden.pid !== PID) throw new Error('Bu talep artık düzeltilemez (durumu değişti).');
+    const yeni = Object.assign({}, o, temel, {
+      gecmis: (o.gecmis || []).concat([olay('Talep düzeltildi ve yeniden gönderildi (' + ((o.surum || 1) + 1) + '. tur)')]),
+      surum: (o.surum || 1) + 1, guncelleme: serverTimestamp(), sonBildirim: qref ? qref.id : (o.sonBildirim || '')
+    });
+    tx.set(ref, yeni);
+    if (qref) tx.set(qref, epostaKaydi(alici, yeni, ED.id));
+  });
+  return ED.id;
+}
+
+/* ---------------------------------------------------- 3) TALEP AYRINTISI + KARAR */
+function talepSayfasi(kok, id) {
+  ustBantKur('Personel Talebi');
+  const t = TALEP.get(id);
+  if (!t) {
+    O.kaput(kok, { ustEtiket: 'Personel Talepleri', baslik: 'Talep bulunamadı' });
+    sekmeler(kok, 'talepler'); yuklemeHatasi(kok);
+    kok.append(O.el('div', { class: 'pt-bilgi uyari', html: '<b>Bu talebi göremiyorsunuz.</b> Talep silinmiş olabilir ya da bu talebin onay zincirinde değilsiniz. E-postadaki bağlantıyı açtıysanız e-postanın size gönderildiğinden emin olun ve kendi hesabınızla giriş yapın.' }));
+    kok.append(O.el('a', { class: 'btn', href: '#/talepler', html: IK_GERI + '<span>Taleplere dön</span>' }));
+    return;
+  }
+  const f = t.form || {};
+  O.kaput(kok, {
+    ustEtiket: 'Personel Talebi · ' + (t.no || ''), baslik: (f.pozisyon || '—') + ' · ' + depAdi(t),
+    ozetHtml: 'Talep eden <b>' + O.esc(kisiAd(t.talepEden && t.talepEden.ad)) + '</b>' + (t.talepEden && t.talepEden.unvan ? ' (' + O.esc(T.trBaslik(t.talepEden.unvan)) + ')' : '') + ' · ' + O.esc(T.tarihTR(f.tarih)) + ((t.surum || 1) > 1 ? ' · ' + t.surum + '. tur' : ''),
+    meta: [{ html: '<b>' + O.esc(T.durumAdi(t.durum)) + '</b>' }]
+  });
+  sekmeler(kok, 'talepler');
+  const ust = O.el('div', { class: 'pt-arac' }, O.el('a', { class: 'btn btn-hayalet', href: '#/talepler', html: IK_GERI + '<span>Taleplere dön</span>' }), O.el('span', { class: 'bosluk' }),
+    O.el('button', { class: 'btn', type: 'button', html: IK_YAZDIR + '<span>Yazdır / PDF</span>', on: { click: () => yazdir(t) } }));
+  kok.append(ust);
+  const serit = O.el('div', { class: 'pt-kart' }, O.el('div', { class: 'pt-kart-govde' }, seritEl(t)));
+  kok.append(serit, O.el('div', { style: { height: '16px' } }));
+  const izg = O.el('div', { class: 'pt-detay' });
+  const ana = O.el('div', { class: 'pt-form' });
+  const yan = O.el('aside', {});
+  izg.append(ana, yan);
+  kok.append(izg);
+  /* karar alanı */
+  if (siraBende(t)) yan.append(kararKarti(t, t.durum, false));
+  else if (ceoIsaretlenebilir(t)) yan.append(kararKarti(t, 'ceo', true));
+  else if (T.surecteMi(t.durum)) {
+    const z = (t.zincir || {})[t.durum] || {};
+    yan.append(O.el('div', { class: 'pt-yan-kart' }, O.el('h4', { text: 'Sıradaki onay' }), O.el('div', { html: '<b>' + O.esc(kisiAd(z.ad)) + '</b><br><small style="color:var(--metin-3)">' + O.esc(T.ASAMALAR.find((a) => a.kod === t.durum).ad) + (t.durum === 'ceo' ? ' · kararını İnsan Kaynakları işaretler' : '') + '</small>' })));
+  }
+  if (t.durum === 'revize') {
+    const son = ['ceo', 'ik', 'direktor'].map((a) => (t.onaylar || {})[a]).find((o) => o && o.karar === 'revize');
+    const k = O.el('div', { class: 'pt-yan-kart' }, O.el('h4', { text: 'Revize istendi' }), O.el('div', { style: { fontSize: '13.5px', lineHeight: '1.5' }, html: son ? '<b>' + O.esc(kisiAd(son.ad)) + ':</b> ' + O.esc(son.not || '') : '' }));
+    if (talepEdenBenim(t)) k.append(O.el('a', { class: 'btn btn-pirinc', href: '#/duzenle/' + t.id, html: IK_DONUS + '<span>Düzelt ve yeniden gönder</span>' }));
+    yan.append(k);
+  }
+  /* işlemler */
+  const islem = O.el('div', { class: 'pt-yan-kart' }, O.el('h4', { text: 'İşlemler' }));
+  islem.append(O.el('button', { class: 'btn', type: 'button', html: IK_YAZDIR + '<span>Yazdır / PDF</span>', on: { click: () => yazdir(t) } }));
+  const p = POZ.get(t.id);
+  if (p) islem.append(O.el('a', { class: 'btn', href: '#/pozisyon/' + p.id, html: IK_POZ + '<span>Açık pozisyon: ' + O.esc(T.POZ_DURUM[p.durum] ? T.POZ_DURUM[p.durum].ad : p.durum) + '</span>' }));
+  if ((talepEdenBenim(t) && ['direktor', 'revize'].includes(t.durum)) || (ikYetkili(t) && ['direktor', 'ik', 'ceo', 'revize', 'ertelendi'].includes(t.durum)))
+    islem.append(O.el('button', { class: 'btn', type: 'button', html: IK_CARPI + '<span>Talebi iptal et</span>', on: { click: () => iptalSor(t) } }));
+  if (ikYetkili(t) && t.durum === 'ertelendi') islem.append(O.el('button', { class: 'btn', type: 'button', html: IK_DONUS + '<span>Yeniden CEO kararına al</span>', on: { click: () => yenidenAl(t) } }));
+  if (IK && T.surecteMi(t.durum)) {
+    const z = T.zincirKur(AYAR, t.depKey);
+    if (zincirYenilenebilir(t, z)) islem.append(O.el('button', { class: 'btn', type: 'button', html: IK_ZINCIR + '<span>Onay zincirini güncelle</span>', title: 'Onay Zinciri ayarı bu talep açıldıktan sonra değişmiş', on: { click: () => zincirGuncelle(t) } }));
+    const alici = t.durum === 'ceo' ? null : (t.zincir || {})[t.durum];
+    if (alici && T.epostaGecerli(alici.eposta)) islem.append(O.el('button', { class: 'btn', type: 'button', html: IK_POSTA + '<span>E-postayı yeniden gönder</span>', on: { click: () => epostaYenidenGonder(t) } }));
+  }
+  yan.append(islem);
+  if (IK && t.sonBildirim) {
+    const ed = O.el('div', { class: 'pt-yan-kart' }, O.el('h4', { text: 'Son e-posta' }), O.el('div', { style: { fontSize: '13px', color: 'var(--metin-2)' }, text: EPOSTA_DURUM.has(t.sonBildirim) ? epostaDurumMetni(EPOSTA_DURUM.get(t.sonBildirim)) : 'Durum okunuyor…' }));
+    yan.append(ed);
+    if (!EPOSTA_DURUM.has(t.sonBildirim)) getDoc(doc(db, 'epostaKuyrugu', t.sonBildirim)).then((s) => { EPOSTA_DURUM.set(t.sonBildirim, s.exists() ? s.data().durum : 'yok'); guncellendi(); }).catch(() => { EPOSTA_DURUM.set(t.sonBildirim, '?'); });
+  }
+  /* form görünümü */
+  formGorunumu(ana, t);
+}
+const epostaDurumMetni = (d) => ({ bekliyor: 'Gönderim sırasında (en geç birkaç dakika)', gonderiliyor: 'Gönderiliyor', gonderildi: 'Gönderildi', hata: 'Gönderilemedi — yeniden gönderin', iptal: 'İptal edildi', yok: 'Kayıt bulunamadı' }[d] || d);
+function formGorunumu(kap, t) {
+  const f = t.form || {};
+  const dd = (ad, deger, sinif) => O.el('div', { class: sinif || '' }, O.el('dt', { text: ad }), O.el('dd', { text: deger === undefined || deger === null || deger === '' ? '—' : deger }));
+  const isaretler = (liste, secili) => O.el('div', { class: 'pt-isaret' }, ...liste.map((x) => { const v = Array.isArray(secili) ? secili.includes(x) : secili === x; return O.el('span', { class: v ? 'var' : '' }, O.el('i', { text: v ? '✓' : '' }), x); }));
+  const ddN = (ad, node, sinif) => O.el('div', { class: sinif || '' }, O.el('dt', { text: ad }), O.el('dd', {}, node));
+  const kart = (baslik, govde, alt) => O.el('section', { class: 'pt-kart' }, O.el('header', { class: 'pt-kart-ust' }, O.el('h3', { text: baslik }), alt ? O.el('small', { text: alt }) : null), O.el('div', { class: 'pt-kart-govde' }, govde));
+  kap.append(kart('İstenilen pozisyon bilgileri', O.el('dl', { class: 'pt-dl' },
+    dd('Pozisyon adı', f.pozisyon), dd('Birim / bölüm', depAdi(t)), dd('Deneyim', f.deneyim), dd('Mezuniyet bilgisi', f.mezuniyet), dd('Cinsiyet', f.cinsiyet),
+    dd('Gerekli sertifikalar', f.sertifikalar), dd('Beklentiler', f.beklentiler, 'iki'), dd('İsim soyisim (önerilen aday)', f.adayYok ? 'Önerilen aday yok' : f.adayAd),
+    dd('Görev tanımı', f.gorevTanimi, 'genis'))));
+  kap.append(kart('Talep nedeni', O.el('dl', { class: 'pt-dl' },
+    ddN('Talep nedeni', isaretler(T.NEDENLER, f.nedenler), 'genis'),
+    (f.nedenler || []).includes('Yerine alım') ? dd('Kimin yerine', f.yerineKim, 'iki') : null,
+    (f.nedenler || []).includes('Yerine alım') ? dd('Çıkış tarihi', T.tarihTR(f.yerineCikis)) : null,
+    dd('Alım talebinin detaylı açıklaması', f.aciklama, 'genis'))));
+  const ik = t.ikDeg || {};
+  kap.append(kart('Değerlendirme', O.el('dl', { class: 'pt-dl' },
+    ddN('İç aday değerlendirmesi', isaretler(T.IC_ADAY, f.icAday), 'genis'),
+    dd('Ücret — yönetici önerisi', T.tl(f.ucretYonetici)), dd('Ücret — İK önerisi', typeof ik.ucretIk === 'number' ? T.tl(ik.ucretIk) : 'İK Direktörü dolduracak'),
+    dd('Kadro planına uygunluk', typeof ik.kadroUygun === 'boolean' ? (ik.kadroUygun ? 'Uygun' : 'Değil') : 'İK Direktörü işaretleyecek'),
+    dd('Birim bütçesi (yıllık)', T.tl(f.butceYillik)), dd('Kullanılan bütçe', T.tl(f.butceKullanilan)), dd('Kalan bütçe', T.tl(T.butceKalan(f))),
+    ddN('Eksik personel ile devam edilebilirlik', isaretler(T.DEVAM, f.devam), 'genis'),
+    f.devamAciklama ? dd('Sürdürülemez — açıklama', f.devamAciklama, 'genis') : null,
+    ddN('Pozisyon alınmazsa oluşacak riskler', isaretler(T.RISKLER, f.riskler), 'genis'),
+    dd('Risk açıklaması', f.riskAciklama, 'genis'),
+    ddN('Distribütör / marka zorunluluğu', isaretler(T.MARKA, f.marka), 'genis'),
+    dd('Dayanak', f.markaDayanak, 'genis'))));
+  /* ONAY BÖLÜMÜ + KARAR BÖLÜMÜ */
+  const imzalar = O.el('div', { class: 'pt-imzalar' }, ...T.ASAMALAR.map((a) => {
+    const d = asamaDurumu(t, a.kod);
+    const kisi = { ad: imzaAdi(t, a.kod) };
+    const o = (t.onaylar || {})[a.kod];
+    const alt = a.kod === 'talep' ? 'E-onay · ' + T.zamanTR(t.olusturma) : o && o.karar ? (o.adina ? 'İşaretleme · ' : 'E-onay · ') + T.zamanTR(o.zaman) + (o.adina ? '<br>İşaretleyen: ' + O.esc(kisiAd(o.ad)) + ' (İK)' : '') + (o.not ? '<br>“' + O.esc(o.not) + '”' : '') : '';
+    return O.el('div', { class: 'pt-imza ' + d.sinif }, O.el('span', { class: 'ad', text: a.ad }), O.el('b', { text: kisiAd(kisi && kisi.ad) || '—' }), O.el('span', { class: 'karar', text: d.metin }), alt ? O.el('small', { html: alt }) : null);
+  }));
+  const ceo = (t.onaylar || {}).ceo;
+  const karar = O.el('div', { class: 'pt-isaret', style: { marginTop: '14px' } }, ...[['onay', 'Onaylandı'], ['revize', 'Revize istendi'], ['erteleme', 'Ertelendi'], ['red', 'Reddedildi']].map(([k, a]) => { const v = !!(ceo && ceo.karar === k); return O.el('span', { class: v ? 'var' : '' }, O.el('i', { text: v ? '✓' : '' }), a); }));
+  kap.append(kart('Onay bölümü', O.el('div', {}, imzalar, O.el('div', { class: 'pt-alt-baslik', style: { marginTop: '16px' }, text: 'Karar bölümü (CEO)' }), karar)));
+  /* geçmiş */
+  const g = O.el('div', { class: 'pt-gecmis' }, ...(t.gecmis || []).slice().reverse().map((x) => O.el('div', { class: 'pt-olay' }, O.el('i'), O.el('div', {}, O.el('b', { text: x.olay || '' }), O.el('small', { text: kisiAd(x.kim) + ' · ' + T.zamanTR(x.zaman) }), x.not ? O.el('p', { text: x.not }) : null))));
+  kap.append(kart('Geçmiş', g, (t.gecmis || []).length + ' kayıt'));
+}
+function kararKarti(t, asama, adina) {
+  const tsl = KARAR_TASLAK.get(t.id) || { karar: '', not: '', ucretIk: '', kadroUygun: null, onay: false };
+  KARAR_TASLAK.set(t.id, tsl);
+  const kart = O.el('div', { class: 'pt-karar' });
+  const baslik = adina ? 'CEO kararını işaretle' : 'Onayınız bekleniyor';
+  const alt = adina ? 'İnsan Kaynakları · ' + (kisiAd(((t.zincir || {}).ceo || {}).ad) || 'CEO') + ' sisteme girmez' : T.ASAMALAR.find((a) => a.kod === asama).ad + ' olarak';
+  kart.append(O.el('div', { class: 'pt-karar-ust' }, O.el('small', { text: alt }), O.el('b', { text: baslik })));
+  const g = O.el('div', { class: 'pt-karar-govde' });
+  kart.append(g);
+  const yenile = () => { const y = window.scrollY; ciz(); window.scrollTo(0, y); };
+  const secenek = O.el('div', { class: 'pt-secenekler dikey', role: 'radiogroup', 'aria-label': 'Karar' });
+  T.KARARLAR[asama].forEach((k) => secenek.append(O.el('label', { class: 'pt-secenek ' + k + (tsl.karar === k ? ' secili' : '') },
+    O.el('input', { type: 'radio', name: 'pt-karar', checked: tsl.karar === k ? true : null, on: { change: () => { tsl.karar = k; yenile(); } } }), O.el('span', { text: (adina ? T.CEO_SECIM : T.KARAR_SECIM)[k] }))));
+  g.append(secenek);
+  if (asama === 'ik' && (tsl.karar === 'onay' || !tsl.karar)) {
+    g.append(O.el('label', { class: 'pt-alan s6' }, O.el('span', { class: 'pt-etiket', html: 'İnsan Kaynakları ücret önerisi <span class="zorunlu">*</span>' }),
+      O.el('span', { class: 'pt-tl' }, O.el('input', { class: 'pt-girdi', type: 'text', inputmode: 'decimal', value: tsl.ucretIk, placeholder: '0', on: { input: (e) => { tsl.ucretIk = e.target.value; } } })),
+      O.el('span', { class: 'pt-ipucu', text: 'Yönetici önerisi: ' + T.tl((t.form || {}).ucretYonetici) })));
+    const ku = O.el('div', { class: 'pt-secenekler' });
+    [[true, 'Uygun'], [false, 'Değil']].forEach(([v, a]) => ku.append(O.el('label', { class: 'pt-secenek' + (tsl.kadroUygun === v ? ' secili' : '') }, O.el('input', { type: 'radio', name: 'pt-kadro', checked: tsl.kadroUygun === v ? true : null, on: { change: () => { tsl.kadroUygun = v; yenile(); } } }), O.el('span', { text: a }))));
+    g.append(O.el('div', { class: 'pt-alan s6' }, O.el('span', { class: 'pt-etiket', html: 'Kadro planına uygunluk <span class="zorunlu">*</span>' }), ku));
+  }
+  const notZorunlu = !!(tsl.karar && tsl.karar !== 'onay');
+  const notG = O.el('textarea', { class: 'pt-girdi', rows: 3, maxlength: T.SINIR.not, placeholder: tsl.karar === 'revize' ? 'Neyin düzeltilmesi istendi?' : tsl.karar === 'red' ? 'Ret gerekçesi' : tsl.karar === 'erteleme' ? 'Erteleme gerekçesi / ne zamana' : 'İsterseniz not ekleyin', on: { input: (e) => { tsl.not = e.target.value; } } });
+  notG.value = tsl.not;
+  g.append(O.el('label', { class: 'pt-alan s6' }, O.el('span', { class: 'pt-etiket', html: 'Not / gerekçe' + (notZorunlu ? ' <span class="zorunlu">*</span>' : '') }), notG));
+  const onay = O.el('label', { class: 'pt-onay-kutu' }, O.el('input', { type: 'checkbox', checked: tsl.onay ? true : null, on: { change: (e) => { tsl.onay = e.target.checked; } } }),
+    O.el('span', { text: adina ? 'CEO’nun kararını aldım; kararı İnsan Kaynakları olarak işaretliyorum.' : 'Personel talep formunu inceledim; bu kararı e-onay olarak veriyorum.' }));
+  g.append(onay);
+  const hata = O.el('div', { class: 'pt-hata', role: 'alert' });
+  const btn = O.el('button', { class: 'btn btn-pirinc', type: 'button', html: IK_TIK + '<span>Kararı kaydet</span>', on: { click: () => kararGonder(t, asama, adina, btn, hata) } });
+  g.append(hata, btn);
+  const sonra = asama === 'direktor' ? 'Onaylarsanız talep İK Direktörüne e-postayla iletilir.' : asama === 'ik' ? 'Onaylarsanız talep CEO kararına geçer (CEO kararını İK işaretler).' : '“CEO onay verdi” işaretlenince talep Açık Pozisyonlar’a ONAYLI olarak düşer.';
+  g.append(O.el('div', { class: 'pt-ipucu', text: sonra + ' Revize isterseniz talep, talep edene döner.' }));
+  return kart;
+}
+async function kararGonder(t, asama, adina, btn, hataEl) {
+  if (MESGUL) return;
+  const tsl = KARAR_TASLAK.get(t.id) || {};
+  const not = T.temiz(tsl.not || '', T.SINIR.not);
+  const h = [];
+  if (!tsl.karar) h.push('Kararınızı seçin.');
+  if (tsl.karar && tsl.karar !== 'onay' && !not) h.push('Revize / ret / erteleme için gerekçe yazın.');
+  let ikDeg = null;
+  if (asama === 'ik' && tsl.karar === 'onay') {
+    const n = T.sayiCoz(tsl.ucretIk);
+    if (!isFinite(n) || n < 0 || n > T.UCRET_UST) h.push('İK ücret önerisini TL olarak yazın.');
+    if (typeof tsl.kadroUygun !== 'boolean') h.push('Kadro planına uygunluğu işaretleyin.');
+    ikDeg = { ucretIk: Math.round(n * 100) / 100, kadroUygun: tsl.kadroUygun };
+  }
+  if (!tsl.onay) h.push('Onay kutusunu işaretleyin.');
+  if (h.length) { hataEl.textContent = h.join(' '); return; }
+  hataEl.textContent = '';
+  MESGUL = true; btn.disabled = true; btn.querySelector('span').textContent = 'Kaydediliyor…';
+  try {
+    await kararKaydet(t.id, asama, tsl.karar, not, ikDeg, adina);
+    KARAR_TASLAK.delete(t.id);
+    MESGUL = false;
+    O.bildirim('Kararınız kaydedildi.');
+    ciz();
+  } catch (e) {
+    MESGUL = false; btn.disabled = false; btn.querySelector('span').textContent = 'Kararı kaydet';
+    console.error(e); hataEl.textContent = hataMetni(e);
+  }
+}
+/** Karar (kural: ptKarar) — tek işlemde talep + gerekirse e-posta + CEO onayında açık pozisyon */
+async function kararKaydet(id, asama, karar, not, ikDeg, adina) {
+  const ref = doc(db, 'personelTalepFormlari', id);
+  await runTransaction(db, async (tx) => {
+    const s = await tx.get(ref);
+    if (!s.exists()) throw new Error('Talep bulunamadı.');
+    const o = s.data();
+    if (o.durum !== asama) throw new Error('Bu talebin aşaması değişti; ekran yenilendi.');
+    const sonraki = T.SONRAKI[asama][karar];
+    const yeni = Object.assign({}, o, {
+      durum: sonraki,
+      onaylar: Object.assign({}, o.onaylar || {}, { [asama]: { karar, not, ad: HAM_AD, pid: PID, zaman: serverTimestamp(), adina: !!adina } }),
+      gecmis: (o.gecmis || []).concat([olay(adina ? T.CEO_SECIM[karar] + ' (İK işaretledi)' : T.ASAMALAR.find((a) => a.kod === asama).ad + ' · ' + T.KARAR_SONUC[karar], not)]),
+      guncelleme: serverTimestamp()
+    });
+    if (asama === 'ik' && karar === 'onay') yeni.ikDeg = ikDeg;
+    /* e-posta yalnız direktör onayında İK Direktörüne (CEO'ya e-posta yok: CEO sisteme girmez) */
+    const alici = karar === 'onay' && asama === 'direktor' ? 'ik' : null;
+    let qref = null;
+    if (alici && T.epostaGecerli(o.zincir[alici].eposta)) { qref = doc(collection(db, 'epostaKuyrugu')); yeni.sonBildirim = qref.id; }
+    tx.set(ref, yeni);
+    if (qref) tx.set(qref, epostaKaydi(alici, yeni, id));
+    if (asama === 'ceo' && karar === 'onay') tx.set(doc(db, 'acikPozisyonlar', id), pozisyonKaydi(yeni, id));
+  });
+}
+function pozisyonKaydi(t, id) {
+  return {
+    talepId: id, no: t.no, pozisyon: t.form.pozisyon, departman: t.departman, bolum: t.bolum, depKey: t.depKey, durum: 'acik', kaynak: 'talep',
+    pidler: t.pidler, ikPid: t.zincir.ik.pid, talepEdenAd: t.talepEden.ad, direktorAd: t.zincir.direktor.ad, kanallar: [], ikNot: '', alinanKisi: '', baslama: '',
+    acilis: serverTimestamp(), guncelleme: serverTimestamp(), gecmis: [olay('Pozisyon açıldı · 4 aşamadan onaylı geçti (CEO onayını İK işaretledi)')]
+  };
+}
+function notSor(baslik, aciklama, dugme, isle) {
+  const ta = O.el('textarea', { class: 'pt-girdi', rows: 3, maxlength: T.SINIR.not, placeholder: 'Gerekçe' });
+  const hata = O.el('div', { class: 'pt-hata' });
+  modal({ baslik, govde: O.el('div', { style: { display: 'grid', gap: '10px' } }, O.el('div', { text: aciklama }), ta, hata), dugmeler: [{ metin: 'Vazgeç' }, { metin: dugme, sinif: 'btn-lacivert', tikla: async (kapat) => {
+    const n = T.temiz(ta.value, T.SINIR.not); if (!n) { hata.textContent = 'Gerekçe yazın.'; return; }
+    try { MESGUL = true; await isle(n); MESGUL = false; kapat(); O.bildirim('Kaydedildi.'); ciz(); } catch (e) { MESGUL = false; hata.textContent = hataMetni(e); }
+  } }] });
+}
+async function talepGuncelle(id, fn) {
+  const ref = doc(db, 'personelTalepFormlari', id);
+  await runTransaction(db, async (tx) => { const s = await tx.get(ref); if (!s.exists()) throw new Error('Talep bulunamadı.'); const yeni = fn(s.data()); tx.set(ref, yeni); });
+}
+function iptalSor(t) {
+  notSor('Talebi iptal et', 'İptal edilen talep onaya gitmez ve yeniden açılamaz. Gerekçeyi yazın.', 'İptal et', (n) => talepGuncelle(t.id, (o) => {
+    if (!(['direktor', 'ik', 'ceo', 'revize', 'ertelendi'].includes(o.durum))) throw new Error('Bu talep artık iptal edilemez.');
+    return Object.assign({}, o, { durum: 'iptal', gecmis: (o.gecmis || []).concat([olay('Talep iptal edildi', n)]), guncelleme: serverTimestamp() });
+  }));
+}
+function yenidenAl(t) {
+  notSor('Yeniden CEO kararına al', 'Ertelenen talep yeniden CEO kararına alınır; önceki erteleme kararı geçmişte kalır.', 'CEO kararına al', (n) => talepGuncelle(t.id, (o) => {
+    if (o.durum !== 'ertelendi') throw new Error('Talep ertelenmiş durumda değil.');
+    const onaylar = Object.assign({}, o.onaylar || {}); delete onaylar.ceo;
+    return Object.assign({}, o, { durum: 'ceo', onaylar, gecmis: (o.gecmis || []).concat([olay('Yeniden CEO kararına alındı', n)]), guncelleme: serverTimestamp() });
+  }));
+}
+async function zincirGuncelle(t) {
+  try {
+    MESGUL = true;
+    await talepGuncelle(t.id, (o) => {
+      const z = T.zincirKur(AYAR, o.depKey);
+      if (!z) throw new Error('Bu departmanın onay zinciri ayarda bulunamadı.');
+      return Object.assign({}, o, { zincir: z, pidler: T.pidler(o.talepEden.pid, z), gecmis: (o.gecmis || []).concat([olay('Onay zinciri güncel ayara göre yenilendi')]), guncelleme: serverTimestamp() });
+    });
+    MESGUL = false; O.bildirim('Onay zinciri güncellendi.'); ciz();
+  } catch (e) { MESGUL = false; modal({ baslik: 'Güncellenemedi', govde: O.el('div', { text: hataMetni(e) }), dugmeler: [{ metin: 'Tamam' }] }); }
+}
+async function epostaYenidenGonder(t) {
+  const tur = t.durum;
+  try {
+    const ref = doc(collection(db, 'epostaKuyrugu'));
+    await setDoc(ref, epostaKaydi(tur, t, t.id));       /* İK kuralı (epostaKuyrugu: ik) */
+    O.bildirim('E-posta gönderim sırasına alındı.');
+  } catch (e) { modal({ baslik: 'E-posta sıraya alınamadı', govde: O.el('div', { text: hataMetni(e) }), dugmeler: [{ metin: 'Tamam' }] }); }
+}
+
+/* ---------------------------------------------------- YAZDIR (kâğıt forma benzer A4) */
+function yazdir(t) {
+  const f = t.form || {}, ik = t.ikDeg || {};
+  const e = O.esc;
+  const kutu = (ad, deger, genis) => '<div class="b-kutu' + (genis ? ' genis' : '') + '"><i>' + e(ad) + '</i><span>' + e(deger === undefined || deger === null || deger === '' ? '—' : deger) + '</span></div>';
+  const sec = (liste, secili) => '<div class="b-sec">' + liste.map((x) => '<span class="' + ((Array.isArray(secili) ? secili.includes(x) : secili === x) ? 'var' : '') + '">' + e(x) + '</span>').join('') + '</div>';
+  const imza = T.ASAMALAR.map((a) => {
+    const kisi = { ad: imzaAdi(t, a.kod) };
+    const o = (t.onaylar || {})[a.kod];
+    const d = asamaDurumu(t, a.kod);
+    const satir = a.kod === 'talep' ? 'E-onay: ' + T.zamanTR(t.olusturma) : o && o.karar ? T.KARAR_SONUC[o.karar] + ' · ' + T.zamanTR(o.zaman) + (o.adina ? '<br>(İşaretleyen: ' + e(kisiAd(o.ad)) + ', İK)' : '') : e(d.metin);
+    return '<div><b>' + e(a.ad) + '</b>' + e(kisiAd(kisi && kisi.ad)) + '<br>' + satir + '</div>';
+  }).join('');
+  const ceo = (t.onaylar || {}).ceo;
+  $('baski').innerHTML =
+    '<div class="b-ust"><div class="b-marka">İnciroğlu <span>Otomotiv</span></div><div class="b-tarih">TARİH: <b>' + e(T.tarihTR(f.tarih)) + '</b><br>Talep no: ' + e(t.no || '') + '</div></div>' +
+    '<h1>PERSONEL TALEP FORMU</h1>' +
+    '<h2>İstenilen pozisyon bilgileri</h2><div class="b-izgara">' +
+      kutu('Pozisyon adı', f.pozisyon) + kutu('Mezuniyet bilgisi', f.mezuniyet) + kutu('Gerekli sertifikalar', f.sertifikalar) +
+      kutu('Birim / bölüm', depAdi(t)) + kutu('Cinsiyet', f.cinsiyet) + kutu('İsim soyisim (önerilen aday)', f.adayYok ? 'Yok' : f.adayAd) +
+      kutu('Deneyim', f.deneyim) + kutu('Beklentiler', f.beklentiler) + kutu('Talep eden', kisiAd(t.talepEden && t.talepEden.ad) + ' · ' + T.trBaslik((t.talepEden && t.talepEden.unvan) || '')) +
+      kutu('Görev tanımı', f.gorevTanimi, true) + '</div>' +
+    '<h2>Talep nedeni</h2>' + sec(T.NEDENLER, f.nedenler) +
+      ((f.nedenler || []).includes('Yerine alım') ? '<div class="b-metin" style="margin-top:3px">Kimin yerine: <b>' + e(f.yerineKim) + '</b> · Çıkış tarihi: <b>' + e(T.tarihTR(f.yerineCikis)) + '</b></div>' : '') +
+    '<div class="b-kutu genis" style="margin-top:6px"><i>Alım talebinin detaylı açıklaması (talep eden yönetici)</i><span>' + e(f.aciklama) + '</span></div>' +
+    '<div class="b-iki" style="margin-top:8px"><div>' +
+      '<div class="b-alt">İç aday değerlendirmesi</div>' + sec(T.IC_ADAY, f.icAday) +
+      '<div class="b-alt">Talep edilen ücret</div><div class="b-metin">Yönetici önerisi: <b>' + e(T.tl(f.ucretYonetici)) + '</b><br>İnsan Kaynakları önerisi: <b>' + e(typeof ik.ucretIk === 'number' ? T.tl(ik.ucretIk) : '—') + '</b></div>' +
+      '<div class="b-alt">Bütçe durumu</div><div class="b-metin">İlgili birim bütçesi (yıllık): <b>' + e(T.tl(f.butceYillik)) + '</b><br>Kullanılan bütçe (bugüne kadar): <b>' + e(T.tl(f.butceKullanilan)) + '</b><br>Kalan bütçe: <b>' + e(T.tl(T.butceKalan(f))) + '</b></div>' +
+      '<div class="b-alt">İnsan Kaynakları değerlendirmesi</div><div class="b-metin">Kadro planına uygunluk: <span class="b-k' + (ik.kadroUygun === true ? ' var' : '') + '"></span>Uygun &nbsp;<span class="b-k' + (ik.kadroUygun === false ? ' var' : '') + '"></span>Değil</div>' +
+    '</div><div>' +
+      '<div class="b-alt">Eksik personel ile devam edilebilirlik analizi</div>' + sec(T.DEVAM, f.devam) + (f.devamAciklama ? '<div class="b-metin">Açıklama: ' + e(f.devamAciklama) + '</div>' : '') +
+      '<div class="b-alt">Pozisyon alınmazsa oluşacak riskler</div>' + sec(T.RISKLER, f.riskler) + '<div class="b-metin">Açıklama: ' + e(f.riskAciklama) + '</div>' +
+      '<div class="b-alt">Distribütör / marka zorunluluğu</div>' + sec(T.MARKA, f.marka) + '<div class="b-metin">Dayanak: ' + e(f.markaDayanak || '—') + '</div>' +
+    '</div></div>' +
+    '<h2>Onay bölümü</h2><div class="b-imza">' + imza + '</div>' +
+    '<h2>Karar bölümü</h2>' + sec(['Onaylandı', 'Revize istendi', 'Ertelendi', 'Reddedildi'], ceo ? { onay: 'Onaylandı', revize: 'Revize istendi', erteleme: 'Ertelendi', red: 'Reddedildi' }[ceo.karar] : '') +
+    '<div class="b-dip">Bu form İK Portalı’nda elektronik olarak doldurulmuş ve onaylanmıştır. Talep eden, direktör ve İK Direktörü onaylarını kendi portal hesaplarıyla vermiştir; CEO kararını İnsan Kaynakları işaretlemiştir. Yazdırma:' + e(T.zamanTR(Date.now())) + ' · ' + e(t.no || '') + '</div>';
+  setTimeout(() => window.print(), 50);
+}
+
+/* ---------------------------------------------------- 4) AÇIK POZİSYONLAR
+   Kullanıcı kararı (16.11): her personel talebi kısa bilgileriyle burada görünür. ONAY DURUMU:
+   4 aşamadan onaylı geçen → ONAYLI (gerçek açık pozisyon; ilan/görüşme/teklif/dolduruldu İK'ca işlenir),
+   CEO kararı henüz verilmemiş (süreçte, revize, ertelenen) → ONAY AŞAMASINDA, reddedilen → ONAYLI DEĞİL. İptal edilen listelenmez. */
+function pozisyonSatirlari() {
+  const satirlar = [];
+  talepler().forEach((t) => {
+    const od = T.onayDurumu(t.durum); if (!od) return;
+    const p = POZ.get(t.id) || null;
+    satirlar.push({ id: t.id, tur: p ? 'poz' : 'talep', od, p, t });
+  });
+  /* talepsiz (İK'nın elle eklediği) ya da talebi bu kullanıcıya görünmeyen pozisyonlar */
+  pozisyonlar().forEach((p) => { if (!satirlar.some((s) => s.id === p.id)) satirlar.push({ id: p.id, tur: 'poz', od: 'onayli', p, t: null }); });
+  return satirlar.map((s) => {
+    const f = (s.t && s.t.form) || {};
+    const kapandi = !!(s.p && !T.pozAcikMi(s.p.durum));
+    return Object.assign(s, {
+      poz: (s.p && s.p.pozisyon) || f.pozisyon || '', dep: depAdi(s.p || s.t), eden: kisiAd((s.t && s.t.talepEden && s.t.talepEden.ad) || (s.p && s.p.talepEdenAd)),
+      no: (s.t && s.t.no) || (s.p && s.p.no) || (s.p && s.p.kaynak === 'elle' ? 'Talepsiz' : ''), tarih: f.tarih || '',
+      neden: (f.nedenler || []).join(', ') + ((f.nedenler || []).includes('Yerine alım') && f.yerineKim ? ' (' + f.yerineKim + ')' : ''),
+      onay: T.ONAY_DURUMU[s.od].ad, asama: s.od === 'asamada' ? (T.ASAMA_ACIKLAMA[s.t.durum] || T.durumAdi(s.t.durum)) : '',
+      pdurum: s.p ? (T.POZ_DURUM[s.p.durum] || {}).ad || s.p.durum : '', gun: s.p ? (kapandi ? T.gunFarki(s.p.acilis, s.p.kapanis) : T.gunFarki(s.p.acilis)) : null,
+      kapandi, alinan: s.p ? kisiAd(s.p.alinanKisi) : ''
+    });
+  });
+}
+function onayCip(od, alt) {
+  const x = T.ONAY_DURUMU[od];
+  const k = O.el('span', { style: { display: 'inline-grid', gap: '3px' } }, O.el('span', { class: 'pt-durum ' + x.sinif, style: { letterSpacing: '.04em' }, text: x.ad }));
+  if (alt) k.append(O.el('small', { style: { fontSize: '11.5px', color: 'var(--metin-3)', paddingLeft: '4px' }, text: alt }));
+  return k;
+}
+function pozisyonlarSayfasi(kok) {
+  ustBantKur('Açık Pozisyonlar');
+  const tum = pozisyonSatirlari();
+  const onayliAcik = tum.filter((s) => s.od === 'onayli' && !s.kapandi);
+  const asamada = tum.filter((s) => s.od === 'asamada');
+  const degil = tum.filter((s) => s.od === 'degil');
+  const kapanan = tum.filter((s) => s.kapandi);
+  const gunler = onayliAcik.map((s) => s.gun).filter((x) => x !== null);
+  const ort = gunler.length ? Math.round(gunler.reduce((a, b) => a + b, 0) / gunler.length) : null;
+  O.kaput(kok, {
+    ustEtiket: 'İnsan Kaynakları · Kadro', baslik: 'Açık Pozisyonlar',
+    ozetHtml: 'Her personel talebi burada kısa bilgileriyle görünür. Dört aşamadan onaylı geçen talep <b>ONAYLI</b> açık pozisyondur; CEO kararı henüz verilmemiş olanlar <b>ONAY AŞAMASINDA</b>, reddedilenler <b>ONAYLI DEĞİL</b> görünür.',
+    meta: [{ ikon: 'dosya', html: '<b>' + onayliAcik.length + '</b> onaylı açık pozisyon' }, { ikon: 'saat', html: '<b>' + asamada.length + '</b> talep onay aşamasında' }]
+  });
+  sekmeler(kok, 'pozisyonlar');
+  yuklemeHatasi(kok);
+  const kpiEl = O.kpiSatiri(kok, [
+    { etiket: 'Onaylı açık pozisyon', deger: onayliAcik.length, ikon: 'onay', alt: ort === null ? 'açık pozisyon yok' : 'ortalama ' + ort + ' gündür açık', renk: 'var(--ok-500)' },
+    { etiket: 'Onay aşamasında', deger: asamada.length, ikon: 'saat', alt: asamada.filter((s) => s.t.durum === 'ceo').length + ' talepte CEO kararı bekleniyor' },
+    { etiket: 'Onaylı değil', deger: degil.length, ikon: 'carpi', alt: 'reddedilen talepler', renk: 'var(--ht-500)' },
+    { etiket: 'Kapanan pozisyon', deger: kapanan.length, ikon: 'kisiler', alt: kapanan.filter((s) => s.p.durum === 'dolduruldu').length + ' dolduruldu', renk: 'var(--ey-400)' }
+  ], { kolon: 4 });
+  const arac = O.el('div', { class: 'pt-arac' });
+  const suz = O.el('select', { class: 'girdi', 'aria-label': 'Onay durumuna göre süz', style: { width: 'auto' }, on: { change: (e) => { SUZ.poz = e.target.value; ciz(); } } },
+    ...[['hepsi', 'Tüm onay durumları'], ['onayli', 'ONAYLI'], ['asamada', 'ONAY AŞAMASINDA'], ['degil', 'ONAYLI DEĞİL']].map(([k, a]) => O.el('option', { value: k, selected: SUZ.poz === k ? true : null, text: a })));
+  if (!['hepsi', 'onayli', 'asamada', 'degil'].includes(SUZ.poz)) SUZ.poz = 'hepsi';
+  arac.append(O.el('span', { class: 'bosluk' }));
+  if (IK) { arac.append(O.el('button', { class: 'btn', type: 'button', html: IK_EKLE + '<span>Talepsiz pozisyon ekle</span>', title: 'Sistemden önce onaylanmış ya da talep formu olmadan açılan pozisyonlar için', on: { click: elleEkle } })); kok.insertBefore(arac, kpiEl); }
+  O.akisBaslik(kok, { no: '01', baslik: 'Pozisyonlar ve onay durumu', aciklama: 'ONAYLI satırlar pozisyon kartını, diğerleri personel talep formunu açar' });
+  const liste = tum.filter((s) => !s.kapandi && (SUZ.poz === 'hepsi' || s.od === SUZ.poz));
+  const sira = { onayli: 0, asamada: 1, degil: 2 };
+  liste.sort((a, b) => (sira[a.od] - sira[b.od]) || ((b.gun || 0) - (a.gun || 0)) || String(b.tarih).localeCompare(String(a.tarih)));
+  const k1 = O.kart(O.izgara(kok), { baslik: 'Pozisyonlar', aciklama: liste.length + ' kayıt', sinif: 's12' });
+  O.tablo(k1.govde, {
+    sutunlar: [
+      { k: 'poz', ad: 'Pozisyon', sinif: 'ad-hucre' }, { k: 'dep', ad: 'Departman' }, { k: 'eden', ad: 'Talep eden' },
+      { k: 'tarih', ad: 'Talep tarihi', bicim: (v) => T.tarihTR(v) || '—', siralamaDegeri: (r) => r.tarih }, { k: 'neden', ad: 'Talep nedeni' },
+      { k: 'onay', ad: 'Onay durumu', bicim: (v, r) => onayCip(r.od, r.asama), siralamaDegeri: (r) => sira[r.od] },
+      { k: 'pdurum', ad: 'Pozisyon durumu', bicim: (v, r) => (r.p ? durumCip(r.p.durum, true) : '—') },
+      { k: 'gun', ad: 'Açık (gün)', tip: 'sayi', sag: true }
+    ],
+    satirlar: liste, sayfaBoyu: 15, ara: true, araYer: 'Pozisyon, departman, kişi…', araAlanlari: ['poz', 'dep', 'eden', 'neden', 'onay', 'no'], aracEk: suz,
+    satirTikla: (r) => git(r.p ? '#/pozisyon/' + r.p.id : '#/talep/' + r.id),
+    bos: { baslik: tum.length ? 'Bu süzgece uyan kayıt yok' : 'Henüz personel talebi yok', metin: tum.length ? '' : 'Personel talepleri oluşturuldukça burada onay durumlarıyla görünür.' }
+  });
+  O.akisBaslik(kok, { no: '02', baslik: 'Kapanan pozisyonlar', aciklama: 'Doldurulan ve iptal edilen onaylı pozisyonlar' });
+  const k2 = O.kart(O.izgara(kok), { baslik: 'Kapanan', aciklama: kapanan.length + ' pozisyon', sinif: 's12' });
+  O.tablo(k2.govde, {
+    sutunlar: [{ k: 'poz', ad: 'Pozisyon', sinif: 'ad-hucre' }, { k: 'dep', ad: 'Departman' }, { k: 'pdurum', ad: 'Durum', bicim: (v, r) => durumCip(r.p.durum, true) },
+      { k: 'alinan', ad: 'Alınan kişi' }, { k: 'gun', ad: 'Doldurma süresi (gün)', tip: 'sayi', sag: true, bicim: (v, r) => (r.p.durum === 'dolduruldu' && v !== null ? O.sayi(v) : '—') }, { k: 'no', ad: 'Talep no' }],
+    satirlar: kapanan, sayfaBoyu: 10, ara: true, satirTikla: (r) => git('#/pozisyon/' + r.p.id), bos: { baslik: 'Kapanan pozisyon yok' }
+  });
+  O.notlar(kok, [
+    'ONAYLI: talep eden, direktör, İK Direktörü ve CEO onayından geçmiştir. CEO kararını İnsan Kaynakları “CEO onay verdi” olarak işaretler.',
+    'ONAY AŞAMASINDA: talep direktörde, İK Direktöründe ya da CEO kararını bekliyor; revize istenen ve CEO’nun ertelediği talepler de buradadır.',
+    'ONAYLI DEĞİL: talep direktör, İK Direktörü ya da CEO tarafından reddedilmiştir. İptal edilen talepler listelenmez.',
+    'Açık kalma süresi CEO onayının işaretlendiği günden bugüne sayılır; doldurma süresi açılıştan “Dolduruldu” işaretlenen güne kadardır.',
+    IK ? 'Pozisyon durumunu, ilan kanallarını ve notları İnsan Kaynakları değiştirir; talep eden yönetici ve direktör durumu buradan izler.' : 'Pozisyonun durumunu İnsan Kaynakları günceller; siz buradan izleyebilirsiniz.'
+  ]);
+}
+function pozisyonSayfasi(kok, id) {
+  ustBantKur('Açık Pozisyon');
+  const p = POZ.get(id);
+  const t = p.talepId ? TALEP.get(p.talepId) : null;
+  O.kaput(kok, { ustEtiket: 'Açık Pozisyon' + (p.no ? ' · ' + p.no : ''), baslik: (p.pozisyon || '—') + ' · ' + depAdi(p),
+    ozetHtml: 'Açılış: <b>' + O.esc(T.zamanTR(p.acilis, false)) + '</b> · ' + (T.pozAcikMi(p.durum) ? '<b>' + T.gunFarki(p.acilis) + ' gündür açık</b>' : 'Kapanış: <b>' + O.esc(T.zamanTR(p.kapanis, false)) + '</b>') });
+  sekmeler(kok, 'pozisyonlar');
+  kok.append(O.el('div', { class: 'pt-arac' }, O.el('a', { class: 'btn btn-hayalet', href: '#/pozisyonlar', html: IK_GERI + '<span>Pozisyonlara dön</span>' }), O.el('span', { class: 'bosluk' }),
+    t ? O.el('a', { class: 'btn', href: '#/talep/' + t.id, html: IK_TALEP + '<span>Personel talep formu</span>' }) : null));
+  const izg = O.el('div', { class: 'pt-detay' });
+  const ana = O.el('div', { class: 'pt-form' }), yan = O.el('aside', {});
+  izg.append(ana, yan); kok.append(izg);
+  const dd = (ad, v, s) => O.el('div', { class: s || '' }, O.el('dt', { text: ad }), O.el('dd', { text: v === undefined || v === null || v === '' ? '—' : v }));
+  ana.append(O.el('section', { class: 'pt-kart' }, O.el('header', { class: 'pt-kart-ust' }, O.el('h3', { text: 'Pozisyon' }), O.el('span', { class: 'sag' }, durumCip(p.durum, true))),
+    O.el('div', { class: 'pt-kart-govde' }, O.el('dl', { class: 'pt-dl' }, dd('Pozisyon', p.pozisyon), dd('Departman', depAdi(p)), dd('Kaynak', p.kaynak === 'elle' ? 'Talepsiz (İK ekledi)' : 'Personel talebi ' + (p.no || '')),
+      dd('Talep eden', kisiAd(p.talepEdenAd)), dd('Onaylayan direktör', kisiAd(p.direktorAd)), dd('İlan kanalları', (p.kanallar || []).join(', ')),
+      dd('Alınan kişi', kisiAd(p.alinanKisi)), dd('İşe başlama', T.tarihTR(p.baslama)), dd('İK notu', p.ikNot, 'genis')))));
+  const g = O.el('div', { class: 'pt-gecmis' }, ...(p.gecmis || []).slice().reverse().map((x) => O.el('div', { class: 'pt-olay' }, O.el('i'), O.el('div', {}, O.el('b', { text: x.olay || '' }), O.el('small', { text: kisiAd(x.kim) + ' · ' + T.zamanTR(x.zaman) }), x.not ? O.el('p', { text: x.not }) : null))));
+  ana.append(O.el('section', { class: 'pt-kart' }, O.el('header', { class: 'pt-kart-ust' }, O.el('h3', { text: 'Geçmiş' })), O.el('div', { class: 'pt-kart-govde' }, g)));
+  if (!(IK || (p.ikPid && p.ikPid === PID))) return;      /* düzenleme: İK rolü ya da talebin İK Direktörü (kural: apYazar) */
+  /* İK düzenleyici */
+  const d = { durum: p.durum, kanallar: (p.kanallar || []).slice(), ikNot: p.ikNot || '', alinanKisi: p.alinanKisi || '', baslama: p.baslama || '', not: '' };
+  const k = O.el('div', { class: 'pt-karar' }, O.el('div', { class: 'pt-karar-ust' }, O.el('small', { text: 'İnsan Kaynakları' }), O.el('b', { text: 'Pozisyonu güncelle' })));
+  const gv = O.el('div', { class: 'pt-karar-govde' }); k.append(gv);
+  const durumSec = O.el('select', { class: 'pt-girdi', on: { change: (e) => { d.durum = e.target.value; dolduAlan.style.display = d.durum === 'dolduruldu' ? '' : 'none'; } } }, ...T.POZ_SIRA.map((x) => O.el('option', { value: x, text: T.POZ_DURUM[x].ad, selected: d.durum === x ? true : null })));
+  gv.append(O.el('label', { class: 'pt-alan s6' }, O.el('span', { class: 'pt-etiket', text: 'Durum' }), durumSec));
+  const kn = O.el('div', { class: 'pt-secenekler' });
+  T.KANALLAR.forEach((x) => kn.append(O.el('label', { class: 'pt-secenek' + (d.kanallar.includes(x) ? ' secili' : '') }, O.el('input', { type: 'checkbox', checked: d.kanallar.includes(x) ? true : null, on: { change: (e) => { const s = new Set(d.kanallar); if (e.target.checked) s.add(x); else s.delete(x); d.kanallar = T.KANALLAR.filter((y) => s.has(y)); e.target.closest('label').classList.toggle('secili', e.target.checked); } } }), O.el('span', { text: x }))));
+  gv.append(O.el('div', { class: 'pt-alan s6' }, O.el('span', { class: 'pt-etiket', text: 'İlan kanalları' }), kn));
+  const dolduAlan = O.el('div', { style: { display: d.durum === 'dolduruldu' ? '' : 'none' } },
+    O.el('label', { class: 'pt-alan s6' }, O.el('span', { class: 'pt-etiket', text: 'Alınan kişi' }), O.el('input', { class: 'pt-girdi', type: 'text', value: d.alinanKisi, maxlength: 120, list: 'ptPersonel2', on: { input: (e) => { d.alinanKisi = e.target.value; } } })),
+    O.el('label', { class: 'pt-alan s6', style: { marginTop: '10px' } }, O.el('span', { class: 'pt-etiket', text: 'İşe başlama tarihi' }), O.el('input', { class: 'pt-girdi', type: 'date', value: d.baslama, on: { change: (e) => { d.baslama = e.target.value; } } })),
+    O.el('datalist', { id: 'ptPersonel2' }, ...PERSONEL.map((x) => O.el('option', { value: x.ad }))));
+  gv.append(dolduAlan);
+  const ikNot = O.el('textarea', { class: 'pt-girdi', rows: 3, maxlength: T.SINIR.ikNot, on: { input: (e) => { d.ikNot = e.target.value; } } }); ikNot.value = d.ikNot;
+  gv.append(O.el('label', { class: 'pt-alan s6' }, O.el('span', { class: 'pt-etiket', text: 'İK notu (pozisyon kartında görünür)' }), ikNot));
+  const olayNot = O.el('input', { class: 'pt-girdi', type: 'text', maxlength: T.SINIR.not, placeholder: 'ör. 3 adayla görüşme planlandı', on: { input: (e) => { d.not = e.target.value; } } });
+  gv.append(O.el('label', { class: 'pt-alan s6' }, O.el('span', { class: 'pt-etiket', text: 'Geçmişe not (isteğe bağlı)' }), olayNot));
+  const hata = O.el('div', { class: 'pt-hata' });
+  const btn = O.el('button', { class: 'btn btn-pirinc', type: 'button', html: IK_TIK + '<span>Kaydet</span>', on: { click: async () => {
+    if (d.durum === 'dolduruldu' && (!T.temiz(d.alinanKisi, 120) || !/^\d{4}-\d{2}-\d{2}$/.test(d.baslama))) { hata.textContent = 'Dolduruldu için alınan kişiyi ve işe başlama tarihini yazın.'; return; }
+    try {
+      MESGUL = true; btn.disabled = true;
+      const ref = doc(db, 'acikPozisyonlar', id);
+      await runTransaction(db, async (tx) => {
+        const s = await tx.get(ref); const o = s.data();
+        const degisen = [];
+        if (o.durum !== d.durum) degisen.push('Durum: ' + T.POZ_DURUM[d.durum].ad);
+        if (JSON.stringify(o.kanallar || []) !== JSON.stringify(d.kanallar)) degisen.push('İlan kanalları güncellendi');
+        if ((o.ikNot || '') !== T.temiz(d.ikNot, T.SINIR.ikNot)) degisen.push('İK notu güncellendi');
+        const kapanacak = !T.pozAcikMi(d.durum), acikti = T.pozAcikMi(o.durum);
+        const yeni = Object.assign({}, o, { durum: d.durum, kanallar: d.kanallar, ikNot: T.temiz(d.ikNot, T.SINIR.ikNot),
+          alinanKisi: d.durum === 'dolduruldu' ? T.temiz(d.alinanKisi, 120) : '', baslama: d.durum === 'dolduruldu' ? d.baslama : '', guncelleme: serverTimestamp() });
+        if (kapanacak && acikti) yeni.kapanis = serverTimestamp();
+        if (!kapanacak && !acikti) delete yeni.kapanis;
+        if (degisen.length || T.temiz(d.not, T.SINIR.not)) yeni.gecmis = (o.gecmis || []).concat([olay(degisen.join(' · ') || 'Not eklendi', d.not)]);
+        tx.set(ref, yeni);
+      });
+      MESGUL = false; O.bildirim('Pozisyon güncellendi.'); ciz();
+    } catch (e) { MESGUL = false; btn.disabled = false; hata.textContent = hataMetni(e); }
+  } } });
+  gv.append(hata, btn);
+  yan.append(k);
+}
+function elleEkle() {
+  const d = { pozisyon: '', depKey: '', not: '' };
+  const deps = departmanSecenekleri();
+  const poz = O.el('input', { class: 'pt-girdi', type: 'text', maxlength: T.SINIR.pozisyon, placeholder: 'ör. Servis Danışmanı', on: { input: (e) => { d.pozisyon = e.target.value; } } });
+  const dep = O.el('select', { class: 'pt-girdi', on: { change: (e) => { d.depKey = e.target.value; } } }, O.el('option', { value: '', text: 'Departman seçin…' }), ...deps.map(({ k, d: x }) => O.el('option', { value: k, text: x.ad + ' · ' + x.bolum })));
+  const nt = O.el('textarea', { class: 'pt-girdi', rows: 2, maxlength: T.SINIR.ikNot, placeholder: 'ör. Eylül’de yönetim kurulunca onaylandı', on: { input: (e) => { d.not = e.target.value; } } });
+  const hata = O.el('div', { class: 'pt-hata' });
+  modal({ baslik: 'Talepsiz pozisyon ekle', govde: O.el('div', { style: { display: 'grid', gap: '10px' } },
+    O.el('div', { text: 'Personel talep formu olmadan açılmış (ör. sistemden önce onaylanmış) pozisyonlar için. Bu kayıtları yalnız İnsan Kaynakları görür.' }),
+    O.el('label', { class: 'pt-alan s6' }, O.el('span', { class: 'pt-etiket', text: 'Pozisyon' }), poz), O.el('label', { class: 'pt-alan s6' }, O.el('span', { class: 'pt-etiket', text: 'Departman' }), dep),
+    O.el('label', { class: 'pt-alan s6' }, O.el('span', { class: 'pt-etiket', text: 'Not' }), nt), hata),
+    dugmeler: [{ metin: 'Vazgeç' }, { metin: 'Ekle', sinif: 'btn-lacivert', tikla: async (kapat) => {
+      const pz = T.temiz(d.pozisyon, T.SINIR.pozisyon); const x = AYAR && AYAR.departmanlar && AYAR.departmanlar[d.depKey];
+      if (!pz || !x) { hata.textContent = 'Pozisyonu ve departmanı girin.'; return; }
+      try {
+        const ref = doc(collection(db, 'acikPozisyonlar'));
+        await setDoc(ref, { talepId: '', no: '', pozisyon: pz, departman: x.ad, bolum: x.bolum, depKey: d.depKey, durum: 'acik', kaynak: 'elle', pidler: [], ikPid: '', talepEdenAd: '', direktorAd: (x.direktor && x.direktor.ad) || '',
+          kanallar: [], ikNot: T.temiz(d.not, T.SINIR.ikNot), alinanKisi: '', baslama: '', acilis: serverTimestamp(), guncelleme: serverTimestamp(), gecmis: [olay('Pozisyon İK tarafından eklendi (talepsiz)', d.not)] });
+        kapat(); O.bildirim('Pozisyon eklendi.'); git('#/pozisyon/' + ref.id);
+      } catch (e) { hata.textContent = hataMetni(e); }
+    } }] });
+}
+
+/* ---------------------------------------------------- 5) ONAY ZİNCİRİ (yalnız İK) */
+const BOS_KISI = () => ({ pid: '', ad: '', eposta: '' });
+function ayarSayfasi(kok) {
+  ustBantKur('Onay Zinciri');
+  O.kaput(kok, { ustEtiket: 'Personel Talepleri · Ayar', baslik: 'Onay Zinciri',
+    ozetHtml: 'Her departmanın talebini hangi direktörün onaylayacağını, İK Direktörünü ve CEO’yu buradan belirleyin. Kişiler <b>portal hesaplarından</b> seçilir (onayı kendi hesaplarıyla verirler); e-postalar yalnız <b>@inciroglu.com.tr</b> olabilir.' });
+  sekmeler(kok, 'ayar');
+  yuklemeHatasi(kok);
+  if (HESAPLAR === null) {
+    kok.append(O.el('div', { class: 'pt-bilgi', text: 'Portal hesapları okunuyor…' }));
+    talepKimlikleriHazirla().then(() => ciz()).catch((e) => { HESAPLAR = []; AY = null; O.bildirim('Hesaplar okunamadı: ' + hataMetni(e)); ciz(); });
+    return;
+  }
+  if (!AY) AY = JSON.parse(JSON.stringify(AYAR || { departmanlar: {}, ikDirektor: BOS_KISI(), ceo: { ad: '' } }));
+  AY.departmanlar = AY.departmanlar || {};
+  AY.ceo = { ad: (AY.ceo && AY.ceo.ad) || '' };
+  const yon = HESAPLAR.filter((h) => h.roller.some((r) => r !== 'calisan'));
+  const kisiSec = (deger, degisince) => {
+    const s = O.el('select', { class: 'pt-girdi', on: { change: (e) => { const h = HESAPLAR.find((x) => x.pid === e.target.value); degisince(h || null); } } }, O.el('option', { value: '', text: 'Seçin…' }));
+    const grup = (ad, l) => { if (!l.length) return; const g = O.el('optgroup', { label: ad }); l.forEach((h) => g.append(O.el('option', { value: h.pid, text: kisiAd(h.ad), selected: deger === h.pid ? true : null }))); s.append(g); };
+    grup('Direktörler', yon.filter((h) => h.roller.includes('direktor')));
+    grup('Diğer yönetim hesapları', yon.filter((h) => !h.roller.includes('direktor')));
+    if (deger && !yon.some((h) => h.pid === deger)) s.append(O.el('option', { value: deger, selected: true, text: '(hesap bulunamadı / kapalı)' }));
+    return s;
+  };
+  const epostaG = (o) => O.el('input', { class: 'pt-girdi', type: 'email', value: o.eposta || '', placeholder: 'ad.soyad@inciroglu.com.tr', on: { input: (e) => { o.eposta = e.target.value.trim().toLocaleLowerCase('en'); } } });
+  const yenile = () => { const y = window.scrollY; ciz(); window.scrollTo(0, y); };
+  /* genel */
+  const genel = O.el('table', { class: 'pt-ayar-tablo' }, O.el('thead', {}, O.el('tr', {}, O.el('th', { text: 'Rol' }), O.el('th', { text: 'Kişi (portal hesabı)' }), O.el('th', { text: 'E-posta' }), O.el('th', { text: '' }))));
+  const tb = O.el('tbody'); genel.append(tb);
+  const kisiSatir = (rol, o, ek) => tb.append(O.el('tr', { class: !o.pid ? 'eksik' : '' }, O.el('td', { class: 'dep' }, O.el('b', { text: rol })),
+    O.el('td', {}, kisiSec(o.pid, (h) => { o.pid = h ? h.pid : ''; o.ad = h ? h.ad : ''; yenile(); })), O.el('td', {}, epostaG(o)), O.el('td', {}, ek || '')));
+  kisiSatir('İnsan Kaynakları Direktörü', AY.ikDirektor);
+  tb.append(O.el('tr', { class: !AY.ceo.ad ? 'eksik' : '' }, O.el('td', { class: 'dep' }, O.el('b', { text: 'CEO' })),
+    O.el('td', {}, O.el('input', { class: 'pt-girdi', type: 'text', value: kisiAd(AY.ceo.ad), maxlength: 120, placeholder: 'Ad Soyad', on: { input: (e) => { AY.ceo.ad = T.temiz(e.target.value, 120).toLocaleUpperCase('tr'); } } })),
+    O.el('td', { colspan: '2', style: { fontSize: '12.5px', color: 'var(--metin-3)' }, text: 'Sisteme girmez, e-posta gitmez. Kararını İK (İK rolü ya da İK Direktörü) “CEO onay verdi” diye işaretler.' })));
+  kok.append(O.el('section', { class: 'pt-kart' }, O.el('header', { class: 'pt-kart-ust' }, O.el('h3', { text: 'Tüm talepler için' }), O.el('small', { text: 'İK Direktörü kendi hesabıyla onaylar; CEO kararını İK işaretler' })), O.el('div', { class: 'pt-kart-govde', style: { overflowX: 'auto' } }, genel)));
+  /* departmanlar */
+  const dt = O.el('table', { class: 'pt-ayar-tablo' }, O.el('thead', {}, O.el('tr', {}, O.el('th', { text: 'Departman' }), O.el('th', { text: 'Onay veren direktör' }), O.el('th', { text: 'E-posta' }), O.el('th', { text: '' }))));
+  const dtb = O.el('tbody'); dt.append(dtb);
+  Object.keys(AY.departmanlar).map((k) => ({ k, d: AY.departmanlar[k] })).sort((a, b) => O.trKarsilastir(a.d.bolum + a.d.ad, b.d.bolum + b.d.ad)).forEach(({ k, d }) => {
+    d.direktor = d.direktor || BOS_KISI();
+    dtb.append(O.el('tr', { class: !d.direktor.pid ? 'eksik' : '' }, O.el('td', { class: 'dep' }, O.el('b', { text: d.ad }), O.el('small', { text: d.bolum })),
+      O.el('td', {}, kisiSec(d.direktor.pid, (h) => { d.direktor.pid = h ? h.pid : ''; d.direktor.ad = h ? h.ad : ''; const es = Object.values(AY.departmanlar).find((x) => x.direktor && x.direktor.pid === d.direktor.pid && x.direktor.eposta); if (h && es && !d.direktor.eposta) d.direktor.eposta = es.direktor.eposta; yenile(); })),
+      O.el('td', {}, epostaG(d.direktor)),
+      O.el('td', {}, O.el('button', { class: 'btn btn-hayalet', type: 'button', title: 'Departmanı listeden çıkar', html: IK_CARPI, on: { click: () => { delete AY.departmanlar[k]; yenile(); } } }))));
+  });
+  const ekleAd = O.el('input', { class: 'pt-girdi', type: 'text', placeholder: 'Departman adı (ör. BMW)', maxlength: 60 });
+  const ekleBolum = O.el('select', { class: 'pt-girdi' }, ...O.BOLUMLER.map((b) => O.el('option', { value: b, text: b })));
+  const ekleBtn = O.el('button', { class: 'btn', type: 'button', html: IK_EKLE + '<span>Ekle</span>', on: { click: () => { const ad = T.temiz(ekleAd.value, 60).toLocaleUpperCase('tr'); if (!ad) return; const k = T.depKey(ad, ekleBolum.value); if (!AY.departmanlar[k]) AY.departmanlar[k] = { ad, bolum: ekleBolum.value, direktor: BOS_KISI() }; yenile(); } } });
+  const dAlt = O.el('div', { class: 'pt-arac', style: { marginTop: '12px' } }, O.el('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' } }, ekleAd, ekleBolum, ekleBtn), O.el('span', { class: 'bosluk' }),
+    O.el('button', { class: 'btn', type: 'button', text: 'Haftalık veriden departmanları ekle', title: 'İK Dashboard verisindeki tüm departmanları (eksik olanları) ekler', on: { click: haftalikDepartmanlar } }));
+  kok.append(O.el('section', { class: 'pt-kart', style: { marginTop: '16px' } }, O.el('header', { class: 'pt-kart-ust' }, O.el('h3', { text: 'Departman → direktör' }), O.el('small', { text: Object.keys(AY.departmanlar).length + ' departman · kırmızı satırlarda direktör seçilmedi' })),
+    O.el('div', { class: 'pt-kart-govde', style: { overflowX: 'auto' } }, dt, dAlt)));
+  /* aktarım + kaydet */
+  const hata = O.el('div', { class: 'pt-hata' });
+  const kaydet = O.el('button', { class: 'btn btn-pirinc', type: 'button', html: IK_TIK + '<span>Onay zincirini kaydet</span>', on: { click: () => ayarKaydet(kaydet, hata) } });
+  kok.append(O.el('div', { class: 'pt-alt-cubuk', style: { marginTop: '16px' } }, O.el('span', { class: 'not', text: 'Değişiklik yalnız yeni taleplere uygulanır; süren talepleri ayrıntı ekranındaki “Onay zincirini güncelle” ile güncelleyebilirsiniz.' }), hata,
+    O.el('button', { class: 'btn', type: 'button', html: O.ikon('yukle') + '<span>Zincir dosyası aktar (.json)</span>', on: { click: zincirAktar } }),
+    O.el('a', { class: 'btn', href: '#/talepler', text: 'Vazgeç' }), kaydet));
+}
+async function haftalikDepartmanlar() {
+  try {
+    const s = await getDoc(doc(db, 'satisVeri', 'ikPano'));
+    const pk = s.exists() && s.data().json ? JSON.parse(s.data().json) : null;
+    const D = pk && pk.D; if (!D) { O.bildirim('Haftalık veri bulunamadı.'); return; }
+    let n = 0;
+    (D.normal || []).forEach((x) => {
+      const ad = String(x.dept || '').trim(), b = String(x.bolum || '').trim();
+      if (!ad || !b || /icra kurulu|yonetim kurulu/.test(T.katla(ad))) return;
+      const k = T.depKey(ad, b);
+      if (!AY.departmanlar[k]) { AY.departmanlar[k] = { ad: T.temiz(ad, 60), bolum: T.temiz(b, 20), direktor: BOS_KISI() }; n++; }
+    });
+    O.bildirim(n ? n + ' departman eklendi.' : 'Eksik departman yok.'); const y = window.scrollY; ciz(); window.scrollTo(0, y);
+  } catch (e) { O.bildirim('Haftalık veri okunamadı: ' + hataMetni(e)); }
+}
+/** Aktarım dosyası: { tur:'personel-talep-zincir', departmanlar:[{ad, bolum, direktor, eposta}], ikDirektor:{ad, eposta}, ceo:{ad} }
+    Kişiler AD ile portal hesaplarına eşlenir (hesap kimliği dosyada yoktur). Eşlenemeyenler bildirilir. */
+function zincirAktar() {
+  const inp = O.el('input', { type: 'file', accept: '.json,application/json' });
+  inp.addEventListener('change', async () => {
+    const fl = inp.files && inp.files[0]; if (!fl) return;
+    try {
+      const j = JSON.parse(await fl.text());
+      if (!j || j.tur !== 'personel-talep-zincir' || !Array.isArray(j.departmanlar)) throw new Error('Bu dosya bir onay zinciri dosyası değil.');
+      /* yalnız yönetim rolü olan ve talep kimliği verilmiş hesaplar (rolsüz kişi seçilirse sayfayı açamaz, süreç takılır) */
+      const ADAY = HESAPLAR.filter((h) => h.pid && h.roller.some((r) => r !== 'calisan'));
+      const bul = (ad) => { const a = T.adAnahtari(ad); if (!a) return null; const tam = ADAY.filter((h) => T.adAnahtari(h.ad) === a); if (tam.length === 1) return tam[0];
+        const p = a.split(' '); const k = ADAY.filter((h) => { const ha = T.adAnahtari(h.ad); return p.every((x) => (' ' + ha + ' ').includes(' ' + x + ' ') || (x.length <= 2 && ha.split(' ').some((y) => y.startsWith(x)))); }); return k.length === 1 ? k[0] : null; };
+      const eslenmeyen = [];
+      const kisi = (x, hedef) => { const h = bul(x.ad || x.direktor); if (!h) { eslenmeyen.push(x.ad || x.direktor); return; } hedef.pid = h.pid; hedef.ad = h.ad; hedef.eposta = T.epostaGecerli(x.eposta) ? x.eposta : ''; };
+      const yeni = { departmanlar: {}, ikDirektor: BOS_KISI(), ceo: { ad: T.temiz((j.ceo && j.ceo.ad) || '', 120).toLocaleUpperCase('tr') } };
+      j.departmanlar.forEach((d) => { const ad = T.temiz(d.ad, 60), b = T.temiz(d.bolum, 20); if (!ad || !O.BOLUMLER.includes(b)) return; const k = T.depKey(ad, b); yeni.departmanlar[k] = { ad, bolum: b, direktor: BOS_KISI() }; kisi({ ad: d.direktor, eposta: d.eposta }, yeni.departmanlar[k].direktor); });
+      if (j.ikDirektor) kisi(j.ikDirektor, yeni.ikDirektor);
+      AY = yeni;
+      const benzersiz = [...new Set(eslenmeyen.filter(Boolean))];
+      modal({ baslik: 'Zincir dosyası aktarıldı', govde: O.el('div', { html: '<b>' + Object.keys(yeni.departmanlar).length + ' departman</b> yüklendi. Henüz kaydedilmedi; kontrol edip <b>Onay zincirini kaydet</b>’e basın.' +
+        (benzersiz.length ? '<br><br><b style="color:var(--ht-700)">Portal hesabı bulunamayan ' + benzersiz.length + ' kişi:</b> ' + benzersiz.map((x) => O.esc(kisiAd(x))).join(', ') + '<br>Bu satırlar kırmızı görünür; kişiyi listeden elle seçin.' : '<br><br>Tüm kişiler portal hesaplarıyla eşleşti.') }), dugmeler: [{ metin: 'Tamam', sinif: 'btn-lacivert' }] });
+      const y = window.scrollY; ciz(); window.scrollTo(0, y);
+    } catch (e) { modal({ baslik: 'Dosya okunamadı', govde: O.el('div', { text: e.message || String(e) }), dugmeler: [{ metin: 'Tamam' }] }); }
+  });
+  inp.click();
+}
+async function ayarKaydet(btn, hata) {
+  const h = [];
+  /* direktörü seçilmemiş departman kaydedilebilir (o departmandan talep açılamaz, form uyarır); İK Direktörü ve CEO zorunlu */
+  const kisiTemiz = (o, rol, zorunlu) => { const x = { pid: String(o.pid || ''), ad: x0(o.pid ? o.ad : ''), eposta: o.pid ? String(o.eposta || '').trim().toLocaleLowerCase('en') : '' }; if (x.eposta && !T.epostaGecerli(x.eposta)) h.push(rol + ': e-posta yalnız @inciroglu.com.tr olabilir.'); if (zorunlu && !x.pid) h.push(rol + ': kişi seçilmedi.'); return x; };
+  const x0 = (s) => T.temiz(s, 120);
+  const yeni = { departmanlar: {}, ikDirektor: kisiTemiz(AY.ikDirektor, 'İK Direktörü', true), ceo: { ad: T.temiz(AY.ceo.ad, 120) }, guncelleme: serverTimestamp(), guncelleyen: T.temiz(HAM_AD, 120) };
+  if (!yeni.ceo.ad) h.push('CEO: adını yazın.');
+  Object.keys(AY.departmanlar).forEach((k) => { const d = AY.departmanlar[k]; yeni.departmanlar[k] = { ad: T.temiz(d.ad, 60), bolum: T.temiz(d.bolum, 20), direktor: kisiTemiz(d.direktor || BOS_KISI(), d.ad + ' ' + d.bolum, false) }; });
+  if (!Object.keys(yeni.departmanlar).length) h.push('En az bir departman ekleyin.');
+  if (Object.keys(yeni.departmanlar).length > 150) h.push('En çok 150 departman kaydedilebilir.');
+  if (h.length) { hata.textContent = h.slice(0, 3).join(' ') + (h.length > 3 ? ' (+' + (h.length - 3) + ')' : ''); return; }
+  const direktorsuz = Object.values(yeni.departmanlar).filter((d) => !d.direktor.pid).length;
+  try {
+    MESGUL = true; btn.disabled = true;
+    await setDoc(doc(db, 'talepAyar', 'zincir'), yeni);
+    MESGUL = false; AY = null; O.bildirim('Onay zinciri kaydedildi.' + (direktorsuz ? ' ' + direktorsuz + ' departmanda direktör seçilmedi; oradan talep açılamaz.' : '')); git('#/talepler');
+  } catch (e) { MESGUL = false; btn.disabled = false; hata.textContent = hataMetni(e); }
+}
+
+/* ilk çizim (veri gelince guncellendi() yeniden çizer) */
+setTimeout(() => { if (!(AYAR_HAZIR && TALEP_HAZIR && POZ_HAZIR)) acilisMetni('Bağlantı bekleniyor…'); }, 4000);
+setTimeout(() => { if (!(AYAR_HAZIR && TALEP_HAZIR && POZ_HAZIR)) { AYAR_HAZIR = TALEP_HAZIR = POZ_HAZIR = true; guncellendi(); } }, 12000);
+</script>
+</body>
+</html>

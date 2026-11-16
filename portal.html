@@ -169,6 +169,10 @@ var PANOLAR={
     svg:'<circle cx="12" cy="8" r="6"/><path d="M15.5 13.6 17 21.5l-5-3-5 3 1.5-7.9"/>'},
   isealim: {ad:'İşe Alım',       tag:'Aday Yönetimi',  url:'https://inciroglu-ik.github.io/ise-alim-sureci/',  aciklama:'Aday havuzu, görüşme, oryantasyon ve deneme süreci.',
     svg:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>'},
+  talep:   {ad:'Personel Talepleri', tag:'Kadro Onayı', url:'https://inciroglu-ik.github.io/IK-PLATFORM/personel-talep.html#/talepler', aciklama:'Personel talep formu; direktör, İK Direktörü ve CEO onayıyla 4 aşamalı süreç.',
+    svg:'<rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M9 8h6M9 12h6"/><polyline points="9 16.2 10.6 17.8 14.5 14"/>'},
+  pozisyon:{ad:'Açık Pozisyonlar', tag:'Kadro', url:'https://inciroglu-ik.github.io/IK-PLATFORM/personel-talep.html#/pozisyonlar', aciklama:'Onaylı açık pozisyonlar ve personel taleplerinin onay durumu.',
+    svg:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M3 13h18"/>'},
   ayrilis: {ad:'İşten Ayrılış Anketleri', tag:'Geri Bildirim', url:'https://inciroglu-ik.github.io/IK-PLATFORM/ayrilis.html', aciklama:'İstifa edenlerin ayrılış anketi sonuçları ve kişiye özel anket bağlantısı.',
     svg:'<rect x="5" y="3.5" width="14" height="17.5" rx="2"/><path d="M9 3.5h6v2.5H9z"/><polyline points="8.5 12.5 10.5 14.5 15.5 9.5"/><line x1="8.5" y1="17.5" x2="15.5" y2="17.5"/>'},
   oryantasyon: {ad:'Oryantasyon Formları', tag:'Uyum Süreci', url:'https://inciroglu-ik.github.io/IK-PLATFORM/oryantasyon.html', aciklama:'Unvanlara göre oryantasyon formları; inceleme, düzenleme ve öneriler.',
@@ -186,12 +190,12 @@ var PANOLAR={
    ROL -> GÖRÜNEN KUTUCUKLAR
    ============================================================ */
 var ROL_KUTU={
-  ik:           ['ikdash','satis','servis','yetenek','isealim','ayrilis','oryantasyon','mr'],   /* İK Sistemi portalda GÖSTERİLMEZ — ayrı link (ik.html) olarak erişilir */
-  direktor:     ['ikdash','satis','servis','yetenek','isealim','ayrilis','oryantasyon','mr'],   /* Direktör: İK Sistemi YOK. Ayrılış anketleri: yalnız İK + direktör (12.11.2026) */
-  satis_mudur:  ['satis','yetenek','isealim','oryantasyon','mr'],                     /* Satış müdürü: servis YOK, İK Sistemi YOK */
-  servis_mudur: ['servis','yetenek','isealim','oryantasyon','mr'],                    /* Servis müdürü: satış YOK, İK Sistemi YOK */
-  idari_mudur:  ['ikdash','yetenek','isealim','oryantasyon','mr']                     /* İdari müdür: İK Sistemi YOK */
-};                                                                       /* Oryantasyon formları: tüm yönetim rolleri (13.11.2026) */
+  ik:           ['ikdash','satis','servis','yetenek','isealim','talep','pozisyon','ayrilis','oryantasyon','mr'],   /* İK Sistemi portalda GÖSTERİLMEZ — ayrı link (ik.html) olarak erişilir */
+  direktor:     ['ikdash','satis','servis','yetenek','isealim','talep','pozisyon','ayrilis','oryantasyon','mr'],   /* Direktör: İK Sistemi YOK. Ayrılış anketleri: yalnız İK + direktör (12.11.2026) */
+  satis_mudur:  ['satis','yetenek','isealim','talep','pozisyon','oryantasyon','mr'],                     /* Satış müdürü: servis YOK, İK Sistemi YOK */
+  servis_mudur: ['servis','yetenek','isealim','talep','pozisyon','oryantasyon','mr'],                    /* Servis müdürü: satış YOK, İK Sistemi YOK */
+  idari_mudur:  ['ikdash','yetenek','isealim','talep','pozisyon','oryantasyon','mr']                     /* İdari müdür: İK Sistemi YOK */
+};                                                                       /* Oryantasyon formları: tüm yönetim rolleri (13.11.2026) · Personel talepleri + açık pozisyonlar: tüm yönetim rolleri (16.11.2026) */
 var ROL_ETIKET={ik:'İK / Tam Yetki',direktor:'Direktör',satis_mudur:'Satış Müdürü',servis_mudur:'Servis Müdürü',idari_mudur:'İdari Müdür'};
 
 /* ============================================================
@@ -200,16 +204,16 @@ var ROL_ETIKET={ik:'İK / Tam Yetki',direktor:'Direktör',satis_mudur:'Satış M
    rolleri ve kapsamı (marka vb.) İK'nın yönettiği 'hesaplar' kaydından gelir. Verilere erişim
    Firestore güvenlik kurallarıyla sunucuda denetlenir.
    ============================================================ */
-ROL_KUTU.mudur=['yetenek','isealim','oryantasyon','mr'];                 /* Departman müdürü */
+ROL_KUTU.mudur=['yetenek','isealim','talep','pozisyon','oryantasyon','mr'];                 /* Departman müdürü */
 ROL_ETIKET.mudur='Departman Müdürü';
 var ROL_ONCELIK=['ik','direktor','idari_mudur','satis_mudur','servis_mudur','mudur'];
 var $=function(id){return document.getElementById(id);};
 var AKTIF_KULLANICI=null;
 
-/* Türkçe-duyarlı başlık düzeni: "MEHMET TİRYAKİ" -> "Mehmet Tiryaki" */
+/* Türkçe-duyarlı başlık düzeni: "AD SOYADI" -> "Ad Soyadı" */
 function trLower(s){return String(s||'').replace(/İ/g,'i').replace(/I/g,'ı').toLowerCase();}
 function trTitle(s){return trLower(s).split(/\s+/).map(function(w){if(!w)return w;var f=w.charAt(0);var up=(f==='i')?'İ':(f==='ı'?'I':f.toLocaleUpperCase('tr'));return up+w.slice(1);}).join(' ');}
-/* Panolara aktarılan kısa kullanıcı adı (eski portal düzeni: ilk harf + soyad, ör. "mtiryaki") */
+/* Panolara aktarılan kısa kullanıcı adı (eski portal düzeni: ilk harf + soyad, ör. "asoyadi") */
 function kisaAd(ad){
   var m={'ç':'c','ğ':'g','ı':'i','i':'i','ö':'o','ş':'s','ü':'u'};
   var p=trLower(ad).replace(/[çğıiöşü]/g,function(c){return m[c];}).replace(/[^a-z\s]/g,'').trim().split(/\s+/).filter(Boolean);
@@ -230,7 +234,7 @@ window.portalBaslat=function(hesap){
 function kutularim(k){
   var set=[]; k.roller.forEach(function(r){ (ROL_KUTU[r]||[]).forEach(function(id){ if(set.indexOf(id)<0) set.push(id); }); });
   if(k.kurucu) set.push('ajanofisi');                                  /* yalnız ofis sahibi (kurulum İK hesabı) */
-  return ['ikdash','satis','servis','yetenek','isealim','ayrilis','oryantasyon','mr','ajanofisi'].filter(function(id){ return set.indexOf(id)>=0; });
+  return ['ikdash','satis','servis','yetenek','isealim','talep','pozisyon','ayrilis','oryantasyon','mr','ajanofisi'].filter(function(id){ return set.indexOf(id)>=0; });
 }
 function anaEkran(){
   var k=AKTIF_KULLANICI; if(!k) return;
@@ -278,7 +282,9 @@ function panoAc(id){
   fr.onload=function(){ $('vspin').classList.remove('on'); };
   setTimeout(function(){ $('vspin').classList.remove('on'); },7000);
   /* Önbellek kırıcı: iframe her açılışta EN GÜNCEL kodu yükler (eski sürüm cache'den gelmesin). */
-  var url=p.url + (p.url.indexOf('?')>=0?'&':'?') + '_t=' + Date.now();
+  /* #… bölümü (ör. personel-talep.html#/pozisyonlar) parametreden SONRA kalmalı */
+  var hs=p.url.indexOf('#'), on=hs>=0?p.url.slice(0,hs):p.url, kare=hs>=0?p.url.slice(hs):'';
+  var url=on + (on.indexOf('?')>=0?'&':'?') + '_t=' + Date.now() + kare;
   $('vnt').href=url;
   fr.setAttribute('src', url);
 }
