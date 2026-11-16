@@ -10,7 +10,10 @@
    • Stajyer sayısı: ozet.stajyer_elle varsa o (ofis sahibinin elle verdiği sayı, 16.11.2026), yoksa
      ozet.stajyer_sayisi. Elle sayı varken "Toplam kayıt" aynı sayfada tutarlı olsun diye bileşenlerden kurulur.
    • 16.11.2026 yönetici geri bildirimi: istenen/istenmeyen ve simüle yıl sonu kartları ile "Öne çıkanlar"
-     paneli KALDIRILDI; V.İ. ve stajyer ayrı kart; personel grafiğinde 2025/2026 ayrımı ay adlarıyla altta.
+     paneli KALDIRILDI; V.İ. ve stajyer ayrı kart; personel grafiği Genel Bakış'takinin aynısı (çizgi, çubuk değil).
+   • Yemekhane paneli: D.yemek.gunler [{tarih:'YYYY-AA-GG', personel, taseron, misafir}] — YALNIZ bu sayfa okur.
+     Toplam/ortalama günlük satırlardan hesaplanır; GÜNLÜK ORTALAMA başlıkta büyük + tablonun son satırı şerit.
+     D.yemek yoksa panel çizilmez, yerleşim eski hâline (iki panel) döner.
    • Çıktı: Sunum görünümü (tam ekran) · Görseli indir (PNG 3200×1800, html2canvas cdnjs, yalnız tıklayınca
      yüklenir) · Yazdır (A4 yatay tek sayfa, ölçek CSS'te).
    Firebase import ETMEZ. Sözleşme: pano/KABUK.md
@@ -31,7 +34,8 @@ export function ciz(kok, B) {
   kok.append(O.el('style', { text: STIL }));
   aracCiz(kok, B, M);
   sahneEl = O.el('div', { class: 'oz-sahne' });
-  tuvalEl = O.el('div', { class: 'oz-tuval', 'aria-label': 'Yönetici özeti · ' + (M.hafta || '') });
+  /* yemekli: grafik satırı kısalır — sınıf grafikler ÇİZİLMEDEN önce verilir (grafik boyutu çizimde sabitlenir) */
+  tuvalEl = O.el('div', { class: 'oz-tuval' + (M.yemek ? ' yemekli' : ''), 'aria-label': 'Yönetici özeti · ' + (M.hafta || '') });
   sahneEl.append(tuvalEl);
   kok.append(sahneEl);
   bantCiz(tuvalEl, M);
@@ -75,6 +79,26 @@ function aralikMetni(t) {
   return b.getDate() + ' ' + O.ayAdi(b.getMonth() + 1) + ' – ' + s.getDate() + ' ' + O.ayAdi(s.getMonth() + 1) + ' ' + s.getFullYear();
 }
 
+/* Yemekhane (D.yemek; yalnız bu sayfa okur): toplam ve ortalamalar GÜNLÜK SATIRLARDAN hesaplanır (kaynak tablodaki
+   elle yazılmış toplam/ortalamalar tutarsız olabildiği için). Yemek verilmeyen gün (hepsi 0) iş günü sayılmaz. */
+const GUN_KISA = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+const iki = (x) => (x < 10 ? '0' : '') + x;
+function yemekHesapla(Y) {
+  if (!Y || !Array.isArray(Y.gunler) || !Y.gunler.length) return null;
+  const gunler = Y.gunler.map((g) => {
+    const m = String((g && g.tarih) || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const p = n(g && g.personel) || 0, ts = n(g && g.taseron) || 0, ms = n(g && g.misafir) || 0;
+    return { t: m ? new Date(+m[1], +m[2] - 1, +m[3]) : null, p, ts, ms, top: p + ts + ms };
+  }).filter((g) => g.t).sort((a, b) => a.t - b.t);
+  const is = gunler.filter((g) => g.top > 0);
+  if (!is.length) return null;
+  const top = is.reduce((a, g) => ({ p: a.p + g.p, ts: a.ts + g.ts, ms: a.ms + g.ms, top: a.top + g.top }), { p: 0, ts: 0, ms: 0, top: 0 });
+  const k = is.length;
+  return { gunler: is, bos: gunler.filter((g) => g.top === 0), isGunu: k, top,
+    ort: { p: top.p / k, ts: top.ts / k, ms: top.ms / k, top: top.top / k },
+    aralik: aralikMetni({ b: gunler[0].t, s: gunler[gunler.length - 1].t }) };
+}
+
 function hesapla(B) {
   const D = B.D || {}, oz = D.ozet || {}, pw = oz.prev_week || {};
   const aylar = O.aylar(D), sonAy = aylar[aylar.length - 1] || 0;
@@ -105,7 +129,8 @@ function hesapla(B) {
     bolum: bm ? BOLUM_SIRA.map((b) => [b, n(bm[b])]) : null,
     aylar, sonAy, ayDevam, cikisAy, girisAy,
     hc25: (hc.y2025 || []).slice(0, 12).map(n), hc26: (hc.y2026 || []).slice(0, 12).map(n),
-    nedenler, nedenToplam: nedenler.reduce((t, x) => t + x[1], 0)
+    nedenler, nedenToplam: nedenler.reduce((t, x) => t + x[1], 0),
+    yemek: yemekHesapla(D.yemek)
   };
 }
 
@@ -188,7 +213,7 @@ function grafikKutu(kap, { baslik, aciklama, lejant = [] }) {
   const kutu = O.el('div', { class: 'oz-kutu oz-grafik-kutu' });
   const ust = O.el('div', { class: 'oz-kutu-ust' },
     O.el('div', {}, O.el('div', { class: 'oz-kutu-baslik', text: baslik }), O.el('div', { class: 'oz-kutu-alt', html: aciklama })),
-    O.el('div', { class: 'oz-lejant' }, ...lejant.map(([ad, renk]) => O.el('span', {}, O.el('i', { style: { background: renk } }), ad))));
+    O.el('div', { class: 'oz-lejant' }, ...lejant.map(([ad, renk, tip]) => O.el('span', {}, O.el('i', { class: tip === 'cizgi' ? 'cizgi' : null, style: { background: renk } }), ad))));
   const gk = O.el('div', { class: 'oz-grafik' });
   kutu.append(ust, gk);
   kap.append(kutu);
@@ -209,18 +234,26 @@ function grafiklerCiz(t, M) {
     scales: { x: O.eksenX(Object.assign({ ticks: { font: { size: 12 } } }, ekX)), y: O.eksenY({ display: false, grace: '10%' }) },
     plugins: { tooltip: { callbacks: { label: (it) => it.dataset.label + ': ' + O.sayi(it.raw) } } }
   });
-  /* 1 — Aylara göre personel (Excel Dashboard'daki alışılmış grafik): 2025 gri, 2026 lacivert.
-     Yıl ayrımı üstte lejant yerine her sütunun ALTINDA ("25" / "26"), ay adı onun altında (yönetici isteği 16.11). */
-  const c1 = grafikKutu(s, { baslik: 'Aylara göre personel sayısı', aciklama: 'Ay sonu personel mevcudu · her ayda <b style="color:' + R.n500 + '">25</b> = 2025, <b style="color:' + R.y2026 + '">26</b> = 2026' });
+  /* 1 — Aylara göre personel: Genel Bakış'taki grafiğin AYNISI (çizgi; 2025 gri, 2026 lacivert; etiketler diğer seriye
+     göre üstte/altta) — yönetici isteği 16.11 "çubuk grafik olmasın". Özette tüm değer etiketleri açık (secim: 'hepsi'). */
+  const c1 = grafikKutu(s, { baslik: 'Aylara göre personel sayısı', aciklama: 'Ay sonu personel mevcudu · 2025 ile karşılaştırma',
+    lejant: [['2025', R.y2025, 'cizgi'], ['2026', R.y2026, 'cizgi']] });
   const ay12 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-  const yilEtiketi = (yil, renk) => ({ display: (ctx) => ctx.dataset.data[ctx.dataIndex] !== null && ctx.dataset.data[ctx.dataIndex] !== undefined,
-    anchor: 'start', align: 'bottom', offset: 5, clamp: false, clip: false, color: renk, font: { family: 'Inter', size: 11, weight: '700' }, formatter: () => yil });
-  const g1 = O.grafik(c1, { type: 'bar', data: { labels: ay12.map(yildiz), datasets: [
-    { label: '2025', data: ay12.map((m) => M.hc25[m - 1] ?? null), backgroundColor: R.y2025, maxBarThickness: 22, categoryPercentage: 0.8, barPercentage: 0.88,
-      datalabels: { labels: { deger: O.etiket.ust({ secim: 'hepsi', boyut: 10.5, renk: R.n500 }), yil: yilEtiketi('25', R.n500) } } },
-    { label: '2026', data: ay12.map((m) => M.hc26[m - 1] ?? null), backgroundColor: R.y2026, maxBarThickness: 22, categoryPercentage: 0.8, barPercentage: 0.88,
-      datalabels: { labels: { deger: O.etiket.ust({ secim: 'hepsi', boyut: 10.5, renk: R.y2026 }), yil: yilEtiketi('26', R.y2026) } } }
-  ] }, options: ortak({ ticks: { font: { size: 12, weight: '600' }, padding: 22 } }) });
+  const y25 = ay12.map((m) => M.hc25[m - 1] ?? null), y26 = ay12.map((m) => M.hc26[m - 1] ?? null);
+  const hiza = (diger) => (ctx) => { const v = ctx.dataset.data[ctx.dataIndex], o = diger[ctx.dataIndex]; return o == null || v >= o ? 'top' : 'bottom'; };
+  const o1 = ortak();
+  o1.interaction = { mode: 'index', intersect: false };
+  o1.layout = { padding: { top: 18, right: 14, left: 4, bottom: 4 } };
+  o1.scales = { x: O.eksenX({ ticks: { font: { size: 12 } } }), y: O.eksenY({ beginAtZero: false, grace: '14%' }) };
+  o1.plugins = { tooltip: { callbacks: {
+    label: (c) => ' ' + c.dataset.label + ': ' + O.sayi(c.parsed.y) + ' kişi',
+    footer: (it) => { const i = it[0].dataIndex; return y25[i] != null && y26[i] != null ? '2025’e göre: ' + O.isaretli(y26[i] - y25[i]) : ''; } } } };
+  const g1 = O.grafik(c1, { type: 'line', data: { labels: ay12.map(yildiz), datasets: [
+    { label: '2025', data: y25, borderColor: R.y2025, backgroundColor: R.y2025, pointBackgroundColor: R.y2025, pointRadius: 3.5,
+      datalabels: O.etiket.nokta({ align: hiza(y26), renk: R.n500, secim: 'hepsi' }) },
+    { label: '2026', data: y26, borderColor: R.y2026, backgroundColor: R.y2026, pointBackgroundColor: R.y2026, pointRadius: 4.5,
+      datalabels: O.etiket.nokta({ align: hiza(y25), secim: 'hepsi' }) }
+  ] }, options: o1 });
   /* 2 — 2026 aylık giriş ve çıkış (Turnover sayfasıyla aynı kaynaklar) */
   const c2 = grafikKutu(s, { baslik: '2026 aylık giriş ve çıkış', aciklama: 'Kişi sayısı, V.İ. hariç · girişler işe alım listesinden, çıkışlar turnover tablosundan', lejant: [['Giriş', R.giris], ['Çıkış', R.cikis]] });
   const g2 = O.grafik(c2, { type: 'bar', data: { labels: M.aylar.map(yildiz), datasets: [
@@ -237,7 +270,7 @@ function grafiklerCiz(t, M) {
 }
 
 function panellerCiz(t, M) {
-  const s = O.el('div', { class: 'oz-satir oz-paneller' });
+  const s = O.el('div', { class: 'oz-satir oz-paneller' + (M.yemek ? ' uc' : '') });
   t.append(s);
   /* A — Kadro bileşimi */
   const a = O.el('div', { class: 'oz-kutu', data: { k: 'kadro' } });
@@ -269,6 +302,30 @@ function panellerCiz(t, M) {
     O.el('b', { text: O.sayi(v) }))));
   b.append(ul);
   s.append(b);
+  if (M.yemek) yemekCiz(s, M.yemek);
+}
+
+/* C — Yemekhane: günlük tablo + vurgulu GÜNLÜK ORTALAMA (başlıkta büyük, tabloda son satır şerit) */
+function yemekCiz(s, Y) {
+  const k = O.el('div', { class: 'oz-kutu oz-yemek', data: { k: 'yemek' } });
+  const gunAdi = (g) => g.t.getDate() + ' ' + O.ayKisa(g.t.getMonth() + 1) + ' ' + GUN_KISA[g.t.getDay()];
+  const bos = !Y.bos.length ? '' : Y.bos.every((g) => g.t.getDay() === 0) ? ' · Pazar günleri yemek yok' : ' · yemek yok: ' + Y.bos.map(gunAdi).join(', ');
+  k.append(O.el('div', { class: 'oz-kutu-ust' },
+    O.el('div', {},
+      O.el('div', { class: 'oz-kutu-baslik', text: 'Yemekhane · günlük yemek sayısı' }),
+      O.el('div', { class: 'oz-kutu-alt', text: Y.aralik + ' · ' + Y.isGunu + ' iş günü' + bos })),
+    O.el('div', { class: 'oz-yemek-ort' },
+      O.el('div', { class: 'oz-yemek-ort-etiket', text: 'GÜNLÜK ORTALAMA' }),
+      O.el('div', { class: 'oz-yemek-ort-deger', html: O.esc(O.sayi(Y.ort.top, 1)) + '<span> kişi</span>' }))));
+  const hucre = (v, o) => '<td>' + O.esc(O.sayi(v, o)) + '</td>';
+  const tb = O.el('table', { class: 'oz-yemek-tablo' });
+  tb.innerHTML = '<thead><tr><th>Tarih</th><th>Personel*</th><th>Taşeron + Olgun</th><th>Misafir</th><th>Günlük toplam</th></tr></thead>'
+    + '<tbody>' + Y.gunler.map((g) => '<tr><td>' + O.esc(iki(g.t.getDate()) + '.' + iki(g.t.getMonth() + 1) + ' ' + GUN_KISA[g.t.getDay()]) + '</td>'
+      + hucre(g.p) + hucre(g.ts) + hucre(g.ms) + '<td><b>' + O.esc(O.sayi(g.top)) + '</b></td></tr>').join('') + '</tbody>'
+    + '<tfoot><tr class="oz-yemek-top"><td>' + Y.isGunu + ' günlük toplam</td>' + hucre(Y.top.p) + hucre(Y.top.ts) + hucre(Y.top.ms) + hucre(Y.top.top) + '</tr>'
+    + '<tr class="oz-yemek-ortsatir"><td>Günlük ortalama</td>' + hucre(Y.ort.p, 1) + hucre(Y.ort.ts, 1) + hucre(Y.ort.ms, 1) + hucre(Y.ort.top, 1) + '</tr></tfoot>';
+  k.append(tb, O.el('div', { class: 'oz-kucuk-not', text: '* Sigortalı personel + stajyer + güvenlik. Toplam ve ortalamalar günlük satırlardan hesaplanır.' }));
+  s.append(k);
 }
 
 /* ==========================================================================
@@ -383,12 +440,30 @@ const STIL = `
 .oz-satir{display:grid;gap:12px}
 .oz-grafikler{grid-template-columns:1fr 1fr;flex:none;height:326px}
 .oz-paneller{grid-template-columns:1fr 1fr;flex:1;min-height:0}
+/* yemekhane paneli varken: grafikler kısalır, alt satır üç panel */
+.oz-tuval.yemekli .oz-kpiler{height:124px}
+.oz-tuval.yemekli .oz-grafikler{height:252px}
+.oz-paneller.uc{grid-template-columns:1fr 1fr 1.25fr}
+.oz-yemek-ort{flex:none;text-align:right;background:var(--lac-800);color:#fff;border-radius:10px;padding:5px 12px}
+.oz-yemek-ort-etiket{font-size:10.5px;letter-spacing:.12em;font-weight:700;color:var(--lac-200)}
+.oz-yemek-ort-deger{font-size:24px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.oz-yemek-ort-deger span{font-size:13px;font-weight:500;color:var(--lac-200)}
+.oz-yemek-tablo{width:100%;border-collapse:separate;border-spacing:0;margin-top:6px;font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--n-800)}
+.oz-yemek-tablo th{font-size:10.5px;font-weight:700;color:var(--n-600);text-align:right;padding:0 6px 3px;border-bottom:1px solid var(--cizgi-2);white-space:nowrap;line-height:15px}
+.oz-yemek-tablo th:first-child,.oz-yemek-tablo td:first-child{text-align:left}
+.oz-yemek-tablo td{text-align:right;padding:0 6px;height:13px;line-height:13px;font-size:11px;border-bottom:1px solid var(--n-100);white-space:nowrap}
+.oz-yemek-tablo tfoot td{font-weight:700;border-bottom:0}
+.oz-yemek-top td{background:var(--n-100);height:17px;line-height:17px}
+.oz-yemek-ortsatir td{background:var(--lac-800);color:#fff;height:23px;line-height:23px;font-size:13.5px}
+.oz-yemek-ortsatir td:first-child{border-radius:7px 0 0 7px}
+.oz-yemek-ortsatir td:last-child{border-radius:0 7px 7px 0}
 .oz-kutu{background:var(--n-0);border:1px solid var(--cizgi-2);border-radius:14px;padding:14px 18px;box-sizing:border-box;min-width:0;min-height:0;display:flex;flex-direction:column}
 .oz-kutu-ust{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
 .oz-kutu-baslik{font-size:17px;font-weight:700;color:var(--lac-800)}
 .oz-kutu-alt{font-size:13px;color:var(--n-500);margin-top:2px}
 .oz-lejant{display:flex;gap:14px;font-size:13px;color:var(--n-600);white-space:nowrap}
 .oz-lejant i,.oz-bilesim-lejant i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.oz-lejant i.cizgi{width:16px;height:3px;border-radius:2px;vertical-align:4px}
 .oz-grafik{position:relative;flex:1;min-height:0;margin-top:6px}
 .oz-bilesim{display:flex;height:14px;border-radius:7px;overflow:hidden;margin-top:14px;background:var(--n-100)}
 .oz-bilesim i{display:block;height:100%}
