@@ -87,15 +87,16 @@ function yemekHesapla(Y) {
   if (!Y || !Array.isArray(Y.gunler) || !Y.gunler.length) return null;
   const gunler = Y.gunler.map((g) => {
     const m = String((g && g.tarih) || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    const p = n(g && g.personel) || 0, ts = n(g && g.taseron) || 0, ms = n(g && g.misafir) || 0;
-    return { t: m ? new Date(+m[1], +m[2] - 1, +m[3]) : null, p, ts, ms, top: p + ts + ms };
+    const p = n(g && g.personel) || 0, ts = n(g && g.taseron) || 0, ms = n(g && g.misafir) || 0, cz = n(g && g.cenaze) || 0;
+    return { t: m ? new Date(+m[1], +m[2] - 1, +m[3]) : null, p, ts, ms, cz, top: p + ts + ms + cz };
   }).filter((g) => g.t).sort((a, b) => a.t - b.t);
   const is = gunler.filter((g) => g.top > 0);
   if (!is.length) return null;
-  const top = is.reduce((a, g) => ({ p: a.p + g.p, ts: a.ts + g.ts, ms: a.ms + g.ms, top: a.top + g.top }), { p: 0, ts: 0, ms: 0, top: 0 });
+  const top = is.reduce((a, g) => ({ p: a.p + g.p, ts: a.ts + g.ts, ms: a.ms + g.ms, cz: a.cz + g.cz, top: a.top + g.top }), { p: 0, ts: 0, ms: 0, cz: 0, top: 0 });
   const k = is.length;
-  return { gunler: is, bos: gunler.filter((g) => g.top === 0), isGunu: k, top,
-    ort: { p: top.p / k, ts: top.ts / k, ms: top.ms / k, top: top.top / k },
+  /* cenaze (16.11.2026): ayrı sütun, yalnız o hafta cenaze yemeği varsa görünür; günlük toplama dahil */
+  return { gunler: is, bos: gunler.filter((g) => g.top === 0), isGunu: k, top, cenazeVar: top.cz > 0,
+    ort: { p: top.p / k, ts: top.ts / k, ms: top.ms / k, cz: top.cz / k, top: top.top / k },
     aralik: aralikMetni({ b: gunler[0].t, s: gunler[gunler.length - 1].t }) };
 }
 
@@ -309,7 +310,7 @@ function panellerCiz(t, M) {
 function yemekCiz(s, Y) {
   const k = O.el('div', { class: 'oz-kutu oz-yemek', data: { k: 'yemek' } });
   const gunAdi = (g) => g.t.getDate() + ' ' + O.ayKisa(g.t.getMonth() + 1) + ' ' + GUN_KISA[g.t.getDay()];
-  const bos = !Y.bos.length ? '' : Y.bos.every((g) => g.t.getDay() === 0) ? ' · Pazar günleri yemek yok' : ' · yemek yok: ' + Y.bos.map(gunAdi).join(', ');
+  const bos = !Y.bos.length ? '' : Y.bos.every((g) => g.t.getDay() === 0) ? ' · Pazar günleri hariç' : ' · hariç: ' + Y.bos.map(gunAdi).join(', ');
   k.append(O.el('div', { class: 'oz-kutu-ust' },
     O.el('div', {},
       O.el('div', { class: 'oz-kutu-baslik', text: 'Yemekhane · günlük yemek sayısı' }),
@@ -318,12 +319,14 @@ function yemekCiz(s, Y) {
       O.el('div', { class: 'oz-yemek-ort-etiket', text: 'GÜNLÜK ORTALAMA' }),
       O.el('div', { class: 'oz-yemek-ort-deger', html: O.esc(O.sayi(Y.ort.top, 1)) + '<span> kişi</span>' }))));
   const hucre = (v, o) => '<td>' + O.esc(O.sayi(v, o)) + '</td>';
+  const cz = Y.cenazeVar;
+  const czH = (v, o) => (cz ? (v ? hucre(v, o) : '<td></td>') : '');
   const tb = O.el('table', { class: 'oz-yemek-tablo' });
-  tb.innerHTML = '<thead><tr><th>Tarih</th><th>Personel*</th><th>Taşeron + Olgun</th><th>Misafir</th><th>Günlük toplam</th></tr></thead>'
+  tb.innerHTML = '<thead><tr><th>Tarih</th><th>Personel*</th><th>Taşeron + Olgun</th><th>Misafir</th>' + (cz ? '<th>Cenaze</th>' : '') + '<th>Günlük toplam</th></tr></thead>'
     + '<tbody>' + Y.gunler.map((g) => '<tr><td>' + O.esc(iki(g.t.getDate()) + '.' + iki(g.t.getMonth() + 1) + ' ' + GUN_KISA[g.t.getDay()]) + '</td>'
-      + hucre(g.p) + hucre(g.ts) + hucre(g.ms) + '<td><b>' + O.esc(O.sayi(g.top)) + '</b></td></tr>').join('') + '</tbody>'
-    + '<tfoot><tr class="oz-yemek-top"><td>' + Y.isGunu + ' günlük toplam</td>' + hucre(Y.top.p) + hucre(Y.top.ts) + hucre(Y.top.ms) + hucre(Y.top.top) + '</tr>'
-    + '<tr class="oz-yemek-ortsatir"><td>Günlük ortalama</td>' + hucre(Y.ort.p, 1) + hucre(Y.ort.ts, 1) + hucre(Y.ort.ms, 1) + hucre(Y.ort.top, 1) + '</tr></tfoot>';
+      + hucre(g.p) + hucre(g.ts) + hucre(g.ms) + czH(g.cz) + '<td><b>' + O.esc(O.sayi(g.top)) + '</b></td></tr>').join('') + '</tbody>'
+    + '<tfoot><tr class="oz-yemek-top"><td>' + Y.isGunu + ' günlük toplam</td>' + hucre(Y.top.p) + hucre(Y.top.ts) + hucre(Y.top.ms) + czH(Y.top.cz) + hucre(Y.top.top) + '</tr>'
+    + '<tr class="oz-yemek-ortsatir"><td>Günlük ortalama</td>' + hucre(Y.ort.p, 1) + hucre(Y.ort.ts, 1) + hucre(Y.ort.ms, 1) + czH(Y.ort.cz, 1) + hucre(Y.ort.top, 1) + '</tr></tfoot>';
   k.append(tb, O.el('div', { class: 'oz-kucuk-not', text: '* Sigortalı personel + stajyer + güvenlik. Toplam ve ortalamalar günlük satırlardan hesaplanır.' }));
   s.append(k);
 }
