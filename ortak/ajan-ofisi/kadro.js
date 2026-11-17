@@ -7,7 +7,7 @@
    Kişisel veri YOK: çalışan adları kurgusaldır.
    ============================================================================ */
 
-export const SURUM = '2026-11-17.1';
+export const SURUM = '2026-11-17.2';
 export const VARSAYILAN_MODEL = 'claude-opus-5-5';
 export const MODELLER = [
   { id: 'claude-opus-5-5', ad: 'Claude Opus 5.5 (önerilen)' },
@@ -443,6 +443,8 @@ export const VIDEO_GORSELLERI = {
   'v2-portal': { aciklama: 'İK Portalı ana ekranı (satış müdürü): modül kutucukları; Personel Talepleri kutucuğu sağ üstte', vurgu: { x: 0.685, y: 0.31, w: 0.17, h: 0.267 } },
   'v2-form-bos': { aciklama: 'Yeni personel talebi formu BOŞ: Pozisyon adı (x .112 y .165 w .252 h .044), Birim/bölüm "Departman seçin…" (x .374 y .165), Deneyim (x .636 y .165), Mezuniyet (x .112 y .276), altta Gönder düğmesi (x .727 y .941 w .163 h .044)', vurgu: { x: 0.374, y: 0.165, w: 0.252, h: 0.044 } },
   'v2-form-dep': { aciklama: 'Aynı form ARA HÂL: yalnız Pozisyon adı "Satış Danışmanı" yazılı ve Birim/bölüm "BMW · Satış" seçili; altında "Onaylayacak direktör bu seçime göre belirlenir" ipucu (x .374 y .14 w .252 h .095); diğer alanlar boş', vurgu: { x: 0.374, y: 0.14, w: 0.252, h: 0.095 } },
+  'v2-form-hata': { aciklama: 'Aynı form, yalnız pozisyon + birim doluyken Gönder\'e basılmış: eksik alanlar KIRMIZI ve altında uyarı (deneyim x .636 y .14 w .252 h .097 · mezuniyet/cinsiyet/sertifikalar satırı y .252 h .097 · beklentiler x .112 y .365 w .383 h .153 · görev tanımı y .533 h .163 · talep nedeni y .808 h .095), alt çubukta "17 alan eksik ya da hatalı" (x .109 y .953 w .225 h .021), Gönder (x .727 y .941)', vurgu: { x: 0.112, y: 0.14, w: 0.776, h: 0.21 } },
+  'v2-form-tam': { aciklama: 'UZUN görüntü (1600×1711): formun TAMAMI dolu, tutarlar gizli. Oranlar sayfa boyuna göre: Pozisyon bilgileri kartı (x .1 y .014 w .8 h .298) · Talep nedeni kartı + kimin yerine + detaylı açıklama (y .321 h .221) · Değerlendirme kartı (y .552 h .434): iç aday + devam analizi (x .112 y .59 w .776 h .087), riskler + açıklama (x .505 y .697 w .383 h .104), ücret + bütçe (x .112 y .70 w .383 h .147), marka zorunluluğu + dayanak (x .505 y .819 w .383 h .155). Kamera z=1 iken boyun ~%53\'ü görünür; y ile kaydırılır', vurgu: { x: 0.1, y: 0.014, w: 0.8, h: 0.298 } },
   'v2-form': { aciklama: 'Aynı form DOLU (aynı kaydırma): BMW · Satış seçili, "Onaylayacak direktör bu seçime göre belirlenir" ipucu (x .374 y .14 w .252 h .095), Gönder düğmesi (x .727 y .941)', vurgu: { x: 0.374, y: 0.14, w: 0.252, h: 0.095 } },
   'v2-onay-bos': { aciklama: 'Direktör ekranı karar ÖNCESİ: üstte onay şeridi (x .112 y .078 w .776 h .109), sağda karar kartı (x .675 y .27 w .225 h .568): Onaylıyorum (x .686 y .368 w .203 h .04), e-onay kutusu (x .686 y .653 w .011 h .019), Kararı kaydet (x .686 y .721 w .204 h .047)', vurgu: { x: 0.675, y: 0.27, w: 0.225, h: 0.568 } },
   'v2-onay-secim': { aciklama: 'Aynı direktör ekranı: Onaylıyorum SEÇİLİ (x .686 y .368 w .203 h .04), e-onay kutusu henüz boş (x .686 y .653)', vurgu: { x: 0.686, y: 0.368, w: 0.203, h: 0.04 } },

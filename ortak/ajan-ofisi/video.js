@@ -573,7 +573,8 @@ function canliCiz(ctx, s, lt, sure, gor) {
   yazi(ctx, kisalt(ctx, s.pencere || PENCERE[(s.durumlar[0] || {}).gorsel] || 'İK Portalı', pw - 30), px0 + pw / 2, fy + 23, '500 14px ' + SANS, A.metin2, 'center');
   const k = durumAl(s, lt), dk = s.durumlar[k], imA = GORSEL.get(dk.gorsel);
   const W = imA ? imA.naturalWidth : 1600, H = imA ? imA.naturalHeight : 900;
-  const kam = kameraAl(s.kamera, lt), sw = W / kam.z, sh = H / kam.z;
+  /* uzun (boydan) ekran görüntüsü de olabilir: görünen dilim çerçeve oranında kesilir, kamera y'si sayfada kaydırma olur */
+  const kam = kameraAl(s.kamera, lt), sw = W / kam.z, sh = Math.min(H, sw * ah / aw);
   const sx = sinir(kam.x * W - sw / 2, 0, W - sw), sy = sinir(kam.y * H - sh / 2, 0, H - sh), olc = aw / sw;
   const M = (ix, iy) => [ax + (ix * W - sx) * olc, ay + (iy * H - sy) * olc];
   const sonrakiler = [];   /* kırpma alanı dışına taşabilen etiketler en sonda çizilir */
@@ -690,6 +691,7 @@ const PENCERE = {
   'talep-form': 'İK Portalı · Personel Talepleri', 'talep-onay': 'İK Portalı · Personel Talepleri',
   'talep-pozisyon': 'İK Portalı · Açık Pozisyonlar', 'talep-havuz': 'İşe Alım · Aday Havuzu',
   'v2-portal': 'İK Portalı', 'v2-form-bos': 'İK Portalı · Personel Talepleri · Yeni talep', 'v2-form': 'İK Portalı · Personel Talepleri · Yeni talep',
+  'v2-form-dep': 'İK Portalı · Personel Talepleri · Yeni talep', 'v2-form-hata': 'İK Portalı · Personel Talepleri · Yeni talep', 'v2-form-tam': 'İK Portalı · Personel Talepleri · Yeni talep',
   'v2-onay-bos': 'İK Portalı · Personel Talepleri · Onay', 'v2-onay-sonra': 'İK Portalı · Personel Talepleri · Onay',
   'v2-poz-bekliyor': 'İK Portalı · Açık Pozisyonlar', 'v2-poz-onayli': 'İK Portalı · Açık Pozisyonlar',
   'v2-havuz-1': 'İşe Alım · Aday Havuzu', 'v2-havuz-2': 'İşe Alım · Aday Havuzu'
