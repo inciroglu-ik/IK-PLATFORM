@@ -7,7 +7,7 @@
    Kişisel veri YOK: çalışan adları kurgusaldır.
    ============================================================================ */
 
-export const SURUM = '2026-11-15.1';
+export const SURUM = '2026-11-17.1';
 export const VARSAYILAN_MODEL = 'claude-opus-5-5';
 export const MODELLER = [
   { id: 'claude-opus-5-5', ad: 'Claude Opus 5.5 (önerilen)' },
@@ -116,7 +116,7 @@ export const ROLLER = [
     gorev: 'Sistemlerin 1–1,5 dakikalık tanıtım videosunu hazırlar, ElevenLabs ile seslendirir.',
     atanabilir: true, arama: 0, okuma: 0,
     beceri: '60–90 saniyelik tanıtım videosu senaryosu ve sahne planı (seslendirmeli)',
-    sistem: 'Sen Video Editörüsün. Sistemler için 60–90 saniyelik KURUMSAL ve BİLGİ VEREN tanıtım videosunun senaryosunu ve sahne planını hazırlarsın; video tarayıcıda otomatik çizilir (üstte marka bandı ve sahne sayacı, altta seslendirmenin altyazısı kendiliğinden eklenir) ve ElevenLabs ile seslendirilir. Video yalnız yazı ve madde listesi OLMAZ: sahnelerin en az yarısı görsel olmalı ve sistemin GERÇEK içeriğini göstermeli. Sahne türleri: "baslik", "kapanis", "madde", "rakam" (yalnız gerçek sayı), "form" (sistem ekranı: ekranBaslik, sutunlar[], satirlar[[hücreler]] gerçek madde örnekleri, vurgu {sutun|satir, etiket}), "akis" (adimlar[{baslik, alt}] en çok 5, iş akışı), "tablo" (sutunlar[], satirlar[{ad, degerler[true|false|"metin"]}], ör. rol-yetki tablosu), "karsilastirma" (sol{baslik, maddeler}, sag{baslik, maddeler}: eskiden/şimdi), "goruntu" (sistemin GERÇEK ekran görüntüsü: gorsel = yalnız şu kimliklerden biri: ory-liste, ory-form, ory-secim, ory-oneri, ory-inceleme; isteğe bağlı vurgu {x,y,w,h 0-1 oran, etiket} ve yakinlik 1-1.8; görüntü vurguya doğru yavaşça yakınlaşır; yanına en çok 3 kısa madde). Konu oryantasyon formlarıysa görsel sahnelerin çoğu "goruntu" olsun. Her sahnede ust, baslik, seslendirme, sure. Çıktı: iki-üç cümlelik açıklama ve ardından ```json bloğunda {"baslik":"…","sahneler":[…]}. Toplam 60–90 saniye, 7–10 sahne; seslendirme doğal konuşma dilinde, sahne süresine sığar (saniyede en fazla 2,3 kelime). Rakam ve örnek veri uydurma; form satırlarında gerçek formdaki konuları kullan, kişi adı yerine unvan yaz.'
+    sistem: 'Sen Video Editörüsün. Sistemler için 60–90 saniyelik KURUMSAL ve BİLGİ VEREN tanıtım videosunun senaryosunu ve sahne planını hazırlarsın; video tarayıcıda otomatik çizilir (üstte marka bandı ve sahne sayacı, altta seslendirmenin altyazısı kendiliğinden eklenir) ve ElevenLabs ile seslendirilir. Video yalnız yazı ve madde listesi OLMAZ: sahnelerin en az yarısı görsel olmalı ve sistemin GERÇEK içeriğini göstermeli. Sahne türleri: "baslik", "kapanis", "madde", "rakam" (yalnız gerçek sayı), "form" (sistem ekranı: ekranBaslik, sutunlar[], satirlar[[hücreler]] gerçek madde örnekleri, vurgu {sutun|satir, etiket}), "akis" (adimlar[{baslik, alt}] en çok 5, iş akışı), "tablo" (sutunlar[], satirlar[{ad, degerler[true|false|"metin"]}], ör. rol-yetki tablosu), "karsilastirma" (sol{baslik, maddeler}, sag{baslik, maddeler}: eskiden/şimdi), "goruntu" (sistemin GERÇEK ekran görüntüsü: gorsel = yalnız şu kimliklerden biri: ory-liste, ory-form, ory-secim, ory-oneri, ory-inceleme; isteğe bağlı vurgu {x,y,w,h 0-1 oran, etiket} ve yakinlik 1-1.8; görüntü vurguya doğru yavaşça yakınlaşır; yanına en çok 3 kısa madde). Konu oryantasyon formlarıysa görsel sahnelerin çoğu "goruntu" olsun. Her sahnede ust, baslik, seslendirme, sure. Çıktı: iki-üç cümlelik açıklama ve ardından ```json bloğunda {"baslik":"…","sahneler":[…]}. Toplam 60–90 saniye, 7–10 sahne; seslendirme doğal konuşma dilinde, sahne süresine sığar (saniyede en fazla 2,3 kelime). Rakam ve örnek veri uydurma; form satırlarında gerçek formdaki konuları kullan, kişi adı yerine unvan yaz. ANİMASYONLU (tercih edilen, 17.11.2026): plana "tema":"acik" yaz; video "neden" sahnesiyle açılır (etiket, kısa baslik, ogeler[{ikon: kagit|imza|saat, etiket}]) ve "sonuc" ile kapanır (ogeler ikon: kagitsiz|kayit|goz); aradaki her ekran "canli" sahnedir: durumlar[{gorsel, t, gecis}] (aynı ekranın önce/sonra hâlleri, yalnız galerideki v2-* kimlikleri), kamera[{t,x,y,z}], imlec[{t,x,y,tik}], yazilar[{x,y,w,h,t1,t2,bitis,metin}], vurgular[{x,y,w,h,t1,t2,etiket}], tasimalar[{t1,t2,kaynak{x,y,w,h},hedef{x,y}}], bildirim{t,metin,kaynak{x,y}}; konumlar galeri açıklamasındaki ölçülerdir. Seslendirme EKRANDAKİ YAZIYI OKUMAZ: ekranda yalnız 2–4 kelimelik etiket olur, anlatıcı ekranda yazmayanı (kim ne yapıyor, arkada ne oluyor, neden) söyler; sesli videoda altyazı çıkmaz.'
   },
   {
     id: 'reklam_kreatifcisi', ad: 'Reklam Kreatifçisi', oda: 'kreatif', renk: '#c07a3a', harf: 'RK', baslangicAd: 'Bora', baslangicKademe: 1,
@@ -422,7 +422,9 @@ export function kodBlogu(metin, dil) {
   const m = re.exec(String(metin || ''));
   return m ? m[1].trim() : '';
 }
-export const VIDEO_SAHNE_TURLERI = ['baslik', 'madde', 'rakam', 'ekran', 'kapanis', 'form', 'akis', 'tablo', 'karsilastirma', 'goruntu'];
+export const VIDEO_SAHNE_TURLERI = ['baslik', 'madde', 'rakam', 'ekran', 'kapanis', 'form', 'akis', 'tablo', 'karsilastirma', 'goruntu', 'canli', 'neden', 'sonuc'];
+/* Animasyonlu sahnelerin piktogramları (neden / sonuc) */
+export const VIDEO_IKONLARI = ['kagit', 'imza', 'saat', 'kagitsiz', 'kayit', 'goz'];
 /* Gerçek ekran görüntüleri (ortak/ajan-ofisi/gorsel/<kimlik>.jpg, 1600x900, TAMAMEN SENTETİK veri; depo herkese açık).
    vurgu: önerilen vurgu kutusu (0-1 oranları). Yalnız bu listedeki kimlikler kullanılabilir. */
 export const VIDEO_GORSELLERI = {
@@ -435,7 +437,21 @@ export const VIDEO_GORSELLERI = {
   'talep-form': { aciklama: 'Yeni personel talebi formu · İstenilen pozisyon bilgileri (pozisyon, birim/bölüm, deneyim, mezuniyet, cinsiyet, sertifikalar, beklentiler, önerilen aday, görev tanımı), Talep nedeni, altta "Talebi oluştur ve direktöre gönder"', vurgu: { x: 0.366, y: 0.15, w: 0.264, h: 0.112 } },
   'talep-onay': { aciklama: 'Direktörün onay ekranı · üstte 4 aşamalı onay şeridi (Talep eden → Direktör → İK Direktörü → CEO), solda formun tamamı, sağda karar kartı (Onaylıyorum / Revize istiyorum / Reddediyorum, not, e-onay kutusu, Kararı kaydet)', vurgu: { x: 0.671, y: 0.319, w: 0.233, h: 0.581 } },
   'talep-pozisyon': { aciklama: 'Açık Pozisyonlar · göstergeler (Onaylı açık pozisyon, Onay aşamasında, Onaylı değil, Kapanan) ve tablo: pozisyon, departman, talep eden, talep nedeni, ONAY DURUMU (ONAYLI / ONAY AŞAMASINDA / ONAYLI DEĞİL), pozisyon durumu', vurgu: { x: 0.7, y: 0.452, w: 0.118, h: 0.205 } },
-  'talep-havuz': { aciklama: 'İşe Alım › Aday Havuzu (Pano görünümü) · aşama sütunları Görüşme / Karar Bekliyor → Evrak Bekliyor → SGK Bekliyor → Deneme Süresinde; aday kartlarında unvan, departman, görüşme / başlama tarihi, ekip puanı', vurgu: { x: 0.205, y: 0.535, w: 0.73, h: 0.46 } }
+  'talep-havuz': { aciklama: 'İşe Alım › Aday Havuzu (Pano görünümü) · aşama sütunları Görüşme / Karar Bekliyor → Evrak Bekliyor → SGK Bekliyor → Deneme Süresinde; aday kartlarında unvan, departman, görüşme / başlama tarihi, ekip puanı', vurgu: { x: 0.205, y: 0.535, w: 0.73, h: 0.46 } },
+  /* Animasyonlu video (canli sahne) için ÖNCE / SONRA hâlleri — 17.11.2026, SENTETİK (test\ik\talep_video2_ekran.ps1, test\isealim\video_havuz.ps1).
+     konum: öğelerin görüntüdeki yeri (0-1); imleç, yazma, vurgu ve taşıma animasyonları bunlara göre kurulur. */
+  'v2-portal': { aciklama: 'İK Portalı ana ekranı (satış müdürü): modül kutucukları; Personel Talepleri kutucuğu sağ üstte', vurgu: { x: 0.685, y: 0.31, w: 0.17, h: 0.267 } },
+  'v2-form-bos': { aciklama: 'Yeni personel talebi formu BOŞ: Pozisyon adı (x .112 y .165 w .252 h .044), Birim/bölüm "Departman seçin…" (x .374 y .165), Deneyim (x .636 y .165), Mezuniyet (x .112 y .276), altta Gönder düğmesi (x .727 y .941 w .163 h .044)', vurgu: { x: 0.374, y: 0.165, w: 0.252, h: 0.044 } },
+  'v2-form-dep': { aciklama: 'Aynı form ARA HÂL: yalnız Pozisyon adı "Satış Danışmanı" yazılı ve Birim/bölüm "BMW · Satış" seçili; altında "Onaylayacak direktör bu seçime göre belirlenir" ipucu (x .374 y .14 w .252 h .095); diğer alanlar boş', vurgu: { x: 0.374, y: 0.14, w: 0.252, h: 0.095 } },
+  'v2-form': { aciklama: 'Aynı form DOLU (aynı kaydırma): BMW · Satış seçili, "Onaylayacak direktör bu seçime göre belirlenir" ipucu (x .374 y .14 w .252 h .095), Gönder düğmesi (x .727 y .941)', vurgu: { x: 0.374, y: 0.14, w: 0.252, h: 0.095 } },
+  'v2-onay-bos': { aciklama: 'Direktör ekranı karar ÖNCESİ: üstte onay şeridi (x .112 y .078 w .776 h .109), sağda karar kartı (x .675 y .27 w .225 h .568): Onaylıyorum (x .686 y .368 w .203 h .04), e-onay kutusu (x .686 y .653 w .011 h .019), Kararı kaydet (x .686 y .721 w .204 h .047)', vurgu: { x: 0.675, y: 0.27, w: 0.225, h: 0.568 } },
+  'v2-onay-secim': { aciklama: 'Aynı direktör ekranı: Onaylıyorum SEÇİLİ (x .686 y .368 w .203 h .04), e-onay kutusu henüz boş (x .686 y .653)', vurgu: { x: 0.686, y: 0.368, w: 0.203, h: 0.04 } },
+  'v2-onay-secili': { aciklama: 'Aynı direktör ekranı: Onaylıyorum seçili VE e-onay kutusu işaretli; Kararı kaydet (x .686 y .721 w .204 h .047)', vurgu: { x: 0.686, y: 0.721, w: 0.204, h: 0.047 } },
+  'v2-onay-sonra': { aciklama: 'Aynı ekran karar SONRASI: şeritte Direktör ✓ Onayladı (x .306 y .078 w .194 h .109), İK Direktörü onay bekliyor (x .5 y .078), sağda "Sıradaki onay", altta "Kararınız kaydedildi" bildirimi', vurgu: { x: 0.306, y: 0.078, w: 0.388, h: 0.109 } },
+  'v2-poz-bekliyor': { aciklama: 'Açık Pozisyonlar, CEO kararı ÖNCESİ: Satış Danışmanı ONAY AŞAMASINDA · CEO kararı bekleniyor (satır x .113 y .454 w .868 h .073), tablo (x .1 y .274 w .8 h .429)', vurgu: { x: 0.1, y: 0.274, w: 0.8, h: 0.429 } },
+  'v2-poz-onayli': { aciklama: 'Aynı liste CEO onayı SONRASI: Satış Danışmanı en üstte ONAYLI (satır x .113 y .454 w .868 h .05, çip x .707 y .465 w .05 h .027), Onaylı açık pozisyon göstergesi 1 (x .1 y .044 w .193 h .137)', vurgu: { x: 0.113, y: 0.454, w: 0.787, h: 0.05 } },
+  'v2-havuz-1': { aciklama: 'Aday Havuzu (Pano): Ece Örnek kartı Görüşme / Karar Bekliyor sütununda (kart x .213 y .608 w .17 h .128)', vurgu: { x: 0.213, y: 0.608, w: 0.17, h: 0.128 } },
+  'v2-havuz-2': { aciklama: 'Aynı pano: Ece Örnek kartı Evrak Bekliyor sütununa taşınmış (kart x .406 y .881 w .17 h .127)', vurgu: { x: 0.406, y: 0.881, w: 0.17, h: 0.119 } }
 };
 const vOran = (v) => Math.max(0, Math.min(1, Number(v) || 0));
 const vMetin = (v, n) => String(v == null ? '' : v).slice(0, n);
@@ -448,7 +464,9 @@ export function videoPlaniAyir(metin) {
     if (!p || !Array.isArray(p.sahneler) || !p.sahneler.length) return null;
     const sahneler = p.sahneler.filter((s) => s && typeof s === 'object').slice(0, 14).map((s) => {
       let tur = VIDEO_SAHNE_TURLERI.indexOf(s.tur) >= 0 ? s.tur : 'madde';
-      if (tur === 'goruntu' && !Object.prototype.hasOwnProperty.call(VIDEO_GORSELLERI, s.gorsel)) tur = 'madde';
+      const gorselVar = (g) => Object.prototype.hasOwnProperty.call(VIDEO_GORSELLERI, g);
+      if (tur === 'goruntu' && !gorselVar(s.gorsel)) tur = 'madde';
+      if (tur === 'canli' && !(Array.isArray(s.durumlar) && s.durumlar.some((d) => d && gorselVar(d.gorsel)))) tur = 'madde';
       const o = {
         tur, ust: vMetin(s.ust, 60), baslik: vMetin(s.baslik, 120), maddeler: vListe(s.maddeler, 5, 90),
         rakam: vMetin(s.rakam, 12), seslendirme: vMetin(s.seslendirme, 600), sure: Math.max(3, Math.min(20, Number(s.sure) || 7))
@@ -472,11 +490,26 @@ export function videoPlaniAyir(metin) {
         const x = vOran(v.x), y = vOran(v.y), w = Math.min(1 - x, vOran(v.w)), h = Math.min(1 - y, vOran(v.h));
         o.vurgu = w > 0.01 && h > 0.01 ? { x, y, w, h, etiket: vMetin(s.vurgu && s.vurgu.etiket, 40) } : null;
         o.yakinlik = Math.max(1, Math.min(1.8, Number(s.yakinlik) || 1.25));
+      } else if (tur === 'canli') {
+        /* gerçek ekran üzerinde animasyon: durum geçişleri, kamera, imleç/tıklama, alan yazma, vurgu, kart taşıma, bildirim */
+        const zaman = (v) => Math.max(0, Math.min(20, Number(v) || 0));
+        const kutuAl = (k) => { const x = vOran(k && k.x), y = vOran(k && k.y); return { x, y, w: Math.min(1 - x, vOran(k && k.w)), h: Math.min(1 - y, vOran(k && k.h)) }; };
+        o.etiket = vMetin(s.etiket, 32); o.pencere = vMetin(s.pencere, 60);
+        o.durumlar = s.durumlar.filter((d) => d && gorselVar(d.gorsel)).slice(0, 4).map((d) => ({ gorsel: d.gorsel, t: zaman(d.t), gecis: Math.max(0.1, Math.min(2, Number(d.gecis) || 0.6)) })).sort((a, b) => a.t - b.t);
+        o.kamera = (Array.isArray(s.kamera) ? s.kamera : []).slice(0, 12).map((k) => ({ t: zaman(k && k.t), x: vOran(k && k.x), y: vOran(k && k.y), z: Math.max(1, Math.min(2.6, Number(k && k.z) || 1)) })).sort((a, b) => a.t - b.t);
+        o.imlec = (Array.isArray(s.imlec) ? s.imlec : []).slice(0, 16).map((k) => ({ t: zaman(k && k.t), x: vOran(k && k.x), y: vOran(k && k.y), tik: !!(k && k.tik) })).sort((a, b) => a.t - b.t);
+        o.yazilar = (Array.isArray(s.yazilar) ? s.yazilar : []).slice(0, 6).map((k) => Object.assign(kutuAl(k), { t1: zaman(k && k.t1), t2: zaman(k && k.t2), bitis: zaman(k && (k.bitis || 20)), metin: vMetin(k && k.metin, 60) }));
+        o.vurgular = (Array.isArray(s.vurgular) ? s.vurgular : []).slice(0, 6).map((k) => Object.assign(kutuAl(k), { t1: zaman(k && k.t1), t2: zaman(k && (k.t2 || 20)), etiket: vMetin(k && k.etiket, 40) }));
+        o.tasimalar = (Array.isArray(s.tasimalar) ? s.tasimalar : []).slice(0, 3).map((k) => ({ t1: zaman(k && k.t1), t2: zaman(k && k.t2), kaynak: kutuAl(k && k.kaynak), hedef: { x: vOran(k && k.hedef && k.hedef.x), y: vOran(k && k.hedef && k.hedef.y) } }));
+        o.bildirim = s.bildirim && typeof s.bildirim === 'object' ? { t: zaman(s.bildirim.t), metin: vMetin(s.bildirim.metin, 48), kaynak: { x: vOran(s.bildirim.kaynak && s.bildirim.kaynak.x), y: vOran(s.bildirim.kaynak && s.bildirim.kaynak.y) } } : null;
+      } else if (tur === 'neden' || tur === 'sonuc') {
+        o.etiket = vMetin(s.etiket, 32);
+        o.ogeler = (Array.isArray(s.ogeler) ? s.ogeler : []).slice(0, 3).map((g) => ({ ikon: VIDEO_IKONLARI.indexOf(g && g.ikon) >= 0 ? g.ikon : 'kayit', etiket: vMetin(g && g.etiket, 40) }));
       }
       return o;
     });
     if (!sahneler.length) return null;
-    return { baslik: vMetin(p.baslik || 'Tanıtım', 100), sahneler };
+    return { baslik: vMetin(p.baslik || 'Tanıtım', 100), tema: p.tema === 'acik' ? 'acik' : 'klasik', altyazi: p.altyazi === 'hep' ? 'hep' : 'oto', sahneler };
   } catch (e) { return null; }
 }
 export function planTemizle(p) {
