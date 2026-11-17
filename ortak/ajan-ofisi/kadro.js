@@ -430,7 +430,12 @@ export const VIDEO_GORSELLERI = {
   'ory-form': { aciklama: 'Form düzenleyici · İK SÜREÇLERİ maddeleri: konu, kapsam, tarih (takvim), saat, süre, oryantasyon sorumlusu', vurgu: { x: 0.143, y: 0.292, w: 0.496, h: 0.059 } },
   'ory-secim': { aciklama: 'Sorumlu seçici · aktif personel listesi, ada göre arama, seçilenler çip olarak', vurgu: { x: 0.646, y: 0.564, w: 0.238, h: 0.378 } },
   'ory-oneri': { aciklama: 'Müdür önerisi · değişen alan sarı ve altında önceki hâli, yeni madde yeşil, üstte değişiklik özeti ve Kaydet', vurgu: { x: 0.142, y: 0.374, w: 0.497, h: 0.061 } },
-  'ory-inceleme': { aciklama: 'İK inceleme ekranı · düzenleyen müdür, işaretli değişiklikler, Notlar listesi (silindi / eklendi / içerik değişikliği)', vurgu: { x: 0.725, y: 0.016, w: 0.175, h: 0.297 } }
+  'ory-inceleme': { aciklama: 'İK inceleme ekranı · düzenleyen müdür, işaretli değişiklikler, Notlar listesi (silindi / eklendi / içerik değişikliği)', vurgu: { x: 0.725, y: 0.016, w: 0.175, h: 0.297 } },
+  /* Personel Talepleri + İşe Alım (17.11.2026) — SENTETİK veriyle (test\ik\talep_video_ekran.ps1, test\isealim\video_havuz.ps1) */
+  'talep-form': { aciklama: 'Yeni personel talebi formu · İstenilen pozisyon bilgileri (pozisyon, birim/bölüm, deneyim, mezuniyet, cinsiyet, sertifikalar, beklentiler, önerilen aday, görev tanımı), Talep nedeni, altta "Talebi oluştur ve direktöre gönder"', vurgu: { x: 0.366, y: 0.15, w: 0.264, h: 0.112 } },
+  'talep-onay': { aciklama: 'Direktörün onay ekranı · üstte 4 aşamalı onay şeridi (Talep eden → Direktör → İK Direktörü → CEO), solda formun tamamı, sağda karar kartı (Onaylıyorum / Revize istiyorum / Reddediyorum, not, e-onay kutusu, Kararı kaydet)', vurgu: { x: 0.671, y: 0.319, w: 0.233, h: 0.581 } },
+  'talep-pozisyon': { aciklama: 'Açık Pozisyonlar · göstergeler (Onaylı açık pozisyon, Onay aşamasında, Onaylı değil, Kapanan) ve tablo: pozisyon, departman, talep eden, talep nedeni, ONAY DURUMU (ONAYLI / ONAY AŞAMASINDA / ONAYLI DEĞİL), pozisyon durumu', vurgu: { x: 0.7, y: 0.452, w: 0.118, h: 0.205 } },
+  'talep-havuz': { aciklama: 'İşe Alım › Aday Havuzu (Pano görünümü) · aşama sütunları Görüşme / Karar Bekliyor → Evrak Bekliyor → SGK Bekliyor → Deneme Süresinde; aday kartlarında unvan, departman, görüşme / başlama tarihi, ekip puanı', vurgu: { x: 0.205, y: 0.535, w: 0.73, h: 0.46 } }
 };
 const vOran = (v) => Math.max(0, Math.min(1, Number(v) || 0));
 const vMetin = (v, n) => String(v == null ? '' : v).slice(0, n);

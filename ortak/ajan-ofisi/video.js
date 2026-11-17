@@ -287,7 +287,7 @@ function sahneCiz(ctx, s, lt, sure) {
     kutu(ctx, fx, fy, fw, bar + 16, 14, '#1c2c47', null);
     [0, 1, 2].forEach((i) => { ctx.beginPath(); ctx.arc(fx + 26 + i * 20, fy + 20, 6, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fill(); });
     kutu(ctx, fx + 110, fy + 9, fw - 220, 23, 11, 'rgba(255,255,255,.07)', null);
-    yazi(ctx, 'İK Portalı · Oryantasyon Formları', fx + fw / 2, fy + 26, '500 15px ' + SANS, R.gri, 'center');
+    yazi(ctx, PENCERE[s.gorsel] || 'İK Portalı · Oryantasyon Formları', fx + fw / 2, fy + 26, '500 15px ' + SANS, R.gri, 'center');
     const im = GORSEL.get(s.gorsel), v = s.vurgu;
     ctx.save(); ctx.beginPath(); ctx.rect(ax, ay, aw, ah); ctx.clip();
     let kx = 0, ky = 0, kw = 0, kh = 0;
@@ -367,6 +367,11 @@ function kisaltF(ctx, metin, maxW, font) { ctx.font = font; return kisalt(ctx, m
 
 /* ---------------------------------------------------------------- gerçek ekran görüntüleri (aynı köken: tuval kirlenmez, kayıt çalışır) */
 const GORSEL = new Map();
+/* tarayıcı çerçevesinin başlığı (görsel kimliğine göre; listede yoksa oryantasyon ekranları) */
+const PENCERE = {
+  'talep-form': 'İK Portalı · Personel Talepleri', 'talep-onay': 'İK Portalı · Personel Talepleri',
+  'talep-pozisyon': 'İK Portalı · Açık Pozisyonlar', 'talep-havuz': 'İşe Alım · Aday Havuzu'
+};
 export function gorselAdresi(id) { return new URL('./gorsel/' + encodeURIComponent(id) + '.jpg', import.meta.url).href; }
 export function gorselleriYukle(plan) {
   const idler = [...new Set(((plan && plan.sahneler) || []).filter((s) => s.tur === 'goruntu' && s.gorsel && !GORSEL.has(s.gorsel)).map((s) => s.gorsel))];
