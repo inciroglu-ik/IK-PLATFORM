@@ -1,0 +1,887 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Müdür Prim Sistemleri · İnciroğlu Otomotiv</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0f1b2d">
+<link rel="icon" href="pano/amblem.svg" type="image/svg+xml">
+<link rel="icon" href="pano/amblem-192.png" sizes="192x192">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="pano/kokpit.css">
+<link rel="stylesheet" href="pano/pano.css">
+<style>
+/* Müdür Prim Sistemleri — İK Portalı kutucuğu (YALNIZ erişim listesindeki kişiler). Kabuk ve bileşenler İK Dashboard ile ortaktır. */
+body.prim .ust-marka { display: flex; }
+.pr-araclar { display: flex; gap: 8px; align-items: center; }
+/* ---- marka dilimleyicisi (Excel dilimleyicisi gibi) */
+.pr-dilim { background: var(--yuzey-kart); border: 1px solid var(--cizgi-1); border-radius: 16px; box-shadow: var(--gol-1); padding: 14px 16px 16px; }
+.pr-dilim-bas { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; }
+.pr-dilim-bas b { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--metin-3); font-weight: 700; }
+.pr-dilim-bas .ikon { width: 15px; height: 15px; color: var(--pir-600); }
+.pr-dilim-bas .pr-temizle { margin-left: auto; }
+.pr-markalar { display: flex; flex-wrap: wrap; gap: 8px; }
+.pr-marka { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px 0 14px; border-radius: 10px; border: 1px solid var(--cizgi-2); background: #fff; color: var(--metin-1); font: 600 13px/1 var(--font-sans); letter-spacing: .01em; cursor: pointer; transition: background .15s, border-color .15s, color .15s, box-shadow .15s; }
+.pr-marka:hover { border-color: var(--pir-300); box-shadow: var(--gol-1); }
+.pr-marka:focus-visible { outline: none; box-shadow: var(--odak-halkasi); }
+.pr-marka small { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--n-100); color: var(--metin-2); font-size: 11px; font-weight: 700; display: inline-grid; place-items: center; }
+.pr-marka[aria-selected="true"] { background: var(--lac-800); border-color: var(--lac-800); color: #fff; }
+.pr-marka[aria-selected="true"] small { background: var(--pir-500); color: #fff; }
+.pr-marka.tum { padding: 0 16px; }
+/* ---- süzgeç çubuğu */
+.pr-suzgec { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: flex-end; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--cizgi-2); }
+.pr-suzgec .alan { min-width: 150px; flex: 0 1 190px; }
+.pr-suzgec .ara-kutu { flex: 1 1 240px; max-width: 340px; }
+.pr-suzgec .pr-sayac { margin-left: auto; font-size: 12.5px; color: var(--metin-3); align-self: center; white-space: nowrap; }
+.pr-etkin { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.pr-etkin:empty { display: none; }
+/* ---- tablolar */
+.pr-tablo-kap { overflow-x: auto; border: 1px solid var(--cizgi-1); border-radius: 12px; background: #fff; }
+.pr-tablo { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; color: var(--metin-1); }
+.pr-tablo th { position: sticky; top: 0; z-index: 1; background: var(--lac-800); color: #fff; font-size: 11.5px; font-weight: 600; letter-spacing: .02em; text-align: left; vertical-align: bottom; padding: 9px 10px; line-height: 1.3; min-width: 64px; border-right: 1px solid rgba(255, 255, 255, .08); }
+.pr-tablo th.ay, .pr-tablo td.ay { text-align: center; padding-left: 3px; padding-right: 3px; width: 54px; min-width: 54px; }
+.pr-tablo td.pr-uzun > div { position: sticky; left: 10px; max-width: min(1180px, calc(100vw - 120px)); }
+.pr-tablo td { padding: 9px 10px; border-bottom: 1px solid var(--cizgi-1); vertical-align: top; line-height: 1.45; }
+.pr-tablo tbody tr:last-child td { border-bottom: 0; }
+.pr-tablo td.no { color: var(--metin-3); font-variant-numeric: tabular-nums; width: 36px; }
+.pr-tablo td.kriter { min-width: 230px; max-width: 360px; }
+.pr-tablo td.kriter b { display: block; font-weight: 600; color: var(--metin-marka); }
+.pr-tablo td.kriter span { display: block; margin-top: 3px; font-size: 12.5px; color: var(--metin-2); }
+.pr-tablo td.esik { min-width: 120px; max-width: 220px; font-weight: 600; color: var(--metin-1); }
+.pr-tablo td.genis { min-width: 220px; max-width: 420px; white-space: pre-line; }
+.pr-tablo td.dar { white-space: nowrap; }
+.pr-tablo tr.pr-grup td { background: var(--lac-50); color: var(--lac-700); font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 7px 10px; border-left: 3px solid var(--pir-500); }
+.pr-tablo tr.pr-grup.yok td { background: var(--n-25); color: var(--metin-3); text-transform: none; letter-spacing: 0; font-weight: 600; border-left-color: var(--n-300); }
+.pr-tablo tr.pr-not td { background: var(--n-25); color: var(--metin-2); font-size: 12.5px; padding-top: 0; white-space: pre-line; }
+.pr-tablo tr.pr-not td i { font-style: normal; font-weight: 700; color: var(--metin-3); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; margin-right: 6px; }
+.pr-tablo tr.pr-satir.notlu td { border-bottom: 0; }
+.pr-dr { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 46px; height: 22px; padding: 0 6px; border-radius: 999px; font-size: 10.5px; font-weight: 700; white-space: nowrap; }
+.pr-dr.tuttu { background: var(--ok-100); color: var(--ok-700); }
+.pr-dr.tutmadi { background: var(--ht-100); color: var(--ht-700); }
+.pr-dr.sayilmaz { background: var(--n-150); color: var(--metin-2); }
+.pr-dr.diger { background: var(--uy-100); color: var(--uy-700); }
+.pr-bos { color: var(--n-300); }
+.pr-yuzde { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pr-yuzde i { position: relative; display: inline-block; width: 64px; height: 7px; border-radius: 999px; background: var(--n-100); overflow: hidden; }
+.pr-yuzde i::after { content: ''; position: absolute; inset: 0 auto 0 0; width: var(--o, 0%); background: var(--pir-500); border-radius: inherit; }
+.pr-oran { display: inline-block; min-width: 46px; padding: 2px 6px; border-radius: 6px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.pr-oran.tam { background: var(--ok-100); color: var(--ok-700); }
+.pr-oran.yari { background: var(--uy-100); color: var(--uy-700); }
+.pr-oran.yok { background: var(--ht-100); color: var(--ht-700); }
+.pr-kart-bas { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 13px; color: var(--metin-2); }
+.pr-kart-bas b { color: var(--metin-1); font-weight: 600; }
+.pr-notlar { display: grid; gap: 6px; margin-top: 2px; }
+.pr-notlar p { margin: 0; font-size: 12.5px; color: var(--metin-2); line-height: 1.55; padding: 8px 12px; background: var(--uy-50); border: 1px solid var(--uy-200); border-radius: 10px; }
+.pr-lejant { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pr-detay-btn { border: 0; background: none; padding: 0; font: 600 12.5px/1.2 var(--font-sans); color: var(--lac-600); cursor: pointer; white-space: nowrap; }
+.pr-detay-btn:hover { text-decoration: underline; }
+.pr-bilgi { background: var(--lac-50); border: 1px solid var(--lac-100); border-radius: 12px; padding: 12px 14px; font-size: 13.5px; color: var(--metin-2); line-height: 1.6; }
+.pr-bilgi.uyari { background: var(--uy-50); border-color: var(--uy-200); color: var(--uy-700); }
+.pr-bilgi b { color: inherit; }
+.pr-dip { font-size: 12px; color: var(--metin-3); line-height: 1.6; }
+/* ---- pencere */
+.pr-perde { position: fixed; inset: 0; z-index: var(--z-modal, 400); background: rgba(8, 16, 30, .55); display: grid; place-items: center; padding: 16px; }
+.pr-pencere { width: min(640px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: var(--yuzey-kart, #fff); border-radius: 18px; box-shadow: 0 30px 80px -20px rgba(4, 11, 22, .6); padding: 22px 22px 18px; display: grid; gap: 14px; }
+.pr-pencere h2 { font-family: var(--font-serif); font-size: 21px; font-weight: 600; color: var(--metin-marka); margin: 0; }
+.pr-pencere p { margin: 0; font-size: 13.5px; color: var(--metin-2); line-height: 1.6; }
+.pr-pencere ul { margin: 0; padding-left: 18px; font-size: 13.5px; color: var(--metin-1); line-height: 1.7; }
+.pr-pencere .alt { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; align-items: center; }
+.pr-pencere .alt .sol { margin-right: auto; font-size: 12.5px; color: var(--metin-3); }
+.pr-kisiler { display: grid; gap: 6px; }
+.pr-kisi { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--cizgi-1); border-radius: 10px; background: #fff; font-size: 13.5px; }
+.pr-kisi b { font-weight: 600; }
+.pr-kisi small { color: var(--metin-3); font-size: 12px; }
+.pr-kisi .btn { margin-left: auto; height: 30px; padding: 0 10px; font-size: 12.5px; }
+.pr-kisi .kilitli { margin-left: auto; font-size: 12px; color: var(--metin-3); }
+.pr-hata { color: var(--ht-700); font-size: 13px; }
+@media (max-width: 760px) {
+  .pr-suzgec .alan, .pr-suzgec .ara-kutu { flex: 1 1 100%; max-width: none; }
+  .pr-suzgec .pr-sayac { margin-left: 0; }
+  .pr-marka { height: 34px; padding: 0 10px; font-size: 12.5px; }
+}
+@media print {
+  .ust-alan, .pr-dilim, .pr-araclar { display: none !important; }
+  .pr-tablo-kap { overflow: visible; border: 0; }
+  .pr-tablo th { position: static; }
+}
+</style>
+</head>
+<!--
+  Müdür Prim Sistemleri (İK Portalı) — 19.11.2026
+  Kaynak: İK'nın prim çalışma kitabı (ör. Masaüstü\ÇALIŞMALARIM\Müdür Prim Sistemleri 2026.xlsx). Excel tarayıcıda okunur
+  (ortak/prim-sistemleri.js, SheetJS) ve "olduğu gibi" primSistemleri/veri belgesine JSON olarak yazılır. Veri bu depoda YOKTUR.
+  GÖRENLER: YALNIZ primAyar/erisim listesindeki hesaplar (kişi bazlı; rol yetmez — İK ekibi ve direktörler dahil listede
+  olmayan hiç kimse göremez). Listeyi yalnız kurulum İK hesabı (ofis sahibi) değiştirir. Kurallar: guvenlik/firestore.rules →
+  MÜDÜR PRİM SİSTEMLERİ.
+-->
+<body class="prim">
+<div class="acilis" id="acilis" role="status" aria-live="polite">
+  <div class="acilis-ic">
+    <span class="amblem buyuk" role="img" aria-label="İnciroğlu Otomotiv İK amblemi"></span>
+    <div class="acilis-baslik">Müdür Prim Sistemleri</div>
+    <div class="acilis-metin" id="acilisMetin">Oturum denetleniyor…</div>
+    <div class="acilis-cubuk"><i></i></div>
+  </div>
+</div>
+<div class="ana">
+  <div class="ust-alan kokpit">
+    <header class="ust-bant">
+      <div class="ic ust-ic">
+        <div class="ust-marka"><span class="amblem" role="img" aria-label="İnciroğlu Otomotiv İK amblemi"></span></div>
+        <div class="uyg-ad"><span>Müdür Prim Sistemleri</span><small id="ustAlt">İnsan Kaynakları · Kısıtlı erişim</small></div>
+        <div class="ust-sag" id="ustSag"></div>
+      </div>
+    </header>
+    <div id="kaputYuva"></div>
+  </div>
+  <main class="ic icerik" id="icerik"></main>
+</div>
+<input type="file" id="dosyaSec" accept=".xlsx,.xlsm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+
+<script type="module">
+import { doc, getDoc, getDocs, setDoc, collection, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { db, kimlikBaslat, cikisYap, adBasliklari } from "./ortak/kimlik.js";
+import * as O from "./pano/ortak.js";
+import * as P from "./ortak/prim-sistemleri.js";
+
+const $ = (id) => document.getElementById(id);
+const el = O.el;
+const acilisMetni = (t) => { const m = $('acilisMetin'); if (m) m.textContent = t; };
+const acilisGizle = () => { const a = $('acilis'); if (a) { a.classList.add('gizle'); setTimeout(() => a.remove(), 600); } };
+const SVG = (yol) => '<svg class="ikon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + yol + '</svg>';
+const IK_DILIM = SVG('<rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M3.5 9h17M8 13h3M8 16.5h3M13.5 13h3M13.5 16.5h3"/>');
+const K = P.katla;
+
+/* ============================================================== OTURUM + ERİŞİM */
+const ROLLER = ['ik', 'direktor', 'satis_mudur', 'servis_mudur', 'idari_mudur', 'mudur'];
+const ROL_ADI = { ik: 'İnsan Kaynakları', direktor: 'Direktör', satis_mudur: 'Satış Müdürü', servis_mudur: 'Servis Müdürü', idari_mudur: 'İdari Müdür', mudur: 'Departman Müdürü' };
+const OTURUM = await kimlikBaslat({ uygulama: 'Müdür Prim Sistemleri', roller: ROLLER });
+const HESAP = OTURUM.hesap;
+const HID = OTURUM.hid;
+const AD = adBasliklari(HESAP.ad || '');
+const ANA_ROL = ROLLER.find((r) => HESAP.roller.indexOf(r) >= 0) || '';
+const ROL_AD = ROL_ADI[ANA_ROL] || ANA_ROL;
+/* Kurucu = kurulum koduyla açılmış İK hesabı (Ajan Ofisi sahibi). Erişim listesini YALNIZ o değiştirir (kural: ofisSahibiOlabilir). */
+const KURUCU = HESAP.olusturan === 'kurulum' && HESAP.roller.indexOf('ik') >= 0;
+acilisMetni('Erişim denetleniyor…');
+
+let ERISIM = null, ERISIM_VAR = false, YETKILI = false, ERISIM_HATA = null;
+async function erisimOku() {
+  try {
+    const s = await getDoc(doc(db, 'primAyar', 'erisim'));
+    ERISIM_VAR = s.exists();
+    ERISIM = ERISIM_VAR ? s.data() : null;
+    YETKILI = !!(ERISIM && Array.isArray(ERISIM.hidler) && ERISIM.hidler.indexOf(HID) >= 0);
+    ERISIM_HATA = null;
+  } catch (e) {
+    ERISIM = null; ERISIM_VAR = false; YETKILI = false;
+    ERISIM_HATA = e && e.code === 'permission-denied' ? null : e;
+  }
+}
+await erisimOku();
+
+/* ============================================================== DURUM */
+let VERI = null, VERI_META = null, VERI_HAZIR = false, VERI_HATA = null, VERI_BOZUK = false;
+let M = null;                                     /* hazırlanmış model (hazirla) */
+const F = { marka: '', ara: '', birim: '', mudur: '', donem: '', grup: '', durum: '' };
+let veriAboneligi = null;
+
+/* ============================================================== MODEL HAZIRLAMA */
+const GIZLI_SUTUN = ['DETAY', 'ETIKET', 'GRAFIK DEGERI'];
+function hazirla(m) {
+  const tablolar = m.tablolar.map((t, ti) => {
+    const KS = t.sutunlar.map(K);
+    const ix = (ad) => KS.indexOf(K(ad));
+    const iMarka = ix('Marka'), iMudur = ix('Müdür'), iBirim = ix('Birim'), iDonem = ix('Prim Dönemi');
+    const ayIdx = new Array(12).fill(-1);
+    t.sutunlar.forEach((s, i) => { const a = P.ayBasligi(s); if (a && ayIdx[a.ay] < 0) ayIdx[a.ay] = i; });
+    const satirlar = t.satirlar.map((r, ri) => {
+      const marka = ((iMarka >= 0 ? r.h[iMarka] : '') || (t.tur === 'marka' ? t.sayfa : '')).trim();
+      return {
+        g: r.g || '', h: r.h, n: r.n, ti, ri,
+        marka, markaK: K(marka),
+        mudur: iMudur >= 0 ? r.h[iMudur] : '', mudurK: K(iMudur >= 0 ? r.h[iMudur] : ''),
+        birim: iBirim >= 0 ? r.h[iBirim] : '', donem: iDonem >= 0 ? r.h[iDonem] : '',
+        aylar: ayIdx.map((i) => (i >= 0 ? r.h[i] : '')),
+        ayN: ayIdx.map((i) => (i >= 0 ? r.n[i] : null))
+      };
+    });
+    return Object.assign({}, t, { ti, KS, ix, ayIdx, satirlar, ayVar: ayIdx.some((i) => i >= 0) });
+  });
+  /* birimi olmayan tablolarda (hak ediş, detay) birim: aynı müdür + marka, yoksa müdürün tek birimi */
+  const birimMM = new Map(), birimM = new Map();
+  tablolar.forEach((t) => t.satirlar.forEach((r) => {
+    if (!r.birim) return;
+    birimMM.set(r.mudurK + '|' + r.markaK, r.birim);
+    const s = birimM.get(r.mudurK) || new Set(); s.add(r.birim); birimM.set(r.mudurK, s);
+  }));
+  tablolar.forEach((t) => t.satirlar.forEach((r) => {
+    if (r.birim) return;
+    const b = birimMM.get(r.mudurK + '|' + r.markaK) || (birimM.get(r.mudurK) && birimM.get(r.mudurK).size === 1 ? [...birimM.get(r.mudurK)][0] : '');
+    r.birim = b || ''; r.birimTuretilmis = !!b;
+  }));
+  /* marka listesi: marka sayfasının adı öncelikli (CİTROEN), yoksa ilk görülen yazım */
+  const ad = new Map(), kisiler = new Map();
+  tablolar.filter((t) => t.tur === 'marka').forEach((t) => { const k = K(t.sayfa); if (k && !ad.has(k)) ad.set(k, t.sayfa.trim()); });
+  tablolar.forEach((t) => t.satirlar.forEach((r) => {
+    if (!r.markaK) return;
+    if (!ad.has(r.markaK)) ad.set(r.markaK, r.marka);
+    const s = kisiler.get(r.markaK) || new Set(); if (r.mudurK) s.add(r.mudurK); kisiler.set(r.markaK, s);
+  }));
+  const markalar = [...ad.entries()].map(([k, a]) => ({ k, ad: a, kisi: (kisiler.get(k) || new Set()).size }))
+    .sort((a, b) => O.trKarsilastir(a.ad, b.ad));
+  const tur = (x) => tablolar.filter((t) => t.tur === x);
+  const detay = tur('detay')[0] || null;
+  /* içeriği olan detay satırları (Müdür/Marka dışında en az bir hücre dolu) */
+  const detaySatir = detay ? detay.satirlar.filter((r) => r.h.some((v, i) => v && i !== detay.ix('Müdür') && i !== detay.ix('Marka'))) : [];
+  const detaySay = new Map(); detaySatir.forEach((r) => detaySay.set(r.mudurK, (detaySay.get(r.mudurK) || 0) + 1));
+  return { tablolar, markalar, ozet: tur('ozet')[0] || null, marka: tur('marka'), hakedis: tur('hakedis')[0] || null, hakedisTL: tur('hakedisTL')[0] || null, detay, detaySatir, detaySay };
+}
+
+/* ============================================================== SÜZGEÇ */
+function durumUygun(r) {
+  if (!F.durum) return true;
+  const d = r.aylar.map(P.durumSinifi).filter(Boolean);
+  if (F.durum === 'tutmadi') return d.indexOf('tutmadi') >= 0;
+  if (F.durum === 'sayilmaz') return d.indexOf('sayilmaz') >= 0;
+  if (F.durum === 'tuttu') return d.length > 0 && d.every((x) => x === 'tuttu' || x === 'sayilmaz') && d.indexOf('tuttu') >= 0;
+  return true;
+}
+function uygun(t, r, { metrik = false, markaYok = false } = {}) {
+  if (!markaYok && F.marka && r.markaK !== F.marka) return false;
+  if (F.birim && K(r.birim) !== F.birim) return false;
+  if (F.mudur && r.mudurK !== F.mudur) return false;
+  if (F.donem && t.ix('Prim Dönemi') >= 0 && K(r.donem) !== F.donem) return false;   /* Prim Dönemi sütunu olmayan tabloya (Detaylar) uygulanmaz */
+  if (metrik) {
+    if (F.grup && K(r.g) !== F.grup) return false;
+    if (!durumUygun(r)) return false;
+  }
+  if (F.ara.trim()) {
+    const q = O.aramaAnahtari(F.ara);
+    if (!O.aramaAnahtari([r.g, t.sayfa, r.birim].concat(r.h).join(' ')).includes(q)) return false;
+  }
+  return true;
+}
+/** seçim listesi: seçili markadaki satırlardan (katlanmış anahtarla tekil, ilk yazım görünür) */
+function secenekler(alan, { metrik = false } = {}) {
+  const m = new Map();
+  M.tablolar.forEach((t) => {
+    if (metrik && t.tur !== 'marka') return;
+    t.satirlar.forEach((r) => {
+      if (F.marka && r.markaK !== F.marka) return;
+      const v = String(r[alan] || '').trim(); if (!v) return;
+      const k = K(v); if (!m.has(k)) m.set(k, v);
+    });
+  });
+  return [...m.entries()].map(([k, ad]) => ({ v: k, ad })).sort((a, b) => O.trKarsilastir(a.ad, b.ad));
+}
+const ADLAR = { birim: 'Birim', mudur: 'Müdür', donem: 'Prim dönemi', grup: 'Prim türü (metrikler)', durum: 'Aylık durum (metrikler)' };
+const DURUMLAR = [{ v: 'tutmadi', ad: 'En az bir ay TUTMADI' }, { v: 'tuttu', ad: 'Değerlendirilen her ay TUTTU' }, { v: 'sayilmaz', ad: 'HEDEFE SAYILMAZ olan' }];
+function suzgecAktif() { return !!(F.ara.trim() || F.birim || F.mudur || F.donem || F.grup || F.durum); }
+function suzgecTemizle() { F.ara = ''; F.birim = ''; F.mudur = ''; F.donem = ''; F.grup = ''; F.durum = ''; }
+
+/* ============================================================== ÜST BANT + KAPUT */
+function ustBantKur() {
+  const sag = $('ustSag'); sag.textContent = '';
+  const ar = el('div', { class: 'pr-araclar' });
+  if (YETKILI) ar.append(el('button', { class: 'btn btn-pirinc', type: 'button', id: 'aktarDugme', title: 'Prim çalışma kitabını (Excel) okuyup portaldaki veriyi günceller', html: O.ikon('yukle') + '<span class="etk">Excel\'den aktar</span>', on: { click: () => $('dosyaSec').click() } }));
+  if (KURUCU) ar.append(el('button', { class: 'btn btn-koyu', type: 'button', id: 'erisimDugme', title: 'Bu sayfayı kimlerin göreceğini belirler (yalnız siz değiştirebilirsiniz)', html: O.ikon('kilit') + '<span class="etk">Erişim</span>', on: { click: erisimPenceresi } }));
+  sag.append(ar);
+  const bas = AD.split(/\s+/).filter(Boolean);
+  sag.append(el('div', { class: 'kisi' }, el('span', { class: 'avatar', text: ((bas[0] || '?')[0] + ((bas[bas.length - 1] || ' ')[0] || '')).toLocaleUpperCase('tr') }),
+    el('div', { class: 'kisi-ad' }, el('div', { text: AD }), el('span', { class: 'rozet', text: ROL_AD }))));
+  if (window.top === window.self) sag.append(el('button', { class: 'btn btn-koyu', type: 'button', html: O.ikon('cikis') + '<span class="etk">Çıkış</span>', on: { click: () => cikisYap('cikis') } }));
+}
+function tarihSaat(ts) {
+  try {
+    const d = ts && typeof ts.toDate === 'function' ? ts.toDate() : (ts && ts.seconds ? new Date(ts.seconds * 1000) : null);
+    if (!d || isNaN(d)) return '';
+    return d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+  } catch (e) { return ''; }
+}
+function kaputCiz(kok) {
+  const meta = [];
+  if (VERI) {
+    const metrik = M.marka.reduce((s, t) => s + t.satirlar.length, 0);
+    const mudurler = new Set(); M.tablolar.forEach((t) => t.satirlar.forEach((r) => r.mudurK && mudurler.add(r.mudurK)));
+    meta.push({ ikon: 'kisiler', metin: mudurler.size + ' müdür' });
+    meta.push({ ikon: 'pano', metin: M.markalar.length + ' marka / birim' });
+    if (M.marka.length) meta.push({ ikon: 'performans', metin: M.marka.length + ' marka sayfası · ' + metrik + ' metrik' });
+  }
+  if (ERISIM && Array.isArray(ERISIM.hidler)) meta.push({ ikon: 'kilit', metin: 'Yalnız ' + ERISIM.hidler.length + ' kişiye açık' });
+  let ozet = 'Müdürlerin prim hak ediş kriterleri, aylık tuttu / tutmadı durumu ve 2026 hak ediş oranları.';
+  if (VERI_META) {
+    const parca = [];
+    if (VERI_META.dosya) parca.push('Kaynak: ' + VERI_META.dosya);
+    const ts = tarihSaat(VERI_META.aktarim); if (ts) parca.push(ts + ' tarihinde aktarıldı');
+    if (VERI_META.aktaran) parca.push(adBasliklari(VERI_META.aktaran));
+    if (parca.length) ozet = parca.join(' · ');
+  }
+  O.kaput(kok, { ustEtiket: 'İnsan Kaynakları · Kısıtlı erişim', baslik: 'Müdür Prim Sistemleri', ozet, meta });
+}
+
+/* ============================================================== ÇİZİM */
+let SONUC = null;   /* süzgeç değişince yalnız sonuç alanı yeniden çizilir (arama kutusu odağı korunur) */
+function ciz() {
+  const kok = $('icerik'); kok.textContent = '';
+  kaputCiz(kok);
+  ustBantKur();
+  const pg = el('div', { class: 'pg giris' }); kok.append(pg);
+  if (!YETKILI) {
+    /* yalnız kurucu buraya gelir: erişim listesi henüz yok ya da kurucu listede değil */
+    const k = O.kart(pg, { baslik: 'Erişim listesi henüz kaydedilmedi', aciklama: 'Sayfayı kimlerin göreceğini belirleyin' });
+    k.govde.append(el('p', { class: 'pr-bilgi', html: 'Bu modül <b>yalnız erişim listesindeki kişilere</b> açıktır; İK ekibi ve direktörler dahil listede olmayan hiç kimse göremez. Listeyi yalnız siz değiştirebilirsiniz.' }));
+    k.govde.append(el('div', null, el('button', { class: 'btn btn-pirinc', type: 'button', html: O.ikon('kilit') + 'Erişimi ayarla', on: { click: erisimPenceresi } })));
+    hazir(); return;
+  }
+  if (VERI_HATA) {
+    O.bosDurum(pg, { ikon: 'uyari', baslik: 'Prim verisi okunamadı', metin: VERI_HATA.code === 'permission-denied' ? 'Bu verinin güvenlik kuralı henüz yayınlanmamış ya da erişiminiz kaldırılmış olabilir.' : 'Bağlantıyı kontrol edip sayfayı yenileyin.', eylem: { metin: 'Yeniden dene', fn: () => location.reload() } });
+    hazir(); return;
+  }
+  if (!VERI_HAZIR) { O.bosDurum(pg, { ikon: 'saat', baslik: 'Prim verisi yükleniyor…', kucuk: true }); return; }
+  if (!VERI) {
+    O.bosDurum(pg, { ikon: 'excel', baslik: VERI_BOZUK ? 'Kayıtlı veri okunamadı' : 'Henüz prim verisi aktarılmadı', metin: 'Prim çalışma kitabını (Müdür Prim Sistemleri 2026.xlsx) seçin; sayfalar olduğu gibi buraya aktarılır.', eylem: { metin: 'Excel\'den aktar', fn: () => $('dosyaSec').click() } });
+    hazir(); return;
+  }
+  dilimleyiciCiz(pg);
+  SONUC = el('div', { class: 'pg', id: 'prSonuc' }); pg.append(SONUC);
+  sonucCiz();
+  hazir();
+}
+function hazir() { acilisGizle(); window.__TEST_HAZIR = true; }
+
+function dilimleyiciCiz(pg) {
+  const d = el('section', { class: 'pr-dilim', 'aria-label': 'Marka dilimleyicisi ve süzgeçler' });
+  const bas = el('div', { class: 'pr-dilim-bas', html: IK_DILIM + '<b>Marka</b>' });
+  if (F.marka || suzgecAktif()) bas.append(el('button', { class: 'btn pr-temizle', type: 'button', html: O.ikon('carpi') + 'Tümünü temizle', on: { click: () => { F.marka = ''; suzgecTemizle(); kareYaz(); ciz(); } } }));
+  d.append(bas);
+  const liste = el('div', { class: 'pr-markalar', role: 'tablist', 'aria-label': 'Marka' });
+  const ekle = (k, ad, sayi, sinif) => {
+    const b = el('button', { class: 'pr-marka' + (sinif ? ' ' + sinif : ''), type: 'button', role: 'tab', 'aria-selected': String(F.marka === k), 'data-marka': k, title: sayi ? ad + ' · ' + sayi + ' müdür' : ad }, ad);
+    if (sayi) b.append(el('small', { text: String(sayi) }));
+    b.addEventListener('click', () => { if (F.marka === k) return; F.marka = k; kareYaz(); suzgecDuzelt(); ciz(); });
+    liste.append(b);
+  };
+  ekle('', 'Tümü', 0, 'tum');
+  M.markalar.forEach((m) => ekle(m.k, m.ad, m.kisi));
+  d.append(liste);
+  /* süzgeçler */
+  const s = el('div', { class: 'pr-suzgec' });
+  const ak = el('label', { class: 'ara-kutu', html: O.ikon('ara') });
+  const girdi = el('input', { class: 'girdi', type: 'search', id: 'prAra', placeholder: 'Ara: kriter, gerekçe, not…', 'aria-label': 'Prim verisinde ara', autocomplete: 'off', value: F.ara });
+  let z = null;
+  girdi.addEventListener('input', () => { clearTimeout(z); z = setTimeout(() => { F.ara = girdi.value; sonucCiz(); etkinCiz(); }, 150); });
+  ak.append(girdi); s.append(ak);
+  const sec = (alan, liste2) => {
+    O.secim(s, { etiket: ADLAR[alan], id: 'prSec_' + alan, secenekler: [{ v: '', ad: 'Tümü' }].concat(liste2), deger: F[alan], degisince: (v) => { F[alan] = v; sonucCiz(); etkinCiz(); temizleDugmesi(); } });
+  };
+  sec('birim', secenekler('birim'));
+  sec('mudur', secenekler('mudur'));
+  sec('donem', secenekler('donem'));
+  const gruplar = secenekler('g', { metrik: true });
+  if (gruplar.length) sec('grup', gruplar);
+  if (M.marka.some((t) => t.ayVar)) sec('durum', DURUMLAR);
+  s.append(el('span', { class: 'pr-sayac', id: 'prSayac' }));
+  d.append(s);
+  d.append(el('div', { class: 'pr-etkin', id: 'prEtkin' }));
+  pg.append(d);
+  function temizleDugmesi() { if (!bas.querySelector('.pr-temizle') && suzgecAktif()) bas.append(el('button', { class: 'btn pr-temizle', type: 'button', html: O.ikon('carpi') + 'Tümünü temizle', on: { click: () => { F.marka = ''; suzgecTemizle(); kareYaz(); ciz(); } } })); }
+  setTimeout(etkinCiz, 0);
+}
+/** marka değişince artık listede olmayan süzgeç değerleri bırakılır */
+function suzgecDuzelt() {
+  ['birim', 'mudur', 'donem'].forEach((a) => { if (F[a] && !secenekler(a).some((x) => x.v === F[a])) F[a] = ''; });
+  if (F.grup && !secenekler('g', { metrik: true }).some((x) => x.v === F.grup)) F.grup = '';
+}
+function etkinCiz() {
+  const e = $('prEtkin'); if (!e) return;
+  e.textContent = '';
+  const cip = [];
+  const adBul = (alan, v) => { const l = alan === 'durum' ? DURUMLAR : secenekler(alan === 'grup' ? 'g' : alan, { metrik: alan === 'grup' }); const x = l.find((y) => y.v === v); return x ? x.ad : v; };
+  ['birim', 'mudur', 'donem', 'grup', 'durum'].forEach((a) => { if (F[a]) cip.push({ metin: ADLAR[a] + ': ' + adBul(a, F[a]), kaldir: () => { F[a] = ''; const s = $('prSec_' + a); if (s) s.value = ''; sonucCiz(); etkinCiz(); } }); });
+  if (F.ara.trim()) cip.push({ metin: 'Arama: ' + F.ara.trim(), kaldir: () => { F.ara = ''; const g = $('prAra'); if (g) g.value = ''; sonucCiz(); etkinCiz(); } });
+  O.filtreCipleri(e, cip);
+}
+function kareYaz() {
+  const yeni = F.marka ? '#/marka/' + encodeURIComponent(F.marka) : '#/';
+  if (location.hash !== yeni) { try { history.replaceState(null, '', location.pathname + location.search + yeni); } catch (e) { location.hash = yeni; } }
+}
+function kareOku() {
+  const m = /^#\/marka\/(.+)$/.exec(location.hash || '');
+  let k = '';
+  if (m) { try { k = K(decodeURIComponent(m[1])); } catch (e) { k = ''; } }
+  F.marka = M && M.markalar.some((x) => x.k === k) ? k : '';
+}
+
+/* ---------------------------------------------------- sonuç alanı */
+function sonucCiz() {
+  if (!SONUC) return;
+  SONUC.textContent = '';
+  let toplam = 0;
+  toplam += ozetCiz(SONUC);
+  toplam += metrikCiz(SONUC);
+  toplam += hakedisCiz(SONUC);
+  toplam += tlCiz(SONUC);
+  toplam += detayCiz(SONUC);
+  dipCiz(SONUC);
+  const sy = $('prSayac'); if (sy) sy.textContent = O.sayi(toplam) + ' satır gösteriliyor';
+}
+const markaAdi = (k) => { const m = M.markalar.find((x) => x.k === k); return m ? m.ad : k; };
+const kapsamMetni = () => (F.marka ? markaAdi(F.marka) : 'Tüm markalar');
+
+/** yüzde hücresi: çubuk + metin (Excel'deki veri çubuğu gibi) */
+function yuzdeEl(n, m) {
+  if (n === null || n === undefined || m === '') return el('span', { class: 'pr-bos', text: '—' });
+  const s = el('span', { class: 'pr-yuzde' }, el('i', { '--o': Math.max(0, Math.min(100, n * 100)) + '%' }), m || ('%' + O.sayi(n * 100, 0)));
+  return s;
+}
+function oranHucre(n, m) {
+  if (n === null || n === undefined || !m) return el('span', { class: 'pr-bos', text: '–' });
+  const sinif = n >= 0.999 ? 'tam' : n > 0 ? 'yari' : 'yok';
+  return el('span', { class: 'pr-oran ' + sinif, text: m });
+}
+const DURUM_ETIKET = { tuttu: 'Tuttu', tutmadi: 'Tutmadı', sayilmaz: 'Sayılmaz' };
+function durumEl(m) {
+  const s = P.durumSinifi(m);
+  if (!s) return el('span', { class: 'pr-bos', text: '–' });
+  return el('span', { class: 'pr-dr ' + s, title: m, text: DURUM_ETIKET[s] || m });
+}
+function lejantEl() {
+  const l = el('div', { class: 'pr-lejant', 'aria-label': 'Aylık durum açıklaması' });
+  ['tuttu', 'tutmadi', 'sayilmaz'].forEach((s) => l.append(el('span', { class: 'pr-dr ' + s, text: s === 'sayilmaz' ? 'Sayılmaz = HEDEFE SAYILMAZ' : DURUM_ETIKET[s] })));
+  return l;
+}
+
+/* ---- 01 · Prim Sistemleri (özet) */
+function ozetCiz(kok) {
+  const t = M.ozet; if (!t) return 0;
+  const satir = t.satirlar.filter((r) => uygun(t, r));
+  O.akisBaslik(kok, { no: '01', baslik: t.sayfa || 'Prim Sistemleri', aciklama: 'Her müdürün primi hak etme koşullarının özeti · ' + kapsamMetni() });
+  const k = O.kart(O.izgara(kok), { baslik: (F.marka ? markaAdi(F.marka) + ' · ' : '') + 'Müdür prim sistemleri', aciklama: satir.length + ' müdür satırı', sinif: 's12' });
+  const gorunen = t.sutunlar.map((s, i) => ({ s, i })).filter((x) => GIZLI_SUTUN.indexOf(K(x.s)) < 0);
+  const detayVar = M.detaySatir.length > 0;
+  const kap = el('div', { class: 'pr-tablo-kap' });
+  const tb = el('table', { class: 'pr-tablo', id: 'prOzetTablo' });
+  const hr = el('tr');
+  gorunen.forEach((x) => hr.append(el('th', { text: x.s })));
+  if (detayVar) hr.append(el('th', { text: 'Detay' }));
+  tb.append(el('thead', null, hr));
+  const govde = el('tbody');
+  if (!satir.length) govde.append(bosSatir(gorunen.length + (detayVar ? 1 : 0)));
+  satir.forEach((r) => {
+    const tr = el('tr', { 'data-mudur': r.mudurK });
+    gorunen.forEach((x) => {
+      const ks = K(x.s), v = r.h[x.i], n = r.n[x.i];
+      const td = el('td');
+      if (ks === 'NO') { td.className = 'no'; td.textContent = v; }
+      else if (n !== null && n !== undefined && /^%/.test(v)) { td.className = 'dar'; td.append(yuzdeEl(n, v)); }
+      else if (ks === 'MUDUR') { td.className = 'dar'; td.append(el('b', { text: v })); }
+      else if (ks.indexOf('KRITER') >= 0 || ks === 'NOT') { td.className = 'genis'; td.textContent = v || ''; if (!v) td.append(el('span', { class: 'pr-bos', text: '—' })); }
+      else { td.className = 'dar'; td.textContent = v || ''; if (!v) td.append(el('span', { class: 'pr-bos', text: '—' })); }
+      tr.append(td);
+    });
+    if (detayVar) {
+      const n = M.detaySay.get(r.mudurK) || 0;
+      const td = el('td', { class: 'dar' });
+      if (n) td.append(el('button', { class: 'pr-detay-btn', type: 'button', text: 'Detay (' + n + ') ›', on: { click: () => detayaGit(r.mudurK) } }));
+      tr.append(td);
+    }
+    govde.append(tr);
+  });
+  tb.append(govde); kap.append(tb); k.govde.append(kap);
+  return satir.length;
+}
+function bosSatir(n) {
+  const td = el('td', { colspan: String(n) });
+  O.bosDurum(td, { ikon: 'filtre', baslik: 'Bu seçimde kayıt yok', metin: suzgecAktif() ? 'Süzgeçleri değiştirin ya da temizleyin.' : '', kucuk: true });
+  return el('tr', null, td);
+}
+
+/* ---- 02 · Marka sayfaları (metrikler + aylık durum) */
+function metrikCiz(kok) {
+  const tablolar = M.marka.filter((t) => !F.marka || K(t.sayfa) === F.marka || t.satirlar.some((r) => r.markaK === F.marka));
+  if (!M.marka.length) return 0;
+  O.akisBaslik(kok, { no: '02', baslik: 'Metrikler ve aylık durum', aciklama: 'Marka sayfalarındaki hak ediş metrikleri, gerekçeleri, notları ve ay ay TUTTU / TUTMADI' });
+  if (!tablolar.length) {
+    const k = O.kart(O.izgara(kok), { baslik: markaAdi(F.marka), sinif: 's12' });
+    O.bosDurum(k.govde, { ikon: 'dosya', baslik: 'Bu marka için Excel\'de ayrı marka sayfası yok', metin: 'Özet satırı ve hak ediş oranı yukarıda / aşağıda gösteriliyor.', kucuk: true });
+    return 0;
+  }
+  let say = 0;
+  const iz = O.izgara(kok);
+  tablolar.forEach((t) => {
+    const satir = t.satirlar.filter((r) => uygun(t, r, { metrik: true, markaYok: K(t.sayfa) === F.marka }));
+    if (suzgecAktif() && !satir.length) return;
+    say += satir.length;
+    /* tüm satırlarda aynı olan sütunlar (Marka, Birim, Müdür) kart başlığına alınır */
+    const sabit = ['Marka', 'Birim', 'Müdür'].map((a) => ({ a, i: t.ix(a) })).filter((x) => x.i >= 0)
+      .filter((x) => new Set(t.satirlar.map((r) => K(r.h[x.i]))).size === 1);
+    const sabitI = sabit.map((x) => x.i);
+    const sag = lejantEl();
+    const k = O.kart(iz, { baslik: t.sayfa.trim(), aciklama: satir.length + ' / ' + t.satirlar.length + ' metrik', sinif: 's12', sag });
+    k.kart.setAttribute('data-sayfa', K(t.sayfa));
+    const bilgi = el('div', { class: 'pr-kart-bas' });
+    sabit.forEach((x) => { if (K(x.a) === 'MARKA') return; bilgi.append(el('span', null, x.a + ': ', el('b', { text: t.satirlar[0].h[x.i] }))); });
+    if (bilgi.childNodes.length) k.govde.append(bilgi);
+    /* sütun düzeni: No · Kriter (+ GEREKÇE) · eşik (2026 Hak Ediş Oranı) · Prim Dönemi · diğerleri · aylar · Not alt satırda */
+    const iNo = t.ix('No'), iKr = t.KS.findIndex((s) => s.indexOf('KRITER') >= 0), iGr = t.ix('GEREKÇE'), iEs = t.KS.findIndex((s) => s.indexOf('HAK EDIS ORANI') >= 0), iDn = t.ix('Prim Dönemi'), iNot = t.ix('Not');
+    const ayI = new Set(t.ayIdx.filter((i) => i >= 0));
+    const kullanilan = new Set([iNo, iKr, iGr, iEs, iDn, iNot].concat(sabitI).concat([...ayI]).filter((i) => i >= 0));
+    const diger = t.sutunlar.map((s, i) => i).filter((i) => !kullanilan.has(i) && GIZLI_SUTUN.indexOf(t.KS[i]) < 0);
+    const kap = el('div', { class: 'pr-tablo-kap' });
+    const tb = el('table', { class: 'pr-tablo pr-metrik' });
+    const hr = el('tr');
+    if (iNo >= 0) hr.append(el('th', { text: t.sutunlar[iNo] }));
+    if (iKr >= 0) hr.append(el('th', { text: t.sutunlar[iKr] + (iGr >= 0 ? ' / ' + t.sutunlar[iGr] : '') }));
+    else if (iGr >= 0) hr.append(el('th', { text: t.sutunlar[iGr] }));
+    if (iEs >= 0) hr.append(el('th', { text: t.sutunlar[iEs] }));
+    if (iDn >= 0) hr.append(el('th', { text: t.sutunlar[iDn] }));
+    diger.forEach((i) => hr.append(el('th', { text: t.sutunlar[i] })));
+    const ayKol = t.ayVar ? t.ayIdx.map((i, a) => ({ i, a })) : [];
+    ayKol.forEach((x) => hr.append(el('th', { class: 'ay', text: P.AYLAR_KISA[x.a], title: x.i >= 0 ? t.sutunlar[x.i] : P.AYLAR_UZUN[x.a] })));
+    tb.append(el('thead', null, hr));
+    const kolon = hr.childNodes.length;
+    const govde = el('tbody');
+    if (!satir.length) govde.append(bosSatir(kolon));
+    let sonGrup = null;
+    const grupluTablo = t.satirlar.some((x) => x.g);
+    satir.forEach((r) => {
+      if (grupluTablo && r.g !== sonGrup && (r.g || sonGrup !== null)) {
+        govde.append(el('tr', { class: 'pr-grup' + (r.g ? '' : ' yok') }, el('td', { colspan: String(kolon), text: r.g || 'Prim türü yazılmamış (Excel\'de bu satırın grup hücresi boş)' })));
+      }
+      sonGrup = r.g;
+      const notV = iNot >= 0 ? r.h[iNot] : '';
+      const tr = el('tr', { class: 'pr-satir' + (notV ? ' notlu' : '') });
+      if (iNo >= 0) tr.append(el('td', { class: 'no', text: r.h[iNo] }));
+      if (iKr >= 0 || iGr >= 0) {
+        const td = el('td', { class: 'kriter' });
+        if (iKr >= 0) td.append(el('b', { text: r.h[iKr] || '—' }));
+        if (iGr >= 0 && r.h[iGr]) td.append(el('span', { text: r.h[iGr] }));
+        tr.append(td);
+      }
+      if (iEs >= 0) tr.append(el('td', { class: 'esik', text: r.h[iEs] || '' }));
+      if (iDn >= 0) tr.append(el('td', { class: 'dar', text: r.h[iDn] || '' }));
+      diger.forEach((i) => tr.append(el('td', { class: 'genis', text: r.h[i] || '' })));
+      ayKol.forEach((x) => { const td = el('td', { class: 'ay' }); td.append(durumEl(x.i >= 0 ? r.h[x.i] : '')); tr.append(td); });
+      govde.append(tr);
+      /* not satırı tablo yana kaysa da görünen alanda kalır (yapışkan iç kutu) */
+      if (notV) govde.append(el('tr', { class: 'pr-not' }, el('td', { colspan: String(kolon), class: 'pr-uzun' }, el('div', null, el('i', { text: t.sutunlar[iNot] }), notV))));
+    });
+    tb.append(govde); kap.append(tb); k.govde.append(kap);
+    if (t.notlar && t.notlar.length) { const n = el('div', { class: 'pr-notlar' }); t.notlar.forEach((x) => n.append(el('p', { text: x }))); k.govde.append(n); }
+  });
+  if (!iz.childNodes.length) {
+    const k = O.kart(iz, { baslik: 'Metrikler', sinif: 's12' });
+    O.bosDurum(k.govde, { ikon: 'filtre', baslik: 'Bu seçimde metrik yok', metin: 'Süzgeçleri değiştirin ya da temizleyin.', kucuk: true });
+  }
+  return say;
+}
+
+/* ---- 03 · 2026 Hak Ediş (oran) */
+function hakedisCiz(kok) {
+  const t = M.hakedis; if (!t) return 0;
+  const satir = t.satirlar.filter((r) => uygun(t, r));
+  const iYil = t.KS.findIndex((s) => s.indexOf('YILLIK HAK EDIS') >= 0);
+  const iDeg = t.KS.findIndex((s) => s.indexOf('DEGERLENDIRILEN') >= 0);
+  O.akisBaslik(kok, { no: '03', baslik: t.sayfa || '2026 Hak Ediş', aciklama: 'Her ay hak edilen primin tam prime oranı (tam %100 · yarım %50 · hak etmedi %0). Boş ay hesaba katılmaz; yıllık oran doldurulan ayların ortalamasıdır.' });
+  const iz = O.izgara(kok);
+  /* grafik: yıllık hak ediş oranı (Excel'deki Grafik sayfasıyla aynı ölçü), yalnız verisi olan müdürler.
+     Excel'de "Grafik" sayfası gizliyse (ya da yoksa) grafik çizilmez: sayfa olduğu gibi aktarılır. */
+  if (P.grafikGorunur(VERI)) grafikCiz(iz, t, satir, iYil, iDeg);
+  /* tablo */
+  const kt = O.kart(iz, { baslik: 'Aylık hak ediş oranları', aciklama: satir.length + ' müdür', sinif: 's12' });
+  kt.govde.append(oranTablosu(t, satir, false));
+  return satir.length;
+}
+function grafikCiz(iz, t, satir, iYil, iDeg) {
+  const veri = satir.filter((r) => iYil >= 0 && r.n[iYil] !== null && r.n[iYil] !== undefined && (iDeg < 0 || (+r.n[iDeg] || 0) > 0))
+    .map((r) => ({ ad: adBasliklari(r.mudur) + (r.marka ? ' · ' + r.marka : ''), deger: +r.n[iYil], renk: +r.n[iYil] >= 0.999 ? 'var(--ok-600)' : +r.n[iYil] >= 0.5 ? 'var(--pir-500)' : 'var(--ht-600)' }))
+    .sort((a, b) => b.deger - a.deger || O.trKarsilastir(a.ad, b.ad));
+  const kg = O.kart(iz, { baslik: '2026 prim hak ediş oranı', aciklama: 'Müdür başına; doldurulan aylarda hak edilen primin tam prime oranı (ortalama). %100 = her ay tam prim aldı.', sinif: 's12' });
+  kg.kart.id = 'prGrafik';
+  if (veri.length) {
+    O.cubukListe(kg.govde, veri, { max: 1, bicim: (v) => '%' + O.sayi(v * 100, 0), adGenislik: '260px' });
+    O.lejant(kg.govde, [{ ad: '%100 (tam prim)', renk: 'var(--ok-600)' }, { ad: '%50 – %99', renk: 'var(--pir-500)' }, { ad: '%50 altı', renk: 'var(--ht-600)' }]);
+    const bos = satir.length - veri.length;
+    if (bos > 0) O.kartNot(kg.govde, bos + ' müdür için henüz aylık oran girilmemiş; grafikte gösterilmez.');
+  } else O.bosDurum(kg.govde, { ikon: 'performans', baslik: 'Bu seçimde girilmiş hak ediş oranı yok', kucuk: true });
+}
+function oranTablosu(t, satir, tl) {
+  const gorunen = t.sutunlar.map((s, i) => ({ s, i })).filter((x) => GIZLI_SUTUN.indexOf(K(x.s)) < 0);
+  const kap = el('div', { class: 'pr-tablo-kap' });
+  const tb = el('table', { class: 'pr-tablo' });
+  const hr = el('tr');
+  gorunen.forEach((x) => hr.append(el('th', { class: P.ayBasligi(x.s) ? 'ay' : null, text: x.s })));
+  tb.append(el('thead', null, hr));
+  const govde = el('tbody');
+  if (!satir.length) govde.append(bosSatir(gorunen.length));
+  satir.forEach((r) => {
+    const tr = el('tr');
+    gorunen.forEach((x) => {
+      const ks = K(x.s), v = r.h[x.i], n = r.n[x.i];
+      const td = el('td', { class: 'dar' });
+      if (P.ayBasligi(x.s)) { td.className = 'ay'; td.append(tl ? (v ? el('span', { text: v }) : el('span', { class: 'pr-bos', text: '–' })) : oranHucre(n, v)); }
+      else if (ks.indexOf('YILLIK HAK EDIS') >= 0) td.append(yuzdeEl(v ? n : null, v));
+      else if (ks === 'MUDUR') td.append(el('b', { text: v }));
+      else td.textContent = v || '';
+      tr.append(td);
+    });
+    govde.append(tr);
+  });
+  tb.append(govde); kap.append(tb);
+  return kap;
+}
+
+/* ---- 04 · 2026 Hak Ediş TL */
+function tlCiz(kok) {
+  const t = M.hakedisTL; if (!t) return 0;
+  const satir = t.satirlar.filter((r) => uygun(t, r));
+  const dolu = t.satirlar.some((r) => r.ayN.some((x) => x !== null && x !== undefined && x !== 0) || r.aylar.some((x) => x));
+  O.akisBaslik(kok, { no: '04', baslik: t.sayfa || '2026 Hak Ediş TL', aciklama: 'Ay ay hak edilen prim tutarları' });
+  const k = O.kart(O.izgara(kok), { baslik: 'Hak ediş tutarları', aciklama: dolu ? satir.length + ' müdür' : 'Excel\'deki sayfada henüz tutar yok', sinif: 's12' });
+  if (!dolu) { O.bosDurum(k.govde, { ikon: 'dosya', baslik: 'Henüz tutar girilmedi', metin: '"' + t.sayfa + '" sayfası doldurulup yeniden aktarıldığında burada görünür.', kucuk: true }); return 0; }
+  k.govde.append(oranTablosu(t, satir, true));
+  return satir.length;
+}
+
+/* ---- 05 · Detaylar */
+function detayCiz(kok) {
+  const t = M.detay; if (!t) return 0;
+  const satir = M.detaySatir.filter((r) => uygun(t, r));
+  const sec = el('div', { id: 'prDetay' }); kok.append(sec);
+  O.akisBaslik(sec, { no: '05', baslik: t.sayfa || 'Detaylar', aciklama: 'Müdürlerin anlattığı ayrıntılar' });
+  const k = O.kart(O.izgara(sec), { baslik: 'Prim detayları', aciklama: M.detaySatir.length ? satir.length + ' kayıt' : 'Henüz detay yazılmadı', sinif: 's12' });
+  if (!M.detaySatir.length) { O.bosDurum(k.govde, { ikon: 'dosya', baslik: 'Henüz detay yazılmadı', metin: 'Excel\'deki "' + t.sayfa + '" sayfasına yazılan açıklamalar burada görünür.', kucuk: true }); return 0; }
+  const gorunen = t.sutunlar.map((s, i) => ({ s, i })).filter((x) => GIZLI_SUTUN.indexOf(K(x.s)) < 0);
+  const kap = el('div', { class: 'pr-tablo-kap' });
+  const tb = el('table', { class: 'pr-tablo' });
+  tb.append(el('thead', null, el('tr', null, gorunen.map((x) => el('th', { text: x.s })))));
+  const govde = el('tbody');
+  if (!satir.length) govde.append(bosSatir(gorunen.length));
+  satir.forEach((r) => govde.append(el('tr', null, gorunen.map((x) => el('td', { class: K(x.s) === 'ACIKLAMA' ? 'genis' : 'dar', text: r.h[x.i] || '' })))));
+  tb.append(govde); kap.append(tb); k.govde.append(kap);
+  return satir.length;
+}
+function detayaGit(mudurK) {
+  F.mudur = mudurK;
+  const s = $('prSec_mudur'); if (s) s.value = mudurK;
+  sonucCiz(); etkinCiz();
+  const d = $('prDetay'); if (d) d.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function dipCiz(kok) {
+  const parca = [];
+  if (VERI.gizli && VERI.gizli.length) parca.push('Excel\'de gizli olduğu için gösterilmeyen sayfalar: ' + VERI.gizli.join(', ') + '.');
+  if (VERI.atlanan && VERI.atlanan.length) parca.push('Tablo olmadığı için alınmayan sayfalar: ' + VERI.atlanan.join(', ') + '.');
+  parca.push('Excel\'deki biçimler (renkler, kutular) taşınmaz; yalnız hücre değerleri gösterilir. Güncellemek için Excel\'i düzenleyip "Excel\'den aktar" ile yeniden yükleyin.');
+  kok.append(el('p', { class: 'pr-dip', text: parca.join(' ') }));
+}
+
+/* ============================================================== EXCEL'DEN AKTAR */
+$('dosyaSec').addEventListener('change', async (ev) => {
+  const f = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (!f) return;
+  if (!YETKILI) { O.bildirim('Önce erişim listesini kaydedin.'); return; }
+  let model = null, json = '';
+  try {
+    O.bildirim('Excel okunuyor…');
+    model = await P.dosyaOku(f);
+    json = JSON.stringify(model);
+  } catch (e) {
+    pencere({ baslik: 'Excel okunamadı', govde: [el('p', { class: 'pr-hata', text: (e && e.message) || String(e) })], dugmeler: [{ metin: 'Kapat' }] });
+    return;
+  }
+  if (!P.modelGecerli(model)) {
+    pencere({ baslik: 'Bu dosyada prim tablosu bulunamadı', govde: [el('p', { text: 'Başlık satırında "Marka" ve "Müdür" sütunları olan bir sayfa (ör. "Prim Sistemleri" ya da marka sayfaları) bulunamadı. Doğru dosyayı seçtiğinizden emin olun.' })], dugmeler: [{ metin: 'Kapat' }] });
+    return;
+  }
+  const bayt = new TextEncoder().encode(json).length;
+  if (json.length > P.JSON_SINIR || bayt > 900000) {
+    pencere({ baslik: 'Dosya çok büyük', govde: [el('p', { text: 'Okunan veri ' + O.sayi(json.length) + ' karakter (' + O.sayi(bayt) + ' bayt); üst sınır ' + O.sayi(P.JSON_SINIR) + ' karakter / 900.000 bayt. Gereksiz sayfaları çıkarıp yeniden deneyin.' })], dugmeler: [{ metin: 'Kapat' }] });
+    return;
+  }
+  const TUR_ADI = { ozet: 'özet tablo', marka: 'marka sayfası', hakedis: 'aylık hak ediş oranları', hakedisTL: 'hak ediş tutarları (TL)', detay: 'detaylar' };
+  const liste = el('ul');
+  model.tablolar.forEach((t) => liste.append(el('li', null, el('b', { text: t.sayfa }), ' — ' + TUR_ADI[t.tur] + ' · ' + t.satirlar.length + (t.tur === 'marka' ? ' metrik' : ' satır') + (t.notlar.length ? ' · ' + t.notlar.length + ' not' : ''))));
+  const govde = [el('p', null, el('b', { text: f.name }), ' dosyasından okunan sayfalar:'), liste];
+  if (model.gizli && model.gizli.length) govde.push(el('p', { class: 'pr-dip', text: 'Excel\'de gizli olduğu için alınmayan sayfalar: ' + model.gizli.join(', ') }));
+  if (model.atlanan.length) govde.push(el('p', { class: 'pr-dip', text: 'Tablo olmadığı için alınmayan sayfalar: ' + model.atlanan.join(', ') }));
+  if (model.uyarilar.length) { const u = el('ul'); model.uyarilar.forEach((x) => u.append(el('li', { text: x }))); govde.push(el('div', { class: 'pr-bilgi uyari' }, el('b', { text: 'Dikkat' }), u)); }
+  if (VERI_META) govde.push(el('p', { class: 'pr-dip', text: 'Portaldaki mevcut veri (' + (VERI_META.dosya || 'önceki aktarım') + (tarihSaat(VERI_META.aktarim) ? ', ' + tarihSaat(VERI_META.aktarim) : '') + ') bununla değiştirilecek.' }));
+  pencere({
+    baslik: 'Excel\'den aktar · önizleme', govde,
+    dugmeler: [{ metin: 'Vazgeç' }, {
+      metin: 'Portala yükle', birincil: true, id: 'prYukle', fn: async (kapat, d) => {
+        d.disabled = true; d.textContent = 'Yükleniyor…';
+        try {
+          await setDoc(doc(db, 'primSistemleri', 'veri'), {
+            json, dosya: String(f.name || '').replace(/[<>]/g, '').slice(0, 200), aktaran: String(HESAP.ad || ''),
+            aktarim: serverTimestamp(), surum: P.MODEL_SURUM
+          });
+          kapat();
+          O.bildirim('Prim verisi güncellendi.');
+        } catch (e) {
+          d.disabled = false; d.textContent = 'Portala yükle';
+          O.bildirim(e && e.code === 'permission-denied' ? 'Kaydedilemedi: yetki yok (kural yayınlanmamış olabilir).' : 'Kaydedilemedi: ' + ((e && e.message) || e));
+        }
+      }
+    }]
+  });
+});
+
+/* ============================================================== PENCERE */
+function pencere({ baslik = '', govde = [], dugmeler = [], kapanirken = null } = {}) {
+  const perde = el('div', { class: 'pr-perde', role: 'dialog', 'aria-modal': 'true', 'aria-label': baslik });
+  const p = el('div', { class: 'pr-pencere' }, el('h2', { text: baslik }), ...govde);
+  const alt = el('div', { class: 'alt' });
+  const kapat = () => { perde.remove(); document.removeEventListener('keydown', esc); if (kapanirken) kapanirken(); };
+  const esc = (e) => { if (e.key === 'Escape') kapat(); };
+  document.addEventListener('keydown', esc);
+  dugmeler.forEach((d) => {
+    if (d.sol) { alt.append(el('span', { class: 'sol', id: d.id || null, text: d.metin })); return; }
+    const b = el('button', { class: 'btn' + (d.birincil ? ' btn-pirinc' : ''), type: 'button', id: d.id || null, text: d.metin });
+    b.addEventListener('click', () => (d.fn ? d.fn(kapat, b) : kapat()));
+    alt.append(b);
+  });
+  p.append(alt); perde.append(p);
+  perde.addEventListener('click', (e) => { if (e.target === perde) kapat(); });
+  document.body.append(perde);
+  const ilk = p.querySelector('.btn-pirinc') || p.querySelector('button'); if (ilk) ilk.focus();
+  return { perde, kapat };
+}
+
+/* ============================================================== ERİŞİM LİSTESİ (yalnız kurucu) */
+let HESAPLAR = null;
+async function hesaplariOku() {
+  if (HESAPLAR) return HESAPLAR;
+  const qs = await getDocs(collection(db, 'hesaplar'));
+  const l = [];
+  qs.forEach((d) => {
+    const x = d.data() || {}; const roller = Array.isArray(x.roller) ? x.roller : [];
+    if (x.aktif === false || !roller.some((r) => r !== 'calisan')) return;
+    l.push({ hid: d.id, ad: String(x.ad || ''), roller });
+  });
+  HESAPLAR = l.sort((a, b) => O.trKarsilastir(a.ad, b.ad));
+  return HESAPLAR;
+}
+/** ilk kurulum önerisi: siz + İK rolündekiler + onay zincirindeki İK Direktörü (Personel Talepleri › Onay Zinciri) */
+async function onerilenler(l) {
+  const s = new Set([HID]);
+  l.forEach((h) => { if (h.roller.indexOf('ik') >= 0) s.add(h.hid); });
+  try {
+    const z = await getDoc(doc(db, 'talepAyar', 'zincir'));
+    const pid = z.exists() && z.data().ikDirektor ? z.data().ikDirektor.pid : '';
+    if (pid) {
+      const ks = await getDocs(collection(db, 'talepKimlik'));
+      ks.forEach((d) => { if (d.data() && d.data().pid === pid && l.some((h) => h.hid === d.id)) s.add(d.id); });
+    }
+  } catch (e) { /* zincir yoksa öneri yalnız İK rolü */ }
+  return s;
+}
+async function erisimPenceresi() {
+  if (!KURUCU) return;
+  let l;
+  try { l = await hesaplariOku(); }
+  catch (e) { O.bildirim('Hesap listesi okunamadı: ' + ((e && e.message) || e)); return; }
+  const secili = ERISIM_VAR && Array.isArray(ERISIM.hidler) ? new Set(ERISIM.hidler) : await onerilenler(l);
+  secili.add(HID);
+  const rolMetni = (r) => r.filter((x) => x !== 'calisan').map((x) => ROL_ADI[x] || x).join(', ');
+  const secKap = el('div', { class: 'pr-kisiler', id: 'prErisimListe' });
+  const sayac = el('span');
+  const ara = el('input', { class: 'girdi', type: 'search', placeholder: 'Kişi ekle: ad yazın…', autocomplete: 'off', 'aria-label': 'Eklenecek kişiyi ara' });
+  const sonuc = el('div', { class: 'pr-kisiler', id: 'prErisimAra' });
+  function seciliCiz() {
+    secKap.textContent = '';
+    const liste = [...secili].map((h) => l.find((x) => x.hid === h) || { hid: h, ad: '(hesap bulunamadı / kapalı)', roller: [] })
+      .sort((a, b) => (a.hid === HID ? -1 : b.hid === HID ? 1 : O.trKarsilastir(a.ad, b.ad)));
+    liste.forEach((h) => {
+      const r = el('div', { class: 'pr-kisi', 'data-hid': h.hid }, el('div', null, el('b', { text: adBasliklari(h.ad) }), el('br'), el('small', { text: rolMetni(h.roller) || '—' })));
+      if (h.hid === HID) r.append(el('span', { class: 'kilitli', text: 'Siz · çıkarılamaz' }));
+      else r.append(el('button', { class: 'btn', type: 'button', text: 'Çıkar', on: { click: () => { secili.delete(h.hid); seciliCiz(); araCiz(); } } }));
+      secKap.append(r);
+    });
+    sayac.textContent = secili.size + ' kişi';
+  }
+  function araCiz() {
+    sonuc.textContent = '';
+    const q = O.aramaAnahtari(ara.value);
+    if (!q) return;
+    l.filter((h) => !secili.has(h.hid) && O.aramaAnahtari(h.ad).includes(q)).slice(0, 8).forEach((h) => {
+      sonuc.append(el('div', { class: 'pr-kisi' }, el('div', null, el('b', { text: adBasliklari(h.ad) }), el('br'), el('small', { text: rolMetni(h.roller) })),
+        el('button', { class: 'btn', type: 'button', text: 'Ekle', on: { click: () => { if (secili.size >= 10) { O.bildirim('En çok 10 kişi eklenebilir.'); return; } secili.add(h.hid); ara.value = ''; seciliCiz(); araCiz(); } } })));
+    });
+    if (!sonuc.childNodes.length) sonuc.append(el('p', { class: 'pr-dip', text: 'Eşleşen hesap yok (yalnız aktif yönetim hesapları listelenir).' }));
+  }
+  ara.addEventListener('input', araCiz);
+  seciliCiz();
+  pencere({
+    baslik: 'Bu sayfayı kimler görecek?',
+    govde: [
+      el('p', { html: 'Müdür Prim Sistemleri <b>yalnız bu listedeki kişilere</b> açıktır. Listede olmayan hiç kimse (İK ekibi ve direktörler dahil) sayfayı ve prim verisini göremez. Listeyi <b>yalnız siz</b> değiştirebilirsiniz.' }),
+      secKap, ara, sonuc
+    ],
+    dugmeler: [{ sol: true, metin: '' , id: 'prErisimSayac' }, { metin: 'Vazgeç' }, {
+      metin: 'Kaydet', birincil: true, id: 'prErisimKaydet', fn: async (kapat, d) => {
+        if (secili.size > 10) { O.bildirim('En çok 10 kişi seçilebilir; şu an ' + secili.size + ' kişi seçili.'); return; }
+        d.disabled = true; d.textContent = 'Kaydediliyor…';
+        try {
+          await setDoc(doc(db, 'primAyar', 'erisim'), { hidler: [...secili], guncelleme: serverTimestamp(), guncelleyen: String(HESAP.ad || '') });
+          kapat();
+          const ilk = !YETKILI;
+          await erisimOku();
+          O.bildirim('Erişim listesi kaydedildi (' + secili.size + ' kişi).');
+          if (ilk && YETKILI) veriBaslat();
+          ciz();
+        } catch (e) {
+          d.disabled = false; d.textContent = 'Kaydet';
+          O.bildirim(e && e.code === 'permission-denied' ? 'Kaydedilemedi: yetki yok (kural yayınlanmamış olabilir).' : 'Kaydedilemedi: ' + ((e && e.message) || e));
+        }
+      }
+    }]
+  });
+  const sy = $('prErisimSayac'); if (sy) { sy.textContent = ''; sy.append(sayac); }
+  ara.focus();   /* odak Kaydet'te olmasın: Enter ile istemeden kaydedilmesin */
+}
+
+/* ============================================================== BAŞLAT */
+function durumEkrani(baslik, metin) {
+  acilisGizle();
+  const kart = el('div', { class: 'durum-kart', role: 'alert' },
+    el('span', { class: 'amblem', role: 'img', 'aria-label': 'İnciroğlu Otomotiv İK amblemi' }),
+    el('div', { class: 'ust-etiket', text: 'İnciroğlu Otomotiv · Müdür Prim Sistemleri' }),
+    el('div', { class: 'durum-ikon hata', html: O.ikon('kilit') }), el('h2', { text: baslik }), el('p', { text: metin }));
+  kart.append(el('div', { class: 'durum-alt', text: AD + ' · ' + ROL_AD }));
+  document.body.append(el('div', { class: 'durum-ekran' }, kart));
+  window.__TEST_HAZIR = true;
+}
+function veriBaslat() {
+  if (veriAboneligi) return;
+  acilisMetni('Prim verisi yükleniyor…');
+  veriAboneligi = onSnapshot(doc(db, 'primSistemleri', 'veri'), (s) => {
+    VERI_HATA = null; VERI_HAZIR = true; VERI_BOZUK = false;
+    if (!s.exists()) { VERI = null; VERI_META = null; M = null; }
+    else {
+      const d = s.data() || {};
+      VERI_META = { dosya: d.dosya || '', aktaran: d.aktaran || '', aktarim: d.aktarim || null };
+      try { const m = JSON.parse(d.json || 'null'); if (P.modelGecerli(m)) { VERI = m; M = hazirla(m); } else { VERI = null; M = null; VERI_BOZUK = true; } }
+      catch (e) { VERI = null; M = null; VERI_BOZUK = true; }
+    }
+    if (M) { kareOku(); suzgecDuzelt(); }
+    ciz();
+  }, (e) => { VERI_HATA = e; VERI_HAZIR = true; ciz(); });
+}
+window.addEventListener('hashchange', () => { if (!M) return; const once = F.marka; kareOku(); if (once !== F.marka) { suzgecDuzelt(); ciz(); } });
+window.__prim = { F, model: () => VERI, hazir: () => M, ciz };
+
+if (ERISIM_HATA) durumEkrani('Bağlantı kurulamadı', 'Erişim bilgisi okunamadı. İnternet bağlantınızı kontrol edip sayfayı yenileyin.');
+else if (!YETKILI && !KURUCU) durumEkrani('Bu sayfa kısıtlı erişimlidir', 'Müdür Prim Sistemleri yalnız yetkilendirilmiş kişilere açıktır. Erişim gerekiyorsa İnsan Kaynakları ile görüşün.');
+else {
+  if (YETKILI) veriBaslat();
+  else { ciz(); erisimPenceresi(); }
+}
+</script>
+</body>
+</html>

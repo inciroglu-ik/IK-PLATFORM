@@ -121,12 +121,24 @@ service cloud.firestore {
       return request.resource.data.get('olusturan', '') != 'kurulum'
         || (resource != null && resource.data.get('olusturan', '') == 'kurulum');
     }
+    // Kurucu hesap: kurulum koduyla açılmış İK hesabı (Ajan Ofisi sahibi olabilecek ve prim erişim listesini yöneten hesap).
+    function kurucuHesap() {
+      return gecerli() && hesap().roller.hasAny(['ik'])
+        && (hesap().get('olusturan', '') == 'kurulum' || request.auth.uid == get(yol('kurulum', 'tek')).data.uid);
+    }
+    // PRİM KORUMASI (19.11.2026): Müdür Prim Sistemleri erişim listesindeki (primAyar/erisim) bir hesabın kaydını (rol, uid,
+    // aktivasyon kodu) ve oturum bağını yalnız kurucu hesap ya da kişinin kendisi değiştirebilir. Böylece İK rolündeki başka
+    // biri listedeki bir hesabı devralarak (uid / bağ değiştirerek ya da yeni kod üreterek) prim verisine erişemez.
+    function primListe() { return get(yol('primAyar', 'erisim')).data.hidler; }
+    function primKorumasi(h) {
+      return !exists(yol('primAyar', 'erisim')) || !(h in primListe()) || kurucuHesap() || (gecerli() && benimHid() == h);
+    }
     match /hesaplar/{h} {
       allow get: if ik() || (gecerli() && benimHid() == h);
       allow list: if ik();
-      allow create: if (ikHesapYazimi(h) && kurulumIsaretiKorunur() && sahipKorumasi(h)) || kurulumHesabi(h);
-      allow update: if (ikHesapYazimi(h) && kurulumIsaretiKorunur() && sahipKorumasi(h)) || aktivasyon(h);
-      allow delete: if ik() && sahipKorumasi(h);
+      allow create: if (ikHesapYazimi(h) && kurulumIsaretiKorunur() && sahipKorumasi(h) && primKorumasi(h)) || kurulumHesabi(h);
+      allow update: if (ikHesapYazimi(h) && kurulumIsaretiKorunur() && sahipKorumasi(h) && primKorumasi(h)) || aktivasyon(h);
+      allow delete: if ik() && sahipKorumasi(h) && primKorumasi(h);
     }
 
     // uidBag/{uid}: Firebase oturumu ↔ hesap bağı. Yalnız oturum sahibi, yalnız geçerli kodla kurar.
@@ -149,8 +161,9 @@ service cloud.firestore {
         && existsAfter(yol('hesaplar', request.resource.data.hid))
         && getAfter(yol('hesaplar', request.resource.data.hid)).data.uid == u
         && (kodlaBag(request.resource.data) || kurulumVar());
-      allow update: if ik() && sahipKorumasi(resource.data.hid) && sahipKorumasi(request.resource.data.hid);
-      allow delete: if ik() && sahipKorumasi(resource.data.hid);
+      allow update: if ik() && sahipKorumasi(resource.data.hid) && sahipKorumasi(request.resource.data.hid)
+        && primKorumasi(resource.data.hid) && primKorumasi(request.resource.data.hid);
+      allow delete: if ik() && sahipKorumasi(resource.data.hid) && primKorumasi(resource.data.hid);
     }
 
     // kurulum/tek: tek seferlik kurulum kaydı (yalnız süre içinde, doğru kodla, YALNIZ BİR KEZ oluşturulabilir).
@@ -172,7 +185,7 @@ service cloud.firestore {
         && request.resource.data.e == request.auth.token.email
         && getAfter(yol('uidBag', request.auth.uid)).data.hid == h
         && getAfter(yol('hesaplar', h)).data.uid == request.auth.uid;
-      allow delete: if ik();
+      allow delete: if ik() && primKorumasi(h);
     }
 
     // ============================================== İK + SATIŞ (satisVeri)
@@ -901,10 +914,7 @@ service cloud.firestore {
     function ofisSahibi() {
       return gecerli() && exists(yol('ajanOfisi', 'sahip')) && get(yol('ajanOfisi', 'sahip')).data.hid == benimHid();
     }
-    function ofisSahibiOlabilir() {
-      return gecerli() && hesap().roller.hasAny(['ik'])
-        && (hesap().get('olusturan', '') == 'kurulum' || request.auth.uid == get(yol('kurulum', 'tek')).data.uid);
-    }
+    function ofisSahibiOlabilir() { return kurucuHesap(); }
     match /ajanOfisi/sahip {
       allow get: if ofisSahibi();
       allow create: if ofisSahibiOlabilir()
@@ -919,6 +929,36 @@ service cloud.firestore {
     // eşleştiği için ajanOfisi/sahip belgesinin kendisi bu kurala GİRMEMELİ (aksi halde sahip kaydı değiştirilebilirdi).
     match /ajanOfisi/{belge}/{kol}/{alt=**} {
       allow read, write: if belge != 'sahip' && ofisSahibi();
+    }
+
+    // ====================================================== MÜDÜR PRİM SİSTEMLERİ (19.11.2026) — YALNIZ ERİŞİM LİSTESİ
+    // Sayfa: prim.html · Excel okuyucu: ortak/prim-sistemleri.js. Prim verisi bu depoda YOKTUR: İK'nın Excel'i tarayıcıda
+    // okunur ve primSistemleri/veri belgesine JSON metni olarak yazılır.
+    // KİŞİ BAZLI: rol yetmez. Yalnız primAyar/erisim.hidler listesindeki GEÇERLİ hesaplar okur ve günceller; İK ekibi ve
+    // direktörler dahil listede olmayan hiç kimse erişemez. Listeyi YALNIZ kurulum İK hesabı (Ajan Ofisi sahibi) yazar ve
+    // kendini listeden çıkaramaz. Liste ve veri silinemez. Listedeki hesapların kendisi de korunur (HESAP ALTYAPISI →
+    // primKorumasi: başka bir İK kullanıcısı bu hesapları devralamaz). primListe() orada tanımlıdır.
+    function primYetkili() { return gecerli() && exists(yol('primAyar', 'erisim')) && benimHid() in primListe(); }
+    function primErisimGecerli(y) {
+      return y.keys().hasOnly(['hidler', 'guncelleme', 'guncelleyen']) && y.keys().hasAll(['hidler', 'guncelleme', 'guncelleyen'])
+        && y.hidler is list && y.hidler.size() >= 1 && y.hidler.size() <= 10
+        && benimHid() in y.hidler
+        && y.guncelleme == request.time && y.guncelleyen == hesap().ad;
+    }
+    match /primAyar/{b} {
+      allow get: if b == 'erisim' && (primYetkili() || kurucuHesap());
+      allow create, update: if b == 'erisim' && kurucuHesap() && primErisimGecerli(request.resource.data);
+      allow list, delete: if false;
+    }
+    function primVeriGecerli(y) {
+      return y.keys().hasOnly(['json', 'dosya', 'aktaran', 'aktarim', 'surum']) && y.keys().hasAll(['json', 'dosya', 'aktaran', 'aktarim', 'surum'])
+        && y.json is string && y.json.size() > 0 && y.json.size() <= 600000
+        && metin(y.dosya, 200) && y.aktaran == hesap().ad && y.aktarim == request.time && y.surum is int;
+    }
+    match /primSistemleri/{b} {
+      allow get: if b == 'veri' && primYetkili();
+      allow create, update: if b == 'veri' && primYetkili() && primVeriGecerli(request.resource.data);
+      allow list, delete: if false;
     }
   }
 }
