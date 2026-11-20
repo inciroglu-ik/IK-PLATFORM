@@ -74,7 +74,34 @@ body.prim #kaputYuva:empty { display: none; }
 .pr-indir .btn { height: 34px; padding: 0 12px; font-size: 13px; }
 .pr-tablo tfoot td { background: var(--lac-50); font-size: 12px; font-weight: 700; color: var(--lac-700); border-top: 1px solid var(--lac-100); border-bottom: 0; }
 .pr-tablo.pr-kosul td.genis { min-width: 260px; max-width: 520px; }
-/* ---- maaş + prim kazancı */
+/* ---- marka sayfası: sağda kazanç kartı (geniş ekranda yan sütun, dar ekranda tabloların üstünde) */
+.pr-kz-yan { background: var(--yuzey-kart); border: 1px solid var(--cizgi-1); border-radius: 16px; box-shadow: var(--gol-1); padding: 14px 16px; display: grid; gap: 12px; align-content: start; }
+.pr-kz-yan-bas { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.pr-kz-yan-bas b { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--metin-3); }
+.pr-kz-kisi { display: grid; gap: 10px; padding: 12px; border-radius: 12px; background: var(--lac-50); border: 1px solid var(--lac-100); }
+.pr-kz-kisi.isaretli { background: var(--ht-50); border-color: var(--ht-200); box-shadow: inset 4px 0 0 var(--ht-600); }
+.pr-kz-ad { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+.pr-kz-ad b { font-size: 15px; font-weight: 700; color: var(--metin-marka); }
+.pr-kz-ad small { flex-basis: 100%; font-size: 12px; color: var(--metin-3); }
+.pr-kz-ciftler { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px 14px; }
+.pr-kz-ciftler div { display: grid; gap: 2px; }
+.pr-kz-ciftler dt { font-size: 11px; color: var(--metin-3); line-height: 1.3; }
+.pr-kz-ciftler dd { margin: 0; font-size: 14px; font-weight: 600; color: var(--metin-1); font-variant-numeric: tabular-nums; }
+.pr-kz-ciftler .vurgu dd { font-size: 17px; font-weight: 700; color: var(--metin-marka); }
+@media (min-width: 1600px) {
+  body.prim { --icerik-max: 1760px; }
+  .pr-ana.yanli { grid-template-columns: minmax(0, 1fr) 286px; align-items: start; }
+  .pr-ana.yanli > * { grid-column: 1; }
+  .pr-ana.yanli > .pr-kz-yan { grid-column: 2; grid-row: 1 / span 8; position: sticky; top: 12px; }
+  .pr-ana.yanli > .pr-kz-yan .pr-kz-ciftler { grid-template-columns: 1fr; }
+}/* ---- Excel görselleri */
+.pr-resimler { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; }
+.pr-resim { margin: 0; border: 1px solid var(--cizgi-1); border-radius: 12px; background: #fff; padding: 10px 12px 12px; cursor: zoom-in; display: grid; gap: 8px; transition: border-color .15s, box-shadow .15s; }
+.pr-resim:hover, .pr-resim:focus-visible { border-color: var(--pir-300); box-shadow: var(--gol-1); outline: none; }
+.pr-resim figcaption { font-size: 12px; font-weight: 700; letter-spacing: .08em; color: var(--lac-700); }
+.pr-resim img { width: 100%; height: auto; display: block; border-radius: 6px; }
+.pr-pencere.genis { width: min(1200px, 100%); }
+.pr-resim-buyuk { width: 100%; height: auto; display: block; }/* ---- maaş + prim kazancı */
 .pr-gostergeler { display: flex; gap: 28px; flex-wrap: wrap; justify-content: flex-end; }
 .pr-tablo th.sag, .pr-tablo td.sag { text-align: right; }
 .pr-tablo td.sag { font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -295,7 +322,10 @@ function hazirla(m) {
         aylar: ayIdx.map((i) => (i >= 0 ? r.h[i] : '')), ayN: ayIdx.map((i) => (i >= 0 ? r.n[i] : null))
       };
     });
-    return Object.assign({}, t, { ti, KS, ix, ayIdx, satirlar, ayVar: ayIdx.some((i) => i >= 0) });
+    const mk = [...new Set(satirlar.map((r) => r.markaK).filter(Boolean))];
+    const markaK = t.tur === 'marka' && mk.length === 1 ? mk[0] : K(t.sayfa);
+    const markaAd = K(t.sayfa) === markaK ? t.sayfa.trim() : ((satirlar.find((r) => r.markaK === markaK) || {}).marka || t.sayfa.trim());
+    return Object.assign({}, t, { ti, KS, ix, ayIdx, satirlar, markaK, markaAd, ayVar: ayIdx.some((i) => i >= 0) });
   });
   /* birimi olmayan tablolarda (hak ediş, detay) birim: aynı müdür + marka, yoksa müdürün tek birimi */
   const birimMM = new Map(), birimM = new Map();
@@ -312,22 +342,22 @@ function hazirla(m) {
   const tur = (x) => tablolar.filter((t) => t.tur === x);
   const markaT = tur('marka');
   const sayfaAd = new Map();
-  markaT.forEach((t) => { const k = K(t.sayfa); if (k && !sayfaAd.has(k)) sayfaAd.set(k, t.sayfa.trim()); });
+  markaT.forEach((t) => { const k = t.markaK; if (k && !sayfaAd.has(k)) sayfaAd.set(k, t.markaAd); });
   const uyelik = (k) => { const o = ORTAK_MARKA[k]; const l = o ? o.map(K).filter((x) => sayfaAd.has(x)) : []; return l.length ? l : [k]; };
   /* marka sayfasının tek müdürü ve tek birimi */
   const sayfaBilgi = new Map();
   markaT.forEach((t) => {
     const md = new Set(t.satirlar.map((r) => r.mudurK).filter(Boolean)), br = new Set(t.satirlar.map((r) => K(r.birim)).filter(Boolean));
     const r0 = t.satirlar.find((r) => r.mudurK);
-    if (r0 && md.size === 1 && br.size === 1) sayfaBilgi.set(K(t.sayfa), { mudurK: r0.mudurK, mudurAd: r0.mudurAd, birimK: [...br][0], birim: r0.birim });
+    if (r0 && md.size === 1 && br.size === 1) sayfaBilgi.set(K(t.sayfa), { markaK: t.markaK, mudurK: r0.mudurK, mudurAd: r0.mudurAd, birimK: [...br][0], birim: r0.birim });
   });
   /* VEKÂLET: özet / hak ediş / detay satırındaki müdür, aynı marka ve aynı birimin marka sayfasındaki müdürden farklıysa sayfadaki
      müdür gösterilir ("vekâleten"); Excel'deki ad ipucunda kalır. (Kullanıcı 20.11: bir markaya vekâleten başka marka müdürü bakıyor;
      özet sayfasında eski ad formüller yüzünden ayrı yazıldı.) */
   tablolar.filter((t) => t.tur !== 'marka').forEach((t) => t.satirlar.forEach((r) => {
     for (const p of uyelik(r.markaK)) {
-      const b = sayfaBilgi.get(p);
-      if (b && r.mudurK && b.mudurK !== r.mudurK && r.birim && K(r.birim) === b.birimK) {
+      const b = [...sayfaBilgi.values()].find((x) => x.markaK === p && r.birim && x.birimK === K(r.birim));
+      if (b && r.mudurK && b.mudurK !== r.mudurK) {
         r.vekalet = true; r.mudurEski = r.mudurAd; r.mudurK = b.mudurK; r.mudurAd = b.mudurAd; break;
       }
     }
@@ -369,19 +399,36 @@ function hazirla(m) {
   const detay = tur('detay')[0] || null;
   const detaySatir = detay ? detay.satirlar.filter((r) => r.h.some((v, i) => v && i !== detay.ix('Müdür') && i !== detay.ix('Marka'))) : [];
   detaySatir.forEach((r) => { r.sayfalar = uyelik(r.markaK); });
+  /* SATIŞ / SERVİS AYRIMI (kullanıcı 20.11): bir markada birden çok birim (Satış, Servis, İdari…) varsa her birim ayrı sayfa
+     olur ("BMW Satış", "BMW Servis"); tek birimli marka bölünmez. Excel'deki marka sayfası (metrik tablosu) kendi birimine gider. */
+  const birimler = new Map();
+  const birimEkle = (p, b) => { if (!b) return; const m = birimler.get(p) || new Map(); if (!m.has(K(b))) m.set(K(b), b); birimler.set(p, m); };
+  const tabloBirimi = (t) => { const b = sayfaBilgi.get(K(t.sayfa)); return b ? b.birim : ((t.satirlar.find((r) => r.birim) || {}).birim || ''); };
+  genel.forEach((g) => g.sayfalar.forEach((p) => birimEkle(p, g.birim)));
+  markaT.forEach((t) => birimEkle(t.markaK, tabloBirimi(t)));
+  detaySatir.forEach((r) => r.sayfalar.forEach((p) => birimEkle(p, r.birim)));
+  const bolunmus = (p) => (birimler.get(p) || new Map()).size > 1;
+  const sayfaKey = (p, birim) => (bolunmus(p) ? p + '|' + (K(birim) || [...birimler.get(p).keys()][0]) : p);
+  genel.forEach((g) => { g.sayfalar = g.sayfalar.map((p) => sayfaKey(p, g.birim)); });
+  detaySatir.forEach((r) => { r.sayfalar = r.sayfalar.map((p) => sayfaKey(p, r.birim)); });
+  const tabloSayfa = (t) => sayfaKey(t.markaK, tabloBirimi(t));
+  const sayfaAdiYap = (k, yedek) => { const [p, bk] = k.split('|'); const ad = sayfaAd.get(p) || yedek || p; return bk ? ad + ' ' + ((birimler.get(p) || new Map()).get(bk) || bk) : ad; };
   /* marka sayfaları (sol liste) */
-  const adlar = new Map(sayfaAd);
-  genel.forEach((g) => g.sayfalar.forEach((p) => { if (!adlar.has(p)) adlar.set(p, g.ortak ? p : g.marka); }));
-  detaySatir.forEach((r) => r.sayfalar.forEach((p) => { if (!adlar.has(p)) adlar.set(p, r.marka); }));
+  const adlar = new Map();
+  markaT.forEach((t) => { const k = tabloSayfa(t); if (!adlar.has(k)) adlar.set(k, sayfaAdiYap(k)); });
+  genel.forEach((g) => g.sayfalar.forEach((p) => { if (!adlar.has(p)) adlar.set(p, sayfaAdiYap(p, g.ortak ? p : g.marka)); }));
+  detaySatir.forEach((r) => r.sayfalar.forEach((p) => { if (!adlar.has(p)) adlar.set(p, sayfaAdiYap(p, r.marka)); }));
   const sayfalar = [...adlar.entries()].map(([k, ad]) => {
     const satir = genel.filter((g) => g.sayfalar.indexOf(k) >= 0);
+    const tab = markaT.filter((t) => tabloSayfa(t) === k);
     const gor = new Set(), mudurler = [];
     satir.forEach((g) => { if (g.mudurK && !gor.has(g.mudurK)) { gor.add(g.mudurK); mudurler.push({ ad: g.mudurAd, birim: g.birim, vekalet: g.vekalet, eski: g.mudurEski }); } });
-    const b = sayfaBilgi.get(k); if (b && !gor.has(b.mudurK)) mudurler.push({ ad: b.mudurAd, birim: b.birim, vekalet: false, eski: '' });
+    const b = tab.length ? sayfaBilgi.get(K(tab[0].sayfa)) : null; if (b && !gor.has(b.mudurK)) mudurler.push({ ad: b.mudurAd, birim: b.birim, vekalet: false, eski: '' });
     const oranli = satir.filter((g) => g.yilM);
     const ortaklar = [...new Set(satir.filter((g) => g.ortak).map((g) => g.marka))];
-    return { k, ad, satir, mudurler, tablolar: markaT.filter((t) => K(t.sayfa) === k), oran: oranli.length === 1 ? oranli[0] : null, ortaklar, detay: detaySatir.filter((r) => r.sayfalar.indexOf(k) >= 0) };
+    return { k, ad, taban: k.split('|')[0], satir, mudurler, tablolar: tab, oran: oranli.length === 1 ? oranli[0] : null, ortaklar, detay: detaySatir.filter((r) => r.sayfalar.indexOf(k) >= 0) };
   }).sort((x, y) => O.trKarsilastir(x.ad, y.ad));
+
   return { kazanc: kazancHazirla(kazancHam, sayfalar), tablolar, sayfalar, genel, markaT, detay, detaySatir, oz, hk, ayAdlari: hk ? hk.ayIdx.map((i, a) => (i >= 0 ? hk.sutunlar[i] : P.AYLAR_KISA[a])) : P.AYLAR_KISA.slice() };
 }
 
@@ -498,7 +545,9 @@ function ciz() {
   if (F.sayfa === '@kazanc') { kazancBasCiz(ana); ana.append(kazancArac()); }
   else {
     if (s) markaBasCiz(ana, s);
-    else {
+    const kzYan = s ? kazancYanCiz(s) : null;
+    if (kzYan) { ana.append(kzYan); ana.classList.add('yanli'); }
+    if (!s) {
       const b = el('div', { class: 'pr-baslik' }, el('h1', { text: 'Genel bakış' }), el('span', { class: 'pr-baslik-alt', text: 'Tüm markalar' }));
       const km = kaynakMetni(); if (km) b.append(el('span', { class: 'pr-kaynak', text: km }));
       ana.append(b);
@@ -668,6 +717,7 @@ function oranCiz(kap) {
     govde.append(tr);
   });
   tb.append(govde); kp.append(tb); k.govde.append(kp);
+  if (!genel) resimKarti(kap, seciliSayfa());
   if (genel) O.kartNot(k.govde, 'Satıra tıklayınca markanın sayfası açılır. ' + (M.genel.some((g) => g.vekalet) ? '"vekâleten" işaretli satırlarda Excel özetindeki ad, marka sayfasındaki müdürle değiştirildi.' : ''));
   return { metin: satir.length + ' / ' + toplam + ' müdür satırı' };
 }
@@ -813,6 +863,7 @@ function kosulCiz(kap) {
     tb.append(govde); kp.append(tb); k.govde.append(kp);
     say += detay.length;
   }
+  if (s) resimKarti(kap, s);
   if (!kap.childNodes.length) { const k = O.kart(kap, { baslik: 'Hak ediş gereklilikleri' }); O.bosDurum(k.govde, { ikon: 'dosya', baslik: suzgecAktif() ? 'Bu seçimde gereklilik yok' : 'Bu marka için Excel\'de kriter yazılmamış', metin: suzgecAktif() ? 'Süzgeçleri değiştirin ya da temizleyin.' : '', kucuk: true }); }
   return { metin: say + ' satır' };
 }
@@ -822,6 +873,53 @@ function dipCiz(kok) {
   if (VERI.atlanan && VERI.atlanan.length) parca.push('Tablo olmadığı için alınmayan sayfalar: ' + VERI.atlanan.join(', ') + '.');
   parca.push('Excel\'deki biçimler (renkler, kutular) taşınmaz; yalnız hücre değerleri gösterilir. Güncellemek için Excel\'i düzenleyip "Excel\'den aktar" ile yeniden yükleyin.');
   kok.append(el('p', { class: 'pr-dip', text: parca.join(' ') }));
+}
+
+/* ---- Excel'deki görseller (ör. BMW Servis çeyreklik prim tabloları): marka sayfasında, tıklayınca büyür */
+function resimKarti(kap, s) {
+  const r = [];
+  (s ? s.tablolar : []).forEach((t) => (t.resimler || []).forEach((x) => { if (x && /^data:image\/(png|jpeg|gif);base64,[A-Za-z0-9+/=]+$/.test(String(x.veri || ''))) r.push({ t, x }); }));
+  if (!r.length) return;
+  const k = O.kart(kap, { baslik: 'Excel\'deki tablolar (görsel)', aciklama: 'Excel › ' + [...new Set(r.map((y) => y.t.sayfa.trim()))].join(', ') + ' sayfası · ' + r.length + ' görsel · büyütmek için tıklayın' });
+  k.kart.id = 'prResimler';
+  const g = el('div', { class: 'pr-resimler' });
+  r.forEach(({ x }) => {
+    const fig = el('figure', { class: 'pr-resim', tabindex: '0', role: 'button', 'aria-label': (x.etiket || 'Excel görseli') + ' · büyüt' },
+      x.etiket ? el('figcaption', { text: x.etiket }) : null, el('img', { src: x.veri, alt: x.etiket || 'Excel görseli' }));
+    const ac = () => { const p = pencere({ baslik: x.etiket || 'Excel görseli', govde: [el('img', { src: x.veri, alt: x.etiket || '', class: 'pr-resim-buyuk' })], dugmeler: [{ metin: 'Kapat' }] }); p.perde.querySelector('.pr-pencere').classList.add('genis'); };
+    fig.addEventListener('click', ac);
+    fig.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ac(); } });
+    g.append(fig);
+  });
+  k.govde.append(g);
+}/* ---- marka sayfasının sağında: o sayfanın müdür(ler)inin "Maaş + prim kazancı" satırı (kullanıcı 20.11) */
+function kazancYanCiz(s) {
+  if (!M.kazanc || !s) return null;
+  const z = M.kazanc;
+  const gor = new Set();
+  const kisiler = s.mudurler.map((m) => ({ m, r: z.satirlar.find((r) => r.adK === K(m.ad)) })).filter((x) => x.r && !gor.has(x.r.adK) && gor.add(x.r.adK));
+  if (!kisiler.length) return null;
+  const k = el('aside', { class: 'pr-kz-yan', id: 'prKzYan', 'aria-label': 'Maaş ve prim kazancı' });
+  k.append(el('div', { class: 'pr-kz-yan-bas' }, el('b', { text: 'Maaş + prim kazancı' }),
+    el('button', { class: 'pr-marka-baglanti', type: 'button', text: 'Tüm tablo ›', on: { click: () => sayfaAc('@kazanc') } })));
+  const iPrim = z.KS.findIndex((x) => x.indexOf('PRIM') >= 0 && x.indexOf('NET') >= 0 && x.indexOf('TOPLAM') < 0 && x.indexOf('MAAS') < 0);
+  kisiler.forEach(({ m, r }) => {
+    const kart = el('div', { class: 'pr-kz-kisi' + (r.isaret === 'kirmizi' ? ' isaretli' : ''), 'data-ad': r.adK });
+    const ad = el('div', { class: 'pr-kz-ad' }, el('b', { text: r.adGoster }));
+    if (m.vekalet) ad.append(el('span', { class: 'pr-vek', text: 'vekâleten' }));
+    if (r.unvan) ad.append(el('small', { text: r.unvan }));
+    kart.append(ad);
+    if (r.isaret === 'kirmizi') kart.append(el('span', { class: 'pr-isaret-cip', text: 'Excel\'de kırmızı işaretli' }));
+    const l = el('dl', { class: 'pr-kz-ciftler' });
+    z.sutunlar.forEach((baslik, i) => {
+      if (i === z.iAd || i === z.iUnvan) return;
+      l.append(el('div', { class: i === iPrim ? 'vurgu' : null }, el('dt', { text: O.trBaslik(baslik) }), el('dd', { text: r.h[i] || '—' })));
+    });
+    kart.append(l);
+    k.append(kart);
+  });
+  k.append(el('p', { class: 'pr-dip', style: { margin: 0 }, text: 'Excel › ' + z.sayfa + ' sayfası' }));
+  return k;
 }
 
 /* ============================================================== MAAŞ + PRİM KAZANCI (20.11.2026)
@@ -1051,7 +1149,11 @@ function kareOku() {
   let k = '';
   if (m && m[1]) { try { k = K(decodeURIComponent(m[1])); } catch (e) { k = ''; } }
   /* eski adres biçimi (#/marka/X) ve ortak ad (ARJ) da açılır */
-  if (k && M && !M.sayfalar.some((x) => x.k === k) && ORTAK_MARKA[k]) k = K(ORTAK_MARKA[k][0]);
+  if (k && M && !M.sayfalar.some((x) => x.k === k)) {
+    /* bölünmüş marka (BMW → BMW Satış) ya da ortak ad (ARJ → ALFA ROMEO) */
+    const ilk = M.sayfalar.find((x) => x.taban === k) || (ORTAK_MARKA[k] ? M.sayfalar.find((x) => x.taban === K(ORTAK_MARKA[k][0])) : null);
+    if (ilk) k = ilk.k;
+  }
   F.sayfa = M && M.sayfalar.some((x) => x.k === k) ? k : '';
   if (m && m[2]) F.sekme = m[2];
 }

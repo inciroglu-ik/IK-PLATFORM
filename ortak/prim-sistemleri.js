@@ -178,7 +178,7 @@ export function sayfaOku(XLSX, ws, sayfaAdi) {
     const h = [], n = [];
     bas.forEach((b) => {
       const d = deger(r, b.c); h.push(d.m); n.push(d.n);
-      if (d.hata) uyarilar.push(yer(r) + ', "' + b.ad + '" hücresinde Excel hatası var (boş gösterilir).');
+      if (d.hata && ['DETAY', 'ETIKET', 'GRAFIK DEGERI'].indexOf(katla(b.ad)) < 0) uyarilar.push(yer(r) + ', "' + b.ad + '" hücresinde Excel hatası var (boş gösterilir).');   /* gizli yardımcı sütunlardaki formül hatası uyarılmaz */
     });
     const satir = { g: grup, h, n };
     if (tur === 'kazanc' && kirmizi(hucre(r, mudurC))) satir.isaret = 'kirmizi';
@@ -203,7 +203,7 @@ export function sayfaOku(XLSX, ws, sayfaAdi) {
 
 /** Çalışma kitabı → model { surum, dosya, okunma, tablolar[], atlanan[] (görünür ama tablo değil), gizli[] (Excel'de gizli
     sayfalar: "olduğu gibi" kuralı gereği portala ALINMAZ), uyarilar[] } */
-export function kitapOku(XLSX, wb, dosya) {
+export function kitapOku(XLSX, wb, dosya, resimler) {
   const tablolar = [], atlanan = [], gizliler = [], uyarilar = [];
   (wb.SheetNames || []).forEach((ad) => {
     const ws = wb.Sheets[ad];
@@ -215,6 +215,15 @@ export function kitapOku(XLSX, wb, dosya) {
     if (!t.satirlar.length && t.tur !== 'detay' && t.tur !== 'hakedisTL') uyarilar.push(ad + ': tabloda satır yok.');
     t.uyarilar.forEach((u) => uyarilar.push(u));
     delete t.uyarilar;
+    /* sayfadaki resimler: etiket = resmin hemen üstündeki kısa metin (ör. Q1) */
+    const rl = resimler && resimler[ad];
+    if (rl && rl.length) {
+      t.resimler = rl.slice().sort((a, b) => a.satir - b.satir || a.sutun - b.sutun).map((r) => {
+        let etiket = '';
+        for (let rr = r.satir - 1; rr >= Math.max(0, r.satir - 3) && !etiket; rr--) for (let cc = r.sutun; cc <= r.sutun + 3 && !etiket; cc++) { const x = ws[XLSX.utils.encode_cell({ r: rr, c: cc })]; if (x && (x.t === 's' || x.t === 'str') && String(x.v).trim().length <= 30) etiket = String(x.v).trim(); }
+        return { etiket, veri: r.veri };
+      });
+    }
     tablolar.push(t);
   });
   return { surum: MODEL_SURUM, dosya: String(dosya || ''), okunma: new Date().toISOString(), tablolar, atlanan, gizli: gizliler, uyarilar };
@@ -245,7 +254,58 @@ export function modelBirlestir(eski, yeni) {
   return { model, primYeni, kazancYeni };
 }
 
-/** SheetJS'i bir kez yükler (cdnjs) */
+/* ------------------------------------------------------------ RESİMLER (Excel'deki görseller)
+   SheetJS (topluluk sürümü) resim okumaz: xlsx bir ZIP'tir; XLSX.CFB ile açılıp çizim (drawing) parçalarından her resmin
+   sayfası, sol üst hücresi ve dosyası bulunur. Büyük resimler tuvalde küçültülür (veri belgesi sınırı). → { sayfaAdi: [{ satir, sutun, veri }] } */
+const REL_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+function b64(u8) { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); }
+function resimYukle(src) { return new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error('resim')); i.src = src; }); }
+async function resimVerisi(u8, tip) {
+  const ham = 'data:' + tip + ';base64,' + b64(u8);
+  if (u8.length <= 90000) return ham;
+  try {
+    const img = await resimYukle(ham);
+    const en = Math.min(1400, img.naturalWidth || 1400), boy = Math.max(1, Math.round((img.naturalHeight || 400) * en / (img.naturalWidth || 1400)));
+    const cv = document.createElement('canvas'); cv.width = en; cv.height = boy;
+    const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, en, boy); cx.drawImage(img, 0, 0, en, boy);
+    return [ham, cv.toDataURL('image/png'), cv.toDataURL('image/jpeg', 0.86)].sort((a, b) => a.length - b.length)[0];
+  } catch (e) { return ham; }
+}
+export async function resimleriOku(XLSX, buf, sayfalar) {
+  const sonuc = {};
+  let zip = null;
+  try { zip = XLSX.CFB.read(new Uint8Array(buf), { type: 'array' }); } catch (e) { return sonuc; }
+  const icerik = (yol) => { let e = null; try { e = XLSX.CFB.find(zip, yol) || XLSX.CFB.find(zip, '/' + yol); } catch (x) { e = null; } return e && e.content ? (e.content instanceof Uint8Array ? e.content : new Uint8Array(e.content)) : null; };
+  const metin = (yol) => { const c = icerik(yol); return c ? new TextDecoder('utf-8').decode(c) : ''; };
+  const xml = (t) => new DOMParser().parseFromString(t || '<x/>', 'application/xml');
+  const coz = (taban, hedef) => { if (!hedef) return ''; if (hedef[0] === '/') return hedef.slice(1); const p = taban.split('/'); p.pop(); hedef.split('/').forEach((x) => { if (x === '..') p.pop(); else if (x && x !== '.') p.push(x); }); return p.join('/'); };
+  const relsYolu = (yol) => { const p = yol.split('/'); const ad = p.pop(); return p.concat(['_rels', ad + '.rels']).join('/'); };
+  const rels = (yol) => { const m = {}; Array.from(xml(metin(relsYolu(yol))).getElementsByTagName('Relationship')).forEach((r) => { m[r.getAttribute('Id')] = { hedef: r.getAttribute('Target') || '', tip: r.getAttribute('Type') || '' }; }); return m; };
+  const wbRels = rels('xl/workbook.xml');
+  for (const sh of Array.from(xml(metin('xl/workbook.xml')).getElementsByTagName('sheet'))) {
+    const ad = sh.getAttribute('name');
+    if (sayfalar.indexOf(ad) < 0) continue;
+    const rid = sh.getAttributeNS(REL_NS, 'id') || sh.getAttribute('r:id');
+    const sr = wbRels[rid]; if (!sr) continue;
+    const syol = coz('xl/workbook.xml', sr.hedef);
+    const cr = Object.values(rels(syol)).find((r) => /\/drawing$/.test(r.tip)); if (!cr) continue;
+    const cyol = coz(syol, cr.hedef), cRels = rels(cyol), c = xml(metin(cyol));
+    const capalar = Array.from(c.getElementsByTagNameNS('*', 'twoCellAnchor')).concat(Array.from(c.getElementsByTagNameNS('*', 'oneCellAnchor')));
+    for (const a of capalar) {
+      const from = a.getElementsByTagNameNS('*', 'from')[0], blip = a.getElementsByTagNameNS('*', 'blip')[0];
+      if (!from || !blip) continue;
+      const mr = cRels[blip.getAttributeNS(REL_NS, 'embed') || blip.getAttribute('r:embed')]; if (!mr) continue;
+      const myol = coz(cyol, mr.hedef);
+      if (!/\.(png|jpe?g|gif)$/i.test(myol)) continue;                       /* emf/wmf tarayıcıda gösterilemez */
+      const bayt = icerik(myol); if (!bayt) continue;
+      const tip = /\.jpe?g$/i.test(myol) ? 'image/jpeg' : /\.gif$/i.test(myol) ? 'image/gif' : 'image/png';
+      const sayi = (ad2) => +((from.getElementsByTagNameNS('*', ad2)[0] || {}).textContent || 0);
+      (sonuc[ad] = sonuc[ad] || []).push({ satir: sayi('row'), sutun: sayi('col'), veri: await resimVerisi(bayt, tip) });
+    }
+  }
+  return sonuc;
+}
+
 let XLSX_YUK = null;
 export function xlsxYukle() {
   if (window.XLSX) return Promise.resolve(window.XLSX);
@@ -268,5 +328,8 @@ export async function dosyaOku(dosya) {
   const XLSX = await xlsxYukle();
   const buf = dosya instanceof ArrayBuffer ? dosya : await dosya.arrayBuffer();
   const wb = XLSX.read(buf, { type: 'array', cellNF: true, cellText: true, cellDates: false, cellFormula: false, cellStyles: true });   /* cellStyles: gizli sütunlar (!cols) ve kırmızı satır işareti için */
-  return kitapOku(XLSX, wb, dosya && dosya.name ? dosya.name : '');
+  const gorunur = (wb.SheetNames || []).filter((ad) => !(wb.Workbook && wb.Workbook.Sheets && (wb.Workbook.Sheets.find((x) => x.name === ad) || {}).Hidden));
+  let resimler = {};
+  try { resimler = await resimleriOku(XLSX, buf, gorunur); } catch (e) { resimler = {}; }
+  return kitapOku(XLSX, wb, dosya && dosya.name ? dosya.name : '', resimler);
 }
