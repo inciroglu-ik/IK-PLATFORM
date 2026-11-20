@@ -165,6 +165,22 @@ th[aria-sort] .pr-sirala .ok { opacity: 1; color: var(--pir-300); }
 .pr-dr.kesintili { background: var(--uy-100); color: var(--uy-700); }
 td .pr-dr.bagimsiz, td .pr-dr.kesintili { min-width: 0; padding: 0 3px; font-size: 9.5px; letter-spacing: -.1px; }   /* dar ay sütununa sığsın (1366'da taşıyordu) */
 .pr-dr sup { font-size: 9px; margin-left: 1px; line-height: 0; }
+/* ay hücresine TL tutarı yazılmış (çeyrek sonunda gelen prim): tutar görünür, 0 = prim gelmedi */
+.pr-dr.tutar { background: var(--ok-100); color: var(--ok-700); font-variant-numeric: tabular-nums; }
+.pr-dr.tutar0 { background: var(--ht-100); color: var(--ht-700); font-variant-numeric: tabular-nums; }
+td .pr-dr.tutar, td .pr-dr.tutar0 { min-width: 0; padding: 0 4px; font-size: 10px; letter-spacing: -.2px; }
+.pr-tablo tfoot tr.pr-tutar-satir td { font-variant-numeric: tabular-nums; font-size: 11px; letter-spacing: -.2px; white-space: nowrap; }
+.pr-tablo tr.pr-gizlenen td { background: var(--n-25); color: var(--metin-3); font-size: 12px; padding-top: 7px; padding-bottom: 7px; }
+/* adımlı gruplar ("1 · …", "2 · …"): sayfanın üstünde okuma sırası; tıklayınca o adım süzülür */
+.pr-adimlar { list-style: none; margin: 0 0 12px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(176px, 1fr)); gap: 8px; }
+.pr-adim { width: 100%; height: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 9px; align-content: start; padding: 10px 12px; border: 1px solid var(--cizgi-1); border-radius: 12px; background: #fff; cursor: pointer; text-align: left; font: inherit; color: inherit; }
+.pr-adim:hover { border-color: var(--cizgi-3); background: var(--n-25); }
+.pr-adim:focus-visible { outline: none; box-shadow: var(--odak-halkasi); }
+.pr-adim[aria-pressed="true"] { border-color: var(--pir-500); background: var(--pir-50); }
+.pr-adim .no { grid-row: span 2; width: 24px; height: 24px; border-radius: 50%; background: var(--lac-800); color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+.pr-adim b { font-size: 13px; font-weight: 600; color: var(--metin-marka); line-height: 1.3; }
+.pr-adim small { font-size: 11.5px; color: var(--metin-2); line-height: 1.4; }
+.pr-adim small em { font-style: normal; color: var(--metin-3); }
 .pr-bos { color: var(--n-300); }
 .pr-yuzde { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .pr-yuzde i { position: relative; display: inline-block; width: 64px; height: 7px; border-radius: 999px; background: var(--n-100); overflow: hidden; }
@@ -253,7 +269,7 @@ td .pr-dr.bagimsiz, td .pr-dr.kesintili { min-width: 0; padding: 0 3px; font-siz
 import { doc, getDoc, getDocs, setDoc, collection, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { db, kimlikBaslat, cikisYap, adBasliklari } from "./ortak/kimlik.js";
 import * as O from "./pano/ortak.js";
-import * as P from "./ortak/prim-sistemleri.js";
+import * as P from "./ortak/prim-sistemleri.js?v=20261120b";   /* sürüm: yeni yardımcılar (durumTutar/durumSayim) önbellekteki eski modülle karışmasın */
 
 const $ = (id) => document.getElementById(id);
 const el = O.el;
@@ -440,7 +456,7 @@ function hazirla(m) {
 /* ============================================================== SÜZGEÇ */
 function durumUygun(r) {
   if (!F.durum) return true;
-  const d = r.aylar.map(P.durumSinifi).filter(Boolean);
+  const d = r.aylar.map(P.durumSayim).filter(Boolean);
   if (F.durum === 'tutmadi') return d.indexOf('tutmadi') >= 0;
   if (F.durum === 'sayilmaz') return d.indexOf('sayilmaz') >= 0;
   if (F.durum === 'tuttu') return d.length > 0 && d.every((x) => x === 'tuttu' || x === 'sayilmaz' || x === 'bagimsiz') && d.indexOf('tuttu') >= 0;
@@ -665,9 +681,11 @@ function oranHucre(n, m) {
   return el('span', { class: 'pr-oran ' + (n >= 0.999 ? 'tam' : n > 0 ? 'yari' : 'yok'), text: m });
 }
 const DURUM_ETIKET = { tuttu: 'Tuttu', tutmadi: 'Tutmadı', sayilmaz: 'Sayılmaz', bagimsiz: 'Bağımsız', kesintili: 'Kesintili' };
+const tlMetni = (n) => (+n || 0).toLocaleString('tr-TR', { maximumFractionDigits: 0 });
 function durumEl(m) {
   const s = P.durumSinifi(m);
   if (!s) return el('span', { class: 'pr-bos', text: '–' });
+  if (s === 'tutar' || s === 'tutar0') return el('span', { class: 'pr-dr ' + s, title: m + (s === 'tutar0' ? ' · prim gelmedi' : ''), text: tlMetni(P.durumTutar(m)) });
   const d = el('span', { class: 'pr-dr ' + s, title: m, text: DURUM_ETIKET[s] || m });
   if (P.durumAyrintili(m)) d.append(el('sup', { text: '*' }));   /* Excel'deki ifade ayrıntılı ("%110 ÜZERİ TUTTU"); tam metin ipucunda */
   return d;
@@ -680,8 +698,32 @@ function lejantEl(satirlar) {
   ['tuttu', 'tutmadi', 'sayilmaz'].forEach((s) => l.append(el('span', { class: 'pr-dr ' + s, text: s === 'sayilmaz' ? 'Sayılmaz = HEDEFE SAYILMAZ' : DURUM_ETIKET[s] })));
   if (var_('bagimsiz')) l.append(el('span', { class: 'pr-dr bagimsiz', title: 'Hedefe bağlı değil; tutan / değerlendirilen sayımına girmez', text: 'Bağımsız = HEDEF BAĞIMSIZ' }));
   if (var_('kesintili')) l.append(el('span', { class: 'pr-dr kesintili', title: 'Prim kesintili hak edildi; tutan / değerlendirilen sayımına girmez', text: 'Kesintili = KESİNTİLİ HAK EDİŞ' }));
+  if (var_('tutar') || var_('tutar0')) l.append(el('span', { class: 'pr-dr tutar', title: 'Excel\'de ay hücresine TL tutarı yazılmış; sayımda prim geldi = tuttu', text: 'Rakam = gelen prim (TL)' }));
+  if (var_('tutar0')) l.append(el('span', { class: 'pr-dr tutar0', title: 'Sayımda tutmadı sayılır', text: '0 = prim gelmedi' }));
   if (ay.some(P.durumAyrintili)) l.append(el('span', { class: 'pr-lejant-not', text: '* Excel\'de ayrıntılı yazılmış; tam metin için üzerine gelin' }));
   return l;
+}
+/* ADIMLI GRUPLAR (20.11, PSA Servis): grup hücreleri "1 · Başlık — açıklama" biçimindeyse (en az 2 adım, hepsi numaralı) sayfanın
+   üstünde okuma sırası şeridi çizilir; adıma tıklamak o grubu süzer (tekrar tıklamak kaldırır). Başka sayfalarda hiçbir şey değişmez. */
+const ADIM_RE = /^\s*(\d{1,2})\s*[·.)\-–]\s*(.+)$/;
+function adimlar(t) {
+  const gr = [];
+  t.satirlar.forEach((r) => { if (r.g && !gr.some((x) => x.g === r.g)) gr.push({ g: r.g, n: 0 }); const x = gr.find((y) => y.g === r.g); if (x) x.n++; });
+  if (gr.length < 2 || !gr.every((x) => ADIM_RE.test(x.g))) return null;
+  return gr.map((x) => { const m = ADIM_RE.exec(x.g); const [bas, ...ac] = m[2].split(/\s+[—–]\s+/); return { g: x.g, no: m[1], bas: bas.trim(), ac: ac.join(' — ').trim(), n: x.n }; });
+}
+function adimSeridi(t) {
+  const a = F.sayfa ? adimlar(t) : null;
+  if (!a) return null;
+  const ol = el('ol', { class: 'pr-adimlar', 'aria-label': 'Okuma sırası' });
+  a.forEach((x) => {
+    const secili = F.grup === K(x.g);
+    const b = el('button', { class: 'pr-adim', type: 'button', 'aria-pressed': String(secili), title: secili ? 'Süzgeci kaldır' : 'Yalnız bu adımı göster' },
+      el('span', { class: 'no', text: x.no }), el('b', { text: x.bas }), el('small', null, x.ac ? x.ac + ' ' : '', el('em', { text: '· ' + x.n + ' satır' })));
+    b.addEventListener('click', () => { F.grup = secili ? '' : K(x.g); ciz(); });
+    ol.append(el('li', null, b));
+  });
+  return ol;
 }
 function bosSatir(n, metin) {
   const td = el('td', { colspan: String(n) });
@@ -745,13 +787,19 @@ function durumCiz(kap) {
   }
   let say = 0, top = 0;
   tablolar.forEach((t) => {
-    const satir = t.satirlar.filter((r) => metrikUygun(t, r));
+    /* tabloda ay ay sonuç yazılmış satır varsa, hiç sonucu olmayan satırlar (yalnız kural) burada tek satırla özetlenir;
+       tamamı "Hak ediş gereklilikleri" sekmesinde (20.11, PSA Servis: 20 kural + 3 gelen prim satırı) */
+    const veriVar = t.satirlar.some((r) => r.aylar.some(Boolean));
+    const uyan = t.satirlar.filter((r) => metrikUygun(t, r));
+    const satir = veriVar ? uyan.filter((r) => r.aylar.some(Boolean)) : uyan;
+    const gizlenen = uyan.length - satir.length;
     top += t.satirlar.length;
-    if (suzgecAktif() && !satir.length && !F.sayfa) return;
+    if (suzgecAktif() && !uyan.length && !F.sayfa) return;
     say += satir.length;
     const c = metrikSutun(t);
-    const k = O.kart(kap, { baslik: F.sayfa ? 'Tuttu / Tutmadı' : t.sayfa.trim(), aciklama: (F.sayfa ? '' : sayfaMudurAdi(t) + ' · ') + satir.length + ' / ' + t.satirlar.length + ' metrik', sag: lejantEl(t.satirlar) });
+    const k = O.kart(kap, { baslik: F.sayfa ? 'Tuttu / Tutmadı' : t.sayfa.trim(), aciklama: (F.sayfa ? '' : sayfaMudurAdi(t) + ' · ') + satir.length + ' / ' + t.satirlar.length + ' metrik' + (gizlenen ? ' · ' + gizlenen + ' kuralda ay ay sonuç yok' : ''), sag: lejantEl(t.satirlar) });
     k.kart.setAttribute('data-sayfa', K(t.sayfa));
+    const sr = adimSeridi(t); if (sr) k.govde.append(sr);
     const kp = el('div', { class: 'pr-tablo-kap' });
     const tb = el('table', { class: 'pr-tablo pr-metrik' });
     const hr = el('tr');
@@ -762,7 +810,7 @@ function durumCiz(kap) {
     tb.append(el('thead', null, hr));
     const kolon = hr.childNodes.length;
     const govde = el('tbody');
-    if (!satir.length) govde.append(bosSatir(kolon));
+    if (!satir.length && !gizlenen) govde.append(bosSatir(kolon));
     grupluSatirlar(t, satir, kolon, govde, (r) => {
       const tr = el('tr', { class: 'pr-satir' });
       if (c.no >= 0) tr.append(el('td', { class: 'no', text: r.h[c.no] }));
@@ -771,17 +819,30 @@ function durumCiz(kap) {
       r.aylar.forEach((m) => tr.append(el('td', { class: 'ay' }, durumEl(m))));
       return tr;
     });
+    if (gizlenen) govde.append(el('tr', { class: 'pr-gizlenen' }, el('td', { colspan: String(kolon), text: gizlenen + ' kuralda Excel\'de ay ay sonuç yazılmamış; bu kurallar burada listelenmiyor, tamamı "Hak ediş gereklilikleri" sekmesinde.' })));
     tb.append(govde);
-    /* ay başına özet: tutan / değerlendirilen (HEDEFE SAYILMAZ paydaya girmez) */
+    /* ay başına özet: tutan / değerlendirilen (HEDEFE SAYILMAZ paydaya girmez; TL tutarı: geldi = tuttu, 0 = tutmadı) */
     if (satir.length && t.ayVar) {
       const ft = el('tr', { class: 'pr-ozet-satir' });
       ft.append(el('td', { colspan: String(kolon - 12), text: 'Tutan / değerlendirilen' }));
       for (let a = 0; a < 12; a++) {
-        const d = satir.map((r) => P.durumSinifi(r.aylar[a])).filter((x) => x === 'tuttu' || x === 'tutmadi');
+        const d = satir.map((r) => P.durumSayim(r.aylar[a])).filter((x) => x === 'tuttu' || x === 'tutmadi');
         const tut = d.filter((x) => x === 'tuttu').length;
         ft.append(el('td', { class: 'ay', text: d.length ? tut + '/' + d.length : '' }));
       }
-      tb.append(el('tfoot', null, ft));
+      const foot = el('tfoot', null, ft);
+      /* ay hücrelerinde TL tutarı varsa ay toplamı ve yıl toplamı */
+      const tl = (m) => P.durumTutar(m);
+      if (satir.some((r) => r.aylar.some((m) => tl(m) !== null))) {
+        const top_ = new Array(12).fill(null);
+        satir.forEach((r) => r.aylar.forEach((m, a) => { const v = tl(m); if (v !== null) top_[a] = (top_[a] || 0) + v; }));
+        const yil = top_.reduce((x, v) => x + (v || 0), 0);
+        const ts = el('tr', { class: 'pr-ozet-satir pr-tutar-satir' });
+        ts.append(el('td', { colspan: String(kolon - 12), text: 'Toplam gelen prim (TL) · yıl: ' + tlMetni(yil) }));
+        top_.forEach((v) => ts.append(el('td', { class: 'ay', text: v === null ? '' : tlMetni(v) })));
+        foot.append(ts);
+      }
+      tb.append(foot);
     }
     kp.append(tb); k.govde.append(kp);
   });
@@ -836,6 +897,7 @@ function kosulCiz(kap) {
     const c = metrikSutun(t);
     const k = O.kart(kap, { baslik: F.sayfa ? 'Metrik gereklilikleri' : t.sayfa.trim(), aciklama: (F.sayfa ? 'Excel › ' + t.sayfa.trim() + ' sayfası · ' : sayfaMudurAdi(t) + ' · ') + satir.length + ' / ' + t.satirlar.length + ' metrik' });
     k.kart.setAttribute('data-sayfa', K(t.sayfa));
+    const sr = adimSeridi(t); if (sr) k.govde.append(sr);
     const kp = el('div', { class: 'pr-tablo-kap' });
     const tb = el('table', { class: 'pr-tablo pr-kosul' });
     const hr = el('tr');

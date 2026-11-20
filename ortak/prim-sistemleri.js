@@ -48,6 +48,8 @@ export function ayBasligi(ad) {
 export function durumSinifi(m) {
   const k = katla(m);
   if (!k) return '';
+  const tl = durumTutar(m);
+  if (tl !== null) return tl > 0 ? 'tutar' : 'tutar0';
   if (k === 'TUTTU') return 'tuttu';
   if (k === 'TUTMADI') return 'tutmadi';
   if (k.indexOf('SAYILMAZ') >= 0) return 'sayilmaz';
@@ -58,6 +60,17 @@ export function durumSinifi(m) {
   if (k.indexOf('KESINTILI') >= 0) return 'kesintili';
   return 'diger';
 }
+/** Ay hücresinde TL tutarı yazılmışsa sayısı ("45.000 TL", "₺45.000", "0 TL" → 45000 / 0), değilse null.
+ *  Çeyrek sonunda dağıtıcıdan gelen prim tutarı gibi (20.11): durum sınıfı 'tutar' (>0) ya da 'tutar0' (0) olur;
+ *  sayımda prim geldi = tuttu, gelmedi (0) = tutmadı sayılır. TL / ₺ işareti olmayan sayı tutar sayılmaz. */
+export function durumTutar(m) {
+  const k = katla(m).replace(/\s+/g, '');
+  if (!/TL|₺/.test(k)) return null;
+  const x = /^₺?(\d{1,3}(?:\.\d{3})+|\d+)(?:,(\d{1,2}))?(?:TL|₺)?$/.exec(k);
+  return x ? +(x[1].replace(/\./g, '') + (x[2] ? '.' + x[2] : '')) : null;
+}
+/** Sayımda kullanılan sınıf: tutar → tuttu (prim geldi), tutar0 → tutmadi (prim gelmedi) */
+export function durumSayim(m) { const s = durumSinifi(m); return s === 'tutar' ? 'tuttu' : s === 'tutar0' ? 'tutmadi' : s; }
 /** Durum metni sınıfın yalın yazımından farklı mı ("%110 ÜZERİ TUTTU" gibi) — ekranda * ile işaretlenir, tam metin ipucunda */
 export function durumAyrintili(m) {
   const k = katla(m), s = durumSinifi(m);
