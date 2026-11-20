@@ -42,14 +42,27 @@ export function ayBasligi(ad) {
   return null;
 }
 
-/** Aylık durum metni → 'tuttu' | 'tutmadi' | 'sayilmaz' | 'diger' | '' */
+/** Aylık durum metni → 'tuttu' | 'tutmadi' | 'sayilmaz' | 'bagimsiz' | 'kesintili' | 'diger' | ''
+ *  Yöneticiler ayrıntılı da yazabiliyor (20.11 BMW Satış): "%110 ÜZERİ TUTTU" ve "KESİNTİSİZ HAKKEDİŞ SAĞLANDI." → tuttu,
+ *  "HEDEF BAĞIMSIZ" → bagimsiz (hedefe bağlı değil; HEDEFE SAYILMAZ gibi paydaya girmez), "KESİNTİLİ HAKKEDİŞ" → kesintili. */
 export function durumSinifi(m) {
   const k = katla(m);
   if (!k) return '';
   if (k === 'TUTTU') return 'tuttu';
   if (k === 'TUTMADI') return 'tutmadi';
   if (k.indexOf('SAYILMAZ') >= 0) return 'sayilmaz';
+  if (/(^|[^A-Z])TUTMADI([^A-Z]|$)/.test(k)) return 'tutmadi';
+  if (/(^|[^A-Z])TUTTU([^A-Z]|$)/.test(k)) return 'tuttu';
+  if (k.indexOf('BAGIMSIZ') >= 0) return 'bagimsiz';
+  if (k.indexOf('KESINTISIZ') >= 0) return 'tuttu';
+  if (k.indexOf('KESINTILI') >= 0) return 'kesintili';
   return 'diger';
+}
+/** Durum metni sınıfın yalın yazımından farklı mı ("%110 ÜZERİ TUTTU" gibi) — ekranda * ile işaretlenir, tam metin ipucunda */
+export function durumAyrintili(m) {
+  const k = katla(m), s = durumSinifi(m);
+  const yalin = { tuttu: ['TUTTU'], tutmadi: ['TUTMADI'], sayilmaz: ['HEDEFE SAYILMAZ', 'SAYILMAZ'], bagimsiz: ['HEDEF BAGIMSIZ'], kesintili: ['KESINTILI HAKKEDIS', 'KESINTILI HAK EDIS'] }[s];
+  return !!yalin && yalin.indexOf(k) < 0;
 }
 
 const trSayi = (n, f = 2) => (+n).toLocaleString('tr-TR', { maximumFractionDigits: f });

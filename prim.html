@@ -160,6 +160,11 @@ th[aria-sort] .pr-sirala .ok { opacity: 1; color: var(--pir-300); }
 .pr-dr.tutmadi { background: var(--ht-100); color: var(--ht-700); }
 .pr-dr.sayilmaz { background: var(--n-150); color: var(--metin-2); }
 .pr-dr.diger { background: var(--uy-100); color: var(--uy-700); }
+.pr-dr.bagimsiz { background: transparent; color: var(--metin-2); box-shadow: inset 0 0 0 1px var(--cizgi-3); }
+.pr-lejant-not { font-size: 11px; color: var(--metin-2); }
+.pr-dr.kesintili { background: var(--uy-100); color: var(--uy-700); }
+td .pr-dr.bagimsiz, td .pr-dr.kesintili { min-width: 0; padding: 0 3px; font-size: 9.5px; letter-spacing: -.1px; }   /* dar ay sütununa sığsın (1366'da taşıyordu) */
+.pr-dr sup { font-size: 9px; margin-left: 1px; line-height: 0; }
 .pr-bos { color: var(--n-300); }
 .pr-yuzde { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .pr-yuzde i { position: relative; display: inline-block; width: 64px; height: 7px; border-radius: 999px; background: var(--n-100); overflow: hidden; }
@@ -438,7 +443,7 @@ function durumUygun(r) {
   const d = r.aylar.map(P.durumSinifi).filter(Boolean);
   if (F.durum === 'tutmadi') return d.indexOf('tutmadi') >= 0;
   if (F.durum === 'sayilmaz') return d.indexOf('sayilmaz') >= 0;
-  if (F.durum === 'tuttu') return d.length > 0 && d.every((x) => x === 'tuttu' || x === 'sayilmaz') && d.indexOf('tuttu') >= 0;
+  if (F.durum === 'tuttu') return d.length > 0 && d.every((x) => x === 'tuttu' || x === 'sayilmaz' || x === 'bagimsiz') && d.indexOf('tuttu') >= 0;
   return true;
 }
 const aramaVar = () => !!F.ara.trim();
@@ -659,15 +664,23 @@ function oranHucre(n, m) {
   if (n === null || n === undefined || !m) return el('span', { class: 'pr-bos', text: '–' });
   return el('span', { class: 'pr-oran ' + (n >= 0.999 ? 'tam' : n > 0 ? 'yari' : 'yok'), text: m });
 }
-const DURUM_ETIKET = { tuttu: 'Tuttu', tutmadi: 'Tutmadı', sayilmaz: 'Sayılmaz' };
+const DURUM_ETIKET = { tuttu: 'Tuttu', tutmadi: 'Tutmadı', sayilmaz: 'Sayılmaz', bagimsiz: 'Bağımsız', kesintili: 'Kesintili' };
 function durumEl(m) {
   const s = P.durumSinifi(m);
   if (!s) return el('span', { class: 'pr-bos', text: '–' });
-  return el('span', { class: 'pr-dr ' + s, title: m, text: DURUM_ETIKET[s] || m });
+  const d = el('span', { class: 'pr-dr ' + s, title: m, text: DURUM_ETIKET[s] || m });
+  if (P.durumAyrintili(m)) d.append(el('sup', { text: '*' }));   /* Excel'deki ifade ayrıntılı ("%110 ÜZERİ TUTTU"); tam metin ipucunda */
+  return d;
 }
-function lejantEl() {
+/* tablodaki satırlarda geçen ek durumlar (Bağımsız, Kesintili, * ayrıntılı ifade) yalnız varsa açıklanır */
+function lejantEl(satirlar) {
   const l = el('div', { class: 'pr-lejant', 'aria-label': 'Aylık durum açıklaması' });
+  const ay = (satirlar || []).flatMap((r) => r.aylar).filter(Boolean);
+  const var_ = (s) => ay.some((m) => P.durumSinifi(m) === s);
   ['tuttu', 'tutmadi', 'sayilmaz'].forEach((s) => l.append(el('span', { class: 'pr-dr ' + s, text: s === 'sayilmaz' ? 'Sayılmaz = HEDEFE SAYILMAZ' : DURUM_ETIKET[s] })));
+  if (var_('bagimsiz')) l.append(el('span', { class: 'pr-dr bagimsiz', title: 'Hedefe bağlı değil; tutan / değerlendirilen sayımına girmez', text: 'Bağımsız = HEDEF BAĞIMSIZ' }));
+  if (var_('kesintili')) l.append(el('span', { class: 'pr-dr kesintili', title: 'Prim kesintili hak edildi; tutan / değerlendirilen sayımına girmez', text: 'Kesintili = KESİNTİLİ HAK EDİŞ' }));
+  if (ay.some(P.durumAyrintili)) l.append(el('span', { class: 'pr-lejant-not', text: '* Excel\'de ayrıntılı yazılmış; tam metin için üzerine gelin' }));
   return l;
 }
 function bosSatir(n, metin) {
@@ -737,7 +750,7 @@ function durumCiz(kap) {
     if (suzgecAktif() && !satir.length && !F.sayfa) return;
     say += satir.length;
     const c = metrikSutun(t);
-    const k = O.kart(kap, { baslik: F.sayfa ? 'Tuttu / Tutmadı' : t.sayfa.trim(), aciklama: (F.sayfa ? '' : sayfaMudurAdi(t) + ' · ') + satir.length + ' / ' + t.satirlar.length + ' metrik', sag: lejantEl() });
+    const k = O.kart(kap, { baslik: F.sayfa ? 'Tuttu / Tutmadı' : t.sayfa.trim(), aciklama: (F.sayfa ? '' : sayfaMudurAdi(t) + ' · ') + satir.length + ' / ' + t.satirlar.length + ' metrik', sag: lejantEl(t.satirlar) });
     k.kart.setAttribute('data-sayfa', K(t.sayfa));
     const kp = el('div', { class: 'pr-tablo-kap' });
     const tb = el('table', { class: 'pr-tablo pr-metrik' });
