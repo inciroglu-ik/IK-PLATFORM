@@ -12,6 +12,8 @@
        hakedisTL  : aynısı, sayfa adında "TL" geçer                               → "2026 Hak Ediş TL"
        detay      : Konu + Açıklama                                               → "Detaylar"
        kazanc     : Adı Soyadı + Maaş + Prim (Müdür sütunu yok)                    → maaş + prim kazanç tablosu (ayrı dosya olabilir)
+       aylikPrim  : Adı Soyadı + tam ay adları (OCAK … EKİM), Müdür sütunu yok     → kişi bazında aylık net prim tutarları ("PRİM AY BAZLI")
+                    (maaş sütunu bu tabloda ALINMAZ: yalnız ad, unvan, aylar ve prim toplamı)
      TC Kimlik No sütunu HİÇBİR tabloda okunmaz; kazanç tablosunda Excel'de gizli sütunlar da alınmaz.
      Başlık satırında "Müdür" olmayan sayfalar (Grafik, Listeler…) atlanır.
    • Satır = "Müdür" hücresi dolu satır. Başlığın solundaki sütun (ör. A: "DİSTRİBÜTÖR PRİMLERİ", "İÇ PRİM") satırın
@@ -122,6 +124,8 @@ export function tcBasligi(ad) {
 export function sayfaTuru(sayfaAdi, basliklar) {
   const k = basliklar.map(katla);
   if (k.indexOf('MUDUR') < 0 && k.some((x) => AD_SOYAD.indexOf(x) >= 0)) {
+    /* 21.11: kişi × ay prim tablosu (OCAK … EKİM sütunları) — maaş sütunu olsa da kazanç tablosu DEĞİL; onun yerine geçmez */
+    if (basliklar.map(ayBasligi).filter((a) => a && a.uzun).length >= 6) return 'aylikPrim';
     return k.some((x) => x.indexOf('MAAS') >= 0) && k.some((x) => x.indexOf('PRIM') >= 0) ? 'kazanc' : null;
   }
   if (k.indexOf('MUDUR') < 0) return null;
@@ -153,8 +157,12 @@ export function sayfaOku(XLSX, ws, sayfaAdi) {
   /* TC sütunu hiçbir zaman alınmaz; kazanç tablosunda Excel'de gizli sütunlar da alınmaz (olduğu gibi) */
   const tcAtlanan = bas.filter((b) => tcBasligi(b.ad)).map((b) => b.ad);
   const gizliKol = (c) => !!(ws['!cols'] && ws['!cols'][c] && ws['!cols'][c].hidden);
-  const gizliSutun = tur === 'kazanc' ? bas.filter((b) => !tcBasligi(b.ad) && gizliKol(b.c)).map((b) => b.ad) : [];
-  bas = bas.filter((b) => !tcBasligi(b.ad) && !(tur === 'kazanc' && gizliKol(b.c)));
+  const kisiTablo = tur === 'kazanc' || tur === 'aylikPrim';
+  const gizliSutun = kisiTablo ? bas.filter((b) => !tcBasligi(b.ad) && gizliKol(b.c)).map((b) => b.ad) : [];
+  /* aylık prim tablosunda maaş sütunu alınmaz (gerekmiyor; maaş yalnız kazanç tablosunda) */
+  const maasAtla = (b) => tur === 'aylikPrim' && katla(b.ad).indexOf('MAAS') >= 0;
+  const maasAtlandi = bas.some(maasAtla);
+  bas = bas.filter((b) => !tcBasligi(b.ad) && !(kisiTablo && gizliKol(b.c)) && !maasAtla(b));
   if (!bas.length) return null;
   const ilkC = bas[0].c, sonC = bas[bas.length - 1].c;
   const anahtar = bas.find((b) => anahtarBaslik(katla(b.ad)));
@@ -196,7 +204,7 @@ export function sayfaOku(XLSX, ws, sayfaAdi) {
       /* tablonun içinde ya da hemen altında: numarası / metni olup müdürü yazılmamış satır alınmaz, uyarılır */
       const metin = dolu.filter((c) => c.t === 's' || c.t === 'str').length;
       const numara = dolu.some((c) => c.t === 'n');
-      if (satirlar.length && (metin >= 2 || (numara && dolu.length >= 2)) && r <= sonVeri + 3) uyarilar.push(yer(r) + ': ' + (tur === 'kazanc' ? 'ad soyad' : 'müdür adı') + ' yazılmamış, satır alınmadı.');
+      if (satirlar.length && (metin >= 2 || (numara && dolu.length >= 2)) && r <= sonVeri + 3) uyarilar.push(yer(r) + ': ' + (kisiTablo ? 'ad soyad' : 'müdür adı') + ' yazılmamış, satır alınmadı.');
       continue;
     }
     bosSeri = 0;
@@ -224,6 +232,7 @@ export function sayfaOku(XLSX, ws, sayfaAdi) {
   const t = { sayfa: sayfaAdi, tur, baslik: ust[0] || '', aciklama: ust[1] || '', sutunlar: bas.map((b) => b.ad), satirlar, notlar, uyarilar };
   if (tcAtlanan.length) t.tcAtlandi = true;                       /* yalnız işaret: değerleri hiç okunmadı */
   if (gizliSutun.length) t.gizliSutun = gizliSutun;
+  if (maasAtlandi) t.maasAtlandi = true;                         /* yalnız işaret: aylık prim tablosunda maaş okunmadı */
   return t;
 }
 
@@ -260,24 +269,27 @@ export function grafikGorunur(m) { return !!(m && Array.isArray(m.atlanan) && m.
 export const PRIM_TURLERI = ['ozet', 'marka', 'hakedis', 'hakedisTL', 'detay'];
 const primVar = (m) => !!(m && Array.isArray(m.tablolar) && m.tablolar.some((t) => (t.tur === 'ozet' || t.tur === 'marka') && Array.isArray(t.satirlar) && t.satirlar.length));
 const kazancVar = (m) => !!(m && Array.isArray(m.tablolar) && m.tablolar.some((t) => t.tur === 'kazanc' && Array.isArray(t.satirlar) && t.satirlar.length));
-/** Modelin kullanılabilir olup olmadığı (prim tabloları ya da kazanç tablosu) */
+const aylikVar = (m) => !!(m && Array.isArray(m.tablolar) && m.tablolar.some((t) => t.tur === 'aylikPrim' && Array.isArray(t.satirlar) && t.satirlar.length));
+/** Modelin kullanılabilir olup olmadığı (prim tabloları, kazanç tablosu ya da aylık prim tablosu) */
 export function modelGecerli(m) {
-  return !!(m && m.surum === MODEL_SURUM && Array.isArray(m.tablolar) && (primVar(m) || kazancVar(m)));
+  return !!(m && m.surum === MODEL_SURUM && Array.isArray(m.tablolar) && (primVar(m) || kazancVar(m) || aylikVar(m)));
 }
 /** Yeni okunan dosyayı portaldaki veriyle birleştirir: prim çalışma kitabı yalnız prim kısmını, kazanç (maaş + prim) dosyası
-    yalnız kazanç kısmını değiştirir; diğer kısım korunur. → { model, primYeni, kazancYeni } */
+    yalnız kazanç kısmını, aylık prim dosyası ("PRİM AY BAZLI") yalnız aylık prim kısmını değiştirir; diğerleri korunur.
+    → { model, primYeni, kazancYeni, aylikYeni } */
 export function modelBirlestir(eski, yeni) {
-  const primYeni = primVar(yeni), kazancYeni = kazancVar(yeni);
+  const primYeni = primVar(yeni), kazancYeni = kazancVar(yeni), aylikYeni = aylikVar(yeni);
   const e = eski && Array.isArray(eski.tablolar) ? eski : null;
   const kaynak = (m, tur) => (m && m.kaynaklar && m.kaynaklar[tur]) || (m && tur === 'prim' && primVar(m) ? { dosya: m.dosya || '', okunma: m.okunma || '' } : null);
-  const ePrim = e ? e.tablolar.filter((t) => PRIM_TURLERI.indexOf(t.tur) >= 0) : [], eKaz = e ? e.tablolar.filter((t) => t.tur === 'kazanc') : [];
+  const kisim = (m, tur) => (m ? m.tablolar.filter((t) => (tur === 'prim' ? PRIM_TURLERI.indexOf(t.tur) >= 0 : t.tur === tur)) : []);
+  const kay = { dosya: yeni.dosya, okunma: yeni.okunma };
   const model = {
     surum: MODEL_SURUM, dosya: yeni.dosya, okunma: yeni.okunma,
-    tablolar: (primYeni ? yeni.tablolar.filter((t) => PRIM_TURLERI.indexOf(t.tur) >= 0) : ePrim).concat(kazancYeni ? yeni.tablolar.filter((t) => t.tur === 'kazanc') : eKaz),
+    tablolar: kisim(primYeni ? yeni : e, 'prim').concat(kisim(kazancYeni ? yeni : e, 'kazanc'), kisim(aylikYeni ? yeni : e, 'aylikPrim')),
     atlanan: primYeni ? yeni.atlanan : (e && e.atlanan) || [], gizli: primYeni ? yeni.gizli : (e && e.gizli) || [], uyarilar: primYeni ? yeni.uyarilar : (e && e.uyarilar) || [],
-    kaynaklar: { prim: primYeni ? { dosya: yeni.dosya, okunma: yeni.okunma } : kaynak(e, 'prim'), kazanc: kazancYeni ? { dosya: yeni.dosya, okunma: yeni.okunma } : kaynak(e, 'kazanc') }
+    kaynaklar: { prim: primYeni ? kay : kaynak(e, 'prim'), kazanc: kazancYeni ? kay : kaynak(e, 'kazanc'), aylik: aylikYeni ? kay : kaynak(e, 'aylik') }
   };
-  return { model, primYeni, kazancYeni };
+  return { model, primYeni, kazancYeni, aylikYeni };
 }
 
 /* ------------------------------------------------------------ RESİMLER (Excel'deki görseller)
