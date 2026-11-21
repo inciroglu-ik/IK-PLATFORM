@@ -151,7 +151,7 @@ body{font-family:var(--font);background:var(--page);color:var(--ink);overflow:hi
     <div class="sp"></div>
     <a class="vnt" id="vnt" href="#" target="_blank" rel="noopener">↗ Yeni sekmede aç</a>
   </div>
-  <div class="vframe"><div class="vspin" id="vspin"><i></i></div><iframe id="frame" title="Pano"></iframe></div>
+  <div class="vframe"><div class="vspin" id="vspin"><i></i></div><iframe id="frame" title="Pano" allow="fullscreen" allowfullscreen></iframe></div>
 </div>
 
 <script>
@@ -177,6 +177,9 @@ var PANOLAR={
     svg:'<rect x="5" y="3.5" width="14" height="17.5" rx="2"/><path d="M9 3.5h6v2.5H9z"/><polyline points="8.5 12.5 10.5 14.5 15.5 9.5"/><line x1="8.5" y1="17.5" x2="15.5" y2="17.5"/>'},
   oryantasyon: {ad:'Oryantasyon Formları', tag:'Uyum Süreci', url:'https://inciroglu-ik.github.io/IK-PLATFORM/oryantasyon.html', aciklama:'Unvanlara göre oryantasyon formları; inceleme, düzenleme ve öneriler.',
     svg:'<path d="M4 6.5h9M4 11.5h9M4 16.5h6"/><circle cx="17.5" cy="15.5" r="3.5"/><path d="m16 15.5 1.1 1.1 2-2.2"/><path d="M15.5 6.5h4.5"/>'},
+  /* Organizasyon Şeması (21.11.2026): tüm yönetim rolleri görür, yalnız İK yükler. Şema dosyası Firestore'da (orgSemasi/guncel), depoda YOK. */
+  orgsema: {ad:'Organizasyon Şeması', tag:'Kurumsal Yapı', url:'https://inciroglu-ik.github.io/IK-PLATFORM/org-sema.html', aciklama:'Güncel organizasyon şeması: yönetim, direktörlükler, müdürlükler ve ekipler, sayfa sayfa.',
+    svg:'<rect x="9" y="3" width="6" height="5" rx="1"/><rect x="3" y="16" width="6" height="5" rx="1"/><rect x="15" y="16" width="6" height="5" rx="1"/><path d="M12 8v6M6 16v-2h12v2"/>'},
   mr:      {ad:'MR',             tag:'Personel',       url:'https://inciroglu-ik.github.io/IK-PLATFORM/mr.html', aciklama:'Aktif çalışan listesi ve işten ayrılan personel takibi.',
     svg:'<rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/>'},
   iksistem:{ad:'İK Sistemi',     tag:'Personel Yönetimi', url:'https://inciroglu-ik.github.io/IK-PLATFORM/ik.html', aciklama:'Çalışan özlük kartları, izin, puantaj, raporlar — tek sistem (Kolay İK benzeri, gelişmekte).',
@@ -193,12 +196,12 @@ var PANOLAR={
    ROL -> GÖRÜNEN KUTUCUKLAR
    ============================================================ */
 var ROL_KUTU={
-  ik:           ['ikdash','satis','servis','yetenek','isealim','talep','pozisyon','ayrilis','oryantasyon','mr'],   /* İK Sistemi portalda GÖSTERİLMEZ — ayrı link (ik.html) olarak erişilir */
-  direktor:     ['ikdash','satis','servis','yetenek','isealim','talep','pozisyon','ayrilis','oryantasyon','mr'],   /* Direktör: İK Sistemi YOK. Ayrılış anketleri: yalnız İK + direktör (12.11.2026) */
-  satis_mudur:  ['satis','yetenek','isealim','talep','pozisyon','oryantasyon','mr'],                     /* Satış müdürü: servis YOK, İK Sistemi YOK */
-  servis_mudur: ['servis','yetenek','isealim','talep','pozisyon','oryantasyon','mr'],                    /* Servis müdürü: satış YOK, İK Sistemi YOK */
-  idari_mudur:  ['ikdash','yetenek','isealim','talep','pozisyon','oryantasyon','mr']                     /* İdari müdür: İK Sistemi YOK */
-};                                                                       /* Oryantasyon formları: tüm yönetim rolleri (13.11.2026) · Personel talepleri + açık pozisyonlar: tüm yönetim rolleri (16.11.2026) */
+  ik:           ['ikdash','satis','servis','yetenek','isealim','talep','pozisyon','ayrilis','oryantasyon','orgsema','mr'],   /* İK Sistemi portalda GÖSTERİLMEZ — ayrı link (ik.html) olarak erişilir */
+  direktor:     ['ikdash','satis','servis','yetenek','isealim','talep','pozisyon','ayrilis','oryantasyon','orgsema','mr'],   /* Direktör: İK Sistemi YOK. Ayrılış anketleri: yalnız İK + direktör (12.11.2026) */
+  satis_mudur:  ['satis','yetenek','isealim','talep','pozisyon','oryantasyon','orgsema','mr'],                     /* Satış müdürü: servis YOK, İK Sistemi YOK */
+  servis_mudur: ['servis','yetenek','isealim','talep','pozisyon','oryantasyon','orgsema','mr'],                    /* Servis müdürü: satış YOK, İK Sistemi YOK */
+  idari_mudur:  ['ikdash','yetenek','isealim','talep','pozisyon','oryantasyon','orgsema','mr']                     /* İdari müdür: İK Sistemi YOK */
+};                                                                       /* Oryantasyon formları: tüm yönetim rolleri (13.11.2026) · Personel talepleri + açık pozisyonlar: tüm yönetim rolleri (16.11.2026) · Organizasyon şeması: tüm yönetim rolleri (21.11.2026) */
 var ROL_ETIKET={ik:'İK / Tam Yetki',direktor:'Direktör',satis_mudur:'Satış Müdürü',servis_mudur:'Servis Müdürü',idari_mudur:'İdari Müdür'};
 
 /* ============================================================
@@ -207,7 +210,7 @@ var ROL_ETIKET={ik:'İK / Tam Yetki',direktor:'Direktör',satis_mudur:'Satış M
    rolleri ve kapsamı (marka vb.) İK'nın yönettiği 'hesaplar' kaydından gelir. Verilere erişim
    Firestore güvenlik kurallarıyla sunucuda denetlenir.
    ============================================================ */
-ROL_KUTU.mudur=['yetenek','isealim','talep','pozisyon','oryantasyon','mr'];                 /* Departman müdürü */
+ROL_KUTU.mudur=['yetenek','isealim','talep','pozisyon','oryantasyon','orgsema','mr'];       /* Departman müdürü */
 ROL_ETIKET.mudur='Departman Müdürü';
 var ROL_ONCELIK=['ik','direktor','idari_mudur','satis_mudur','servis_mudur','mudur'];
 var $=function(id){return document.getElementById(id);};
@@ -238,7 +241,7 @@ function kutularim(k){
   var set=[]; k.roller.forEach(function(r){ (ROL_KUTU[r]||[]).forEach(function(id){ if(set.indexOf(id)<0) set.push(id); }); });
   if(k.kurucu) set.push('ajanofisi');                                  /* yalnız ofis sahibi (kurulum İK hesabı) */
   if(k.kurucu||k.prim) set.push('prim');                               /* yalnız erişim listesi (+ listeyi kuran kurucu) */
-  return ['ikdash','satis','servis','yetenek','isealim','talep','pozisyon','ayrilis','oryantasyon','mr','prim','ajanofisi'].filter(function(id){ return set.indexOf(id)>=0; });
+  return ['ikdash','satis','servis','yetenek','isealim','talep','pozisyon','ayrilis','oryantasyon','orgsema','mr','prim','ajanofisi'].filter(function(id){ return set.indexOf(id)>=0; });
 }
 /* Modül, erişim listesinde olduğunu doğrularsa çağırır (Müdür Prim Sistemleri kutucuğu) */
 window.portalPrimAc=function(){

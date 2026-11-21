@@ -960,5 +960,22 @@ service cloud.firestore {
       allow create, update: if b == 'veri' && primYetkili() && primVeriGecerli(request.resource.data);
       allow list, delete: if false;
     }
+
+    // ====================================================== ORGANİZASYON ŞEMASI (21.11.2026)
+    // Sayfa: org-sema.html · PowerPoint okuyucu: ortak/pptx-gorunum.js. Şema (isimler) bu depoda YOKTUR: İK'nın PowerPoint
+    // dosyası (.pptx) tarayıcıda açılır ve OLDUĞU GİBİ (base64 metin) orgSemasi/guncel belgesine yazılır; sayfalar her açılışta
+    // bu dosyadan çizilir. Tüm yönetim rolleri okur; yalnız İK yükler (yenisi eskisinin yerine geçer). Silinemez, listelenemez.
+    function orgSemaGecerli(y) {
+      return y.keys().hasOnly(['dosya', 'ad', 'boyut', 'yukleyen', 'yukleme']) && y.keys().hasAll(['dosya', 'ad', 'boyut', 'yukleyen', 'yukleme'])
+        && y.dosya is string && y.dosya.size() > 0 && y.dosya.size() <= 1000000
+        && metin(y.ad, 200) && y.ad.size() > 0
+        && y.boyut is int && y.boyut > 0 && y.boyut <= 750000
+        && y.yukleyen == hesap().ad && y.yukleme == request.time;
+    }
+    match /orgSemasi/{b} {
+      allow get: if b == 'guncel' && yonetim();
+      allow create, update: if b == 'guncel' && ik() && orgSemaGecerli(request.resource.data);
+      allow list, delete: if false;
+    }
   }
 }
