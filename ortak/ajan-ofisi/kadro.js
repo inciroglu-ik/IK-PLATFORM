@@ -7,7 +7,7 @@
    Kişisel veri YOK: çalışan adları kurgusaldır.
    ============================================================================ */
 
-export const SURUM = '2026-11-17.2';
+export const SURUM = '2026-11-22.1';
 export const VARSAYILAN_MODEL = 'claude-opus-5-5';
 export const MODELLER = [
   { id: 'claude-opus-5-5', ad: 'Claude Opus 5.5 (önerilen)' },
@@ -453,7 +453,31 @@ export const VIDEO_GORSELLERI = {
   'v2-poz-bekliyor': { aciklama: 'Açık Pozisyonlar, CEO kararı ÖNCESİ: Satış Danışmanı ONAY AŞAMASINDA · CEO kararı bekleniyor (satır x .113 y .454 w .868 h .073), tablo (x .1 y .274 w .8 h .429)', vurgu: { x: 0.1, y: 0.274, w: 0.8, h: 0.429 } },
   'v2-poz-onayli': { aciklama: 'Aynı liste CEO onayı SONRASI: Satış Danışmanı en üstte ONAYLI (satır x .113 y .454 w .868 h .05, çip x .707 y .465 w .05 h .027), Onaylı açık pozisyon göstergesi 1 (x .1 y .044 w .193 h .137)', vurgu: { x: 0.113, y: 0.454, w: 0.787, h: 0.05 } },
   'v2-havuz-1': { aciklama: 'Aday Havuzu (Pano): Ece Örnek kartı Görüşme / Karar Bekliyor sütununda (kart x .213 y .608 w .17 h .128)', vurgu: { x: 0.213, y: 0.608, w: 0.17, h: 0.128 } },
-  'v2-havuz-2': { aciklama: 'Aynı pano: Ece Örnek kartı Evrak Bekliyor sütununa taşınmış (kart x .406 y .881 w .17 h .127)', vurgu: { x: 0.406, y: 0.881, w: 0.17, h: 0.119 } }
+  'v2-havuz-2': { aciklama: 'Aynı pano: Ece Örnek kartı Evrak Bekliyor sütununa taşınmış (kart x .406 y .881 w .17 h .127)', vurgu: { x: 0.406, y: 0.881, w: 0.17, h: 0.119 } },
+  /* Servis Panosu (22.11.2026) — SENTETİK veri, kurgu adlar, üstte "ÖRNEK VERİ" işareti (test\satis\servis_video_ekran.ps1 + servis_video_portal.ps1, konumlar test\ik\ekran_video\sp_konum.json).
+     UZUN görüntülerde oranlar görüntü boyuna göre; kamera z=1 iken 900 px'lik dilim görünür, y ile kaydırılır. */
+  'sp-portal': { aciklama: 'İK Portalı ana ekranı (servis müdürü): Servis Panosu kutucuğu sol üstte (x .145 y .31 w .17 h .267)', vurgu: { x: 0.145, y: 0.31, w: 0.17, h: 0.267 } },
+  'sp-teblig-liste': { aciklama: 'Servis Panosu › 1 · Hedef Tebliğ, danışman seçilmemiş: 3 adım şeridi (1. adım x .013 y .141 w .325 h .066), Servis Danışmanı seçimi (x .328 y .275 w .144 h .041), Dönem Durumu tablosu (x .013 y .539 w .975 h .297; Can Deneme satırı y .639 "Girilmedi")', vurgu: { x: 0.328, y: 0.275, w: 0.144, h: 0.041 } },
+  'sp-teblig-bos': { aciklama: 'UZUN (1600×1166) Hedef Tebliğ Formu BOŞ (Kasım, Can Deneme): hedef kutuları x .779 w .081 h .027 — iş emri y .392, araç başı işçilik y .433, araç başı parça y .474, car care y .515, kontrat y .557; başarı eşiği sütunu x .868 y .322; rozet "Yeni Form" (x .930 y .289); Hedefleri Kaydet (x .024 y .934 w .086 h .031), Formu Yazdır (x .117 y .933 w .105), İK\'ya Gönderildi (x .228 y .933 w .126)', vurgu: { x: 0.779, y: 0.392, w: 0.081, h: 0.19 } },
+  'sp-teblig-dolu': { aciklama: 'UZUN (1600×1166) aynı form hedefler yazılmış ve kaydedilmiş (160 · 4200 · 6800 · 45000 · 12 …); rozet "Taslak" (x .942 y .289 w .034 h .019); düğmeler aynı yerde', vurgu: { x: 0.942, y: 0.289, w: 0.034, h: 0.019 } },
+  'sp-teblig-cikti': { aciklama: 'Yazdırılan resmî Hedef Tebliğ Formu (belge üstü): şirket başlığı (x .271 y .087 w .458 h .057), dönem/ad/yönetici bilgisi, hedef tablosu (x .271 y .284 w .458 h .450); sol üstte "ÖRNEK BELGE · KURGU VERİ"', vurgu: { x: 0.271, y: 0.284, w: 0.458, h: 0.45 } },
+  'sp-teblig-imza': { aciklama: 'Aynı belgenin altı: Çalışanın Beyanı kutusu (x .271 y .637 w .458 h .108), Hukuki bildirim (x .271 y .763 w .458 h .048), Yönetici ve Çalışan imza alanları (x .271 y .831 w .459 h .069)', vurgu: { x: 0.271, y: 0.831, w: 0.459, h: 0.069 } },
+  'sp-teblig-ik': { aciklama: 'UZUN (1600×1166) aynı form "İK\'ya Gönderildi" işaretli: rozet (x .909 y .289 w .067 h .019)', vurgu: { x: 0.909, y: 0.289, w: 0.067, h: 0.019 } },
+  'sp-ik-teblig-once': { aciklama: 'UZUN (1600×1168) İK görünümü, aynı tebliğ: rozet "İK\'ya Gönderildi" (x .909 y .291 w .067 h .019), ✓ Tebliğ Edildi düğmesi (x .228 y .933 w .075 h .032), Tebliğ Alınmadı (x .309 y .933 w .089)', vurgu: { x: 0.228, y: 0.933, w: 0.075, h: 0.032 } },
+  'sp-ik-teblig-sonra': { aciklama: 'UZUN (1600×1168) İK tebliği onaylamış: rozet "✓ Tebliğ Edildi" (x .915 y .291 w .060 h .019)', vurgu: { x: 0.915, y: 0.291, w: 0.06, h: 0.019 } },
+  'sp-karne-bos': { aciklama: 'UZUN (1600×1563) 2 · Aylık Karne (Ekim, Can Deneme) gerçekleşenler BOŞ: göstergeler (x .013 y .206 w .975 h .067; Yetersiz kartı x .504 w .237), hedef sütunu tebliğden dolu (x .606 y .319 w .081), gerçekleşen kutuları x .694 w .066 h .020 — iş emri y .372, işçilik y .406, parça y .440, kontrat y .507, CSI y .636; başarı oranı sütunu x .768; gelişim planı (x .024 y .856 w .951 h .067); Kesinleştir (x .255 y .950 w .107 h .024)', vurgu: { x: 0.606, y: 0.319, w: 0.081, h: 0.47 } },
+  'sp-karne-dolu': { aciklama: 'UZUN (1600×1563) aynı karne gerçekleşenler yazılmış, durumlar hesaplanmış: 12 değerlendirilen / 10 başarılı / 2 yetersiz; yetersiz satırlar araç başı parça (oran x .768 y .433 w .069 h .034, %90) ve kontrat (oran y .500, %75); "2 metrikte yetersiz" rozeti; Geri Bildirim Formu düğmesi (x .616 y .950 w .103)', vurgu: { x: 0.504, y: 0.206, w: 0.237, h: 0.067 } },
+  'sp-karne-alt': { aciklama: 'Karnenin alt kısmı (kaydırılmış, 16:9): gelişim planı BOŞ (x .024 y .459 w .951 h .117), Karneyi Kesinleştir (x .255 y .622 w .107 h .041), Geri Bildirim Formu (x .616 y .622 w .103)', vurgu: { x: 0.024, y: 0.459, w: 0.951, h: 0.117 } },
+  'sp-karne-uyari': { aciklama: 'Aynı kaydırmada "Gelişim Planı Zorunlu" penceresi: kutu (x .325 y .329 w .35 h .342), 4857 uyarı notu (x .338 y .411 w .325 h .089), Anladım (x .610 y .616 w .052 h .04)', vurgu: { x: 0.338, y: 0.411, w: 0.325, h: 0.089 } },
+  'sp-karne-planli': { aciklama: 'Aynı kaydırma, gelişim planı YAZILMIŞ (x .024 y .459 w .951 h .117; kontrat ve araç başı parça aksiyonları)', vurgu: { x: 0.024, y: 0.459, w: 0.951, h: 0.117 } },
+  'sp-karne-onay': { aciklama: '"Karneyi Kesinleştir" onay penceresi: kutu (x .325 y .297 w .35 h .406), "Değerlendirilen 12 · Başarılı 10 · Yetersiz 2" (x .338 y .488 w .325 h .024), geri bildirim notu (x .338 y .526 w .325 h .068), Kesinleştir düğmesi (x .601 y .647 w .061 h .04)', vurgu: { x: 0.338, y: 0.488, w: 0.325, h: 0.024 } },
+  'sp-karne-gb': { aciklama: 'Kesinleştirme sonrası "Zorunlu Bildirim": kutu (x .325 y .314 w .35 h .372), 3 adım (yazdır · görüş al · İK\'ya ilet; x .338 y .505 w .325 h .072), Geri Bildirim Formunu Aç (x .532 y .629 w .131 h .041)', vurgu: { x: 0.338, y: 0.505, w: 0.325, h: 0.072 } },
+  'sp-gb-cikti': { aciklama: 'Yazdırılan Performans Geri Bildirim formu (üst): yalnız yetersiz metrikler tablosu (x .271 y .377 w .458 h .101), hukuki dayanak metni', vurgu: { x: 0.271, y: 0.377, w: 0.458, h: 0.101 } },
+  'sp-gb-cikti2': { aciklama: 'Aynı formun devamı: gelişim aksiyon planı, çalışan görüşü kutusu ve imza/tutanak alanları', vurgu: { x: 0.235, y: 0.55, w: 0.529, h: 0.4 } },
+  'sp-gb-liste': { aciklama: '3 · Geri Bildirim sekmesi: Can Deneme · Ekim satırı (x .013 y .393 w .974 h .059) Durum "Form Bekliyor" (x .562 y .393 w .199 h .059), ✓ İmzalandı (x .831 y .407 w .055 h .031); altında Eylül kayıtları "Form Alındı"', vurgu: { x: 0.562, y: 0.393, w: 0.199, h: 0.059 } },
+  'sp-gb-imza': { aciklama: 'Aynı liste: Can Deneme satırı "✓ Form Alındı" (durum x .562 y .393 w .199 h .059)', vurgu: { x: 0.562, y: 0.393, w: 0.199, h: 0.059 } },
+  'sp-genel': { aciklama: 'İK › Genel Bakış (Ekim): göstergeler (x .013 y .269 w .975 h .116; Geri Bildirim Gereken x .750 w .237), Marka Bazında Süreç Takibi tablosu (x .013 y .405 w .975 h .453; Fiat satırı y .565 h .059; Tebliğ Edildi sütunu x .459, Kesinleşti sütunu x .750)', vurgu: { x: 0.013, y: 0.405, w: 0.975, h: 0.453 } },
+  'sp-dash': { aciklama: 'Performans Analitiği (ayrı pencere, Fiat sekmesi): göstergeler (x .113 y .158 w .774 h .118), Danışman Başarı Sıralaması (x .113 y .302 w .381 h .448), Aylık Ortalama Başarı (x .506 y .302 w .381 h .448), altta başarı dağılımı ve metrik bazında başarı', vurgu: { x: 0.113, y: 0.302, w: 0.381, h: 0.448 } }
 };
 const vOran = (v) => Math.max(0, Math.min(1, Number(v) || 0));
 const vMetin = (v, n) => String(v == null ? '' : v).slice(0, n);

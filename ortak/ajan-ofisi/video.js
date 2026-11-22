@@ -694,7 +694,16 @@ const PENCERE = {
   'v2-form-dep': 'İK Portalı · Personel Talepleri · Yeni talep', 'v2-form-hata': 'İK Portalı · Personel Talepleri · Yeni talep', 'v2-form-tam': 'İK Portalı · Personel Talepleri · Yeni talep',
   'v2-onay-bos': 'İK Portalı · Personel Talepleri · Onay', 'v2-onay-sonra': 'İK Portalı · Personel Talepleri · Onay',
   'v2-poz-bekliyor': 'İK Portalı · Açık Pozisyonlar', 'v2-poz-onayli': 'İK Portalı · Açık Pozisyonlar',
-  'v2-havuz-1': 'İşe Alım · Aday Havuzu', 'v2-havuz-2': 'İşe Alım · Aday Havuzu'
+  'v2-havuz-1': 'İşe Alım · Aday Havuzu', 'v2-havuz-2': 'İşe Alım · Aday Havuzu',
+  'sp-portal': 'İK Portalı',
+  'sp-teblig-liste': 'Servis Panosu · Hedef Tebliğ', 'sp-teblig-bos': 'Servis Panosu · Hedef Tebliğ', 'sp-teblig-dolu': 'Servis Panosu · Hedef Tebliğ',
+  'sp-teblig-ik': 'Servis Panosu · Hedef Tebliğ', 'sp-ik-teblig-once': 'Servis Panosu · Hedef Tebliğ (İK)', 'sp-ik-teblig-sonra': 'Servis Panosu · Hedef Tebliğ (İK)',
+  'sp-teblig-cikti': 'Hedef Tebliğ Formu · yazdır', 'sp-teblig-imza': 'Hedef Tebliğ Formu · yazdır',
+  'sp-karne-bos': 'Servis Panosu · Aylık Karne', 'sp-karne-dolu': 'Servis Panosu · Aylık Karne', 'sp-karne-alt': 'Servis Panosu · Aylık Karne',
+  'sp-karne-uyari': 'Servis Panosu · Aylık Karne', 'sp-karne-planli': 'Servis Panosu · Aylık Karne', 'sp-karne-onay': 'Servis Panosu · Aylık Karne', 'sp-karne-gb': 'Servis Panosu · Aylık Karne',
+  'sp-gb-cikti': 'Performans Geri Bildirim Formu · yazdır', 'sp-gb-cikti2': 'Performans Geri Bildirim Formu · yazdır',
+  'sp-gb-liste': 'Servis Panosu · Geri Bildirim', 'sp-gb-imza': 'Servis Panosu · Geri Bildirim',
+  'sp-genel': 'Servis Panosu · Genel Bakış (İK)', 'sp-dash': 'Servis Panosu · Performans Analitiği'
 };
 export function gorselAdresi(id) { return new URL('./gorsel/' + encodeURIComponent(id) + '.jpg', import.meta.url).href; }
 export function gorselleriYukle(plan) {
