@@ -93,13 +93,24 @@ function ustBant(ctx, plan, i, n) {
   kutu(ctx, VW - 220, 30, 124, 40, 20, 'rgba(255,255,255,.08)', 'rgba(217,191,143,.6)', 2);
   yazi(ctx, String(i + 1).padStart(2, '0') + ' / ' + String(n).padStart(2, '0'), VW - 158, 58, '700 20px ' + SANS, R.acikPirinc, 'center');
 }
+/* Uzun seslendirme metni ikişer satırlık sayfalara bölünür ve sahne süresince sırayla gösterilir (23.11.2026: tek sahnede
+   ~30 kelimelik açılış cümlesi iki satırda kesiliyordu). */
+function altyaziSayfa(sat, lt, sure) {
+  const sayfa = []; for (let i = 0; i < sat.length; i += 2) sayfa.push(sat.slice(i, i + 2));
+  if (sayfa.length < 2) return sayfa[0] || [];
+  /* süre, sayfaların metin uzunluğuna göre paylaştırılır (anlatıcının okuma hızına yakın) */
+  const uz = sayfa.map((p) => p.join(' ').length), top = uz.reduce((a, b) => a + b, 0);
+  let f = Math.max(0, lt) / Math.max(sure, 0.1) * top;
+  for (let k = 0; k < sayfa.length - 1; k++) { if (f < uz[k]) return sayfa[k]; f -= uz[k]; }
+  return sayfa[sayfa.length - 1];
+}
 function altyazi(ctx, metin, lt, sure) {
   if (!metin) return;
   const a = Math.min(yumusak(lt / 0.5), 1 - yumusak((lt - (sure - 0.4)) / 0.4));
   if (a <= 0) return;
   ctx.save(); ctx.globalAlpha = a;
   ctx.font = '500 34px ' + SANS;
-  const sat = sar(ctx, metin, 1500).slice(0, 2);
+  const sat = altyaziSayfa(sar(ctx, metin, 1500), lt, sure);
   const h = 30 + sat.length * 46;
   const y0 = VH - 64 - h;
   kutu(ctx, 190, y0, VW - 380, h, 14, 'rgba(8,16,30,.72)', null);
@@ -415,7 +426,7 @@ function altyaziAcik(ctx, metin, lt, sure) {
   if (!metin) return;
   const a = Math.min(yumusak(lt / 0.5), 1 - yumusak((lt - (sure - 0.4)) / 0.4)); if (a <= 0) return;
   ctx.save(); ctx.globalAlpha = a; ctx.font = '500 30px ' + SANS;
-  const sat = sar(ctx, metin, 1400).slice(0, 2), h = 26 + sat.length * 40, y0 = VH - 40 - h;
+  const sat = altyaziSayfa(sar(ctx, metin, 1400), lt, sure), h = 26 + sat.length * 40, y0 = VH - 40 - h;
   ctx.shadowColor = 'rgba(15,23,42,.18)'; ctx.shadowBlur = 24; kutu(ctx, 240, y0, VW - 480, h, 16, 'rgba(255,255,255,.96)', null); ctx.shadowBlur = 0;
   sat.forEach((s, k) => yazi(ctx, s, VW / 2, y0 + 44 + k * 40, '500 30px ' + SANS, A.metin, 'center'));
   ctx.restore();
