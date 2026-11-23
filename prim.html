@@ -48,6 +48,19 @@ body.prim #kaputYuva:empty { display: none; }
 .pr-kisi-cip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: var(--lac-50); border: 1px solid var(--lac-100); font-size: 13px; color: var(--metin-2); }
 .pr-kisi-cip b { color: var(--metin-1); font-weight: 600; }
 .pr-kisi-cip em, .pr-vek { font-style: normal; font-size: 11px; font-weight: 700; color: var(--pir-800); background: var(--pir-100); border-radius: 999px; padding: 1px 7px; }
+/* 23.11 direktör sayfası: kural satırı, bağlı marka çipleri (tıklanır), tabloda direktörün kendi satırı */
+.pr-dir-kural { margin: 10px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--metin-2); max-width: 860px; }
+.pr-dir-kural b { color: var(--metin-marka); font-weight: 700; }
+.pr-bagli-etk { align-self: center; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--metin-3); margin-right: 2px; }
+.pr-dir-cip, .pr-bagli-cip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: var(--lac-50); border: 1px solid var(--lac-100); font: inherit; font-size: 13px; color: var(--metin-2); }
+.pr-dir-cip b, .pr-bagli-cip b { color: var(--metin-1); font-weight: 600; }
+button.pr-dir-cip, button.pr-bagli-cip { cursor: pointer; transition: border-color .12s, background .12s; }
+button.pr-dir-cip:hover, button.pr-bagli-cip:hover { border-color: var(--pir-300); background: var(--pir-50); }
+button.pr-dir-cip:focus-visible, button.pr-bagli-cip:focus-visible { outline: none; box-shadow: var(--odak-halkasi); }
+.pr-bagli-cip.soluk { background: var(--n-25); border-style: dashed; border-color: var(--cizgi-2); color: var(--metin-3); }
+.pr-dir-cip em { font-style: normal; font-size: 11px; font-weight: 700; color: var(--pir-800); background: var(--pir-100); border-radius: 999px; padding: 1px 7px; }
+.pr-tablo tr.pr-dir-satir td { background: var(--pir-50); }
+.pr-tablo tr.pr-dir-satir td:first-child { box-shadow: inset 4px 0 0 var(--pir-500); }
 .pr-mbas-not { grid-column: 1 / -1; margin: 0; font-size: 12.5px; color: var(--metin-2); background: var(--n-25); border: 1px dashed var(--cizgi-2); border-radius: 10px; padding: 8px 12px; }
 .pr-gosterge { text-align: right; }
 .pr-gosterge b { display: block; font-size: 30px; font-weight: 700; color: var(--metin-marka); font-variant-numeric: tabular-nums; line-height: 1; }
@@ -322,6 +335,18 @@ let veriAboneligi = null;
 /* Excel özetindeki ORTAK satırlar → marka sayfaları. Kullanıcı tanımı (20.11.2026): "ARJ = Alfa Romeo + Jeep; ikisinin ayrı
    sayfası var, müdürü aynı". Ortak satır iki markada da görünür; ayrı bir "ARJ" başlığı açılmaz. */
 const ORTAK_MARKA = { 'ARJ': ['ALFA ROMEO', 'JEEP'] };
+/* DİREKTÖRLER (23.11.2026): özet tablosunda Birim = "Direktör" olan satır marka sayfası açmaz; sol listede "Direktörler" altında
+   kişinin kendi sayfası olur. Marka hücresi direktörün markalarını sayar ("PSA · HONDA · HASAR"); bağlı marka sayfaları bu adlardan
+   bulunur. Grup adları (kullanıcının söylediği gibi "PSA", "O&J") aşağıdaki markaları kapsar. Kural metni (bağlı müdürlerin hak
+   edişinin %50'si) Excel'deki kriter hücresinden gelir; portal hesaplama yapmaz, yalnız gösterir. */
+const DIREKTOR_GRUP = { 'PSA': ['PEUGEOT', 'CITROEN', 'OPEL', 'PSA'], 'O&J': ['O&J', 'OMODA', 'JAECOO'] };
+const kMarka = (s) => K(s).replace(/\s*&\s*/g, '&');
+const direktorMu = (birim) => /(^|\s)DIREKTOR/.test(K(birim));
+/** "PSA · HONDA · HASAR" → ["PSA", "HONDA", "HASAR"] ("O & J" bölünmez) */
+function markaParcalari(s) {
+  return String(s || '').replace(/O\s*&\s*J/gi, 'O\u0001J').split(/\s*[,;·/+&]\s*|\s+ve\s+/i)
+    .map((x) => x.replace('\u0001', ' & ').trim()).filter(Boolean);
+}
 const GIZLI_SUTUN = ['DETAY', 'ETIKET', 'GRAFIK DEGERI'];
 const SEKMELER = [
   { k: 'oran', ad: 'Gerçekleşme oranı', aciklama: 'Aylık prim hak ediş oranları ve 2026 yıllık oran' },
@@ -403,7 +428,7 @@ function hazirla(m) {
   const satirKur = (o, h) => {
     const r = o || h;
     const g = {
-      markaK: r.markaK, marka: markaGoster(r.markaK, r.marka), sayfalar: uyelik(r.markaK), ortak: !!ORTAK_MARKA[r.markaK],
+      markaK: r.markaK, marka: markaGoster(r.markaK, r.marka), markaHam: r.marka, sayfalar: uyelik(r.markaK), ortak: !!ORTAK_MARKA[r.markaK],
       birim: r.birim, mudurK: r.mudurK, mudurAd: r.mudurAd, vekalet: r.vekalet, mudurEski: r.mudurEski,
       donem: (o && o.donem) || (h && h.donem) || '',
       kriter: o && ozI.kr >= 0 ? o.h[ozI.kr] : '', not: o && ozI.not >= 0 ? o.h[ozI.not] : '',
@@ -421,30 +446,35 @@ function hazirla(m) {
     g.ara = [g.marka, g.birim, g.mudurAd, g.mudurEski, g.donem, g.kriter, g.not].concat(g.ekler.map((e) => e.v)).join(' ');
     return g;
   };
-  if (oz) oz.satirlar.forEach((o) => { const h = hkMap.get(o.mudurK0 + '|' + o.markaK) || null; if (h) kullanilan.add(h); genel.push(satirKur(o, h)); });
+  /* direktör satırı hak ediş satırıyla yalnız kişi adından da eşlenir (Marka hücresi birden çok marka sayar; hak ediş sayfasında
+     elle farklı yazılmış olabilir) — tek aday şartıyla */
+  const hkKisi = (o) => { const l = hk ? hk.satirlar.filter((h) => h.mudurK0 === o.mudurK0 && !kullanilan.has(h)) : []; return l.length === 1 ? l[0] : null; };
+  if (oz) oz.satirlar.forEach((o) => { const h = hkMap.get(o.mudurK0 + '|' + o.markaK) || (direktorMu(o.birim) ? hkKisi(o) : null) || null; if (h) kullanilan.add(h); genel.push(satirKur(o, h)); });
   if (hk) hk.satirlar.forEach((h) => { if (!kullanilan.has(h)) genel.push(satirKur(null, h)); });
+  genel.forEach((g) => { g.direktor = direktorMu(g.birim); if (g.direktor) g.sayfalar = []; });   /* sayfası aşağıda (DİREKTÖR SAYFALARI) */
+  const dirKisi = new Set(genel.filter((g) => g.direktor).map((g) => g.mudurK));
   /* detaylar: içeriği olan satırlar (Müdür/Marka dışında en az bir hücre dolu) */
   const detay = tur('detay')[0] || null;
   const detaySatir = detay ? detay.satirlar.filter((r) => r.h.some((v, i) => v && i !== detay.ix('Müdür') && i !== detay.ix('Marka'))) : [];
-  detaySatir.forEach((r) => { r.sayfalar = uyelik(r.markaK); });
+  detaySatir.forEach((r) => { r.direktor = dirKisi.has(r.mudurK0); r.sayfalar = r.direktor ? [] : uyelik(r.markaK); });
   /* SATIŞ / SERVİS AYRIMI (kullanıcı 20.11): bir markada birden çok birim (Satış, Servis, İdari…) varsa her birim ayrı sayfa
      olur ("BMW Satış", "BMW Servis"); tek birimli marka bölünmez. Excel'deki marka sayfası (metrik tablosu) kendi birimine gider. */
   const birimler = new Map();
   const birimEkle = (p, b) => { if (!b) return; const m = birimler.get(p) || new Map(); if (!m.has(K(b))) m.set(K(b), b); birimler.set(p, m); };
   const tabloBirimi = (t) => { const b = sayfaBilgi.get(K(t.sayfa)); return b ? b.birim : ((t.satirlar.find((r) => r.birim) || {}).birim || ''); };
-  genel.forEach((g) => g.sayfalar.forEach((p) => birimEkle(p, g.birim)));
+  genel.forEach((g) => { if (!g.direktor) g.sayfalar.forEach((p) => birimEkle(p, g.birim)); });   /* direktör satırı markayı bölmez */
   markaT.forEach((t) => birimEkle(t.markaK, tabloBirimi(t)));
   detaySatir.forEach((r) => r.sayfalar.forEach((p) => birimEkle(p, r.birim)));
   const bolunmus = (p) => (birimler.get(p) || new Map()).size > 1;
   const sayfaKey = (p, birim) => (bolunmus(p) ? p + '|' + (K(birim) || [...birimler.get(p).keys()][0]) : p);
-  genel.forEach((g) => { g.sayfalar = g.sayfalar.map((p) => sayfaKey(p, g.birim)); });
+  genel.forEach((g) => { if (!g.direktor) g.sayfalar = g.sayfalar.map((p) => sayfaKey(p, g.birim)); });
   detaySatir.forEach((r) => { r.sayfalar = r.sayfalar.map((p) => sayfaKey(p, r.birim)); });
   const tabloSayfa = (t) => sayfaKey(t.markaK, tabloBirimi(t));
   const sayfaAdiYap = (k, yedek) => { const [p, bk] = k.split('|'); const ad = sayfaAd.get(p) || yedek || p; return bk ? ad + ' ' + ((birimler.get(p) || new Map()).get(bk) || bk) : ad; };
   /* marka sayfaları (sol liste) */
   const adlar = new Map();
   markaT.forEach((t) => { const k = tabloSayfa(t); if (!adlar.has(k)) adlar.set(k, sayfaAdiYap(k)); });
-  genel.forEach((g) => g.sayfalar.forEach((p) => { if (!adlar.has(p)) adlar.set(p, sayfaAdiYap(p, g.ortak ? p : g.marka)); }));
+  genel.forEach((g) => { if (!g.direktor) g.sayfalar.forEach((p) => { if (!adlar.has(p)) adlar.set(p, sayfaAdiYap(p, g.ortak ? p : g.marka)); }); });
   detaySatir.forEach((r) => r.sayfalar.forEach((p) => { if (!adlar.has(p)) adlar.set(p, sayfaAdiYap(p, r.marka)); }));
   const sayfalar = [...adlar.entries()].map(([k, ad]) => {
     const satir = genel.filter((g) => g.sayfalar.indexOf(k) >= 0);
@@ -461,7 +491,42 @@ function hazirla(m) {
   const aylik = aylikHazirla(aylikHam);
   genel.forEach((g) => { g.prim = aylik ? aylikKisi(aylik, g.vekalet ? g.mudurEski : g.mudurAd) : null; });
 
-  return { aylik, kazanc: kazancHazirla(kazancHam, sayfalar), tablolar, sayfalar, genel, markaT, detay, detaySatir, oz, hk, ayAdlari: hk ? hk.ayIdx.map((i, a) => (i >= 0 ? hk.sutunlar[i] : P.AYLAR_KISA[a])) : P.AYLAR_KISA.slice() };
+  /* DİREKTÖR SAYFALARI (23.11): kişi başına bir sayfa. Bağlı marka sayfaları Marka hücresindeki adlardan bulunur (grup adı
+     "PSA" → Peugeot, Citroen, Opel, PSA; "ARJ" → Alfa Romeo, Jeep). Sayfada: direktörün satırı + bağlı müdürlerin satırları,
+     bağlı markaların metrik tabloları. Prim sisteminde sayfası olmayan ad (ör. yeni bir marka) "sayfası yok" diye gösterilir. */
+  const tabanK = new Map();
+  sayfalar.forEach((s) => { const k = kMarka(s.taban); const l = tabanK.get(k) || []; l.push(s.k); tabanK.set(k, l); });
+  const parcaSayfa = (ad) => {
+    const hedef = DIREKTOR_GRUP[kMarka(ad)] || ORTAK_MARKA[K(ad)] || [ad];
+    const l = [];
+    hedef.forEach((x) => (tabanK.get(kMarka(x)) || []).forEach((p) => { if (l.indexOf(p) < 0) l.push(p); }));
+    return l;
+  };
+  const dirMap = new Map();
+  genel.filter((g) => g.direktor).forEach((g) => {
+    let d = dirMap.get(g.mudurK);
+    if (!d) { d = { k: '@D:' + g.mudurK, ad: g.mudurAd, taban: '@D', satirD: [], parcalar: [], ortaklar: [] }; dirMap.set(g.mudurK, d); }
+    d.satirD.push(g);
+    markaParcalari(g.markaHam).forEach((ad) => { if (!d.parcalar.some((x) => kMarka(x.ad) === kMarka(ad))) d.parcalar.push({ ad, sayfalar: parcaSayfa(ad) }); });
+    g.sayfalar = [d.k];
+  });
+  const dirSayfalar = [...dirMap.values()].map((d) => {
+    const bagli = [];
+    d.parcalar.forEach((x) => x.sayfalar.forEach((p) => { if (bagli.indexOf(p) < 0) bagli.push(p); }));
+    const bagliGenel = genel.filter((g) => !g.direktor && g.sayfalar.some((p) => bagli.indexOf(p) >= 0));
+    const g0 = d.satirD[0], oranli = d.satirD.filter((g) => g.yilM);
+    return Object.assign(d, {
+      satir: d.satirD.concat(bagliGenel), bagliGenel, bagli,
+      mudurler: [{ ad: g0.mudurAd, birim: g0.birim, vekalet: false, eski: '' }],
+      tablolar: markaT.filter((t) => bagli.indexOf(t.sayfaK) >= 0),
+      oran: oranli.length === 1 ? oranli[0] : null,
+      detay: detaySatir.filter((r) => r.direktor && r.mudurK0 === g0.mudurK),
+      direktor: { g: g0, markaMetni: d.parcalar.map((x) => x.ad).join(' · '), parcalar: d.parcalar }
+    });
+  });
+  const tumSayfalar = sayfalar.concat(dirSayfalar);
+
+  return { aylik, kazanc: kazancHazirla(kazancHam, tumSayfalar), tablolar, sayfalar: tumSayfalar, genel, markaT, detay, detaySatir, oz, hk, ayAdlari: hk ? hk.ayIdx.map((i, a) => (i >= 0 ? hk.sutunlar[i] : P.AYLAR_KISA[a])) : P.AYLAR_KISA.slice() };
 }
 
 /* ============================================================== SÜZGEÇ */
@@ -604,10 +669,17 @@ function yanCiz() {
     b.addEventListener('click', () => sayfaAc(k));
     y.append(b);
   };
-  oge('', 'Genel bakış', 'Tüm markalar · ' + M.genel.length + ' müdür satırı', '');
+  const dirSay = M.genel.filter((g) => g.direktor).length;
+  oge('', 'Genel bakış', 'Tüm markalar · ' + (M.genel.length - dirSay) + (dirSay ? ' müdür · ' + dirSay + ' direktör' : ' müdür satırı'), '');
   if (M.kazanc) oge('@kazanc', 'Maaş + prim kazancı', M.kazanc.satirlar.length + ' kişi · maaş ve net prim', '');
   y.append(el('div', { class: 'pr-yan-baslik', text: 'Markalar' }));
-  M.sayfalar.forEach((s) => oge(s.k, s.ad, s.mudurler.map((m) => m.ad + (m.vekalet ? ' (vekâleten)' : '')).join(' · ') || '—', s.oran ? s.oran.yilM : ''));
+  M.sayfalar.filter((s) => !s.direktor).forEach((s) => oge(s.k, s.ad, s.mudurler.map((m) => m.ad + (m.vekalet ? ' (vekâleten)' : '')).join(' · ') || '—', s.oran ? s.oran.yilM : ''));
+  /* 23.11: direktörler (alışılmış marka listesinin altında) */
+  const dl = M.sayfalar.filter((s) => s.direktor);
+  if (dl.length) {
+    y.append(el('div', { class: 'pr-yan-baslik', text: 'Direktörler' }));
+    dl.forEach((s) => oge(s.k, s.ad, 'Direktör · ' + s.direktor.markaMetni, s.oran ? s.oran.yilM : ''));
+  }
   return y;
 }
 /** marka değişince sekme korunur (aynı bilgiyi markadan markaya gezmek için); geçersiz kalan süzgeçler bırakılır */
@@ -621,6 +693,7 @@ function sekmeAc(k) { if (F.sekme === k) return; F.sekme = k; suzgecTemizle(); k
 
 /* ---- marka başlık kartı */
 function markaBasCiz(ana, s) {
+  if (s.direktor) { direktorBasCiz(ana, s); return; }
   const h = el('section', { class: 'pr-mbas', id: 'prMarkaBas', 'data-sayfa': s.k });
   const sol = el('div');
   sol.append(el('div', { class: 'pr-mbas-ust' }, el('h1', { text: s.ad }),
@@ -628,6 +701,9 @@ function markaBasCiz(ana, s) {
   const kisiler = el('div', { class: 'pr-kisiler-satir' });
   s.mudurler.forEach((m) => kisiler.append(el('span', { class: 'pr-kisi-cip', title: m.vekalet ? 'Excel özetinde kayıtlı ad: ' + m.eski : null },
     el('b', { text: m.ad }), m.birim ? ' · ' + m.birim : '', m.vekalet ? el('em', { text: 'vekâleten' }) : null)));
+  /* 23.11: bu markanın direktörü (direktör sayfasına götürür) */
+  M.sayfalar.filter((d) => d.direktor && d.bagli.indexOf(s.k) >= 0).forEach((d) => kisiler.append(el('button', { class: 'pr-dir-cip', type: 'button', 'data-dir': d.k, title: 'Direktörün prim sayfasını açar', on: { click: () => sayfaAc(d.k) } },
+    el('em', { text: 'Direktör' }), el('b', { text: d.ad }), ' ›')));
   if (kisiler.childNodes.length) sol.append(kisiler);
   h.append(sol);
   if (s.oran) {
@@ -635,6 +711,30 @@ function markaBasCiz(ana, s) {
     h.append(el('div', { class: 'pr-gosterge', title: '2026 yıllık hak ediş oranı (doldurulan ayların ortalaması)' }, el('b', { text: s.oran.yilM }), el('span', { text: '2026 hak ediş oranı' + (ay ? ' · ' + ay : '') })));
   }
   if (s.ortaklar.length) h.append(el('p', { class: 'pr-mbas-not', text: 'Özet ve hak ediş satırı Excel\'de ' + s.ortaklar.join(', ') + ' adıyla ortak tutuluyor; bu yüzden ortak markaların hepsinde aynı görünür.' }));
+  const km = kaynakMetni(); if (km) h.append(el('p', { class: 'pr-dip', style: { gridColumn: '1 / -1', margin: 0 }, text: km }));
+  ana.append(h);
+}
+
+/* ---- direktör başlık kartı (23.11): ad, markalar, hak ediş kuralı (Excel'deki kriter), bağlı marka sayfaları, net prim toplamı */
+function direktorBasCiz(ana, s) {
+  const d = s.direktor, g = d.g;
+  const h = el('section', { class: 'pr-mbas pr-dbas', id: 'prMarkaBas', 'data-sayfa': s.k });
+  const sol = el('div');
+  sol.append(el('div', { class: 'pr-mbas-ust' }, el('h1', { text: s.ad }), el('span', { class: 'pr-etiket', text: (g.birim || 'Direktör') + ' · ' + d.markaMetni })));
+  if (g.kriter) sol.append(el('p', { class: 'pr-dir-kural' }, el('b', { text: 'Hak ediş: ' }), g.kriter));
+  const bag = el('div', { class: 'pr-kisiler-satir', id: 'prBagli' }, el('span', { class: 'pr-bagli-etk', text: 'Bağlı marka sayfaları' }));
+  d.parcalar.forEach((x) => {
+    if (!x.sayfalar.length) { bag.append(el('span', { class: 'pr-bagli-cip soluk', title: 'Excel\'de bu ad için özet satırı ya da marka sayfası yok' }, el('b', { text: x.ad }), ' · prim sisteminde sayfası yok')); return; }
+    x.sayfalar.forEach((p) => {
+      const bs = M.sayfalar.find((y) => y.k === p); if (!bs) return;
+      bag.append(el('button', { class: 'pr-bagli-cip', type: 'button', 'data-sayfa': p, title: 'Marka sayfasını açar', on: { click: () => sayfaAc(p) } },
+        el('b', { text: bs.ad }), bs.mudurler.length ? ' · ' + bs.mudurler.map((m) => m.ad).join(', ') : '', ' ›'));
+    });
+  });
+  sol.append(bag);
+  h.append(sol);
+  if (g.prim) h.append(el('div', { class: 'pr-gosterge', id: 'prDirPrim', title: primIpucu(g, g.prim) }, el('b', { text: tlMetni(g.prim.toplam) + ' TL' }), el('span', { text: 'Net prim (' + M.aylik.aralik + ')' })));
+  else if (s.oran) h.append(el('div', { class: 'pr-gosterge' }, el('b', { text: s.oran.yilM }), el('span', { text: '2026 hak ediş oranı' })));
   const km = kaynakMetni(); if (km) h.append(el('p', { class: 'pr-dip', style: { gridColumn: '1 / -1', margin: 0 }, text: km }));
   ana.append(h);
 }
@@ -818,22 +918,29 @@ function primNotu() {
 function oranSatirlari() { return kapsamGenel().filter(genelUygun); }
 function oranCiz(kap) {
   const genel = !F.sayfa, satir = oranSatirlari(), toplam = kapsamGenel().length;
-  const k = O.kart(kap, { baslik: '2026 prim hak ediş oranı', aciklama: 'Her ay hak edilen primin tam prime oranı (tam %100 · yarım %50 · hak etmedi %0). Boş ay hesaba katılmaz; yıllık oran doldurulan ayların ortalamasıdır.', sinif: 'pr-kart-oran' });
+  const ds = seciliSayfa(), dir = !!(ds && ds.direktor);
+  const markaSutun = genel || dir;   /* direktör sayfasında bağlı müdürlerin markası görünsün */
+  const k = O.kart(kap, { baslik: '2026 prim hak ediş oranı', aciklama: dir ? 'Üstte direktörün satırı, altında bağlı müdürlerin aylık hak ediş oranları ve net primleri. Satıra tıklayınca markanın sayfası açılır.' : 'Her ay hak edilen primin tam prime oranı (tam %100 · yarım %50 · hak etmedi %0). Boş ay hesaba katılmaz; yıllık oran doldurulan ayların ortalamasıdır.', sinif: 'pr-kart-oran' });
   const kp = el('div', { class: 'pr-tablo-kap' });
   const tb = el('table', { class: 'pr-tablo pr-oranlar', id: 'prOranTablo' });
   const hr = el('tr');
-  if (genel) hr.append(el('th', { text: 'Marka' }));
+  if (markaSutun) hr.append(el('th', { text: 'Marka' }));
   /* en önemli sayı (yıllık oran) müdürün hemen yanında: dar ekranda da kaydırmadan görünür */
   hr.append(el('th', { text: 'Müdür', title: 'Altında: birim · prim dönemi' }), el('th', { text: '2026 Hak Ediş Oranı' }));
   M.ayAdlari.forEach((a) => hr.append(el('th', { class: 'ay', text: a })));
-  if (genel) hr.append(el('th', { class: 'git', 'aria-label': 'Markaya git' }));
+  if (markaSutun) hr.append(el('th', { class: 'git', 'aria-label': 'Markaya git' }));
   tb.append(el('thead', null, hr));
   const govde = el('tbody');
   const kolon = hr.childNodes.length;
   if (!satir.length) govde.append(bosSatir(kolon, F.sayfa ? 'Bu marka için Excel\'de hak ediş satırı yok' : null));
+  let bagliBas = false;
   satir.forEach((g) => {
-    const tr = el('tr', { class: genel ? 'tikla' : null, 'data-mudur': g.mudurK });
-    if (genel) { tr.append(el('td', { class: 'pr-marka-td', text: g.marka })); tr.addEventListener('click', () => sayfaAc(g.sayfalar[0])); }
+    const kendi = dir && g.direktor && ds.satirD.indexOf(g) >= 0;
+    if (dir && !kendi && !bagliBas) { bagliBas = true; govde.append(el('tr', { class: 'pr-grup' }, el('td', { colspan: String(kolon), text: 'Bağlı müdürler · ' + satir.filter((x) => !x.direktor).length }))); }
+    const tikla = genel || (dir && !kendi);
+    const tr = el('tr', { class: [tikla ? 'tikla' : '', kendi ? 'pr-dir-satir' : ''].filter(Boolean).join(' ') || null, 'data-mudur': g.mudurK });
+    if (markaSutun) tr.append(el('td', { class: 'pr-marka-td', text: g.marka }));
+    if (tikla && g.sayfalar[0]) tr.addEventListener('click', () => sayfaAc(g.sayfalar[0]));
     const yil = el('td', { class: 'dar pr-yil' }, yuzdeEl(g.yilM ? g.yilN : null, g.yilM));
     if (ayMetni(g)) yil.append(el('small', { text: 'prim alınan ay ' + ayMetni(g) }));
     /* 21.11: aylık net prim (TL) — ay hücresinin altında; yıl sütununda toplam */
@@ -845,22 +952,27 @@ function oranCiz(kap) {
       if (v !== null) td.append(el('small', { class: 'pr-tl' + (v ? '' : ' sifir'), title: primIpucu(g, g.prim) + ' · ' + P.AYLAR_UZUN[i], text: tlMetni(v) }));
       tr.append(td);
     });
-    if (genel) tr.append(el('td', { class: 'git', text: '›' }));
+    if (markaSutun) tr.append(el('td', { class: 'git', text: tikla ? '›' : '' }));
     govde.append(tr);
   });
   tb.append(govde); kp.append(tb); k.govde.append(kp);
-  if (!genel) resimKarti(kap, seciliSayfa());
-  const not = [genel ? 'Satıra tıklayınca markanın sayfası açılır.' : '', genel && M.genel.some((g) => g.vekalet) ? '"vekâleten" işaretli satırlarda Excel özetindeki ad, marka sayfasındaki müdürle değiştirildi.' : '', satir.some((g) => g.prim) ? 'Ay hücresinin altındaki ' + primNotu().replace(/^Rakamlar: /, 'rakam: ') : ''].filter(Boolean).join(' ');
+  if (!genel && !dir) resimKarti(kap, seciliSayfa());
+  const not = [genel ? 'Satıra tıklayınca markanın sayfası açılır.' : '', dir && ds.direktor.g.kriter ? 'Direktörün hak ediş kuralı (Excel özeti): ' + ds.direktor.g.kriter : '', (genel ? M.genel : dir ? satir : []).some((g) => g.vekalet) ? '"vekâleten" işaretli satırlarda Excel özetindeki ad, marka sayfasındaki müdürle değiştirildi.' : '', satir.some((g) => g.prim) ? 'Ay hücresinin altındaki ' + primNotu().replace(/^Rakamlar: /, 'rakam: ') : ''].filter(Boolean).join(' ');
   if (not) O.kartNot(k.govde, not);
+  if (dir) { const kn = satir.filter((g) => ds.satirD.indexOf(g) >= 0).length; return { metin: kn + ' direktör · ' + (satir.length - kn) + ' bağlı müdür' + (satir.length < toplam ? ' (' + toplam + ' satırdan)' : '') }; }
   return { metin: satir.length + ' / ' + toplam + ' müdür satırı' };
 }
 
 /* ---- SEKME 2 · Tuttu / Tutmadı */
 function durumCiz(kap) {
   const tablolar = kapsamTablolari();
+  const ds = seciliSayfa(), dir = !!(ds && ds.direktor);
+  const cok = !F.sayfa || dir;   /* birden çok marka tablosu: kart başlığında sayfa adı + müdür */
+  /* direktörün kendi metrik tablosu yok: hak edişi bağlı müdürlerin primine bağlı (Excel özetindeki kural) */
+  if (dir) kap.append(el('p', { class: 'pr-bilgi', id: 'prDirBilgi' }, el('b', { text: 'Direktörün kendi metrik tablosu yok. ' }), (ds.direktor.g.kriter ? 'Hak ediş kuralı: ' + ds.direktor.g.kriter + ' ' : '') + (tablolar.length ? 'Aşağıda bağlı markaların metrik tabloları var.' : '')));
   if (!tablolar.length) {
     const k = O.kart(kap, { baslik: 'Tuttu / Tutmadı' });
-    O.bosDurum(k.govde, { ikon: 'dosya', baslik: 'Bu marka için Excel\'de metrik sayfası yok', metin: 'Aylık tuttu / tutmadı bilgisi yalnız marka sayfalarında tutuluyor. Gerçekleşme oranı sekmesinde aylık hak ediş yüzdeleri var.', kucuk: true });
+    O.bosDurum(k.govde, { ikon: 'dosya', baslik: dir ? 'Bağlı markaların Excel\'de metrik sayfası yok' : 'Bu marka için Excel\'de metrik sayfası yok', metin: 'Aylık tuttu / tutmadı bilgisi yalnız marka sayfalarında tutuluyor. Gerçekleşme oranı sekmesinde aylık hak ediş yüzdeleri var.', kucuk: true });
     return { metin: '0 metrik' };
   }
   let say = 0, top = 0;
@@ -872,10 +984,10 @@ function durumCiz(kap) {
     const satir = veriVar ? uyan.filter((r) => r.aylar.some(Boolean)) : uyan;
     const gizlenen = uyan.length - satir.length;
     top += t.satirlar.length;
-    if (suzgecAktif() && !uyan.length && !F.sayfa) return;
+    if (suzgecAktif() && !uyan.length && cok) return;
     say += satir.length;
     const c = metrikSutun(t);
-    const k = O.kart(kap, { baslik: F.sayfa ? 'Tuttu / Tutmadı' : t.sayfa.trim(), aciklama: (F.sayfa ? '' : sayfaMudurAdi(t) + ' · ') + satir.length + ' / ' + t.satirlar.length + ' metrik' + (gizlenen ? ' · ' + gizlenen + ' kuralda ay ay sonuç yok' : ''), sag: lejantEl(t.satirlar) });
+    const k = O.kart(kap, { baslik: cok ? t.sayfa.trim() : 'Tuttu / Tutmadı', aciklama: (cok ? sayfaMudurAdi(t) + ' · ' : '') + satir.length + ' / ' + t.satirlar.length + ' metrik' + (gizlenen ? ' · ' + gizlenen + ' kuralda ay ay sonuç yok' : ''), sag: lejantEl(t.satirlar) });
     k.kart.setAttribute('data-sayfa', K(t.sayfa));
     const sr = adimSeridi(t); if (sr) k.govde.append(sr);
     const kp = el('div', { class: 'pr-tablo-kap' });
@@ -934,7 +1046,7 @@ function durumCiz(kap) {
     const pk2 = satir.length && t.ayVar ? tabloPrim(t) : null;
     if (pk2 && pk2.kisi.aylar.some((v) => v !== null)) O.kartNot(k.govde, 'Alttaki "Hak edilen net prim" satırı: ' + primNotu().replace(/^Rakamlar: /, ''));
   });
-  if (!kap.childNodes.length) { const k = O.kart(kap, { baslik: 'Tuttu / Tutmadı' }); O.bosDurum(k.govde, { ikon: 'filtre', baslik: 'Bu seçimde metrik yok', metin: 'Süzgeçleri değiştirin ya da temizleyin.', kucuk: true }); }
+  if (kap.childNodes.length <= (dir ? 1 : 0)) { const k = O.kart(kap, { baslik: 'Tuttu / Tutmadı' }); O.bosDurum(k.govde, { ikon: 'filtre', baslik: 'Bu seçimde metrik yok', metin: 'Süzgeçleri değiştirin ya da temizleyin.', kucuk: true }); }
   return { metin: say + ' / ' + top + ' metrik' };
 }
 /** grup başlıklı satırlar (DİSTRİBÜTÖR PRİMLERİ / İÇ PRİM); grubu yazılmamış satır ayrıca işaretlenir */
@@ -952,6 +1064,7 @@ function grupluSatirlar(t, satir, kolon, govde, satirYap, notYap) {
 /* ---- SEKME 3 · Hak ediş gereklilikleri */
 function kosulCiz(kap) {
   const s = seciliSayfa();
+  const dir = !!(s && s.direktor), cok = !s || dir, markaSutun = !s || dir;
   let say = 0, top = 0;
   /* özet tablodaki kriter ve notlar (marka sayfası olmayan markalar için tek gereklilik bilgisi budur) */
   const ozet = kapsamGenel().filter((g) => (g.kriter || g.not || g.ekler.length) && aramaUyar(g.ara));
@@ -960,13 +1073,13 @@ function kosulCiz(kap) {
     const kp = el('div', { class: 'pr-tablo-kap' });
     const tb = el('table', { class: 'pr-tablo', id: 'prOzetKriter' });
     const hr = el('tr');
-    if (!s) hr.append(el('th', { text: 'Marka' }));
+    if (markaSutun) hr.append(el('th', { text: 'Marka' }));
     hr.append(el('th', { text: 'Müdür' }), el('th', { text: 'Prim Dönemi' }), el('th', { text: ozet[0].kriterAd }), el('th', { text: ozet[0].notAd }));
     tb.append(el('thead', null, hr));
     const govde = el('tbody');
     ozet.forEach((g) => {
-      const tr = el('tr');
-      if (!s) tr.append(el('td', { class: 'dar' }, el('b', { text: g.marka })));
+      const tr = el('tr', { class: dir && s.satirD.indexOf(g) >= 0 ? 'pr-dir-satir' : null });
+      if (markaSutun) tr.append(el('td', { class: 'dar' }, el('b', { text: g.marka })));
       const not = [g.not].concat(g.ekler.map((e) => e.ad + ': ' + e.v)).filter(Boolean).join('\n');
       tr.append(kisiHucre(g), el('td', { class: 'dar', text: g.donem || '' }), el('td', { class: 'genis', text: g.kriter || '' }), el('td', { class: 'genis', text: not }));
       govde.append(tr);
@@ -980,10 +1093,10 @@ function kosulCiz(kap) {
   tablolar.forEach((t) => {
     const satir = t.satirlar.filter((r) => metrikUygun(t, r));
     top += t.satirlar.length;
-    if (suzgecAktif() && !satir.length && !F.sayfa) return;
+    if (suzgecAktif() && !satir.length && cok) return;
     say += satir.length;
     const c = metrikSutun(t);
-    const k = O.kart(kap, { baslik: F.sayfa ? 'Metrik gereklilikleri' : t.sayfa.trim(), aciklama: (F.sayfa ? 'Excel › ' + t.sayfa.trim() + ' sayfası · ' : sayfaMudurAdi(t) + ' · ') + satir.length + ' / ' + t.satirlar.length + ' metrik' });
+    const k = O.kart(kap, { baslik: cok ? t.sayfa.trim() : 'Metrik gereklilikleri', aciklama: (cok ? sayfaMudurAdi(t) + ' · ' : 'Excel › ' + t.sayfa.trim() + ' sayfası · ') + satir.length + ' / ' + t.satirlar.length + ' metrik' });
     k.kart.setAttribute('data-sayfa', K(t.sayfa));
     const sr = adimSeridi(t); if (sr) k.govde.append(sr);
     const kp = el('div', { class: 'pr-tablo-kap' });
@@ -1026,7 +1139,7 @@ function kosulCiz(kap) {
     tb.append(govde); kp.append(tb); k.govde.append(kp);
     say += detay.length;
   }
-  if (s) resimKarti(kap, s);
+  if (s && !dir) resimKarti(kap, s);
   if (!kap.childNodes.length) { const k = O.kart(kap, { baslik: 'Hak ediş gereklilikleri' }); O.bosDurum(k.govde, { ikon: 'dosya', baslik: suzgecAktif() ? 'Bu seçimde gereklilik yok' : 'Bu marka için Excel\'de kriter yazılmamış', metin: suzgecAktif() ? 'Süzgeçleri değiştirin ya da temizleyin.' : '', kucuk: true }); }
   return { metin: say + ' satır' };
 }
@@ -1108,7 +1221,7 @@ function kazancHazirla(t, sayfalar) {
   });
   return { sayfa: t.sayfa, sutunlar: t.sutunlar, KS, iAd, iUnvan, sayisal, tarih, satirlar, gizliSutun: t.gizliSutun || [], tcAtlandi: !!t.tcAtlandi };
 }
-const markaAdi = (k) => { const s = M.sayfalar.find((x) => x.k === k); return s ? s.ad : k; };
+const markaAdi = (k) => { const s = M.sayfalar.find((x) => x.k === k); return s ? (s.direktor ? 'Direktör · ' + s.direktor.markaMetni : s.ad) : k; };
 function kazancSuzgecAktif() { return !!(F.ara.trim() || KZ.unvan || KZ.isaret); }
 function kazancSatirlari() {
   const z = M.kazanc;
@@ -1315,12 +1428,19 @@ async function indir() {
 
 /* ============================================================== ADRES (#/marka/ANAHTAR/sekme · #/genel/sekme) */
 function kareYaz() {
-  const yeni = F.sayfa === '@kazanc' ? '#/kazanc' : '#/' + (F.sayfa ? 'marka/' + encodeURIComponent(F.sayfa) : 'genel') + '/' + F.sekme;
+  const yeni = F.sayfa === '@kazanc' ? '#/kazanc' : '#/' + (F.sayfa ? (F.sayfa.indexOf('@D:') === 0 ? 'direktor/' + encodeURIComponent(F.sayfa.slice(3)) : 'marka/' + encodeURIComponent(F.sayfa)) : 'genel') + '/' + F.sekme;
   if (location.hash !== yeni) { try { history.replaceState(null, '', location.pathname + location.search + yeni); } catch (e) { location.hash = yeni; } }
 }
 function kareOku() {
   const h = location.hash || '';
   if (/^#\/kazanc\/?$/.test(h)) { F.sayfa = M && M.kazanc ? '@kazanc' : ''; return; }
+  const dm = /^#\/direktor\/([^/]+)(?:\/(oran|durum|kosul))?\/?$/.exec(h);
+  if (dm) {
+    let dk = ''; try { dk = '@D:' + K(decodeURIComponent(dm[1])); } catch (e) { dk = ''; }
+    F.sayfa = M && M.sayfalar.some((x) => x.k === dk) ? dk : '';
+    if (dm[2]) F.sekme = dm[2];
+    return;
+  }
   const m = /^#\/(?:marka\/([^/]+)|genel)(?:\/(oran|durum|kosul))?\/?$/.exec(h);
   let k = '';
   if (m && m[1]) { try { k = K(decodeURIComponent(m[1])); } catch (e) { k = ''; } }
