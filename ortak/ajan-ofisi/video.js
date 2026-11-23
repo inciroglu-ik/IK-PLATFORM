@@ -28,7 +28,13 @@ async function ozet(s) { const b = await crypto.subtle.digest('SHA-256', new Tex
 
 /* konuşma hızı: ofis sahibi "çok çok az daha hızlı" istedi (17.11.2026) → 1,07 (ElevenLabs aralığı 0,7–1,2) */
 const SES_HIZI = 1.07;
+/* Okunuş (23.11.2026, ofis sahibi): "İK" kısaltması seslendirmede bir yerde "ik", başka yerde "i-ka" okundu; her yerde "i-ka"
+   okunsun. Yalnız sese giden metin değişir; altyazı ve ekrandaki yazı "İK" kalır. "İK'nın", "İK Portalı" da kapsanır. */
+export function okunus(metin) {
+  return String(metin == null ? '' : metin).replace(/(^|[^\p{L}\p{N}])İK(?![\p{L}\p{N}])/gu, '$1İ-Ka');
+}
 export async function seslendir(metin, { anahtar, sesId }) {
+  metin = okunus(metin);
   const k = await ozet(sesId + '|' + SES_HIZI + '|' + metin);
   const eski = await onbellekAl(k);
   if (eski) return eski;

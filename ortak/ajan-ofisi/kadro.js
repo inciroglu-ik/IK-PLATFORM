@@ -7,7 +7,7 @@
    Kişisel veri YOK: çalışan adları kurgusaldır.
    ============================================================================ */
 
-export const SURUM = '2026-11-23.1';
+export const SURUM = '2026-11-23.2';
 export const VARSAYILAN_MODEL = 'claude-opus-5-5';
 export const MODELLER = [
   { id: 'claude-opus-5-5', ad: 'Claude Opus 5.5 (önerilen)' },
