@@ -187,6 +187,9 @@ var PANOLAR={
   /* Müdür Prim Sistemleri: YALNIZ erişim listesindeki kişiler (+ listeyi kuran kurucu İK hesabı). Rol yetmez; veri kuralla kilitli. */
   prim:    {ad:'Müdür Prim Sistemleri', tag:'Kısıtlı Erişim', url:'https://inciroglu-ik.github.io/IK-PLATFORM/prim.html', aciklama:'Müdürlerin prim hak ediş kriterleri, aylık tuttu / tutmadı durumu ve 2026 hak ediş oranları.',
     svg:'<circle cx="12" cy="12" r="8.5"/><path d="M14.8 9.2c-.5-.9-1.6-1.5-2.8-1.5-1.6 0-2.8.9-2.8 2.1 0 2.9 5.8 1.6 5.8 4.4 0 1.2-1.3 2.1-3 2.1-1.3 0-2.4-.6-2.9-1.5"/><path d="M12 6v1.7M12 16.3V18"/>'},
+  /* Görüşme Detayları (24.11.2026): YALNIZ erişim listesindeki kişiler (+ kurucu İK hesabı). Aday ekleyen/düzenleyen yalnız kurucu; veri kuralla kilitli. */
+  gorusme: {ad:'Görüşme Detayları', tag:'Kısıtlı Erişim', url:'https://inciroglu-ik.github.io/IK-PLATFORM/gorusme.html', aciklama:'Aday görüşme kayıtları: iletişim bilgileri, pozisyon, görüşme şekli, notlar ve sonuç.',
+    svg:'<path d="M4 5.5h12.5a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5H9l-4 3.5V15.5H4A1.5 1.5 0 0 1 2.5 14V7A1.5 1.5 0 0 1 4 5.5z"/><path d="M6.5 9.5h8M6.5 12h5"/><path d="M18 9h1.5A1.5 1.5 0 0 1 21 10.5v6a1.5 1.5 0 0 1-1.5 1.5H19v2.5L16 18h-3.5"/>'},
   /* Ajan Ofisi: YALNIZ kurulum İK hesabı (ofis sahibi). Veriye erişim ayrıca Firestore kuralıyla sunucuda kilitli. */
   ajanofisi:{ad:'Ajan Ofisi',    tag:'Yalnız Size Özel', url:'https://inciroglu-ik.github.io/IK-PLATFORM/ajan-ofisi.html', aciklama:'12 kişilik yapay zekâ ekibiniz: içerik avı, rakip analizi, tasarım, video, kod ve raporlar.',
     svg:'<rect x="2.5" y="4" width="19" height="16" rx="2"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="2.5" y1="12" x2="21.5" y2="12"/><circle cx="7" cy="8.2" r="1.4"/><circle cx="17" cy="16.2" r="1.4"/>'}
@@ -241,8 +244,15 @@ function kutularim(k){
   var set=[]; k.roller.forEach(function(r){ (ROL_KUTU[r]||[]).forEach(function(id){ if(set.indexOf(id)<0) set.push(id); }); });
   if(k.kurucu) set.push('ajanofisi');                                  /* yalnız ofis sahibi (kurulum İK hesabı) */
   if(k.kurucu||k.prim) set.push('prim');                               /* yalnız erişim listesi (+ listeyi kuran kurucu) */
-  return ['ikdash','satis','servis','yetenek','isealim','talep','pozisyon','ayrilis','oryantasyon','orgsema','mr','prim','ajanofisi'].filter(function(id){ return set.indexOf(id)>=0; });
+  if(k.kurucu||k.gorusme) set.push('gorusme');                         /* yalnız görüşme erişim listesi (+ kurucu) */
+  return ['ikdash','satis','servis','yetenek','isealim','gorusme','talep','pozisyon','ayrilis','oryantasyon','orgsema','mr','prim','ajanofisi'].filter(function(id){ return set.indexOf(id)>=0; });
 }
+/* Modül, görüşme erişim listesinde olduğunu doğrularsa çağırır (Görüşme Detayları kutucuğu) */
+window.portalGorusmeAc=function(){
+  if(!AKTIF_KULLANICI||AKTIF_KULLANICI.gorusme) return;
+  AKTIF_KULLANICI.gorusme=true;
+  if($('home').classList.contains('on')) anaEkran();
+};
 /* Modül, erişim listesinde olduğunu doğrularsa çağırır (Müdür Prim Sistemleri kutucuğu) */
 window.portalPrimAc=function(){
   if(!AKTIF_KULLANICI||AKTIF_KULLANICI.prim) return;
@@ -326,11 +336,15 @@ const o=await kimlikBaslat({uygulama:'İK Portalı',roller:['ik','direktor','sat
 window.portalBaslat(o.hesap);
 /* Müdür Prim Sistemleri: kutucuk YALNIZ erişim listesindekilere (primAyar/erisim) görünür. Liste yalnız onlara ve kurucu
    İK hesabına okunabilir; diğer herkes için okuma reddedilir ve kutucuk çıkmaz. Veriye erişim ayrıca kuralla kilitli. */
-try {
-  const s=await getDoc(doc(db,'primAyar','erisim'));
-  const l=s.exists()&&Array.isArray(s.data().hidler)?s.data().hidler:[];
-  if(l.indexOf(o.hid)>=0) window.portalPrimAc();
-} catch(e) { /* yetkisiz: kutucuk gösterilmez */ }
+/* Görüşme Detayları: aynı biçimde YALNIZ gorusmeAyar/erisim listesindekilere görünür. İki liste birbirini beklemeden okunur. */
+const listeAc=async(belge,ac)=>{
+  try {
+    const s=await getDoc(doc(db,belge,'erisim'));
+    const l=s.exists()&&Array.isArray(s.data().hidler)?s.data().hidler:[];
+    if(l.indexOf(o.hid)>=0) ac();
+  } catch(e) { /* yetkisiz: kutucuk gösterilmez */ }
+};
+await Promise.all([listeAc('primAyar',()=>window.portalPrimAc()),listeAc('gorusmeAyar',()=>window.portalGorusmeAc())]);
 </script>
 
 </body>
