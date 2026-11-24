@@ -86,22 +86,27 @@ body.gorusme #kaputYuva:empty { display: none; }
 /* ---- tablo (e-tablo görünümü) */
 .gd-tablo-kap { overflow-x: auto; border: 1px solid var(--cizgi-1); border-radius: 12px; background: #fff; box-shadow: var(--gol-1); }
 .gd-tablo { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; color: var(--metin-1); }
-.gd-tablo th { position: sticky; top: 0; z-index: 1; background: var(--lac-800); color: #fff; font-size: 11.5px; font-weight: 600; letter-spacing: .02em; text-align: left; vertical-align: bottom; padding: 9px 9px; line-height: 1.3; border-right: 1px solid rgba(255, 255, 255, .08); white-space: nowrap; }
-.gd-tablo td { padding: 9px 9px; border-bottom: 1px solid var(--cizgi-1); border-right: 1px solid var(--n-100); vertical-align: top; line-height: 1.45; }
+.gd-tablo th { position: sticky; top: 0; z-index: 1; background: var(--lac-800); color: #fff; font-size: 11.5px; font-weight: 600; letter-spacing: .02em; text-align: left; vertical-align: bottom; padding: 9px 8px; line-height: 1.3; border-right: 1px solid rgba(255, 255, 255, .08); white-space: nowrap; }
+.gd-tablo td { padding: 9px 8px; border-bottom: 1px solid var(--cizgi-1); border-right: 1px solid var(--n-100); vertical-align: top; line-height: 1.45; }
 .gd-tablo td:last-child, .gd-tablo th:last-child { border-right: 0; }
 .gd-tablo tbody tr:last-child td { border-bottom: 0; }
 .gd-tablo td.no { width: 26px; color: var(--metin-3); font-variant-numeric: tabular-nums; text-align: right; }
-.gd-tablo td.ad { min-width: 130px; font-weight: 600; color: var(--metin-marka); }
+.gd-tablo td.ad { min-width: 118px; font-weight: 600; color: var(--metin-marka); }
 .gd-tablo td.tel { white-space: nowrap; font-variant-numeric: tabular-nums; }
-.gd-tablo td.ep { min-width: 140px; max-width: 200px; overflow-wrap: anywhere; }
+.gd-tablo td.ep { min-width: 120px; max-width: 190px; overflow-wrap: anywhere; }
 .gd-tablo td.tel a, .gd-tablo td.ep a { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--cizgi-3); }
 .gd-tablo td.tel a:hover, .gd-tablo td.ep a:hover { color: var(--lac-600); border-bottom-color: var(--lac-600); }
 .gd-tablo td.il { white-space: nowrap; }
 .gd-tablo td.tr { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--metin-2); }
-.gd-tablo td.not { min-width: 190px; color: var(--metin-2); }
+.gd-tablo td.not { min-width: 150px; color: var(--metin-2); }
 .gd-tablo td.not > div { white-space: pre-line; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .gd-tablo td.sn { white-space: nowrap; width: 1%; }
+.gd-tablo td.dep { min-width: 80px; max-width: 150px; font-size: 12.5px; color: var(--metin-2); overflow-wrap: anywhere; }
 .gd-tablo .bos { color: var(--n-300); }
+.gd-cv-btn { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin-left: 6px; padding: 0; vertical-align: -5px; border: 1px solid var(--pir-200); border-radius: 6px; background: var(--pir-50); color: var(--pir-800); cursor: pointer; }
+.gd-cv-btn:hover { background: var(--pir-100); border-color: var(--pir-500); }
+.gd-cv-btn:focus-visible { outline: none; box-shadow: var(--odak-halkasi); }
+.gd-cv-btn svg { width: 13px; height: 13px; }
 .gd-il { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--metin-1); }
 .gd-il svg { width: 14px; height: 14px; color: var(--metin-3); flex: none; }
 .gd-tablo tr.gd-satir { cursor: pointer; }
@@ -158,6 +163,26 @@ body.gorusme #kaputYuva:empty { display: none; }
 .gd-kisi .kilitli { margin-left: auto; font-size: 12px; color: var(--metin-3); }
 .gd-kisi-uyari { margin-top: 4px; font-size: 12px; line-height: 1.45; color: var(--uy-700); }
 .gd-yetki { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--metin-2); }
+/* ---- CV (form + ayrıntı) */
+.gd-cv { display: grid; gap: 6px; }
+.gd-cv-birak { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 62px; padding: 11px 14px; border: 1.5px dashed var(--cizgi-3); border-radius: 12px; background: var(--n-25); color: var(--metin-2); font: 500 13.5px/1.45 var(--font-sans); text-align: left; cursor: pointer; transition: border-color .12s, background .12s; }
+.gd-cv-birak:hover, .gd-cv-birak.uzerinde { border-color: var(--pir-500); background: var(--pir-50); }
+.gd-cv-birak:focus-visible { outline: none; box-shadow: var(--odak-halkasi); }
+.gd-cv-birak svg { width: 22px; height: 22px; color: var(--pir-700); flex: none; }
+.gd-cv-birak u { color: var(--lac-600); }
+.gd-cv-birak small { display: block; font-size: 12px; color: var(--metin-3); }
+.gd-cv-birak[aria-busy="true"] { cursor: progress; opacity: .7; }
+.gd-cv-dosya { display: flex; align-items: center; gap: 12px; padding: 9px 10px 9px 12px; border: 1px solid var(--cizgi-1); border-radius: 12px; background: #fff; }
+.gd-cv-ikon { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 9px; background: var(--pir-100); color: var(--pir-800); }
+.gd-cv-ikon svg { width: 18px; height: 18px; }
+.gd-cv-ad { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.gd-cv-ad b { font-size: 13.5px; font-weight: 600; color: var(--metin-1); overflow-wrap: anywhere; }
+.gd-cv-ad small { font-size: 12px; font-weight: 500; color: var(--metin-3); }
+.gd-cv-ad small.yeni { color: var(--ok-700); }
+.gd-cv-dugmeler { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.gd-cv-dugmeler .btn { height: 32px; padding: 0 11px; font-size: 12.5px; }
+.gd-cv-not { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12.5px; font-weight: 500; color: var(--uy-700); }
+.gd-cv-not .gd-temizle-btn { padding: 2px 0; }
 /* ---- dar ekran */
 @media (max-width: 1100px) {
   .gd-yerlesim { grid-template-columns: minmax(0, 1fr); gap: 14px; }
@@ -173,7 +198,9 @@ body.gorusme #kaputYuva:empty { display: none; }
   .gd-form { grid-template-columns: minmax(0, 1fr); }
   .gd-detay { grid-template-columns: minmax(0, 1fr); gap: 2px; }
   .gd-detay dd { margin-bottom: 8px; }
-  .gd-tablo { min-width: 860px; }
+  .gd-tablo { min-width: 940px; }
+  .gd-cv-dosya { flex-wrap: wrap; }
+  .gd-cv-dugmeler { width: 100%; justify-content: flex-start; }
 }
 @media print {
   .ust-alan, .gd-yan, .gd-arac, .gd-sonuclar { display: none !important; }
@@ -189,6 +216,12 @@ body.gorusme #kaputYuva:empty { display: none; }
   Aday görüşme kayıtları (eskiden e-tabloda tutulan liste): ad soyad, telefon, e-posta, pozisyon, iletişim şekli (arandı / online /
   yüz yüze), görüşme tarihi, görüşme notları ve sonuç. Pozisyon başlıkları Çalışan Listesi'ndeki TÜM unvanlardır (haftalık İK pano
   verisi satisVeri/ikPano + panodan girilen hareketler); listede olmayan bir pozisyon da yazılabilir.
+  24.11.2026 ek: DEPARTMAN (Çalışan Listesi'ndeki departmanlar; süzgeç ve Excel sütunu) ve CV (PDF / Word / JPG / PNG).
+  CV (en çok 5 MB), Firestore belge sınırı (1 MiB) nedeniyle base64 metin olarak parçalara bölünür: gorusmeler/{id}/cv/{yuva}_{n}
+  (yuva "a" ya da "b", n = 0–7); kayıttaki "cv" alanı yalnız dosya bilgisini (ad, tür, boyut, parça sayısı, yuva) tutar. Yeni CV her
+  zaman KULLANILMAYAN yuvaya yazılır, kayıt ona bağlanınca öbür yuva temizlenir (yarıda kalan yükleme eski CV'yi bozmaz). Parça adları
+  sabit olduğu için kayıt silinince 16 parçanın tamamı silinir: aday silindiğinde CV'si veritabanında kalmaz.
+  Kayıt sürerken pencere kapanmaz; kaydetmeden önce kaydın bu arada değişip değişmediğine bakılır.
   GÖRENLER: YALNIZ gorusmeAyar/erisim listesindeki hesaplar (kişi bazlı; rol yetmez). DÜZENLEYEN / ADAY EKLEYEN: YALNIZ kurulum İK
   hesabı. Aday verisi (kişisel veri) bu depoda YOKTUR; Firestore gorusmeler koleksiyonundadır. Kurallar: guvenlik/firestore.rules →
   GÖRÜŞME DETAYLARI.
@@ -217,7 +250,7 @@ body.gorusme #kaputYuva:empty { display: none; }
 </div>
 
 <script type="module">
-import { doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, collection, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection, onSnapshot, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { db, kimlikBaslat, cikisYap, adBasliklari } from "./ortak/kimlik.js";
 import * as O from "./pano/ortak.js";
 import { uygula as hareketUygula } from "./pano/hareket.js";
@@ -235,6 +268,8 @@ const IKON_ILETISIM = {
   online: SVG('<rect x="3" y="5" width="13" height="14" rx="2"/><path d="m16 10 5-3v10l-5-3"/>'),
   yuzyuze: SVG('<circle cx="8" cy="8.5" r="3.2"/><circle cx="16.5" cy="8.5" r="3.2"/><path d="M2.5 19.5a5.5 5.5 0 0 1 11 0M11 19.5a5.5 5.5 0 0 1 11 0"/>')
 };
+const IKON_CV = SVG('<path d="m20.5 11.2-8.4 8.4a5.4 5.4 0 0 1-7.7-7.7l8.4-8.4a3.6 3.6 0 0 1 5.1 5.1l-8.4 8.4a1.8 1.8 0 0 1-2.6-2.6l7.8-7.8"/>');
+const IKON_YUKLE = SVG('<path d="M12 15.5V4.5M7.5 9 12 4.5 16.5 9"/><path d="M4.5 15v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3"/>');
 
 /* ============================================================== SABİTLER */
 /* Kayıt alanları (kural: gorusmeKaydiGecerli ile birebir aynı) */
@@ -253,7 +288,25 @@ const SONUC = [
 ];
 const iletisimBul = (v) => ILETISIM.find((x) => x.v === v) || null;
 const sonucBul = (v) => SONUC.find((x) => x.v === v) || null;
-const SINIR = { ad: 100, telefon: 30, eposta: 120, pozisyon: 120, notlar: 5000 };
+const SINIR = { ad: 100, telefon: 30, eposta: 120, pozisyon: 120, departman: 80, notlar: 5000 };
+/* CV: tür uzantıdan belirlenir ve dosyanın ilk baytlarıyla (imza) doğrulanır — ör. web sayfasından ".doc" diye kaydedilmiş HTML kabul
+   edilmez. Parça: 900.000 base64 karakter (Firestore belgesi en çok 1 MiB). 5 MB → en çok 8 parça (kural: gorusmeCvGecerli). */
+const CV_TUR = {
+  pdf: { tip: 'application/pdf', ad: 'PDF', imza: [0x25, 0x50, 0x44, 0x46], ara: true, ac: true },
+  docx: { tip: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', ad: 'Word', imza: [0x50, 0x4B, 0x03, 0x04] },
+  doc: { tip: 'application/msword', ad: 'Word', imza: [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1] },
+  jpg: { tip: 'image/jpeg', ad: 'JPG', imza: [0xFF, 0xD8, 0xFF], ac: true, uz: 'jpg' },
+  png: { tip: 'image/png', ad: 'PNG', imza: [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A], ac: true }
+};
+CV_TUR.jpeg = CV_TUR.jpg;
+const CV_EN_FAZLA = 5 * 1024 * 1024, CV_PARCA = 900000, CV_PARCA_EN_FAZLA = 8, CV_YUVALAR = ['a', 'b'];
+const cvTurBul = (tip) => Object.values(CV_TUR).find((x) => x.tip === tip) || null;
+const cvUzanti = (tip) => { const k = Object.keys(CV_TUR).find((x) => CV_TUR[x].tip === tip); return k ? (CV_TUR[k].uz || k) : ''; };
+const boyutMetni = (b) => (b >= 1048576 ? (b / 1048576).toLocaleString('tr-TR', { maximumFractionDigits: 1 }) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB');
+/* Departman adlarındaki marka kısaltmaları (Kolay İK büyük harf yazar: "BMW", "MALİ İŞLER" → "BMW", "Mali İşler") */
+const DEP_KISALTMA = new Set(['BMW', 'PSA', 'BPS', 'ARJ', 'MINI', 'İK', 'BT']);
+/* Türkçe küçük harfe çevrilince bozulan yabancı marka adları ("FIAT" → "Fıat" değil "Fiat") */
+const DEP_OZEL = { FIAT: 'Fiat', CITROEN: 'Citroen' };
 /* Bölüm sırası (Çalışan Listesi'ndeki bölüm alanı). Birden çok bölümde geçen unvan en çok geçtiği bölüme yazılır. */
 const BOLUMLER = ['Satış', 'Servis', 'İdari'];
 const GRUPLAR = [{ k: 'Satış', ad: 'Satış' }, { k: 'Servis', ad: 'Servis' }, { k: 'İdari', ad: 'İdari' }, { k: 'Diğer', ad: 'Diğer' }, { k: '@yok', ad: 'Çalışan listesinde olmayan' }];
@@ -291,10 +344,11 @@ await erisimOku();
 const KAYIT = new Map();                  /* id → kayıt */
 let KAYIT_HAZIR = false, KAYIT_HATA = null, abonelik = null;
 let UNVANLAR = [];                        /* [{ ad, k, bolum }] — Çalışan Listesi'ndeki tüm unvanlar */
+let DEPARTMANLAR = [];                    /* [{ ad, k }] — Çalışan Listesi'ndeki departmanlar ("V.İ." grubu hariç) */
 let UNVAN_KAYNAK = '', UNVAN_HATA = false, UNVAN_HAZIR = false, UNVAN_YETKI_YOK = false;
 let ODAK_ISTEK = null;                    /* { id, sec } — yeniden çizimden sonra odak verilecek satır (kaydet / sil / satır seçicisi) */
-/* poz: '' = tüm pozisyonlar, yoksa pozisyon anahtarı */
-const F = { poz: '', ara: '', iletisim: '', sonuc: '', yanAra: '', yalnizDolu: false };
+/* poz: '' = tüm pozisyonlar, yoksa pozisyon anahtarı · dep: '' = tümü, '@bos' = departmanı yazılmamış, yoksa departman anahtarı */
+const F = { poz: '', ara: '', iletisim: '', sonuc: '', dep: '', yanAra: '', yalnizDolu: false };
 try { F.yalnizDolu = localStorage.getItem('gd_yalnizDolu') === '1'; } catch (e) { /* tarayıcı belleği kapalı */ }
 
 const anahtar = (s) => O.aramaAnahtari(s);
@@ -310,6 +364,17 @@ function unvanGoster(s) {
     if (KISALTMA.has(u)) return u;
     if (i > 0 && KUCUK.has(O.trKucuk(w))) return O.trKucuk(w);
     return w;
+  }).join(' ');
+}
+/** Kolay İK departmanı ("MALİ İŞLER", "YIKAMA, TESLİMAT VE SHOWROOM BİRİMİ") → "Mali İşler", "Yıkama, Teslimat ve Showroom Birimi"; BMW gibi kısaltmalar korunur */
+function depGoster(s) {
+  const t = String(s || '').replace(/\s+/g, ' ').trim();
+  if (!t) return '';
+  /* "BMW-MINI", "FIAT/ARJ" gibi birleşik adlarda her parça ayrı denetlenir */
+  const parca = (p) => { const u = O.trBuyuk(p); return DEP_OZEL[u] || (DEP_KISALTMA.has(u) ? u : p); };
+  return O.trBaslik(t).split(' ').map((w, i) => {
+    if (i > 0 && KUCUK.has(O.trKucuk(w))) return O.trKucuk(w);
+    return w.split(/([^\p{L}\p{N}]+)/u).map((p) => (/^[\p{L}\p{N}]+$/u.test(p) ? parca(p) : p)).join('');
   }).join(' ');
 }
 /** Ad soyad: tamamı küçük ya da tamamı büyük yazıldıysa "Ece Denemeci" biçimine getirilir; karışık yazım olduğu gibi kalır */
@@ -357,6 +422,13 @@ async function unvanlariYukle() {
       const b = BOLUMLER.indexOf(String(p.bolum || '').trim()) >= 0 ? String(p.bolum).trim() : 'Diğer';
       u.say[b] = (u.say[b] || 0) + 1;
     }));
+    /* departmanlar: "vi" listesi ayrı bir personel grubudur (departmanı "V.İ."), departman seçeneğine alınmaz */
+    const dm = new Map();
+    ['normal', 'stajyer', 'gecici'].forEach((l) => (D[l] || []).forEach((p) => {
+      const ad = temizMetin(depGoster(p && p.dept), SINIR.departman); if (!ad) return;
+      const k = anahtar(ad); if (!dm.has(k)) dm.set(k, ad);
+    }));
+    DEPARTMANLAR = [...dm.entries()].map(([k, ad]) => ({ k, ad })).sort((a, b) => O.trKarsilastir(a.ad, b.ad));
     UNVANLAR = [...m.values()].map((u) => {
       const sira = Object.keys(u.say).sort((a, b) => (u.say[b] - u.say[a]) || (GRUPLAR.findIndex((g) => g.k === a) - GRUPLAR.findIndex((g) => g.k === b)));
       return { ad: temizMetin(u.ad, SINIR.pozisyon), k: u.k, bolum: sira[0] || 'Diğer' };
@@ -365,9 +437,19 @@ async function unvanlariYukle() {
     UNVAN_KAYNAK = [e.hafta, e.short].filter(Boolean).join(' · ');
     UNVAN_HATA = !UNVANLAR.length;
   } catch (e) {
-    UNVANLAR = []; UNVAN_HATA = true; UNVAN_YETKI_YOK = !!(e && e.code === 'permission-denied');
+    UNVANLAR = []; DEPARTMANLAR = []; UNVAN_HATA = true; UNVAN_YETKI_YOK = !!(e && e.code === 'permission-denied');
   }
   UNVAN_HAZIR = true;
+}
+/** departmanlar: Çalışan Listesi + kayıtlarda geçen ama listede olmayanlar; n = o departmandaki aday sayısı */
+function departmanlar(liste = [...KAYIT.values()]) {
+  const m = new Map(DEPARTMANLAR.map((d) => [d.k, { ad: d.ad, k: d.k, n: 0, listede: true }]));
+  liste.forEach((r) => {
+    const k = anahtar(r.departman); if (!k) return;
+    let d = m.get(k); if (!d) { d = { ad: r.departman, k, n: 0, listede: false }; m.set(k, d); }
+    d.n++;
+  });
+  return [...m.values()].sort((a, b) => O.trKarsilastir(a.ad, b.ad));
 }
 
 /** sol liste: tüm unvanlar + kayıtlarda geçen ama listede olmayan pozisyonlar; her biri aday sayısıyla */
@@ -385,15 +467,19 @@ const pozisyonBul = (k) => pozisyonlar().find((p) => p.k === k) || null;
 /* ============================================================== SÜZGEÇ */
 function aramaUyar(r) {
   if (!F.ara) return true;
-  return O.aramaEslesir([r.ad, r.telefon, r.eposta, r.pozisyon, r.notlar].join(' '), F.ara) || String(r.telefon || '').replace(/\D/g, '').includes(F.ara.replace(/\D/g, '') || '§');
+  return O.aramaEslesir([r.ad, r.telefon, r.eposta, r.pozisyon, r.departman, r.notlar].join(' '), F.ara) || String(r.telefon || '').replace(/\D/g, '').includes(F.ara.replace(/\D/g, '') || '§');
 }
+const depUyar = (r) => !F.dep || (F.dep === '@bos' ? !anahtar(r.departman) : anahtar(r.departman) === F.dep);
 const siraAnahtari = (r) => (r.tarih || '0000-00-00') + '|' + String((zaman(r.olusturma) || new Date(0)).getTime()).padStart(15, '0');
 function kayitlar({ sonucHaric = false } = {}) {
   return [...KAYIT.values()].filter((r) => (!F.poz || anahtar(r.pozisyon) === F.poz)
-    && (!F.iletisim || r.iletisim === F.iletisim) && (sonucHaric || !F.sonuc || (r.sonuc || '') === F.sonuc) && aramaUyar(r))
+    && (!F.iletisim || r.iletisim === F.iletisim) && depUyar(r) && (sonucHaric || !F.sonuc || (r.sonuc || '') === F.sonuc) && aramaUyar(r))
     .sort((a, b) => (siraAnahtari(b) < siraAnahtari(a) ? -1 : siraAnahtari(b) > siraAnahtari(a) ? 1 : O.trKarsilastir(a.ad, b.ad)));
 }
-const suzgecVar = () => !!(F.ara || F.iletisim || F.sonuc);
+const suzgecVar = () => !!(F.ara || F.iletisim || F.sonuc || F.dep);
+const suzgecTemizle = () => { F.ara = ''; F.iletisim = ''; F.sonuc = ''; F.dep = ''; ciz(); };
+/** departmanın ekrandaki adı (Çalışan Listesi'ndeki yazım önceliklidir) */
+const depAdi = (k, yedek) => ((DEPARTMANLAR.find((d) => d.k === k) || {}).ad || yedek || '');
 
 /* ============================================================== ÜST BANT */
 function ustBantKur() {
@@ -541,8 +627,18 @@ function anaCiz(ana) {
     el('option', { value: '', text: 'İletişim: tümü' }), ...ILETISIM.map((x) => el('option', { value: x.v, text: x.uzun })));
   ils.value = F.iletisim;
   ils.addEventListener('change', () => { F.iletisim = ils.value; ciz(); });
-  arac.append(kutu, ils);
-  if (suzgecVar()) arac.append(el('button', { class: 'gd-temizle-btn', type: 'button', id: 'gdTemizle', text: 'Süzgeçleri temizle', on: { click: () => { F.ara = ''; F.iletisim = ''; F.sonuc = ''; ciz(); } } }));
+  /* departman süzgeci: bu pozisyondaki adayların departmanları (aday sayısıyla) + departmanı yazılmamış olanlar */
+  const pozKapsam = [...KAYIT.values()].filter((r) => !F.poz || anahtar(r.pozisyon) === F.poz);
+  const depler = departmanlar(pozKapsam).filter((d) => d.n || d.k === F.dep);
+  if (F.dep && F.dep !== '@bos' && !depler.some((d) => d.k === F.dep)) depler.push({ k: F.dep, ad: depAdi(F.dep, ([...KAYIT.values()].find((r) => anahtar(r.departman) === F.dep) || {}).departman || F.dep), n: 0 });
+  const depBos = pozKapsam.filter((r) => !anahtar(r.departman)).length;
+  const dps = el('select', { class: 'gd-sec' + (F.dep ? ' dolu' : ''), id: 'gdSec_departman', 'aria-label': 'Departman' },
+    el('option', { value: '', text: 'Departman: tümü' }), ...depler.map((d) => el('option', { value: d.k, text: d.ad + ' (' + d.n + ')' })),
+    depBos || F.dep === '@bos' ? el('option', { value: '@bos', text: 'Departmanı yazılmamış (' + depBos + ')' }) : null);
+  dps.value = F.dep;
+  dps.addEventListener('change', () => { F.dep = dps.value; ciz(); });
+  arac.append(kutu, ils, dps);
+  if (suzgecVar()) arac.append(el('button', { class: 'gd-temizle-btn', type: 'button', id: 'gdTemizle', text: 'Süzgeçleri temizle', on: { click: suzgecTemizle } }));
   const sag = el('div', { class: 'gd-sag' });
   sag.append(el('span', { class: 'gd-sayac', id: 'gdSayac', text: liste.length + (liste.length !== kapsam.length || suzgecVar() ? ' / ' + kapsam.length : '') + ' aday' }));
   sag.append(el('button', { class: 'btn', type: 'button', id: 'gdIndir', title: 'Görünen kayıtları Excel dosyası olarak indirir', html: O.ikon('excel') + '<span>Excel\'e indir</span>', on: { click: indir } }));
@@ -553,19 +649,19 @@ function anaCiz(ana) {
   /* tablo */
   ana.append(tabloCiz(liste, !F.poz));
   ana.append(el('p', { class: 'gd-dip', text: DUZENLEYEBILIR
-    ? 'Satıra tıklayarak kaydı düzenleyebilir, sonucu doğrudan tablodan değiştirebilirsiniz. Kayıtları yalnız erişim listesindeki kişiler görür; ekleme ve düzenleme yalnız sizdedir.'
-    : 'Satıra tıklayarak görüşme notunun tamamını görebilirsiniz. Bu sayfada görüntüleme yetkiniz var; kayıtları İnsan Kaynakları ekler ve günceller.' }));
+    ? 'Satıra tıklayarak kaydı düzenleyebilir, sonucu doğrudan tablodan değiştirebilirsiniz; adın yanındaki ataç simgesi adayın CV’sini açar. Kayıtları yalnız erişim listesindeki kişiler görür; ekleme ve düzenleme yalnız sizdedir.'
+    : 'Satıra tıklayarak görüşme notunun tamamını görebilirsiniz; adın yanındaki ataç simgesi adayın CV’sini açar. Bu sayfada görüntüleme yetkiniz var; kayıtları İnsan Kaynakları ekler ve günceller.' }));
 }
 
 function tabloCiz(liste, gruplu) {
   const kap = el('div', { class: 'gd-tablo-kap' });
   const t = el('table', { class: 'gd-tablo', id: 'gdTablo' });
-  t.append(el('thead', null, el('tr', null, ...['#', 'Ad Soyad', 'Telefon', 'E-posta', 'İletişim', 'Tarih', 'Görüşme notları', 'Sonuç'].map((h) => el('th', { scope: 'col', text: h })))));
+  t.append(el('thead', null, el('tr', null, ...['#', 'Ad Soyad', 'Departman', 'Telefon', 'E-posta', 'İletişim', 'Tarih', 'Görüşme notları', 'Sonuç'].map((h) => el('th', { scope: 'col', text: h })))));
   const tb = el('tbody');
   if (!liste.length) {
-    const td = el('td', { colspan: '8' });
+    const td = el('td', { colspan: '9' });
     if (!KAYIT.size) O.bosDurum(td, { ikon: 'kisiler', baslik: 'Henüz aday kaydı yok', metin: DUZENLEYEBILIR ? 'İlk adayı ekleyerek başlayın; kayıt, seçtiğiniz pozisyonun başlığı altında görünür.' : 'İnsan Kaynakları aday ekledikçe kayıtlar burada görünür.', eylem: DUZENLEYEBILIR ? { metin: 'Aday ekle', fn: () => kayitPenceresi(null) } : null });
-    else if (suzgecVar()) O.bosDurum(td, { ikon: 'filtre', baslik: 'Süzgeçlere uyan aday yok', metin: 'Aramayı ya da süzgeçleri değiştirin.', eylem: { metin: 'Süzgeçleri temizle', fn: () => { F.ara = ''; F.iletisim = ''; F.sonuc = ''; ciz(); } } });
+    else if (suzgecVar()) O.bosDurum(td, { ikon: 'filtre', baslik: 'Süzgeçlere uyan aday yok', metin: 'Aramayı ya da süzgeçleri değiştirin.', eylem: { metin: 'Süzgeçleri temizle', fn: suzgecTemizle } });
     else O.bosDurum(td, { ikon: 'kisiler', baslik: 'Bu pozisyonda henüz aday yok', metin: DUZENLEYEBILIR ? 'Bu pozisyon için görüştüğünüz adayı ekleyin.' : '', eylem: DUZENLEYEBILIR ? { metin: 'Aday ekle', fn: () => kayitPenceresi(null) } : null });
     tb.append(el('tr', null, td));
   } else if (gruplu) {
@@ -576,7 +672,7 @@ function tabloCiz(liste, gruplu) {
       const rs = gruplar.get(k), p = sira.find((x) => x.k === k);
       const gb = el('button', { class: 'gd-grup-btn', type: 'button', title: 'Bu pozisyonun sayfasını aç' }, el('b', { text: p ? p.ad : rs[0].pozisyon }), el('span', { text: rs.length + ' aday' }));
       gb.addEventListener('click', () => pozSec(k));
-      tb.append(el('tr', { class: 'gd-grup', 'data-poz': k }, el('td', { colspan: '8' }, gb)));
+      tb.append(el('tr', { class: 'gd-grup', 'data-poz': k }, el('td', { colspan: '9' }, gb)));
       rs.forEach((r, i) => tb.append(satirCiz(r, i + 1)));
     });
   } else liste.forEach((r, i) => tb.append(satirCiz(r, i + 1)));
@@ -590,9 +686,12 @@ function satirCiz(r, no) {
   tr.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target === tr) { e.preventDefault(); ac(); } });
   const bos = () => el('span', { class: 'bos', text: '—' });
   const tl = telLink(r.telefon), il = iletisimBul(r.iletisim);
+  const adTd = el('td', { class: 'ad' }, el('span', { text: r.ad || '—' }));
+  if (r.cv) adTd.append(cvDugmesi(r));
   tr.append(
     el('td', { class: 'no', text: String(no) }),
-    el('td', { class: 'ad', text: r.ad || '—' }),
+    adTd,
+    el('td', { class: 'dep' }, r.departman ? depAdi(anahtar(r.departman), r.departman) : bos()),
     el('td', { class: 'tel' }, r.telefon ? (tl ? el('a', { href: tl, text: r.telefon }) : r.telefon) : bos()),
     el('td', { class: 'ep' }, r.eposta ? (epostaGecerli(r.eposta) ? el('a', { href: 'mailto:' + r.eposta, text: r.eposta }) : r.eposta) : bos()),
     el('td', { class: 'il' }, il ? el('span', { class: 'gd-il', html: IKON_ILETISIM[il.v] }, il.ad) : bos()),
@@ -631,12 +730,102 @@ function sonucHucre(r) {
 }
 const hataMetni = (e) => (e && e.code === 'permission-denied' ? 'Kaydedilemedi: yetki yok ya da bir alan kurala uymuyor (kural yayınlanmamış olabilir).' : 'Kaydedilemedi: ' + ((e && e.message) || e));
 
+/* ============================================================== CV (okuma, doğrulama, parçalı yükleme, açma) */
+function cvDugmesi(r) {
+  return el('button', { class: 'gd-cv-btn', type: 'button', title: 'CV: ' + r.cv.ad + ' · ' + boyutMetni(r.cv.boyut) + ' (açmak için tıklayın)', 'aria-label': 'CV’yi aç: ' + r.cv.ad, html: IKON_CV,
+    on: { click: (e) => { e.stopPropagation(); cvAc(r.id); } } });
+}
+/** dosya kutusu: ad, tür, boyut + (varsa) Aç / İndir + ek düğmeler */
+function cvKutusu(cv, { yeni = false, ac = null, ek = [] } = {}) {
+  const t = cvTurBul(cv.tip);
+  const dg = el('div', { class: 'gd-cv-dugmeler' });
+  if (ac) {
+    if (t && t.ac) dg.append(el('button', { class: 'btn', type: 'button', id: 'gdCvAc', text: 'Aç', on: { click: () => ac(false) } }));
+    dg.append(el('button', { class: 'btn', type: 'button', id: 'gdCvIndir', text: 'İndir', on: { click: () => ac(true) } }));
+  }
+  ek.forEach((b) => dg.append(b));
+  return el('div', { class: 'gd-cv-dosya' }, el('span', { class: 'gd-cv-ikon', html: IKON_CV }),
+    el('div', { class: 'gd-cv-ad' }, el('b', { text: cv.ad }), el('small', { class: yeni ? 'yeni' : '', text: (yeni ? 'Yeni dosya · kaydedince yüklenir · ' : '') + (t ? t.ad : 'Dosya') + ' · ' + boyutMetni(cv.boyut) })), dg);
+}
+/** dosyanın ilk baytları türün imzasıyla uyuşuyor mu (PDF'te imza ilk 1 KB içinde herhangi bir yerde olabilir) */
+function imzaUyar(bas, t) {
+  const bak = (o) => t.imza.every((b, i) => bas[o + i] === b);
+  if (!t.ara) return bak(0);
+  for (let o = 0; o + t.imza.length <= bas.length; o++) if (bak(o)) return true;
+  return false;
+}
+/** seçilen dosyayı denetler ve base64 metne çevirir → { ad, tip, boyut, b64 } (hata: Error, ileti kullanıcıya gösterilir) */
+async function cvDosyaOku(f) {
+  /* uzantı ham addan alınır; uzun ad uzantı korunarak kısaltılır (kural: ad .pdf/.doc/.docx/.jpg/.jpeg/.png ile biter) */
+  const ham = String((f && f.name) || '');
+  const m = /\.([A-Za-z0-9]+)$/.exec(ham), t = m ? CV_TUR[m[1].toLowerCase()] : null;
+  if (!t) throw new Error('CV yalnız PDF, Word (.doc / .docx), JPG ya da PNG dosyası olabilir.');
+  const uz = '.' + m[1].toLowerCase();
+  const ad = (temizMetin(ham.slice(0, -uz.length).replace(/[\\/:*?"|]+/g, ' '), 200 - uz.length) || 'CV') + uz;
+  if (!f.size) throw new Error('Seçilen dosya boş.');
+  if (f.size > CV_EN_FAZLA) throw new Error('Dosya çok büyük (' + boyutMetni(f.size) + '). CV en çok 5 MB olabilir; PDF’i “Yazdır → PDF olarak kaydet” ile küçültebilirsiniz.');
+  const bas = new Uint8Array(await f.slice(0, 1024).arrayBuffer());
+  if (!imzaUyar(bas, t)) throw new Error('Dosyanın içeriği uzantısıyla uyuşmuyor (ör. bir web sayfası “.' + m[1] + '” diye kaydedilmiş olabilir). Dosyayı PDF olarak kaydedip yükleyin.');
+  const b64 = await new Promise((ok, red) => {
+    const fr = new FileReader();
+    fr.onload = () => { const s = String(fr.result || ''); ok(s.slice(s.indexOf(',') + 1)); };
+    fr.onerror = () => red(new Error('Dosya okunamadı.'));
+    fr.readAsDataURL(f);
+  });
+  if (!b64 || !/^[A-Za-z0-9+/=]+$/.test(b64.slice(0, 400))) throw new Error('Dosya okunamadı.');
+  return { ad, tip: t.tip, boyut: f.size, b64 };
+}
+/* parça adı: yuva ("a" / "b") + "_" + sıra. Adlar sabit olduğu için yarıda kalmış yüklemelerin parçaları da her zaman bulunup silinir. */
+const cvParcaYolu = (id, yuva, i) => doc(db, 'gorusmeler', id, 'cv', yuva + '_' + i);
+/** kaydın CV parçalarından, şu an kullanılan CV'ye (tut) ait OLMAYANLARIN hepsini siler; tut yoksa tamamını */
+function cvTemizle(t, id, tut) {
+  CV_YUVALAR.forEach((y) => { for (let i = 0; i < CV_PARCA_EN_FAZLA; i++) if (!(tut && tut.anahtar === y && i < tut.parca)) t.delete(cvParcaYolu(id, y, i)); });
+  return t;
+}
+function base64Bayt(b64) { const s = atob(b64); const u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
+/** indirme adı: uzantı her zaman dosyanın türüne uyar */
+function cvIndirmeAdi(cv) {
+  const m = /\.([A-Za-z0-9]+)$/.exec(cv.ad), t = m ? CV_TUR[m[1].toLowerCase()] : null;
+  return t && t.tip === cv.tip ? cv.ad : cv.ad.replace(/\.[A-Za-z0-9]+$/, '') + '.' + cvUzanti(cv.tip);
+}
+const CV_ACILIYOR = new Set();
+/** CV'yi okur (parçalar birleştirilir); PDF / resim yeni sekmede açılır, Word (ya da "İndir") bilgisayara indirilir */
+async function cvAc(id, indir = false) {
+  const r = KAYIT.get(id); if (!r || !r.cv) { O.bildirim('Bu kayıtta CV yok.'); return; }
+  if (CV_ACILIYOR.has(id)) return;                                 /* çift tıklama: ikinci sekme açılmasın */
+  const cv = r.cv, t = cvTurBul(cv.tip), acilir = !indir && !!(t && t.ac);
+  const kanca = typeof window.__gorusmeCvKanca === 'function' ? window.__gorusmeCvKanca : null;
+  /* yeni sekme tıklama anında açılır (okuma bittikten sonra açılırsa tarayıcının açılır pencere engelleyicisine takılır) */
+  const w = acilir && !kanca ? window.open('', '_blank') : null;
+  if (w) try { w.document.title = 'CV yükleniyor…'; w.document.body.style.font = '15px system-ui, sans-serif'; w.document.body.textContent = 'CV yükleniyor…'; } catch (e) { /* yeni sekmeye yazılamadı */ }
+  CV_ACILIYOR.add(id);
+  try {
+    const ss = await Promise.all(Array.from({ length: cv.parca }, (_, i) => getDoc(cvParcaYolu(id, cv.anahtar, i))));
+    if (ss.some((s) => !s.exists())) throw new Error('dosyanın bir bölümü bulunamadı.');
+    const bayt = base64Bayt(ss.map((s) => String((s.data() || {}).veri || '')).join(''));
+    if (bayt.length !== cv.boyut) throw new Error('dosya eksik okundu.');
+    const adi = cvIndirmeAdi(cv);
+    if (kanca) { kanca({ ad: adi, tip: cv.tip, boyut: bayt.length, bas: Array.from(bayt.slice(0, 8)), ac: acilir }); return; }     /* yerel test kancası */
+    const url = URL.createObjectURL(new Blob([bayt], { type: cv.tip }));
+    if (w) { w.location.href = url; setTimeout(() => URL.revokeObjectURL(url), 300000); }
+    else {
+      const a = el('a', { href: url, download: adi }); document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
+      if (acilir) O.bildirim('Tarayıcı yeni sekmeyi engelledi; CV İndirilenler klasörüne indirildi: ' + adi);
+    }
+  } catch (e) {
+    if (w) try { w.close(); } catch (x) { /* kapatılamadı */ }
+    O.bildirim('CV açılamadı: ' + (e && e.code === 'permission-denied' ? 'yetki yok (kural yayınlanmamış olabilir).' : ((e && e.message) || e)));
+  } finally { CV_ACILIYOR.delete(id); }
+}
+
 /* ============================================================== KAYIT PENCERESİ (yalnız düzenleyici) */
 function kayitPenceresi(id, { ardisik = false } = {}) {
   if (!DUZENLEYEBILIR) return;
   const r = id ? KAYIT.get(id) : null;
   if (id && !r) { O.bildirim('Kayıt bulunamadı (silinmiş olabilir).'); return; }
-  const v = r || { ad: '', telefon: '', eposta: '', pozisyon: F.poz ? ((pozisyonBul(F.poz) || {}).ad || '') : '', iletisim: '', tarih: bugunIso(), notlar: '', sonuc: 'beklemede' };
+  /* yeni kayıtta açık pozisyon / departman süzgeci forma hazır gelir */
+  const secDep = F.dep && F.dep !== '@bos' ? depAdi(F.dep, ([...KAYIT.values()].find((x) => anahtar(x.departman) === F.dep) || {}).departman) : '';
+  const v = r || { ad: '', telefon: '', eposta: '', pozisyon: F.poz ? ((pozisyonBul(F.poz) || {}).ad || '') : '', departman: secDep, iletisim: '', tarih: bugunIso(), notlar: '', sonuc: 'beklemede' };
   const fAd = el('input', { class: 'girdi', id: 'gdF_ad', type: 'text', maxlength: String(SINIR.ad), autocomplete: 'off', value: v.ad || '' });
   const fTel = el('input', { class: 'girdi', id: 'gdF_telefon', type: 'tel', maxlength: String(SINIR.telefon), autocomplete: 'off', placeholder: '05xx xxx xx xx', value: v.telefon || '' });
   fTel.addEventListener('blur', () => { fTel.value = telefonBicim(fTel.value); });
@@ -650,6 +839,42 @@ function kayitPenceresi(id, { ardisik = false } = {}) {
   const pk = anahtar(v.pozisyon);
   if (pk && tumu.some((p) => p.k === pk)) fPoz.value = pk; else if (v.pozisyon) { fPoz.value = '@yeni'; fPozYeni.hidden = false; fPozYeni.value = v.pozisyon; }
   fPoz.addEventListener('change', () => { fPozYeni.hidden = fPoz.value !== '@yeni'; if (!fPozYeni.hidden) fPozYeni.focus(); });
+  /* departman: Çalışan Listesi'ndeki departmanlar + kayıtlarda geçenler + listede olmayan departman (isteğe bağlı alan) */
+  const deplar = departmanlar();
+  const fDep = el('select', { id: 'gdF_departman' }, el('option', { value: '', text: 'Departman seçin' }), ...deplar.map((x) => el('option', { value: x.k, text: x.ad })),
+    el('option', { value: '@yeni', text: '+ Listede olmayan departman yaz…' }));
+  const fDepYeni = el('input', { class: 'girdi', id: 'gdF_depYeni', type: 'text', maxlength: String(SINIR.departman), autocomplete: 'off', placeholder: 'Departman adı', hidden: true });
+  const dk = anahtar(v.departman);
+  if (dk && deplar.some((x) => x.k === dk)) fDep.value = dk; else if (v.departman) { fDep.value = '@yeni'; fDepYeni.hidden = false; fDepYeni.value = v.departman; }
+  fDep.addEventListener('change', () => { fDepYeni.hidden = fDep.value !== '@yeni'; if (!fDepYeni.hidden) fDepYeni.focus(); });
+  /* CV: seçilen dosya hemen denetlenir ve okunur; yükleme Kaydet'e basınca yapılır */
+  let cvYeni = null, cvKaldir = false, cvOkunuyor = false;
+  const fCv = el('input', { type: 'file', id: 'gdF_cvDosya', accept: '.pdf,.doc,.docx,.jpg,.jpeg,.png', hidden: true, tabindex: '-1' });
+  const cvKap = el('div', { class: 'gd-cv', id: 'gdF_cv' });
+  const dosyaSec = () => fCv.click();
+  async function cvSec(f) {
+    if (!f || cvOkunuyor) return;
+    hata.textContent = ''; cvOkunuyor = true; cvCiz();
+    try { cvYeni = await cvDosyaOku(f); cvKaldir = false; }
+    catch (e) { hata.textContent = (e && e.message) || 'Dosya okunamadı.'; }
+    cvOkunuyor = false; cvCiz();
+  }
+  fCv.addEventListener('change', () => { const f = fCv.files && fCv.files[0]; fCv.value = ''; cvSec(f); });
+  function cvCiz() {
+    cvKap.textContent = '';
+    const mevcut = r && r.cv && !cvKaldir ? r.cv : null;
+    const dugme = (metin, id, fn) => el('button', { class: 'btn', type: 'button', id, text: metin, on: { click: fn } });
+    if (cvYeni) { cvKap.append(cvKutusu(cvYeni, { yeni: true, ek: [dugme('Değiştir', 'gdCvDegistir', dosyaSec), dugme('Vazgeç', 'gdCvVazgec', () => { cvYeni = null; hata.textContent = ''; cvCiz(); })] })); return; }
+    if (mevcut) { cvKap.append(cvKutusu(mevcut, { ac: (indir) => cvAc(r.id, indir), ek: [dugme('Değiştir', 'gdCvDegistir', dosyaSec), dugme('Kaldır', 'gdCvKaldir', () => { cvKaldir = true; cvCiz(); })] })); return; }
+    if (cvKaldir) cvKap.append(el('div', { class: 'gd-cv-not' }, 'Mevcut CV kaydedince kaldırılacak.', el('button', { class: 'gd-temizle-btn', type: 'button', id: 'gdCvGeriAl', text: 'Geri al', on: { click: () => { cvKaldir = false; cvCiz(); } } })));
+    const birak = el('button', { class: 'gd-cv-birak', type: 'button', id: 'gdCvBirak', 'aria-busy': cvOkunuyor ? 'true' : 'false',
+      html: IKON_YUKLE + '<span>' + (cvOkunuyor ? 'Dosya okunuyor…' : 'CV dosyasını buraya sürükleyin ya da <u>bilgisayardan seçin</u>') + '<small>PDF, Word, JPG ya da PNG · en çok 5 MB</small></span>' });
+    birak.addEventListener('click', () => { if (!cvOkunuyor) dosyaSec(); });
+    birak.addEventListener('dragover', () => birak.classList.add('uzerinde'));
+    birak.addEventListener('dragleave', (e) => { if (!birak.contains(e.relatedTarget)) birak.classList.remove('uzerinde'); });
+    birak.addEventListener('drop', () => birak.classList.remove('uzerinde'));
+    cvKap.append(birak);
+  }
   const secenekGrubu = (ad, liste, deger, { cls = () => '', ikon = () => '' } = {}) => el('div', { class: 'gd-secenekler', role: 'radiogroup' }, ...liste.map((x) => {
     const inp = el('input', { type: 'radio', name: ad, value: x.v, id: 'gdF_' + ad + '_' + x.v }); inp.checked = deger === x.v;
     /* seçili seçeneğe yeniden tıklanınca seçim kalkar (boş bırakılabilir) */
@@ -662,6 +887,7 @@ function kayitPenceresi(id, { ardisik = false } = {}) {
   const fNot = el('textarea', { id: 'gdF_notlar', maxlength: String(SINIR.notlar), rows: '6', placeholder: 'Görüşmede konuşulanlar, adayın beklentisi, izlenim…' }); fNot.value = v.notlar || '';
   const fSon = secenekGrubu('sonuc', SONUC, v.sonuc, { cls: (x) => x.cls });
   const hata = el('div', { class: 'gd-hata', role: 'alert' });
+  cvCiz();
   const z = el('span', { class: 'zorunlu', text: ' *' });
   const form = el('div', { class: 'gd-form' },
     el('label', null, el('span', null, 'Ad Soyad', z.cloneNode(true)), fAd),
@@ -670,8 +896,9 @@ function kayitPenceresi(id, { ardisik = false } = {}) {
     el('label', null, 'E-posta adresi', fEp),
     el('div', { class: 'gd-alan genis' }, el('span', { text: 'İletişime geçildiği şekil' }), fIl),
     el('label', null, 'Görüşme tarihi', fTar),
-    el('div'),
+    el('label', null, 'Departman', fDep, fDepYeni),
     el('label', { class: 'genis' }, 'Görüşme notları', fNot),
+    el('div', { class: 'gd-alan genis' }, el('span', { text: 'CV' }), cvKap, fCv),
     el('div', { class: 'gd-alan genis' }, el('span', { text: 'Sonuç' }), fSon),
     r ? el('div', { class: 'gd-iz genis', text: ['Kayıt: ' + (zamanMetni(r.olusturma) || '—'), r.guncelleme ? 'son güncelleme: ' + zamanMetni(r.guncelleme) : ''].filter(Boolean).join(' · ') }) : null,
     el('div', { class: 'genis' }, hata));
@@ -680,9 +907,12 @@ function kayitPenceresi(id, { ardisik = false } = {}) {
     let poz = '';
     if (fPoz.value === '@yeni') poz = unvanGoster(temizMetin(fPozYeni.value, SINIR.pozisyon));
     else if (fPoz.value) poz = (tumu.find((p) => p.k === fPoz.value) || {}).ad || '';
+    let dep = '';
+    if (fDep.value === '@yeni') { dep = depGoster(temizMetin(fDepYeni.value, SINIR.departman)); const es = deplar.find((x) => x.k === anahtar(dep)); if (es) dep = es.ad; }
+    else if (fDep.value) dep = (deplar.find((x) => x.k === fDep.value) || {}).ad || '';
     return {
       ad: adBicim(fAd.value), telefon: telefonBicim(fTel.value), eposta: temizMetin(fEp.value, SINIR.eposta).replace(/\s+/g, ''),
-      pozisyon: temizMetin(poz, SINIR.pozisyon), iletisim: secili('iletisim'), tarih: /^\d{4}-\d{2}-\d{2}$/.test(fTar.value) ? fTar.value : '',
+      pozisyon: temizMetin(poz, SINIR.pozisyon), departman: temizMetin(dep, SINIR.departman), iletisim: secili('iletisim'), tarih: /^\d{4}-\d{2}-\d{2}$/.test(fTar.value) ? fTar.value : '',
       notlar: kes(String(fNot.value || '').replace(/\r\n/g, '\n').trim(), SINIR.notlar), sonuc: secili('sonuc')
     };
   }
@@ -692,33 +922,87 @@ function kayitPenceresi(id, { ardisik = false } = {}) {
     if (d.ad.length < 2) { hata.textContent = 'Adayın adını ve soyadını yazın.'; fAd.focus(); return; }
     if (!d.pozisyon) { hata.textContent = 'Görüşmenin yapıldığı pozisyonu seçin.'; (fPoz.value === '@yeni' ? fPozYeni : fPoz).focus(); return; }
     if (!epostaGecerli(d.eposta)) { hata.textContent = 'E-posta adresi geçerli görünmüyor (ör. ad@ornek.com).'; fEp.focus(); return; }
-    const dugmeler = [...document.querySelectorAll('.gd-pencere .alt .btn')]; dugmeler.forEach((b) => { b.disabled = true; });
+    if (cvOkunuyor) { hata.textContent = 'CV dosyası okunuyor; birkaç saniye sonra yeniden deneyin.'; return; }
+    const degisti = kayitDegisti(); if (degisti) { hata.textContent = degisti; return; }
+    /* kayıt sürerken pencere kapatılamaz, sayfadan çıkılırken uyarılır; CV seçimi o anki hâliyle sabitlenir */
+    const dugmeler = [...document.querySelectorAll('.gd-pencere .alt .btn, .gd-pencere .gd-cv button')]; dugmeler.forEach((b) => { b.disabled = true; });
     const eski = dugme.textContent; dugme.textContent = 'Kaydediliyor…';
-    const ek = { guncelleme: serverTimestamp(), guncelleyen: String(HESAP.ad || '') };
+    mesgulBasla();
+    const secilenCv = cvYeni, kaldir = cvKaldir;
+    const ref = doc(db, 'gorusmeler', kayitId);
+    const eskiCv = r && r.cv ? r.cv : null;
+    let cvBilgi = kaldir ? null : eskiCv;
+    let yeniYuva = '';
     try {
-      let id = r ? r.id : '';
-      if (r) await updateDoc(doc(db, 'gorusmeler', r.id), Object.assign({}, d, ek));
-      else id = (await addDoc(collection(db, 'gorusmeler'), Object.assign({}, d, ek, { olusturma: serverTimestamp() }))).id;
+      /* yeni CV önce KULLANILMAYAN yuvaya parça parça yazılır, sonra kayıt ona bağlanır (yükleme yarıda kalırsa eski CV bozulmaz) */
+      if (secilenCv) {
+        yeniYuva = eskiCv && eskiCv.anahtar === 'a' ? 'b' : 'a';
+        const yeni = { ad: secilenCv.ad, tip: secilenCv.tip, boyut: secilenCv.boyut, parca: Math.ceil(secilenCv.b64.length / CV_PARCA), anahtar: yeniYuva };
+        if (yeni.parca > CV_PARCA_EN_FAZLA) throw new Error('CV dosyası çok büyük.');
+        for (let i = 0; i < yeni.parca; i++) {
+          dugme.textContent = 'CV yükleniyor…' + (yeni.parca > 1 ? ' ' + (i + 1) + '/' + yeni.parca : '');
+          await setDoc(cvParcaYolu(ref.id, yeniYuva, i), { veri: secilenCv.b64.slice(i * CV_PARCA, (i + 1) * CV_PARCA) });
+        }
+        cvBilgi = yeni;
+        dugme.textContent = 'Kaydediliyor…';
+        const sonra = kayitDegisti(); if (sonra) throw new Error(sonra);
+      }
+      const veri = Object.assign({}, d, { cv: cvBilgi, guncelleme: serverTimestamp(), guncelleyen: String(HESAP.ad || '') });
+      if (r) await updateDoc(ref, veri);
+      else await setDoc(ref, Object.assign(veri, { olusturma: serverTimestamp() }));
+      /* artık kullanılmayan CV parçaları (eski yuva, yarıda kalmış eski yüklemeler) silinir; silinemezse kayıt yine doğrudur
+         ve parçalar sonraki kayıtta / aday silinince temizlenir */
+      if (secilenCv || kaldir) cvTemizle(writeBatch(db), ref.id, cvBilgi).commit().catch(() => {});
+      mesgulBitir();
       kapat();
       O.bildirim(r ? 'Kayıt güncellendi: ' + d.ad : 'Aday eklendi: ' + d.ad + ' · ' + d.pozisyon);
       if (yeniAc) kayitPenceresi(null, { ardisik: true });
-      else odakla(id);
+      else odakla(ref.id);
     } catch (e) {
-      dugmeler.forEach((b) => { b.disabled = false; }); dugme.textContent = eski;
+      /* yarıda kalan yüklemenin parçaları geri alınır (eski CV'nin yuvasına dokunulmaz) */
+      if (yeniYuva) { const t = writeBatch(db); for (let i = 0; i < CV_PARCA_EN_FAZLA; i++) t.delete(cvParcaYolu(ref.id, yeniYuva, i)); t.commit().catch(() => {}); }
+      mesgulBitir();
+      dugmeler.forEach((b) => { if (b.isConnected) b.disabled = false; }); dugme.textContent = eski;
       hata.textContent = hataMetni(e);
     }
   }
+  /* yeni kaydın kimliği pencere başına bir kez üretilir: kaydetme yarıda kalıp yeniden denenirse ilk denemenin CV parçaları
+     da aynı kaydın altında kalır ve başarılı kayıtta temizlenir (sahipsiz parça oluşmaz) */
+  const kayitId = r ? r.id : doc(collection(db, 'gorusmeler')).id;
+  /* kayıt bu pencere açıkken başka bir yerden (sekme / cihaz) değişti ya da silindi mi */
+  function kayitDegisti() {
+    if (!r) return '';
+    const s = KAYIT.get(r.id);
+    if (!s) return 'Bu kayıt bu arada silinmiş; pencereyi kapatın.';
+    const a = zaman(r.guncelleme), b = zaman(s.guncelleme);
+    if (((s.cv && s.cv.anahtar) || '') !== ((r.cv && r.cv.anahtar) || '') || (a && b && a.getTime() !== b.getTime()))
+      return 'Bu kayıt siz düzenlerken başka bir pencereden değiştirildi. Yazdıklarınızı not alıp pencereyi kapatın ve kaydı yeniden açın.';
+    return '';
+  }
+  let mesgul = false;
+  const ayrilmaUyarisi = (e) => { e.preventDefault(); e.returnValue = ''; };
+  function mesgulBasla() { mesgul = true; window.addEventListener('beforeunload', ayrilmaUyarisi); }
+  function mesgulBitir() { mesgul = false; window.removeEventListener('beforeunload', ayrilmaUyarisi); }
   const dugmeler = [];
   if (r) dugmeler.push({ metin: 'Adayı sil', id: 'gdSil', sinif: 'btn-sil', fn: async (kapat, b) => {
     if (!b.classList.contains('onay')) { b.classList.add('onay'); b.textContent = 'Silmeyi onayla'; return; }
     b.disabled = true; b.textContent = 'Siliniyor…';
-    try { await deleteDoc(doc(db, 'gorusmeler', r.id)); kapat(); O.bildirim('Kayıt silindi: ' + (r.ad || '')); odakla(r.id); }
-    catch (e) { b.disabled = false; b.textContent = 'Silmeyi onayla'; hata.textContent = (e && e.code === 'permission-denied') ? 'Silinemedi: yetki yok.' : 'Silinemedi: ' + ((e && e.message) || e); }
+    mesgulBasla();
+    try {
+      /* kayıt, CV parçalarının TAMAMIYLA (iki yuva, yarıda kalmış yüklemeler dahil) tek seferde silinir: CV veritabanında kalmaz */
+      await cvTemizle(writeBatch(db), r.id, null).delete(doc(db, 'gorusmeler', r.id)).commit();
+      mesgulBitir();
+      kapat(); O.bildirim('Kayıt silindi: ' + (r.ad || '')); odakla(r.id);
+    }
+    catch (e) { mesgulBitir(); b.disabled = false; b.textContent = 'Silmeyi onayla'; hata.textContent = (e && e.code === 'permission-denied') ? 'Silinemedi: yetki yok.' : 'Silinemedi: ' + ((e && e.message) || e); }
   } });
   dugmeler.push({ metin: 'Vazgeç' });
   if (!r) dugmeler.push({ metin: 'Kaydet ve yeni aday', id: 'gdKaydetYeni', fn: (kapat, b) => kaydet(kapat, b, true) });
   dugmeler.push({ metin: 'Kaydet', id: 'gdKaydet', birincil: true, fn: (kapat, b) => kaydet(kapat, b, false) });
-  pencere({ baslik: r ? 'Görüşme kaydını düzenle' : (ardisik ? 'Yeni aday (sıradaki)' : 'Yeni aday görüşmesi'), govde: [form], dugmeler, genis: true, odak: fAd });
+  const pen = pencere({ baslik: r ? 'Görüşme kaydını düzenle' : (ardisik ? 'Yeni aday (sıradaki)' : 'Yeni aday görüşmesi'), govde: [form], dugmeler, genis: true, odak: fAd, kilitli: () => mesgul });
+  /* pencerenin herhangi bir yerine bırakılan dosya CV olarak alınır (tarayıcı dosyayı açıp sayfadan çıkmasın) */
+  pen.perde.addEventListener('dragover', (e) => { e.preventDefault(); });
+  pen.perde.addEventListener('drop', (e) => { e.preventDefault(); const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f && !mesgul) cvSec(f); });
   /* Ctrl+Enter: kaydet */
   form.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); const b = $('gdKaydet'); if (b && !b.disabled) b.click(); } });
 }
@@ -732,11 +1016,13 @@ function detayPenceresi(id) {
   const dl = el('dl', { class: 'gd-detay', id: 'gdDetay' },
     el('dt', { text: 'Ad Soyad' }), dd(r.ad),
     el('dt', { text: 'Pozisyon' }), dd(r.pozisyon),
+    el('dt', { text: 'Departman' }), dd(r.departman ? depAdi(anahtar(r.departman), r.departman) : ''),
     el('dt', { text: 'Telefon' }), dd(r.telefon ? (tl ? el('a', { href: tl, text: r.telefon }) : r.telefon) : ''),
     el('dt', { text: 'E-posta' }), dd(r.eposta ? (epostaGecerli(r.eposta) ? el('a', { href: 'mailto:' + r.eposta, text: r.eposta }) : r.eposta) : ''),
     el('dt', { text: 'İletişim' }), dd(il ? il.uzun : ''),
     el('dt', { text: 'Görüşme tarihi' }), dd(tarihGoster(r.tarih)),
     el('dt', { text: 'Sonuç' }), dd(s ? el('span', { class: 'gd-durum ' + s.cls, text: s.ad }) : ''),
+    el('dt', { text: 'CV' }), dd(r.cv ? cvKutusu(r.cv, { ac: (indir) => cvAc(r.id, indir) }) : ''),
     el('dt', { text: 'Görüşme notları' }), r.notlar ? el('dd', { class: 'not', text: r.notlar }) : el('dd', { class: 'bos', text: '—' }));
   pencere({ baslik: r.ad || 'Aday', govde: [dl, el('div', { class: 'gd-iz', text: ['Kayıt: ' + (zamanMetni(r.olusturma) || '—'), r.guncelleme ? 'son güncelleme: ' + zamanMetni(r.guncelleme) : ''].filter(Boolean).join(' · ') })], dugmeler: [{ metin: 'Kapat', birincil: true }], genis: true });
 }
@@ -749,13 +1035,14 @@ function indirVerisi() {
   if (!F.poz) liste.sort((a, b) => (sira.findIndex((x) => x.k === anahtar(a.pozisyon)) - sira.findIndex((x) => x.k === anahtar(b.pozisyon))) || 0);
   const kapsam = p ? p.ad : 'Tüm pozisyonlar';
   const tarih = new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  const sz = [F.ara ? 'arama: ' + F.ara : '', F.iletisim ? 'iletişim: ' + iletisimBul(F.iletisim).uzun : '', F.sonuc ? 'sonuç: ' + sonucBul(F.sonuc).ad : ''].filter(Boolean).join(' · ');
+  const depSz = F.dep ? 'departman: ' + (F.dep === '@bos' ? 'yazılmamış' : depAdi(F.dep, ([...KAYIT.values()].find((r) => anahtar(r.departman) === F.dep) || {}).departman || F.dep)) : '';
+  const sz = [F.ara ? 'arama: ' + F.ara : '', F.iletisim ? 'iletişim: ' + iletisimBul(F.iletisim).uzun : '', depSz, F.sonuc ? 'sonuç: ' + sonucBul(F.sonuc).ad : ''].filter(Boolean).join(' · ');
   const bas = [['Görüşme Detayları — ' + kapsam], ['İndirme: ' + tarih + ' · ' + liste.length + ' aday' + (sz ? ' · ' + sz : '')], []];
-  const ust = ['Pozisyon', 'Ad Soyad', 'Telefon', 'E-posta', 'İletişim', 'Görüşme tarihi', 'Görüşme notları', 'Sonuç', 'Son güncelleme'];
+  const ust = ['Pozisyon', 'Departman', 'Ad Soyad', 'Telefon', 'E-posta', 'İletişim', 'Görüşme tarihi', 'Görüşme notları', 'Sonuç', 'CV', 'Son güncelleme'];
   const seri = (iso) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? Math.round((Date.UTC(+m[1], +m[2] - 1, +m[3]) - Date.UTC(1899, 11, 30)) / 86400000) : ''; };
-  const satirlar = liste.map((r) => [r.pozisyon || '', r.ad || '', r.telefon || '', r.eposta || '', (iletisimBul(r.iletisim) || {}).uzun || '', seri(r.tarih), r.notlar || '', (sonucBul(r.sonuc) || {}).ad || '', zamanMetni(r.guncelleme)]);
+  const satirlar = liste.map((r) => [r.pozisyon || '', r.departman ? depAdi(anahtar(r.departman), r.departman) : '', r.ad || '', r.telefon || '', r.eposta || '', (iletisimBul(r.iletisim) || {}).uzun || '', seri(r.tarih), r.notlar || '', (sonucBul(r.sonuc) || {}).ad || '', r.cv ? r.cv.ad : '', zamanMetni(r.guncelleme)]);
   const ad = ('Görüşme Detayları - ' + kapsam + ' - ' + tarih).replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
-  return { ad, sayfa: 'Görüşmeler', aoa: bas.concat([ust]).concat(satirlar), basSatir: bas.length + 1, tarihSutun: 5, satirSayisi: satirlar.length };
+  return { ad, sayfa: 'Görüşmeler', aoa: bas.concat([ust]).concat(satirlar), basSatir: bas.length + 1, tarihSutun: 6, notSutun: 7, satirSayisi: satirlar.length };
 }
 async function indir() {
   const v = indirVerisi();
@@ -768,7 +1055,7 @@ async function indir() {
     const sutunSay = v.aoa[v.basSatir - 1].length;
     ws['!cols'] = Array.from({ length: sutunSay }, (_, c) => {
       let w = 8; for (let r = v.basSatir - 1; r < v.aoa.length; r++) { const x = v.aoa[r][c]; const l = x === null || x === undefined ? 0 : String(x).length; if (l > w) w = l; }
-      return { wch: c === v.tarihSutun ? 14 : Math.min(c === 6 ? 70 : 40, w + 2) };
+      return { wch: c === v.tarihSutun ? 14 : Math.min(c === v.notSutun ? 70 : 40, w + 2) };
     });
     ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: v.basSatir - 1, c: 0 }, e: { r: Math.max(v.basSatir - 1, v.aoa.length - 1), c: sutunSay - 1 } }) };
     const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, v.sayfa);
@@ -790,14 +1077,15 @@ function kareOku() {
 window.addEventListener('hashchange', () => { if (!KAYIT_HAZIR) return; const once = F.poz; kareOku(); if (once !== F.poz) ciz(); });
 
 /* ============================================================== PENCERE */
-function pencere({ baslik = '', govde = [], dugmeler = [], kapanirken = null, genis = false, odak = null } = {}) {
+function pencere({ baslik = '', govde = [], dugmeler = [], kapanirken = null, genis = false, odak = null, kilitli = null } = {}) {
   const perde = el('div', { class: 'gd-perde', role: 'dialog', 'aria-modal': 'true', 'aria-label': baslik });
   const p = el('div', { class: 'gd-pencere' }, el('h2', { text: baslik }), ...govde);
   if (genis) p.style.width = 'min(760px, 100%)';
   const alt = el('div', { class: 'alt' });
   const onceki = document.activeElement;
   const kapat = () => { perde.remove(); document.removeEventListener('keydown', esc); if (kapanirken) kapanirken(); try { if (onceki && onceki.isConnected) onceki.focus(); } catch (e) { /* odak geri verilemedi */ } };
-  const esc = (e) => { if (e.key === 'Escape') kapat(); };
+  /* kilitli (ör. kayıt sürüyor): ESC ve pencere dışına tıklama pencereyi kapatmaz */
+  const esc = (e) => { if (e.key === 'Escape' && !(kilitli && kilitli())) kapat(); };
   document.addEventListener('keydown', esc);
   dugmeler.forEach((d) => {
     if (d.sol) { alt.append(el('span', { class: 'sol', id: d.id || null, text: d.metin })); return; }
@@ -806,7 +1094,7 @@ function pencere({ baslik = '', govde = [], dugmeler = [], kapanirken = null, ge
     alt.append(b);
   });
   p.append(alt); perde.append(p);
-  perde.addEventListener('mousedown', (e) => { if (e.target === perde) kapat(); });
+  perde.addEventListener('mousedown', (e) => { if (e.target === perde && !(kilitli && kilitli())) kapat(); });
   document.body.append(perde);
   const ilk = odak || p.querySelector('.btn-pirinc') || p.querySelector('button'); if (ilk) ilk.focus();
   return { perde, kapat };
@@ -916,10 +1204,18 @@ function durumEkrani(baslik, metin) {
   document.body.append(el('div', { class: 'durum-ekran' }, kart));
   window.__TEST_HAZIR = true;
 }
+/** kayıttaki CV bilgisi (geçersizse yok sayılır) */
+function cvBilgiOku(c) {
+  if (!c || typeof c !== 'object') return null;
+  const t = cvTurBul(c.tip), parca = Number(c.parca), boyut = Number(c.boyut);
+  if (!t || CV_YUVALAR.indexOf(c.anahtar) < 0 || !(parca >= 1 && parca <= CV_PARCA_EN_FAZLA) || !(boyut > 0)) return null;
+  return { ad: String(c.ad || 'CV').slice(0, 200), tip: t.tip, boyut, parca: Math.floor(parca), anahtar: c.anahtar };
+}
 /** Firestore kaydı → ekran kaydı (yalnız bilinen alanlar, metin sınırlarıyla) */
 function kayitOku(id, x) {
   const s = (v, n) => String(v == null ? '' : v).slice(0, n);
   return { id, ad: s(x.ad, SINIR.ad), telefon: s(x.telefon, SINIR.telefon), eposta: s(x.eposta, SINIR.eposta), pozisyon: s(x.pozisyon, SINIR.pozisyon),
+    departman: s(x.departman, SINIR.departman), cv: cvBilgiOku(x.cv),
     iletisim: iletisimBul(x.iletisim) ? x.iletisim : '', tarih: /^\d{4}-\d{2}-\d{2}$/.test(x.tarih || '') ? x.tarih : '', notlar: s(x.notlar, SINIR.notlar),
     sonuc: sonucBul(x.sonuc) ? x.sonuc : '', olusturma: x.olusturma || null, guncelleme: x.guncelleme || null, guncelleyen: s(x.guncelleyen, 120) };
 }
@@ -936,7 +1232,9 @@ function kayitBaslat() {
     ciz();
   }, (e) => { KAYIT_HATA = e; KAYIT_HAZIR = true; ciz(); });
 }
-window.__gorusme = { F, kayitlar: () => [...KAYIT.values()], unvanlar: () => UNVANLAR.slice(), pozisyonlar, ciz, DUZENLEYEBILIR };
+/* sayfanın herhangi bir yerine (pencere dışı dahil) bırakılan dosya tarayıcıda açılıp sayfadan çıkılmasın */
+['dragover', 'drop'].forEach((t) => document.addEventListener(t, (e) => { if (e.dataTransfer && Array.from(e.dataTransfer.types || []).indexOf('Files') >= 0) e.preventDefault(); }));
+window.__gorusme = { F, kayitlar: () => [...KAYIT.values()], unvanlar: () => UNVANLAR.slice(), departmanlar, pozisyonlar, ciz, DUZENLEYEBILIR };
 
 if (ERISIM_HATA) durumEkrani('Bağlantı kurulamadı', 'Erişim bilgisi okunamadı. İnternet bağlantınızı kontrol edip sayfayı yenileyin.');
 else if (!YETKILI && !KURUCU) durumEkrani('Bu sayfa kısıtlı erişimlidir', 'Görüşme Detayları yalnız yetkilendirilmiş kişilere açıktır. Erişim gerekiyorsa İnsan Kaynakları ile görüşün.');

@@ -986,7 +986,7 @@ service cloud.firestore {
     }
 
     // ====================================================== GÖRÜŞME DETAYLARI (24.11.2026) — KİŞİ BAZLI, TEK DÜZENLEYİCİ
-    // Sayfa: gorusme.html. Aday görüşme kayıtları (ad soyad, telefon, e-posta, pozisyon, iletişim şekli, tarih, notlar, sonuç):
+    // Sayfa: gorusme.html. Aday görüşme kayıtları (ad soyad, telefon, e-posta, pozisyon, departman, iletişim şekli, tarih, notlar, sonuç, CV):
     // KİŞİSEL VERİDİR, bu depoda YOKTUR. GÖRENLER: yalnız gorusmeAyar/erisim.hidler listesindeki GEÇERLİ hesaplar (rol yetmez;
     // İK ekibi ve direktörler dahil listede olmayan hiç kimse okuyamaz). EKLEYEN / DÜZENLEYEN / SİLEN: YALNIZ kurulum İK hesabı
     // (kurucuHesap); listedeki diğer kişiler yalnız okur. Listeyi yalnız kurucu yazar ve kendini çıkaramaz; liste silinemez.
@@ -1004,11 +1004,28 @@ service cloud.firestore {
       allow list, delete: if false;
     }
     function gorusmeAlanlari() { return ['ad', 'telefon', 'eposta', 'pozisyon', 'iletisim', 'tarih', 'notlar', 'sonuc', 'olusturma', 'guncelleme', 'guncelleyen']; }
+    // 24.11.2026 ek alanlar: departman ve cv (isteğe bağlı: bu alanlardan önce açılmış kayıtlarda bulunmazlar).
+    // cv yalnız dosya bilgisidir; dosyanın kendisi gorusmeler/{id}/cv/{yuva}_{n} parçalarındadır (aşağıda). anahtar = yuva ("a" / "b").
+    function gorusmeEkAlanlar() { return ['departman', 'cv']; }
+    function gorusmeCvTurleri() {
+      return ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+              'image/jpeg', 'image/png'];
+    }
+    function gorusmeCvGecerli(c) {
+      return c == null || (c is map
+        && c.keys().hasOnly(['ad', 'tip', 'boyut', 'parca', 'anahtar']) && c.keys().hasAll(['ad', 'tip', 'boyut', 'parca', 'anahtar'])
+        && metin(c.ad, 200) && c.ad.matches('(?i).+[.](pdf|docx?|jpe?g|png)') && c.tip in gorusmeCvTurleri()
+        && c.boyut is int && c.boyut > 0 && c.boyut <= 5242880
+        && c.parca is int && c.parca >= 1 && c.parca <= 8
+        && c.anahtar in ['a', 'b']);
+    }
     function gorusmeKaydiGecerli(y) {
-      return y.keys().hasOnly(gorusmeAlanlari()) && y.keys().hasAll(gorusmeAlanlari())
+      return y.keys().hasOnly(gorusmeAlanlari().concat(gorusmeEkAlanlar())) && y.keys().hasAll(gorusmeAlanlari())
         && metin(y.ad, 100) && y.ad.size() >= 2
         && metin(y.telefon, 30) && metin(y.eposta, 120)
         && metin(y.pozisyon, 120) && y.pozisyon.size() > 0
+        && metin(y.get('departman', ''), 80)
+        && gorusmeCvGecerli(y.get('cv', null))
         && y.iletisim in ['', 'arandi', 'online', 'yuzyuze']
         && y.sonuc in ['', 'olumlu', 'beklemede', 'ikinci', 'olumsuz', 'ulasilamadi', 'vazgecti']
         && y.tarih is string && (y.tarih == '' || y.tarih.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}'))
@@ -1023,6 +1040,19 @@ service cloud.firestore {
       allow update: if kurucuHesap() && gorusmeKaydiGecerli(request.resource.data)
         && request.resource.data.olusturma == resource.data.olusturma;
       allow delete: if kurucuHesap();
+      // CV parçaları: dosya base64 metin olarak en çok 900.000 karakterlik parçalara bölünür (Firestore belgesi en çok 1 MiB;
+      // 5 MB → en çok 8 parça). Parça adı = yuva ("a" / "b") + "_" + sıra (0–7): adlar SABİT olduğu için aday silinirken 16
+      // parçanın tamamı silinir, CV veritabanında kalmaz. Görenler kayıtla aynı; yalnız kurucu yazar ve siler. Listeleme yok.
+      match /cv/{p} {
+        allow get: if gorusmeYetkili() || kurucuHesap();
+        allow create, update: if kurucuHesap() && p.matches('[ab]_[0-7]')
+          && request.resource.data.keys().hasOnly(['veri']) && request.resource.data.keys().hasAll(['veri'])
+          && request.resource.data.veri is string && request.resource.data.veri.size() > 0
+          && request.resource.data.veri.size() <= 900000
+          && request.resource.data.veri.matches('[A-Za-z0-9+/=]+');
+        allow list: if false;
+        allow delete: if kurucuHesap();
+      }
     }
   }
 }
