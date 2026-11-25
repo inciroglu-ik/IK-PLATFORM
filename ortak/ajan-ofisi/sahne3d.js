@@ -29,7 +29,8 @@ export function webglVar() {
 export async function sahne3dKur(kap, { kadro, onAjanTik, kayit, klavyeIzni } = {}) {
   if (!webglVar()) return null;
   let THREE;
-  try { THREE = await import(THREE_ADRES); } catch (e) { return null; }
+  /* CDN yavaş/engelliyse sonsuza dek bekleme: 15 sn sonra 2B kat planına geçilir */
+  try { THREE = await Promise.race([import(THREE_ADRES), new Promise((_, ret) => setTimeout(() => ret(new Error('zaman aşımı')), 15000))]); } catch (e) { return null; }
 
   kap.innerHTML = '';
   kap.classList.add('ofis-sahne', 'ofis-3b');

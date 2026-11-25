@@ -13,7 +13,8 @@ function idb() {
     try {
       const r = indexedDB.open(DB_AD, 1);
       r.onupgradeneeded = () => r.result.createObjectStore(DEPO);
-      r.onsuccess = () => coz(r.result); r.onerror = () => coz(null);
+      r.onsuccess = () => coz(r.result); r.onerror = () => coz(null); r.onblocked = () => coz(null);
+      setTimeout(() => coz(null), 5000);   /* tarayıcı veritabanı yanıt vermezse köprü 'bağlı değil' sayılır */
     } catch (e) { coz(null); }
   });
 }
@@ -50,7 +51,7 @@ export function kopruKur() {
       if (!destek) return (durum = 'desteklenmiyor');
       kok = await tutamakAl();
       if (!kok) return (durum = 'yok');
-      try { durum = (await kok.queryPermission({ mode: 'readwrite' })) === 'granted' ? 'hazir' : 'izin'; }
+      try { durum = (await Promise.race([kok.queryPermission({ mode: 'readwrite' }), new Promise((coz) => setTimeout(() => coz('zaman'), 5000))])) === 'granted' ? 'hazir' : 'izin'; }
       catch (e) { durum = 'izin'; }
       if (durum === 'hazir') { try { await altKlasorler(); } catch (e) { durum = 'izin'; } }
       return durum;

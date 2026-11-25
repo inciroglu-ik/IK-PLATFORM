@@ -87,6 +87,13 @@ a{color:var(--lacivert3)}
 .ot-bekle{color:var(--soluk);font-style:italic}
 /* ---------- 3B ofis (25.11.2026) */
 .ofis-3b{background:#dde3ec}
+/* yükleme durumu (sahne kurulana kadar) */
+.sahne-yuk{width:100%;aspect-ratio:16/9;border-radius:14px;background:linear-gradient(160deg,#e6ebf2,#d9e0ea);display:grid;place-items:center;box-shadow:var(--golge)}
+.sahne-yuk .sy-ic{text-align:center;max-width:560px;padding:16px}
+.sahne-yuk .sy-baslik{font:600 18px "Source Serif 4",Georgia,serif;color:var(--lacivert)}
+.sahne-yuk .sy-adim{font-size:13px;color:var(--soluk);margin-top:6px}
+.sahne-yuk .sy-hata{margin-top:12px;background:#fff;border:1px solid #efcfcc;border-left:4px solid var(--kirmizi);border-radius:8px;padding:8px 12px;font-size:12.5px;color:#7a2f2b;text-align:left}
+.sahne-yuk .sy-not{font-size:12px;color:var(--soluk);margin-top:6px}
 .ofis-3b canvas.ofis-tuval{position:absolute;inset:0;width:100%;height:100%;display:block;outline:none;cursor:grab;touch-action:none}
 .ofis-3b canvas.ofis-tuval:active{cursor:grabbing}
 .ofis-3b canvas.ofis-tuval:focus-visible{box-shadow:inset 0 0 0 3px rgba(176,141,87,.65)}
@@ -367,9 +374,28 @@ const dur = () => new Promise(() => {});            /* modülü sessizce durduru
 try { sahip = await sahiplikDogrula(); } catch (e) { kilitle('Bağlantı kurulamadı: ' + (e.message || e)); await dur(); }
 if (!sahip) { kilitle(); await dur(); }
 $('uygulama').hidden = false;
-/* Claude Code köprüsü (Masaüstü\Ajan Ofisi klasörü) */
+/* Yükleme durumu (25.11.2026): sahne kurulana kadar sahne alanında hangi adımın beklendiği ve varsa hata görünür
+   (ofis portal içinde boş kaldığında neden takıldığı ekrandan okunsun). */
+let sahne = null, akis = null, sahneKuruluyor = false;
+const YUK = { adim: 'Giriş tamam', hata: '', bas: Date.now() };
+function yukGoster() {
+  const k = $('sahne'); if (!k || sahne) return;
+  let d = $('sahne-yuk');
+  if (!d) { if (sahneKuruluyor) return; /* sahne kapsayıcıyı devraldı: dokunma */ k.innerHTML = '<div class="sahne-yuk" id="sahne-yuk"></div>'; d = $('sahne-yuk'); }
+  const gecen = Math.round((Date.now() - YUK.bas) / 1000);
+  d.innerHTML = '<div class="sy-ic"><div class="sy-baslik">Ofis yükleniyor…</div><div class="sy-adim">' + esc(YUK.adim) + (gecen > 3 ? ' · ' + gecen + ' sn' : '') + '</div>' +
+    (YUK.hata ? '<div class="sy-hata"><b>Hata:</b> ' + esc(YUK.hata) + '</div><div class="sy-not">Bu ekranın görüntüsünü Claude’a gönderin.</div>' : '') +
+    (!YUK.hata && gecen > 20 && !S.hazir.kadro ? '<div class="sy-hata">Veritabanından ofis verisi gelmedi. İnternet bağlantınızı kontrol edip sayfayı yenileyin; olmazsa bu ekranın görüntüsünü Claude’a gönderin.</div>' : '') + '</div>';
+}
+function yukAdim(t) { YUK.adim = t; yukGoster(); }
+window.addEventListener('error', (e) => { if (!sahne) { YUK.hata = String((e && (e.message || (e.error && e.error.message))) || 'bilinmeyen hata').slice(0, 300); yukGoster(); } });
+window.addEventListener('unhandledrejection', (e) => { if (!sahne) { YUK.hata = String((e && e.reason && (e.reason.message || e.reason)) || 'bilinmeyen hata').slice(0, 300); yukGoster(); } });
+const yukZaman = setInterval(() => { if (sahne) clearInterval(yukZaman); else yukGoster(); }, 1000);
+yukAdim('Veriler bekleniyor (kadro, ayarlar)');
+/* Claude Code köprüsü (Masaüstü\Ajan Ofisi klasörü). Sayfayı BEKLETMEZ: klasör izni sorgusu bazı ortamlarda (portal
+   içindeki çerçeve) uzun sürebiliyor; durum hazır olunca şerit ve çipler kendiliğinden güncellenir. */
 const kopru = kopruKur();
-try { await kopru.baslat(); } catch (e) { /* izin/destek durumu seritte gösterilir */ }
+kopru.baslat().catch(() => { /* izin/destek durumu seritte gösterilir */ }).finally(() => { try { seritCiz(); ustBilgi(); } catch (e) { /* sayfa henüz hazır değil */ } });
 
 /* ================================================================ veri katmanı */
 const veri = {
@@ -445,7 +471,7 @@ function bildir(o) {
 }
 
 /* ================================================================ sahne + akış */
-let sahne = null, akis = null, sahneKuruluyor = false;
+/* (sahne / akis / sahneKuruluyor yukarıda, yükleme durumu bloğunda tanımlı) */
 /* 25.11.2026: varsayılan 3B ofis (three.js). WebGL yoksa ya da adreste ?sahne=2b varsa eski kat planı (2B) kullanılır;
    iki sahne aynı API'yi sağlar, iş akışı değişmez. */
 async function sahneyiKur() {
@@ -454,8 +480,13 @@ async function sahneyiKur() {
   const iki = new URLSearchParams(location.search).get('sahne') === '2b';
   const ortak = { kadro: S.kadro, onAjanTik: ajanKartiAc, kayit };
   let s = null;
-  if (!iki) { try { s = await sahne3dKur($('sahne'), Object.assign({ klavyeIzni: () => ACIK.sekme === 'ofis' && $('modal').hidden }, ortak)); } catch (e) { s = null; } }
-  sahne = s || sahneKur($('sahne'), ortak);
+  if (!iki) {
+    yukAdim('3B görüntü motoru yükleniyor');
+    try { s = await sahne3dKur($('sahne'), Object.assign({ klavyeIzni: () => ACIK.sekme === 'ofis' && $('modal').hidden }, ortak)); }
+    catch (e) { s = null; YUK.hata = '3B sahne kurulamadı (' + String((e && e.message) || e).slice(0, 200) + '); 2B kat planına geçildi.'; }
+  }
+  try { if (!s) { $('sahne').innerHTML = ''; $('sahne').className = ''; } sahne = s || sahneKur($('sahne'), ortak); }
+  catch (e) { sahneKuruluyor = false; YUK.hata = 'Sahne kurulamadı: ' + String((e && e.message) || e).slice(0, 250); yukGoster(); return; }
   akis = akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru });
   if (TEST) window.__OFIS = { S, sahne, akis, veri, K, kopru };
   sahne.fikirSayisi(S.fikirler.filter((f) => f.durum === 'masada').length);
