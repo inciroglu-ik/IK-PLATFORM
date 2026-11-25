@@ -27,7 +27,7 @@ export function temizle() { /* isteğe bağlı: zamanlayıcı/dinleyici sök. Gr
 **Bağlam `B`**
 | Alan | Anlam |
 |---|---|
-| `B.D` | Paketin `D` nesnesi, filtresiz. `ozet`, `turnover`, `mesai_aylik`, `mes_bolum`, `mesai_dept` buradan okunur. |
+| `B.D` | Paketin `D` nesnesi, filtresiz. `ozet`, `turnover`, `mesai_aylik`, `mes_bolum`, `mesai_dept` buradan okunur. İsteğe bağlı `ayrilanlar[].giris` (çıkış kaydının işe başlama tarihi; 25.11.2026'dan beri haftalık Excel AYRILANLAR L sütunundan): Turnover › 05 İlk 90 gün kullanır; yoksa kıdem gününden ya da adla işe alım listesinden bulunur. |
 | `B.filtreli` | Global filtre uygulanmış diziler: `normal, stajyer, gecici, vi, ayrilanlar, isealim, izin, mesai_kisi, arabuluculuk`. Filtre boşsa D'deki dizinin kendisi gelir. Filtre doluysa V.İ. çıkar, `dept ∈ seçim`, `bolum` eşleşir. Arabuluculukta da `dept` = departman, `bolum` = bölüm. |
 | `B.filtreAktif`, `B.filtre` | `true/false`, `{ departmanlar:Set, bolum:'' }` |
 | `B.etiket` | `{ label, short, hafta, foot }` |

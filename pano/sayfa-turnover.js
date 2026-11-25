@@ -27,6 +27,7 @@ export function ciz(kok, B) {
   trendCiz(kok, M);
   kirilimCiz(kok, M);
   listeCiz(kok, B, M);
+  ilk90Ciz(kok, B, M);
   notlarCiz(kok, B, M);
 }
 export function temizle() { /* grafikleri kabuk temizler; bu sayfanın ek kaynağı yok */ }
@@ -405,6 +406,178 @@ function excelAktar(B, M) {
   O.bildirim('Aylık turnover tablosu indiriliyor.');
 }
 
+/* ==========================================================================
+   (5) İLK 90 GÜN — giriş ayına göre 30 / 60 / 90. güne kadar ayrılanlar (25.11.2026, Ajan Ofisi fikir masası)
+   Tanım: giriş ayı = işe başlama tarihi; ayrılış günü = çıkış − giriş (takvim günü); 30/60/90 kümülatif; V.İ. hariç.
+   Çıkışın giriş tarihi: paketteki `giris` (çıkış kaydının işe başlama tarihi) → yoksa kıdem gününden ("… / N gün")
+   → yoksa işe alım listesinde aynı ad (çıkıştan önceki son giriş). Haftalık rapor Excel'inin "İLK 90 GÜN" sayfası
+   aynı tanımı formülle hesaplar; iki taraf her hafta birebir tutmalıdır.
+   Kurallar: giriş sayısı 10'dan az olan ayda yüzde verilmez ("N girişten M"); penceresi dolmamış ayda oran verilmez
+   ("sürüyor"), sayı artabilir. Kişi adı gösterilmez. Başlıkta "deneme süresi" geçmez (deneme süresi 90 günle örtüşmez).
+   ========================================================================== */
+const ILK90_ESIK = [30, 60, 90];
+const NEDEN_GRUBU = { 'İstifa': 'kendi', 'Deneme (İşçi)': 'kendi', 'Deneme (İşveren)': 'isveren', 'İşveren Feshi': 'isveren', '25. Madde': 'isveren' };
+export const nedenGrubu = (n) => NEDEN_GRUBU[n] || 'diger';
+const ILK90_NEDEN = [
+  { v: 'hepsi', ad: 'Tümü' },
+  { v: 'kendi', ad: 'Kendi isteği', ipucu: 'İstifa ve deneme süresinde işçinin feshi' },
+  { v: 'isveren', ad: 'İşveren kaynaklı', ipucu: 'Deneme süresinde işverenin feshi, işveren feshi, 25. madde' },
+  { v: 'diger', ad: 'Diğer', ipucu: 'Askerlik, devamsızlık ve diğer nedenler' }
+];
+const ILK90_BANT = ['0–30 gün', '31–60 gün', '61–90 gün'];
+const gunFarki = (a, b) => Math.round((Date.UTC(a.getFullYear(), a.getMonth(), a.getDate()) - Date.UTC(b.getFullYear(), b.getMonth(), b.getDate())) / 86400000);
+const sureGunu = (s) => { const m = String(s || '').match(/\/\s*(-?\d+)\s*gün/); return m ? +m[1] : null; };
+
+/** Referans tarih: haftanın son günü (etiket.short "16.11.2026 - 22.11.2026"); yoksa verideki en geç tarih */
+export function ilk90Referans(B) {
+  const e = (B && B.etiket) || {}, D = (B && B.D) || {};
+  const m = String(e.short || '').match(/(\d{1,2}\.\d{1,2}\.\d{4})\s*$/);
+  const d = m ? O.tarihCoz(m[1]) : null;
+  if (d) return d;
+  let enGec = null;
+  [].concat(D.isealim || [], D.ayrilanlar || []).forEach((x) => { const t = O.tarihCoz(x.tarih); if (t && (!enGec || t > enGec)) enGec = t; });
+  return enGec || new Date();
+}
+
+/** Saf hesap: (işe alım, ayrılanlar, ad eşleştirmesi için tüm işe alım, referans tarih, yıl)
+    → { aylar:[{ ay, giris, tam:[30,60,90 penceresi doldu mu] }], cikis:[{ ay, gun, grup }], bilinmeyen } */
+export function ilk90Hesapla(isealim, ayrilanlar, tumIsealim, ref, yil) {
+  const giris = new Array(12).fill(0);
+  (isealim || []).forEach((x) => { const d = O.tarihCoz(x.tarih); if (d && d.getFullYear() === yil) giris[d.getMonth()]++; });
+  const adlar = new Map();
+  (tumIsealim || isealim || []).forEach((x) => {
+    const d = O.tarihCoz(x.tarih); if (!d) return;
+    const k = O.aramaAnahtari(x.ad); if (!adlar.has(k)) adlar.set(k, []); adlar.get(k).push(d);
+  });
+  const cikis = []; let bilinmeyen = 0;
+  (ayrilanlar || []).forEach((a) => {
+    const c = O.tarihCoz(a.tarih); if (!c) return;
+    let g = O.tarihCoz(a.giris);
+    if (!g) { const n = sureGunu(a.sure); if (n != null) g = new Date(c.getFullYear(), c.getMonth(), c.getDate() - n); }
+    if (!g) { const l = (adlar.get(O.aramaAnahtari(a.ad)) || []).filter((d) => d <= c).sort((p, q) => q - p); if (l.length) g = l[0]; }
+    if (!g) { bilinmeyen++; return; }
+    if (g.getFullYear() !== yil) return;
+    const gun = gunFarki(c, g);
+    if (gun > 90) return;
+    cikis.push({ ay: g.getMonth() + 1, gun: Math.max(0, gun), grup: nedenGrubu(a.neden) });
+  });
+  const sonAy = ref.getFullYear() > yil ? 12 : ref.getFullYear() < yil ? 0 : ref.getMonth() + 1;
+  const aylar = [];
+  for (let m = 1; m <= sonAy; m++) {
+    const ayBitis = new Date(yil, m, 0);
+    aylar.push({ ay: m, giris: giris[m - 1], tam: ILK90_ESIK.map((e) => gunFarki(ref, ayBitis) >= e) });
+  }
+  return { aylar, cikis, bilinmeyen };
+}
+
+/** Nedene göre süzülmüş satırlar: { ay, adUzun, kisa, giris, c30, c60, c90, tam, bant:[0–30, 31–60, 61–90] } */
+function ilk90Satirlar(H, neden, yil) {
+  const C = H.cikis.filter((c) => neden === 'hepsi' || c.grup === neden);
+  return H.aylar.map((a) => {
+    const l = C.filter((c) => c.ay === a.ay);
+    const say = (e) => l.filter((c) => c.gun <= e).length;
+    const c30 = say(30), c60 = say(60), c90 = say(90);
+    return { ay: a.ay, adUzun: O.ayAdi(a.ay) + ' ' + yil, kisa: O.ayKisa(a.ay) + (a.tam[2] ? '' : '*'), giris: a.giris, c30, c60, c90, tam: a.tam, bant: [c30, c60 - c30, c90 - c60] };
+  });
+}
+const ilk90Oran = (r) => (!r.giris ? '—' : !r.tam[2] ? 'sürüyor' : r.giris < 10 ? O.sayi(r.giris) + ' girişten ' + O.sayi(r.c90) : O.yuzde(Math.round(r.c90 / r.giris * 1000) / 10, 1));
+
+function ilk90Ciz(kok, B, M) {
+  const D = B.D || {}, F = B.filtreli || {};
+  const ref = ilk90Referans(B), yil = ref.getFullYear();
+  /* paket V.İ.'yi zaten ayırır (isealim_haric / ayrilanlar_haric); yine de savunma amaçlı süzülür */
+  const H = ilk90Hesapla(O.excludeVI(M.fa ? F.isealim : D.isealim), O.excludeVI(M.fa ? F.ayrilanlar : D.ayrilanlar), D.isealim, ref, yil);
+  O.akisBaslik(kok, { no: '05', baslik: 'İlk 90 gün', aciklama: 'Giriş ayına göre 30, 60 ve 90. güne kadar ayrılanlar · ' + yil + ' girişleri · V.İ. hariç' + (M.fa ? ' · seçili kapsam' : '') });
+  const iz = O.izgara(kok);
+  if (!H.aylar.some((a) => a.giris)) {
+    const { govde } = O.kart(iz, { baslik: 'İlk 90 günde ayrılanlar', sinif: 's12' });
+    O.bosDurum(govde, { ikon: 'donus', baslik: 'Giriş kaydı yok', metin: M.fa ? 'Seçili kapsamda ' + yil + ' girişi bulunmuyor.' : 'Bu haftanın paketinde ' + yil + ' girişi bulunmuyor.', kucuk: true });
+    return;
+  }
+  let neden = 'hepsi';
+  let S = ilk90Satirlar(H, neden, yil);
+  const renk = [O.RENK.cikis, O.renkSaydam(O.RENK.cikis, 0.6), O.renkSaydam(O.RENK.cikis, 0.32)];
+
+  /* Grafik kartı: üstte özet cümle + neden süzgeci, altta yığılmış sütun (0–30 / 31–60 / 61–90 gün) */
+  const g = O.grafikKarti(iz, {
+    baslik: 'İlk 90 günde ayrılanlar · giriş ayına göre', aciklama: 'Kişi sayısı · dilim ayrılış günü, üstte 90 güne kadar toplam', sinif: 's6', yukseklik: 270,
+    lejant: ILK90_BANT.map((ad, i) => ({ ad, renk: renk[i] })), etiket: 'Giriş ayına göre ilk 90 günde ayrılanlar yığılmış sütun grafiği',
+    tablo: () => ikizTablo()
+  });
+  function ikizTablo() {
+    return { sutunlar: [{ ad: 'Giriş ayı' }, { ad: 'Giriş', sag: true }, { ad: '0–30', sag: true }, { ad: '31–60', sag: true }, { ad: '61–90', sag: true }, { ad: '90 güne kadar', sag: true }],
+      satirlar: S.map((r) => [r.adUzun + (r.tam[2] ? '' : ' *'), O.sayi(r.giris), O.sayi(r.bant[0]), O.sayi(r.bant[1]), O.sayi(r.bant[2]), O.sayi(r.c90)]) };
+  }
+  /* Grafik kartının "Tablo" görünümü açıksa süzgeç değişince o tablo da yenilenir (bayat sayı kalmasın) */
+  const ikizYenile = () => { const tk = g.kart.querySelector('.tablo-kap.ikiz'); if (tk) { tk.textContent = ''; O.basitTablo(tk, ikizTablo()); } };
+  const ust = O.el('div', { class: 'ilk90-ust' });
+  const ozet = O.el('p', { class: 'ilk90-ozet' });
+  ust.append(ozet);
+  const secAlan = O.el('div', { class: 'ilk90-secim' }, O.el('span', { class: 'ilk90-secim-et', text: 'Ayrılış nedeni' }));
+  ust.append(secAlan);
+  g.govde.prepend(ust);
+  const ozetYaz = () => {
+    const T = S.filter((r) => r.tam[2]);
+    const gs = T.reduce((a, r) => a + r.giris, 0), cs = T.reduce((a, r) => a + r.c90, 0);
+    const aralik = T.length ? O.ayAdi(T[0].ay) + (T.length > 1 ? '–' + O.ayAdi(T[T.length - 1].ay) : '') : '';
+    const ne = neden === 'hepsi' ? '' : ' (' + ILK90_NEDEN.find((x) => x.v === neden).ad.toLocaleLowerCase('tr-TR') + ')';
+    ozet.innerHTML = !gs ? '90 günü tamamlanan giriş ayı henüz yok.'
+      : '90 günü tamamlanan ' + O.esc(aralik) + ' girişleri: ' + b(O.sayi(gs)) + ' girişten ' + b(O.sayi(cs)) + ' kişi ilk 90 günde ayrıldı' + O.esc(ne)
+        + (gs >= 10 ? ' · ' + b(O.yuzde(Math.round(cs / gs * 1000) / 10, 1)) : '') + '.';
+  };
+  let ch = null;
+  const veriSetleri = () => ILK90_BANT.map((ad, i) => sutun(ad, S.map((r) => r.bant[i]), renk[i], {
+    categoryPercentage: 0.72, barPercentage: 0.9, borderRadius: 0, borderSkipped: false,
+    datalabels: i === 2 ? { labels: { ic: icEtiket(16), toplam: toplamEtiket(S.map((r) => r.c90), false) } } : icEtiket(16)
+  }));
+  const grafikCiz = () => {
+    if (ch) { ch.data.labels = S.map((r) => r.kisa); ch.data.datasets = veriSetleri(); ch.update(); return; }
+    ch = O.grafik(g.canvas, {
+      type: 'bar',
+      data: { labels: S.map((r) => r.kisa), datasets: veriSetleri() },
+      options: {
+        interaction: { mode: 'index', intersect: false },
+        layout: { padding: { top: 8 } },
+        scales: { x: O.eksenX({ stacked: true }), y: O.eksenY({ stacked: true, grace: '18%', ticks: { precision: 0 } }) },
+        plugins: { tooltip: { callbacks: {
+          title: (it) => { const r = S[it[0].dataIndex]; return r.adUzun + ' · ' + O.sayi(r.giris) + ' giriş'; },
+          label: (c) => ' ' + c.dataset.label + ': ' + O.sayi(c.parsed.y) + ' kişi',
+          footer: (it) => { const r = S[it[0].dataIndex]; return '90 güne kadar: ' + O.sayi(r.c90) + ' kişi' + (r.tam[2] ? (r.giris >= 10 ? ' · ' + ilk90Oran(r) : '') : ' · pencere sürüyor'); }
+        } } }
+      }
+    });
+  };
+  O.kartNot(g.govde, '* İşaretli aylarda girişlerin bir kısmı henüz 90. güne ulaşmadı; sayılar artabilir. Ayrılış günü = çıkış tarihi − işe başlama tarihi (takvim günü).');
+
+  /* Tablo kartı: aylık 30 / 60 / 90 (kümülatif) ve oran */
+  const { govde: tg } = O.kart(iz, { baslik: 'Aylık özet · 30 / 60 / 90 gün', aciklama: 'Kümülatif kişi sayısı · giriş 10’dan azsa yüzde yerine sayı', sinif: 's6 kart-liste' });
+  const tabloKap = O.el('div');
+  tg.append(tabloKap);
+  /* Sade tablo (sıralama/sayfalama yok): altı sütun dar kartta ve telefonda kaydırmasız sığar */
+  const tabloCiz = () => {
+    tabloKap.textContent = '';
+    const t = O.el('table', { class: 'tablo ilk90-tablo' });
+    t.append(O.el('thead', null, O.el('tr', null, ...['Giriş ayı', 'Giriş', '30 gün', '60 gün', '90 gün', 'İlk 90 günde'].map((x, i) => O.el('th', { class: i ? 'sag' : null, text: x })))));
+    const tb = O.el('tbody');
+    S.forEach((r) => {
+      const hucre = (i, v) => O.el('td', { class: 'sag' + (r.tam[i] ? '' : ' soluk'), title: r.tam[i] ? null : 'Pencere sürüyor; sayı artabilir', text: O.sayi(v) + (r.tam[i] ? '' : '*') });
+      tb.append(O.el('tr', null,
+        O.el('td', { class: 'ilk90-ay', title: r.adUzun, text: O.ayAdi(r.ay) }),
+        O.el('td', { class: 'sag', text: O.sayi(r.giris) }), hucre(0, r.c30), hucre(1, r.c60), hucre(2, r.c90),
+        O.el('td', { class: 'sag ilk90-oran-hucre ' + (r.tam[2] && r.giris >= 10 ? 'ilk90-oran' : 'soluk'), text: ilk90Oran(r) })));
+    });
+    t.append(tb);
+    const top = (k) => S.reduce((a, r) => a + (+r[k] || 0), 0);
+    t.append(O.el('tfoot', null, O.el('tr', null, O.el('td', { text: 'Toplam' }), ...['giris', 'c30', 'c60', 'c90'].map((k) => O.el('td', { class: 'sag', text: O.sayi(top(k)) })), O.el('td'))));
+    tabloKap.append(t);
+  };
+  O.kartNot(tg, 'Haftalık rapor Excel’indeki “İLK 90 GÜN” sayfasıyla aynı tanım.' + (H.bilinmeyen ? ' ' + O.sayi(H.bilinmeyen) + ' çıkış kaydında işe başlama tarihi bulunamadı; bu kayıtlar sayılmadı.' : ''));
+
+  const yenile = () => { S = ilk90Satirlar(H, neden, yil); ozetYaz(); grafikCiz(); tabloCiz(); ikizYenile(); };
+  O.bolumlu(secAlan, { secenekler: ILK90_NEDEN, deger: 'hepsi', kucuk: true, etiket: 'Ayrılış nedeni', degisince: (v) => { neden = v; yenile(); } });
+  ozetYaz(); grafikCiz(); tabloCiz();
+}
+
 function notlarCiz(kok, B, M) {
   const e = B.etiket || {};
   O.notlar(kok, [
@@ -412,7 +585,8 @@ function notlarCiz(kok, B, M) {
     'Departman filtresi seçiliyken oranlar yaklaşık hesaplanır: seçili kapsamdaki çıkış / seçili kapsamdaki aktif personel; yıl sonu projeksiyonu = YTD / ' + O.sayi(M.aySayisi) + ' × 12 (ay sayısı veriden). 2025 kapanışı şirket geneline aittir.',
     'Aylık ortalama oran, paketteki tüm dönemlerin aylık oran ortalamasıdır; veri gelmemiş aylar 0 sayılır (mevcut panoyla aynı kural).',
     'Değerlendirme eşikleri mevcut panodaki kuraldır: aylık oran %4 üstü “Yüksek risk”, %2,5 üstü “Dikkat”, diğerleri “Normal”. Grafiklerde eşik çizilmez.',
-    'Kadranlar 0–100 % ölçeğindedir; aylık istenen/istenmeyen sayıları işten ayrılanlar listesindeki istenen bayrağından sayılır.'
+    'Kadranlar 0–100 % ölçeğindedir; aylık istenen/istenmeyen sayıları işten ayrılanlar listesindeki istenen bayrağından sayılır.',
+    'İlk 90 gün: o ay işe girenlerden 30, 60 ve 90. güne kadar ayrılanlar (kümülatif). Giriş 10’dan azsa yüzde verilmez; 90 günü dolmamış ayda oran verilmez. Kendi isteği = istifa ve deneme süresinde işçinin feshi; işveren kaynaklı = deneme süresinde işverenin feshi, işveren feshi, 25. madde.'
   ]);
 }
 
@@ -421,4 +595,17 @@ const STIL = `
 .tablo td.tv-donem small { display: block; font-size: 11px; color: var(--metin-3); font-variant-numeric: tabular-nums; margin-top: 1px; }
 .tv-oran { font-weight: 600; font-variant-numeric: tabular-nums; }
 .tv-oran.rr { color: var(--ht-700); } .tv-oran.ry { color: var(--uy-700); } .tv-oran.rg { color: var(--ok-700); }
+.ilk90-ust { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; margin-bottom: 6px; }
+.ilk90-ozet { margin: 0; font-size: 13px; color: var(--metin-2); min-width: 0; flex: 1 1 260px; }
+.ilk90-ozet b { color: var(--metin-marka); }
+.ilk90-secim { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ilk90-secim-et { font-size: 11.5px; color: var(--metin-3); }
+.ilk90-oran { font-weight: 600; color: var(--metin-1); font-variant-numeric: tabular-nums; }
+.tablo.ilk90-tablo { width: 100%; table-layout: auto; font-variant-numeric: tabular-nums; }
+.tablo.ilk90-tablo th, .tablo.ilk90-tablo td { padding: 7px 6px; font-size: 12.5px; white-space: nowrap; }
+.tablo.ilk90-tablo th { font-size: 10.5px; }
+.tablo.ilk90-tablo th:first-child, .tablo.ilk90-tablo td:first-child { padding-left: 2px; }
+.tablo.ilk90-tablo .ilk90-oran-hucre { white-space: normal; min-width: 74px; }
+.tablo.ilk90-tablo tfoot td { font-weight: 700; color: var(--metin-1); border-top: 2px solid var(--cizgi-2); }
+@media (max-width: 480px) { .tablo.ilk90-tablo th, .tablo.ilk90-tablo td { padding: 6px 4px; font-size: 12px; } .tablo.ilk90-tablo th { font-size: 9.5px; letter-spacing: 0; } }
 `;
