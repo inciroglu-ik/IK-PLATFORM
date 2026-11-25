@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<meta name="surum" content="202611231530">
+<meta name="surum" content="202611251200">
 <title>Ajan Ofisi · İnciroğlu İK</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -53,7 +53,9 @@ a{color:var(--lacivert3)}
 .sahne-etiket.koridor{fill:#8796ad;font-size:12px;letter-spacing:.3em}
 .sahne-etiket.kucuk{font-size:10px;letter-spacing:.14em}
 .pano-yazi{font:700 9px Inter,sans-serif;fill:var(--lacivert);letter-spacing:.12em}
-.pano-say{font:700 12px Inter,sans-serif;fill:#fff;paint-order:stroke;stroke:var(--kirmizi);stroke-width:9px;stroke-linejoin:round}
+.pano-say,.fikir-say{font:700 12px Inter,sans-serif;fill:#fff;paint-order:stroke;stroke:var(--kirmizi);stroke-width:9px;stroke-linejoin:round}
+.fikir-say{stroke:var(--lacivert)}
+.ofis-sahne>.ofis-fikir{z-index:3}
 .tahta-bos{font:600 12px Inter,sans-serif;fill:#a3afc1;letter-spacing:.2em}
 .tahta-baslik{font:700 12.5px Inter,sans-serif;fill:var(--lacivert)}
 .tahta-satir{font:500 11px Inter,sans-serif;fill:#3b4b66}
@@ -83,6 +85,56 @@ a{color:var(--lacivert3)}
 .ofis-tahta li.aktif{font-weight:600}
 .ot-rol{display:inline-block;font-size:11px;font-weight:700;color:#fff;background:var(--r);border-radius:4px;padding:0 6px;margin-right:6px}
 .ot-bekle{color:var(--soluk);font-style:italic}
+/* ---------- 3B ofis (25.11.2026) */
+.ofis-3b{background:#dde3ec}
+.ofis-3b canvas.ofis-tuval{position:absolute;inset:0;width:100%;height:100%;display:block;outline:none;cursor:grab;touch-action:none}
+.ofis-3b canvas.ofis-tuval:active{cursor:grabbing}
+.ofis-3b canvas.ofis-tuval:focus-visible{box-shadow:inset 0 0 0 3px rgba(176,141,87,.65)}
+.ajan3d-ad{position:absolute;left:0;top:0;display:inline-flex;align-items:center;gap:5px;font:600 11.5px/1 Inter,sans-serif;color:#1b2433;background:rgba(255,255,255,.9);border:1px solid rgba(22,41,74,.14);border-radius:999px;padding:3px 9px 3px 6px;white-space:nowrap;pointer-events:auto;cursor:pointer;box-shadow:0 2px 8px rgba(22,41,74,.14);will-change:transform;z-index:1}
+.ajan3d-ad:hover{border-color:var(--pirinc);color:var(--lacivert)}
+.ajan3d-ad>i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.ajan3d-nokta{display:none;gap:2px;margin-left:3px}
+.ajan3d-ad.calisiyor .ajan3d-nokta{display:inline-flex}
+.ajan3d-nokta b{width:4px;height:4px;border-radius:50%;background:var(--lacivert);animation:zip 1s infinite ease-in-out}
+.ajan3d-nokta b:nth-child(2){animation-delay:.15s}.ajan3d-nokta b:nth-child(3){animation-delay:.3s}
+.ofis-3b .ofis-balon{z-index:3}
+.ofis-3b-arac{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:flex;gap:4px;flex-wrap:wrap;justify-content:center;width:max-content;max-width:calc(100% - 90px);background:rgba(255,255,255,.88);backdrop-filter:blur(6px);border:1px solid rgba(22,41,74,.12);border-radius:999px;padding:4px;box-shadow:0 6px 20px rgba(22,41,74,.16);z-index:4}
+.ofis-3b-arac button{border:0;background:none;border-radius:999px;padding:5px 11px;font:600 12px Inter,sans-serif;color:var(--soluk);cursor:pointer;white-space:nowrap}
+.ofis-3b-arac button:hover{color:var(--lacivert);background:#eef2f8}
+.ofis-3b-arac button.aktif{background:var(--lacivert);color:#fff}
+.ofis-3b-arac button[data-takip-birak]{color:var(--kirmizi)}
+.ofis-3b-ipucu{position:absolute;left:12px;bottom:60px;max-width:min(560px,calc(100% - 24px));background:rgba(15,31,58,.9);color:#e6ecf5;border-radius:10px;padding:8px 12px;font-size:12px;line-height:1.5;box-shadow:0 8px 24px rgba(15,25,45,.3);z-index:4;transition:opacity .4s}
+.ofis-3b-ipucu b{color:var(--pirinc2);margin-right:6px}
+.ofis-3b-ipucu.gizle{opacity:0;pointer-events:none}
+.ofis-3b-yardim{position:absolute;right:12px;bottom:12px;width:32px;height:32px;border-radius:50%;border:1px solid rgba(22,41,74,.14);background:rgba(255,255,255,.9);color:var(--lacivert);font:700 14px Inter,sans-serif;cursor:pointer;z-index:4;box-shadow:0 4px 12px rgba(22,41,74,.14)}
+.ofis-fikir{position:absolute;left:12px;top:12px;width:min(320px,40%);background:rgba(255,255,255,.96);border:1px solid var(--cizgi);border-left:4px solid var(--pirinc);border-radius:10px;padding:8px 12px 10px;box-shadow:0 10px 28px rgba(22,41,74,.2);z-index:3;font-size:12.5px;transition:opacity .3s}
+.ofis-fikir.gizle{opacity:0;pointer-events:none}
+.ofis-fikir .of-ust{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--pirinc)}
+.ofis-fikir .of-konu{font-weight:600;color:var(--lacivert);margin:2px 0 6px;line-height:1.35}
+.ofis-fikir .of-kisiler{display:flex;gap:4px;flex-wrap:wrap}
+.ofis-fikir .of-kisiler span{font-size:11px;font-weight:600;color:#fff;background:var(--r);border-radius:4px;padding:0 6px}
+.ofis-3b .ofis-balon.asagi::after{bottom:auto;top:-6px;transform:translateX(-50%) rotate(225deg)}
+@media (max-width:820px){
+  .ofis-3b-arac{bottom:8px;left:8px;right:50px;transform:none;width:auto;max-width:none;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;scrollbar-width:none}
+  .ofis-3b-yardim{bottom:10px;right:8px}
+  .ofis-3b-arac::-webkit-scrollbar{display:none}
+  .ofis-3b-arac button{padding:5px 9px;font-size:11.5px;flex:0 0 auto}
+  .ofis-3b-ipucu{bottom:52px;left:8px;right:8px;max-width:none}
+}
+/* telefon: 3B sahne dikey ve uzun (gezinmek için alan) */
+@media (max-width:700px){
+  .ofis-sahne.ofis-3b{aspect-ratio:auto;height:min(68vh,560px)}
+  .ajan3d-ad{font-size:10.5px;padding:2px 7px 2px 5px}
+  .ofis-fikir{width:calc(100% - 24px)}
+}
+/* ---------- fikir masası (çekmece) */
+.fikir-kart .fk-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.fikir-kart .fk-blok{margin:8px 0;font-size:13px;line-height:1.55}
+.fikir-kart .fk-blok b{color:var(--lacivert)}
+.fikir-kart .fk-itiraz{background:#fff8ec;border:1px solid #efd9b0;color:#6b4e1d;border-radius:8px;padding:6px 10px;font-size:12.5px;margin:8px 0}
+.fikir-kart .fk-konusma{margin:4px 0;font-size:12.5px;border-left:3px solid var(--r,#16294a);padding:2px 0 2px 9px}
+.fikir-kart .fk-konusma b{color:var(--lacivert)}
+.fikir-kart .fk-not{width:100%;min-height:54px;margin-top:6px}
 /* aktif iş şeridi */
 .aktif-is{margin:10px auto 0;width:100%;background:#fff;border:1px solid var(--cizgi);border-radius:12px;padding:9px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;box-shadow:var(--golge)}
 .aktif-is .ai-baslik{font-weight:600;color:var(--lacivert);margin-right:4px}
@@ -222,6 +274,7 @@ video.onizleme,canvas.onizleme{width:100%;border-radius:10px;background:#0d1a30;
   <nav class="sekmeler" role="tablist">
     <button class="sekme aktif" data-sekme="ofis">Ofis</button>
     <button class="sekme" data-sekme="notlar">Notlar <span class="rozet" id="rozet-not" hidden></span></button>
+    <button class="sekme" data-sekme="fikir">Fikir Masası <span class="rozet" id="rozet-fikir" hidden></span></button>
     <button class="sekme" data-sekme="isler">İşler</button>
     <button class="sekme" data-sekme="galeri">Galeri</button>
     <button class="sekme" data-sekme="videolar">Videolar</button>
@@ -263,6 +316,7 @@ import { kimlikBaslat, aktifHesap, db } from './ortak/kimlik.js';
 import { doc, getDoc, setDoc, updateDoc, addDoc, collection, query, orderBy, limit, where, onSnapshot, serverTimestamp, runTransaction, getDocs } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 import * as K from './ortak/ajan-ofisi/kadro.js';
 import { sahneKur } from './ortak/ajan-ofisi/sahne.js';
+import { sahne3dKur } from './ortak/ajan-ofisi/sahne3d.js';
 import * as beyin from './ortak/ajan-ofisi/beyin.js';
 import { akisKur } from './ortak/ajan-ofisi/akis.js';
 import { md, esc, guvenliUrl } from './ortak/ajan-ofisi/md.js';
@@ -276,8 +330,8 @@ const tarihSaat = (ms) => ms ? new Date(ms).toLocaleString('tr-TR', { day: '2-di
 const sureMetni = (ms) => { const s = Math.round((ms || 0) / 1000); return s < 60 ? s + ' sn' : Math.floor(s / 60) + ' dk ' + (s % 60) + ' sn'; };
 const puanSinifi = (p) => p == null ? '' : p >= 80 ? 'y' : p >= 60 ? 's' : 'k';
 
-const S = { ayar: { model: K.VARSAYILAN_MODEL, aylikButce: 20 }, anahtarlar: {}, kadro: K.baslangicKadrosu(), zaman: {}, isler: [], notlar: [], harcama: [], olaylar: [], hazir: {} };
-const ACIK = { sekme: 'ofis', not: null, is: null, notFiltre: 'hepsi' };
+const S = { ayar: { model: K.VARSAYILAN_MODEL, aylikButce: 20 }, anahtarlar: {}, kadro: K.baslangicKadrosu(), zaman: {}, isler: [], notlar: [], harcama: [], fikirler: [], olaylar: [], hazir: {} };
+const ACIK = { sekme: 'ofis', not: null, is: null, notFiltre: 'hepsi', fikir: null, fikirFiltre: 'masada' };
 const TEST = !!window.__TEST;                       /* test kancaları yalnız yerel test düzeneğinde açılır */
 const AKTIF_DURUM = ['sirada', 'toplanti', 'calisiyor'];
 const NABIZ_SINIRI = 5 * 60 * 1000;
@@ -348,10 +402,13 @@ const veri = {
   }),
   /* Claude Code köprüsü: görev dosyası bırakıldı / not içe aktarıldı */
   zamanIstendi: (id, anahtar) => setDoc(yolDoc('zamanlama'), { [id]: { istendi: anahtar } }, { merge: true }),
-  zamanTamam: (id, anahtar) => setDoc(yolDoc('zamanlama'), { [id]: { son: anahtar, bitisMs: Date.now(), kaynak: 'claude-code' } }, { merge: true })
+  zamanTamam: (id, anahtar) => setDoc(yolDoc('zamanlama'), { [id]: { son: anahtar, bitisMs: Date.now(), kaynak: 'claude-code' } }, { merge: true }),
+  /* Fikir masası (25.11.2026): ajanOfisi/ofis/fikirler/{isId} — kimlik fikir turunun isId'si (aynı tur iki kez kaydedilmez) */
+  fikirKaydet: (id, o) => setDoc(doc(db, 'ajanOfisi', 'ofis', 'fikirler', String(id).replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 120)), o),
+  fikirGuncelle: (id, p) => updateDoc(doc(db, 'ajanOfisi', 'ofis', 'fikirler', id), p)
 };
 const durum = {
-  kadro: () => S.kadro, ayar: () => S.ayar, isler: () => S.isler, notlar: () => S.notlar,
+  kadro: () => S.kadro, ayar: () => S.ayar, isler: () => S.isler, notlar: () => S.notlar, fikirler: () => S.fikirler,
   ayHarcama: () => S.harcama.reduce((s, h) => s + (h.maliyet || 0), 0)
 };
 
@@ -382,16 +439,29 @@ function bildir(o) {
   else if (o.tur === 'cc-bekliyor') { bildirim('<b>İş Claude Code’a iletildi</b><br>VS Code’da Claude Code’a <b>ofis</b> yazın.'); sonucTara(); }
   else if (o.tur === 'zam') bildirim('<b>Maaş artışı</b><br>' + (o.kayitlar || []).map((x) => esc(x.ad) + ': ' + Number(x.yeniMaas).toLocaleString('tr-TR') + ' TL').join(' · '));
   else if (o.tur === 'kadro') bildirim('<b>Kadro değişikliği</b><br>' + esc(o.kayit.cikan) + ' ayrıldı · yerine ' + esc(o.kayit.giren) + ' (' + esc(K.unvan(o.kayit.rol, o.kayit.yeniKademe)) + ')');
+  else if (o.tur === 'fikir') bildirim('<b>' + (o.sonuc === 'masaya' ? 'Fikir masasında yeni fikir' : o.sonuc === 'arastirilacak' ? 'Araştırılacak fikir' : 'Fikir turu bitti') + '</b><br>' + esc(o.baslik || ''));
+  else if (o.tur === 'yapilanma') bildirim('<b>Ofis yeniden yapılandı</b><br>' + (o.girenler || []).map((g) => esc(g.ad) + ' · ' + esc(K.ROL[g.rol] ? K.ROL[g.rol].ad : g.rol)).join('<br>'));
   aktifIsCiz();
 }
 
 /* ================================================================ sahne + akış */
-let sahne = null, akis = null;
-function sahneyiKur() {
-  sahne = sahneKur($('sahne'), { kadro: S.kadro, onAjanTik: ajanKartiAc, kayit });
+let sahne = null, akis = null, sahneKuruluyor = false;
+/* 25.11.2026: varsayılan 3B ofis (three.js). WebGL yoksa ya da adreste ?sahne=2b varsa eski kat planı (2B) kullanılır;
+   iki sahne aynı API'yi sağlar, iş akışı değişmez. */
+async function sahneyiKur() {
+  if (sahne || sahneKuruluyor) return;
+  sahneKuruluyor = true;
+  const iki = new URLSearchParams(location.search).get('sahne') === '2b';
+  const ortak = { kadro: S.kadro, onAjanTik: ajanKartiAc, kayit };
+  let s = null;
+  if (!iki) { try { s = await sahne3dKur($('sahne'), Object.assign({ klavyeIzni: () => ACIK.sekme === 'ofis' && $('modal').hidden }, ortak)); } catch (e) { s = null; } }
+  sahne = s || sahneKur($('sahne'), ortak);
   akis = akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru });
   if (TEST) window.__OFIS = { S, sahne, akis, veri, K, kopru };
+  sahne.fikirSayisi(S.fikirler.filter((f) => f.durum === 'masada').length);
+  sahne.panoSayisi(S.notlar.filter((n) => Date.now() - (n.tarihMs || 0) < 86400000 && ['model', 'video'].indexOf(n.tur) < 0).length);
   setInterval(sonucTara, 4000);
+  hazirKontrol();
 }
 
 /* ================================================================ Claude Code sonuç klasörünü tara */
@@ -441,11 +511,14 @@ document.addEventListener('click', (e) => { const b = e.target.closest('[data-kl
 
 /* ================================================================ abonelikler */
 function hazirKontrol() {
-  if (S.hazir.kadro && !sahne) sahneyiKur();
+  if (S.hazir.kadro && !sahne) { sahneyiKur(); return; }
+  if (!sahne || !akis) return;
   if (S.hazir.kadro && S.hazir.ayar && S.hazir.anahtar && S.hazir.zaman && !S.hazir.ilkKontrol) {
     S.hazir.ilkKontrol = true;
     akis.zamanKontrol(S.zaman);
     setInterval(() => { harcamaAbone(); akis.zamanKontrol(S.zaman); }, 10 * 60 * 1000);
+    /* Ofis yeniden yapılanması (25.11.2026): kadroda işaret yoksa bir kez oynar (kadro önce kaydedilir, tekrar etmez) */
+    if (S.kadro.yapilanma !== K.YAPILANMA && !new URLSearchParams(location.search).has('yapilanmaYok')) akis.yapilanma();
     window.__TEST_HAZIR = true;
   }
 }
@@ -486,6 +559,26 @@ onSnapshot(query(kol('notlar'), orderBy('tarihMs', 'desc'), limit(80)), (q) => {
   if (sahne) sahne.panoSayisi(gun);
   if (['notlar', 'galeri', 'videolar'].indexOf(ACIK.sekme) >= 0) cekmeceCiz();
 });
+/* Fikir masası: son 80 fikir turu. Masadakiler sahnede (toplantı masasındaki deste) ve sekme rozetinde sayılır;
+   Claude Code bir sonraki fikir turunda tekrar etmesin ve onay/ret notlarını görsün diye klasöre özet yazılır. */
+onSnapshot(query(kol('fikirler'), orderBy('tarihMs', 'desc'), limit(80)), (q) => {
+  S.fikirler = q.docs.map((d) => Object.assign({ id: d.id }, d.data()));
+  const masada = S.fikirler.filter((f) => f.durum === 'masada').length;
+  $('rozet-fikir').hidden = !masada; $('rozet-fikir').textContent = masada;
+  if (sahne) sahne.fikirSayisi(masada);
+  if (ACIK.sekme === 'fikir') cekmeceCiz();
+  fikirMasasiYaz();
+});
+let fikirYazZaman = null;
+function fikirMasasiYaz() {
+  clearTimeout(fikirYazZaman);
+  fikirYazZaman = setTimeout(() => {
+    if (kopru.durum() !== 'hazir') return;
+    const ozet = S.fikirler.map((f) => ({ id: f.id, tarih: K.trTarih(new Date(f.tarihMs || 0)), konu: f.konu || '', baslik: (f.oneri && f.oneri.baslik) || '', sahip: (f.oneri && f.oneri.sahip) || '',
+      durum: f.durum, sahipNotu: f.sahipNotu || '', isId: f.isId || '' }));
+    kopru.kokYaz('fikir-masasi.json', JSON.stringify({ surum: K.SURUM, guncelleme: Date.now(), fikirler: ozet }, null, 1)).catch(() => {});
+  }, 1500);
+}
 /* Harcama aboneliği içinde bulunulan aya bağlı; ay dönünce yeniden kurulur (bütçe yeni aydan sayılır) */
 function harcamaAbone() {
   const ay = K.ayAnahtari();
@@ -527,7 +620,7 @@ function aktifIsCiz() {
   const adimlar = (is.plan && is.plan.adimlar) || [];
   const biten = (is.adimlar || []).length;
   kap.innerHTML = '<span class="ai-baslik">' + esc(is.plan ? is.plan.baslik : 'Yeni iş · ' + String(is.metin || '').slice(0, 50)) + '</span>' +
-    (adimlar.length ? adimlar.map((a, i) => '<span class="ai-adim ' + (i < biten ? 'bitti' : i === biten && is.durum === 'calisiyor' ? 'simdi' : '') + '">' + (i + 1) + '. ' + esc(K.ROL[a.rol].ad) + '</span>').join('<span class="ai-ok">→</span>') + '<span class="ai-ok">→</span><span class="ai-adim">Puanlama</span>'
+    (adimlar.length ? adimlar.map((a, i) => '<span class="ai-adim ' + (i < biten ? 'bitti' : i === biten && is.durum === 'calisiyor' ? 'simdi' : '') + '">' + (i + 1) + '. ' + esc(K.ROL[a.rol] ? K.ROL[a.rol].ad : a.rol) + '</span>').join('<span class="ai-ok">→</span>') + '<span class="ai-ok">→</span><span class="ai-adim">Puanlama</span>'
       : '<span class="ai-adim simdi">' + (is.durum === 'toplanti' ? 'Toplantı' : 'Sırada') + '</span>');
 }
 
@@ -546,7 +639,7 @@ $('is-form').addEventListener('submit', async (e) => {
 $('is-metin').addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) $('is-form').requestSubmit(); });
 
 /* ================================================================ çekmece */
-const BASLIK = { notlar: 'Notlarınız', isler: 'İşler', galeri: 'Galeri · Model Fotoğrafçısı', videolar: 'Videolar · Video Editörü', kadro: 'Kadro ve Performans', harcama: 'Harcama · Muhasebe', akis: 'Ofis Akışı', ayarlar: 'Ayarlar' };
+const BASLIK = { notlar: 'Notlarınız', fikir: 'Fikir Masası', isler: 'İşler', galeri: 'Galeri · Sunum Tasarımcısı', videolar: 'Videolar · Video Editörü', kadro: 'Kadro ve Performans', harcama: 'Harcama', akis: 'Ofis Akışı', ayarlar: 'Ayarlar' };
 document.querySelectorAll('.sekme').forEach((b) => b.addEventListener('click', () => cekmeceAc(b.dataset.sekme)));
 document.addEventListener('click', (e) => { const a = e.target.closest('[data-ac]'); if (a) cekmeceAc(a.dataset.ac); });
 $('cekmece-kapat').addEventListener('click', () => cekmeceAc('ofis'));
@@ -558,7 +651,7 @@ function cekmeceAc(sekme) {
   if (sekme !== 'ofis') { $('cekmece-baslik').textContent = BASLIK[sekme] || ''; cekmeceCiz(); }
 }
 function cekmeceCiz() {
-  const f = { notlar: notlarCiz, isler: islerCiz, galeri: galeriCiz, videolar: videolarCiz, kadro: kadroCiz, harcama: harcamaCiz, akis: akisCiz, ayarlar: ayarlarCiz }[ACIK.sekme];
+  const f = { notlar: notlarCiz, fikir: fikirMasasiCiz, isler: islerCiz, galeri: galeriCiz, videolar: videolarCiz, kadro: kadroCiz, harcama: harcamaCiz, akis: akisCiz, ayarlar: ayarlarCiz }[ACIK.sekme];
   if (!f) return;
   const ic = $('cekmece-ic'); const kay = ic.scrollTop;
   f(ic); ic.scrollTop = kay;
@@ -567,15 +660,75 @@ const kaynakListesi = (k) => (k && k.length) ? '<div class="kaynaklar"><b>Kaynak
 const kisiEtiketi = (rol, ad) => '<span class="renk-nokta" style="background:' + (K.ROL[rol] ? K.ROL[rol].renk : '#16294a') + '"></span>' + esc(ad || '') + ' · ' + esc(K.ROL[rol] ? K.ROL[rol].ad : rol);
 
 /* --- notlar */
-const NOT_TURLERI = { hepsi: 'Tümü', icerik: 'İçerik avı', rakip: 'Rakip raporu', muhasebe: 'Muhasebe', strateji: 'Strateji', ofis: 'Ofis raporu' };
+const NOT_TURLERI = { hepsi: 'Tümü', icerik: 'İçerik avı', mevzuat: 'Mevzuat bülteni', strateji: 'Strateji', ofis: 'Ofis raporu', rakip: 'Rakip raporu (eski)', muhasebe: 'Muhasebe (eski)' };
 function notlarCiz(ic) {
   const liste = S.notlar.filter((n) => ['model', 'video'].indexOf(n.tur) < 0 && (ACIK.notFiltre === 'hepsi' || n.tur === ACIK.notFiltre));
   ic.innerHTML = '<div class="filtre">' + Object.entries(NOT_TURLERI).map(([k, v]) => '<button data-f="' + k + '" class="' + (ACIK.notFiltre === k ? 'aktif' : '') + '">' + v + '</button>').join('') + '</div>' +
     (liste.length ? liste.map((n) => '<div class="kart" data-not="' + esc(n.id) + '"><div class="kart-ust"><div><div class="kart-baslik">' + esc(n.baslik || 'Not') + '</div><div class="kart-alt">' + kisiEtiketi(n.rol, n.ad) + ' · ' + tarihSaat(n.tarihMs) + (n.maliyet ? ' · ' + para(n.maliyet) : '') + '</div></div><div class="kart-sag"><span class="etiket">' + esc(NOT_TURLERI[n.tur] || n.tur) + '</span></div></div>' +
       (ACIK.not === n.id ? '<div class="kart-govde"><div class="md">' + md(n.icerik) + '</div>' + kaynakListesi(n.kaynaklar) + '</div>' : '') + '</div>').join('')
-      : '<div class="bos">Henüz not yok. İçerik Avcısı her sabah 06:00’da, Rakip Analisti pazartesileri, Muhasebeci 3 günde bir panoya not bırakır.</div>');
+      : '<div class="bos">Henüz not yok. İçerik Avcısı her sabah, Mevzuat Danışmanı pazartesileri panoya not bırakır.</div>');
   ic.querySelectorAll('[data-f]').forEach((b) => b.onclick = () => { ACIK.notFiltre = b.dataset.f; cekmeceCiz(); });
   ic.querySelectorAll('[data-not] .kart-ust').forEach((b) => b.onclick = () => { const id = b.parentElement.dataset.not; ACIK.not = ACIK.not === id ? null : id; cekmeceCiz(); });
+}
+/* --- fikir masası (25.11.2026): ekibin boş zamanda ürettiği fikirler; onayla → iş olarak açılır */
+const FIKIR_FILTRE = { masada: 'Masada', arastirilacak: 'Araştırılacak', onaylandi: 'İşe dönüşen', elenen: 'Elenen / rafta', hepsi: 'Tümü' };
+const FIKIR_ETKI = { yuksek: ['Etki: yüksek', 'yesil'], orta: ['Etki: orta', 'sari'], dusuk: ['Etki: düşük', ''] };
+const FIKIR_EFOR = { S: 'Efor: küçük', M: 'Efor: orta', L: 'Efor: büyük' };
+function fikirMasasiCiz(ic) {
+  const filtre = ACIK.fikirFiltre;
+  const uyar = (f) => filtre === 'hepsi' || (filtre === 'elenen' ? (f.durum === 'elendi' || f.durum === 'rafta') : f.durum === filtre);
+  const liste = S.fikirler.filter(uyar);
+  const say = (k) => S.fikirler.filter((f) => k === 'hepsi' || (k === 'elenen' ? (f.durum === 'elendi' || f.durum === 'rafta') : f.durum === k)).length;
+  ic.innerHTML = '<div class="kart-alt" style="margin-bottom:10px">Ekip, siz ofisteyken ve Claude Code açıkken boş zamanlarında gerçek işlerimizle ilgili fikir üretir, tartışır; değerli bulduklarını bu masaya bırakır. <b>İşe dönüştür</b> derseniz fikir Genel Müdür’e iş olarak gider; notunuzu bir sonraki fikir turunda ekip okur.</div>' +
+    '<div class="filtre">' + Object.entries(FIKIR_FILTRE).map(([k, v]) => '<button data-ff="' + k + '" class="' + (filtre === k ? 'aktif' : '') + '">' + v + ' (' + say(k) + ')</button>').join('') + '</div>' +
+    (liste.length ? liste.map((f) => {
+      const o = f.oneri || {}; const acik = ACIK.fikir === f.id; const e = FIKIR_ETKI[o.etki] || FIKIR_ETKI.orta;
+      const durumEt = { masada: ['Masada', 'sari'], arastirilacak: ['Araştırılacak', ''], onaylandi: ['İşe dönüştü', 'yesil'], elendi: ['Elendi', 'kirmizi'], rafta: ['Rafta', ''] }[f.durum] || [f.durum, ''];
+      let govde = '';
+      if (acik) {
+        govde = '<div class="kart-govde">' +
+          (o.ozet ? '<div class="fk-blok"><b>Öneri.</b> ' + esc(o.ozet) + '</div>' : '') +
+          (o.neden ? '<div class="fk-blok"><b>Neden değerli?</b> ' + esc(o.neden) + '</div>' : '') +
+          (o.ilkAdim ? '<div class="fk-blok"><b>İlk adım.</b> ' + esc(o.ilkAdim) + '</div>' : '') +
+          (o.ilgili ? '<div class="fk-blok"><b>İlgili sistem.</b> ' + esc(o.ilgili) + '</div>' : '') +
+          (f.itiraz ? '<div class="fk-itiraz"><b>Tartışmadaki itiraz:</b> ' + esc(f.itiraz) + '</div>' : '') +
+          '<details style="margin:6px 0"><summary style="cursor:pointer;color:var(--lacivert3);font-size:12.5px">Tartışmayı oku (' + (f.konusmalar || []).length + ' konuşma)</summary>' +
+          (f.konusmalar || []).map((k, i) => '<div class="fk-konusma" style="--r:' + (K.ROL[k.rol] ? K.ROL[k.rol].renk : '#16294a') + '"><b>' + esc((f.katilimciAdlari || [])[(f.katilimcilar || []).indexOf(k.rol)] || '') + ' · ' + esc(K.ROL[k.rol] ? K.ROL[k.rol].ad : k.rol) + ':</b> ' + esc(k.metin) + '</div>').join('') + '</details>' +
+          '<label style="font-size:12.5px;font-weight:600;color:var(--lacivert)">Notunuz (ekip bir sonraki turda okur)</label><textarea class="girdi fk-not" data-fnot="' + esc(f.id) + '" placeholder="Örn: Güzel fikir ama önce satış panosunda deneyelim…">' + esc(f.sahipNotu || '') + '</textarea>' +
+          '<div class="satir" style="margin-top:8px">' +
+          (f.durum === 'masada' || f.durum === 'arastirilacak' || f.durum === 'rafta' ? '<button class="btn ana-btn kucuk" data-fonay="' + esc(f.id) + '">İşe dönüştür</button>' : '') +
+          (f.durum === 'masada' || f.durum === 'arastirilacak' ? '<button class="btn kucuk" data-fraf="' + esc(f.id) + '">Rafa kaldır</button>' : '') +
+          '<button class="btn kucuk" data-fnotkaydet="' + esc(f.id) + '">Notu kaydet</button>' +
+          (f.isId ? '<span class="kart-alt">İş açıldı · ' + tarihSaat(f.onayMs) + '</span>' : '') + '</div></div>';
+      }
+      return '<div class="kart fikir-kart" data-fikir="' + esc(f.id) + '"><div class="kart-ust"><div><div class="kart-baslik">' + esc(o.baslik || f.konu || 'Fikir') + '</div>' +
+        '<div class="kart-alt">' + (o.sahip ? kisiEtiketi(o.sahip, o.sahipAd) + ' · ' : '') + tarihSaat(f.tarihMs) + ' · ' + esc((f.katilimciAdlari || []).join(', ')) + '</div>' +
+        '<div class="fk-meta"><span class="etiket ' + e[1] + '">' + e[0] + '</span><span class="etiket">' + esc(FIKIR_EFOR[o.efor] || 'Efor: orta') + '</span>' + (f.sahipNotu ? '<span class="etiket sari">notunuz var</span>' : '') + '</div></div>' +
+        '<div class="kart-sag"><span class="etiket ' + durumEt[1] + '">' + esc(durumEt[0]) + '</span></div></div>' + govde + '</div>';
+    }).join('')
+      : '<div class="bos">' + (S.fikirler.length ? 'Bu filtrede fikir yok.' : 'Henüz fikir turu yapılmadı. Claude Code açıkken ekip boş zamanlarında gerçek işlerimizle ilgili fikir üretip tartışacak; değerli olanlar buraya düşecek.') + '</div>');
+  ic.querySelectorAll('[data-ff]').forEach((b) => b.onclick = () => { ACIK.fikirFiltre = b.dataset.ff; cekmeceCiz(); });
+  ic.querySelectorAll('[data-fikir] > .kart-ust').forEach((b) => b.onclick = () => { const id = b.parentElement.dataset.fikir; ACIK.fikir = ACIK.fikir === id ? null : id; cekmeceCiz(); });
+  ic.querySelectorAll('[data-fnotkaydet]').forEach((b) => b.onclick = async () => {
+    const id = b.dataset.fnotkaydet; const t = ic.querySelector('[data-fnot="' + id + '"]');
+    try { await veri.fikirGuncelle(id, { sahipNotu: String((t && t.value) || '').trim().slice(0, 1000), notMs: Date.now() }); bildirim('Notunuz kaydedildi; ekip bir sonraki fikir turunda okuyacak.'); }
+    catch (e) { bildirim('Not kaydedilemedi: ' + esc(e.message || e), true); }
+  });
+  ic.querySelectorAll('[data-fraf]').forEach((b) => b.onclick = async () => {
+    try { await veri.fikirGuncelle(b.dataset.fraf, { durum: 'rafta', rafMs: Date.now() }); } catch (e) { bildirim('Güncellenemedi: ' + esc(e.message || e), true); }
+  });
+  ic.querySelectorAll('[data-fonay]').forEach((b) => b.onclick = async () => {
+    const f = S.fikirler.find((x) => x.id === b.dataset.fonay); if (!f) return;
+    if (ccMi() && kopru.durum() !== 'hazir') { bildirim('Önce <b>Ajan Ofisi</b> klasörünü bağlayın.', true); return; }
+    const o = f.oneri || {}; const t = ic.querySelector('[data-fnot="' + f.id + '"]'); const not = String((t && t.value) || f.sahipNotu || '').trim();
+    const metin = ('Fikir masasından: ' + (o.baslik || f.konu) + '. ' + (o.ozet || '') + (o.ilkAdim ? ' İlk adım: ' + o.ilkAdim : '') + (not ? ' Ofis sahibinin notu: ' + not : '')).slice(0, 3000);
+    b.disabled = true;
+    try {
+      const isId = await akis.isVer(metin);
+      await veri.fikirGuncelle(f.id, { durum: 'onaylandi', isId: isId || '', onayMs: Date.now(), sahipNotu: not.slice(0, 1000) });
+      bildirim('<b>Fikir işe dönüştü</b><br>Genel Müdür’e iletildi.' + (ccMi() ? ' VS Code’da Claude Code’a <b>ofis</b> yazın.' : ''));
+    } catch (e) { b.disabled = false; bildirim('İş açılamadı: ' + esc(e.message || e), true); }
+  });
 }
 /* --- işler */
 const IS_DURUM = { sirada: ['Sırada', ''], toplanti: ['Toplantıda', 'sari'], calisiyor: ['Çalışılıyor', 'sari'], tamam: ['Tamamlandı', 'yesil'], hata: ['Hata', 'kirmizi'] };
@@ -592,21 +745,22 @@ function islerCiz(ic) {
       if (is.kadroKarari) { const g = is.kadroKarari; govde += '<div class="teslim">Kadro kararı: ' + esc(g.cikan) + ' (' + esc(K.unvan(g.rol, g.eskiKademe)) + ') ayrıldı, yerine ' + esc(g.giren) + ' (' + esc(K.unvan(g.rol, g.yeniKademe)) + ') geldi' + (Number(g.yeniMaas) > 0 ? ' · maaş ' + Number(g.yeniMaas).toLocaleString('tr-TR') + ' ₺' + (Number(g.eskiMaas) > 0 ? ' (önceki ' + Number(g.eskiMaas).toLocaleString('tr-TR') + ' ₺)' : '') : '') + '. ' + esc(g.neden || '') + '</div>'; }
       (is.adimlar || []).forEach((a, i) => {
         const kp = is.puan && is.puan.katkilar && is.puan.katkilar[i] ? is.puan.katkilar[i] : null;
-        const html = a.rol === 'model_fotografcisi' ? K.kodBlogu(a.cikti, 'html') : '';
-        govde += '<div class="adim" style="--r:' + K.ROL[a.rol].renk + '"><div class="adim-ust"><b>' + (i + 1) + '. ' + esc(K.ROL[a.rol].ad) + '</b> · ' + esc(a.ad) + ' · ' + esc(K.kademeBilgisi(a.kademe).ad) + ' (' + esc(a.effort || '') + ') · ' + sureMetni(a.sureMs) + ' · ' + para(a.maliyet) + (kp && kp.puan != null ? ' · <span class="puan ' + puanSinifi(kp.puan) + '">' + kp.puan + '</span>' : '') + (a.kesildi ? ' · <span class="etiket sari">uzunluk sınırında kesildi</span>' : '') + '</div>' +
+        const html = (a.rol === 'model_fotografcisi' || a.rol === 'sunum_tasarimcisi') ? K.kodBlogu(a.cikti, 'html') : '';
+        const rl = K.ROL[a.rol] || { ad: (K.EMEKLI_ROLLER[a.rol] || {}).ad || a.rol, renk: '#8a97a8' };
+        govde += '<div class="adim" style="--r:' + rl.renk + '"><div class="adim-ust"><b>' + (i + 1) + '. ' + esc(rl.ad) + '</b> · ' + esc(a.ad) + ' · ' + esc(K.kademeBilgisi(a.kademe).ad) + ' (' + esc(a.effort || '') + ') · ' + sureMetni(a.sureMs) + ' · ' + para(a.maliyet) + (kp && kp.puan != null ? ' · <span class="puan ' + puanSinifi(kp.puan) + '">' + kp.puan + '</span>' : '') + (a.kesildi ? ' · <span class="etiket sari">uzunluk sınırında kesildi</span>' : '') + '</div>' +
           '<div class="kart-alt" style="margin:4px 0"><b>Görev:</b> ' + esc(a.gorev) + '</div>' +
           (html ? mockupHtml(html) : '') +
           '<details><summary style="cursor:pointer;color:var(--lacivert3);font-size:12.5px">Teslimi oku</summary><div class="md">' + md(a.cikti) + '</div>' + kaynakListesi(a.kaynaklar) + '</details>' +
-          (a.teslimNotu ? '<div class="teslim">Teslim notu: “' + esc(a.teslimNotu) + '”</div>' : '') + (kp && kp.yorum ? '<div class="kart-alt" style="margin-top:4px">Viral’in yorumu: ' + esc(kp.yorum) + '</div>' : '') + '</div>';
+          (a.teslimNotu ? '<div class="teslim">Teslim notu: “' + esc(a.teslimNotu) + '”</div>' : '') + (kp && kp.yorum ? '<div class="kart-alt" style="margin-top:4px">Kalite Denetçisi’nin yorumu: ' + esc(kp.yorum) + '</div>' : '') + '</div>';
       });
       if (is.puan) {
-        govde += '<div class="bolum" style="margin-top:12px"><h3>Viral Tahmincisi puan kartı · ' + is.puan.toplam + '/100</h3><div class="kart-alt" style="margin-bottom:6px">' + esc(is.puan.ozet) + '</div>' +
+        govde += '<div class="bolum" style="margin-top:12px"><h3>Kalite Denetçisi puan kartı · ' + is.puan.toplam + '/100</h3><div class="kart-alt" style="margin-bottom:6px">' + esc(is.puan.ozet) + '</div>' +
           is.puan.kriterler.map((k) => '<div class="kriter"><span>' + esc(k.ad) + '</span><span class="c"><i style="width:' + (k.puan * 5) + '%"></i></span><b>' + k.puan + '/20</b></div>').join('') +
           (is.puan.eksiler.length ? '<div style="margin-top:8px"><b style="font-size:12.5px">Eksiler</b><ul style="margin:4px 0;padding-left:20px;font-size:12.5px">' + is.puan.eksiler.map((e) => '<li>' + esc(e.neden) + ' <b style="color:var(--kirmizi)">−' + e.puan_kaybi + '</b></li>').join('') + '</ul></div>' : '') + '</div>';
       } else if (is.puanHata) govde += '<div class="kart-alt">Puanlanamadı: ' + esc(is.puanHata) + '</div>';
       govde += '</div>';
     }
-    return '<div class="kart" data-is="' + esc(is.id) + '"><div class="kart-ust"><div><div class="kart-baslik">' + esc(is.plan ? is.plan.baslik : String(is.metin || '').slice(0, 80)) + '</div><div class="kart-alt">' + tarihSaat(is.olusturmaMs) + ' · ' + ((is.plan && is.plan.adimlar) || []).map((a) => esc(K.ROL[a.rol].ad)).join(' → ') + (is.maliyet ? ' · ' + para(is.maliyet) : '') + '</div></div><div class="kart-sag"><span class="etiket ' + d[1] + '">' + d[0] + '</span>' + (p != null ? '<span class="puan ' + puanSinifi(p) + '">' + p + '</span>' : '') + '</div></div>' + govde + '</div>';
+    return '<div class="kart" data-is="' + esc(is.id) + '"><div class="kart-ust"><div><div class="kart-baslik">' + esc(is.plan ? is.plan.baslik : String(is.metin || '').slice(0, 80)) + '</div><div class="kart-alt">' + tarihSaat(is.olusturmaMs) + ' · ' + ((is.plan && is.plan.adimlar) || []).map((a) => esc(K.ROL[a.rol] ? K.ROL[a.rol].ad : ((K.EMEKLI_ROLLER[a.rol] || {}).ad || a.rol))).join(' → ') + (is.maliyet ? ' · ' + para(is.maliyet) : '') + '</div></div><div class="kart-sag"><span class="etiket ' + d[1] + '">' + d[0] + '</span>' + (p != null ? '<span class="puan ' + puanSinifi(p) + '">' + p + '</span>' : '') + '</div></div>' + govde + '</div>';
   }).join('');
   ic.querySelectorAll('[data-is] > .kart-ust').forEach((b) => b.onclick = () => { const id = b.parentElement.dataset.is; ACIK.is = ACIK.is === id ? null : id; cekmeceCiz(); });
   mockupOlcekle(ic);
@@ -617,7 +771,7 @@ function mockupHtml(html) { return '<div class="mockup"><iframe sandbox="" refer
 function mockupOlcekle(kok) { kok.querySelectorAll('.mockup').forEach((m) => { const f = m.querySelector('iframe'); const k = m.clientWidth / 1280; f.style.transform = 'scale(' + k + ')'; }); }
 function galeriCiz(ic) {
   const liste = S.notlar.filter((n) => n.tur === 'model');
-  if (!liste.length) { ic.innerHTML = '<div class="bos">Model Fotoğrafçısı henüz görsel hazırlamadı. Örnek iş: “İK Dashboard’a yönetici özeti kartı ekleseydik nasıl görünürdü?”</div>'; return; }
+  if (!liste.length) { ic.innerHTML = '<div class="bos">Sunum Tasarımcısı henüz taslak hazırlamadı. Örnek iş: “Aylık kurul sunumuna turnover sayfası ekleseydik nasıl görünürdü?”</div>'; return; }
   ic.innerHTML = '<div class="galeri">' + liste.map((n) => {
     const { govde } = K.teslimNotuAyir(n.icerik || '');
     const aciklama = govde.split('```html')[0];
@@ -685,9 +839,7 @@ function harcamaCiz(ic) {
     '<div class="bolum"><h3>Bu ay: ' + para(ay) + (butce ? ' / ' + para(butce) : '') + '</h3>' + (butce ? '<div class="cubuk"><i style="width:' + Math.min(100, ay / butce * 100).toFixed(1) + '%"></i></div><div class="kart-alt" style="margin-top:4px">Bütçe dolduğunda ofis yeni iş almaz; Ayarlar’dan değiştirebilirsiniz.</div>' : '<div class="kart-alt">Aylık bütçe sınırı yok.</div>') + '</div>' +
     '<div class="bolum"><h3>Departman bazında</h3>' + (Object.keys(roller).length ? '<table class="tablo"><thead><tr><th>Departman</th><th>Çağrı</th><th>Girdi</th><th>Çıktı</th><th>Arama</th><th>Maliyet</th></tr></thead><tbody>' + Object.entries(roller).sort((a, b) => b[1].m - a[1].m).map(([r, x]) => '<tr><td>' + kisiEtiketi(r, (S.kadro.calisanlar[r] || {}).ad) + '</td><td>' + x.n + '</td><td>' + x.g.toLocaleString('tr-TR') + '</td><td>' + x.c.toLocaleString('tr-TR') + '</td><td>' + x.a + '</td><td><b>' + para(x.m) + '</b></td></tr>').join('') + '</tbody></table>' : '<div class="kart-alt">Bu ay henüz harcama yok.</div>') + '</div>' +
     (gunList.length ? '<div class="bolum"><h3>Günlük harcama</h3>' + gunList.map(([g, m]) => '<div class="kriter" style="grid-template-columns:90px 1fr 70px"><span>' + g.slice(5).split('-').reverse().join('.') + '</span><span class="c"><i style="width:' + (m / maxG * 100).toFixed(1) + '%"></i></span><b>' + para(m) + '</b></div>').join('') + '</div>' : '') +
-    '<div class="bolum"><h3>Muhasebeci</h3><div class="kart-alt">3 günde bir rapor verir ve tasarruf ayarlarını uygular. Son rapor: ' + (z.son ? esc(z.son) : 'henüz yok') + '.</div>' +
-    (S.ayar.tasarruf ? '<div class="kart-alt" style="margin-top:4px">Uygulanan ayarlar: ' + (Object.entries(S.ayar.tasarruf.webArama || {}).map(([r, n]) => esc(K.ROL[r] ? K.ROL[r].ad : r) + ' ≤ ' + n + ' arama').join(', ') || 'web arama sınırı yok') + (S.ayar.tasarruf.kisaYaz && S.ayar.tasarruf.kisaYaz.length ? ' · kısa yazanlar: ' + S.ayar.tasarruf.kisaYaz.map((r) => esc(K.ROL[r].ad)).join(', ') : '') + '</div>' : '') +
-    '<div class="satir" style="margin-top:8px"><button class="btn" data-calistir="muhasebe">Muhasebe raporunu şimdi iste</button></div></div>' +
+    (S.ayar.tasarruf ? '<div class="bolum"><h3>Tasarruf ayarları</h3><div class="kart-alt">Uygulanan ayarlar: ' + (Object.entries(S.ayar.tasarruf.webArama || {}).map(([r, n]) => esc(K.ROL[r] ? K.ROL[r].ad : r) + ' ≤ ' + n + ' arama').join(', ') || 'web arama sınırı yok') + (S.ayar.tasarruf.kisaYaz && S.ayar.tasarruf.kisaYaz.length ? ' · kısa yazanlar: ' + S.ayar.tasarruf.kisaYaz.filter((r) => K.ROL[r]).map((r) => esc(K.ROL[r].ad)).join(', ') : '') + '. (25.11.2026’dan beri ayrı muhasebe raporu yok: Claude Code modunda API maliyeti oluşmuyor.)</div></div>' : '') +
     '<div class="bolum"><h3>Son çağrılar</h3>' + (son.length ? '<table class="tablo"><tbody>' + son.map((h) => '<tr><td>' + tarihSaat(h.tsMs) + '</td><td>' + kisiEtiketi(h.rol, h.ad) + '</td><td>' + esc(h.effort || '') + '</td><td>' + (h.arama ? h.arama + ' arama' : '') + '</td><td><b>' + para(h.maliyet) + '</b>' + (h.hata ? ' <span class="etiket kirmizi">' + esc(h.hata) + '</span>' : '') + '</td></tr>').join('') + '</tbody></table>' : '<div class="kart-alt">Kayıt yok.</div>') + '</div>';
   ic.querySelectorAll('[data-calistir]').forEach((b) => b.onclick = () => zamanliCalistir(b.dataset.calistir));
 }
@@ -735,12 +887,12 @@ function ayarlarCiz(ic) {
       '<div class="form-satir"><label for="a-model">Model</label><select class="girdi" id="a-model">' + K.MODELLER.map((m) => '<option value="' + m.id + '"' + (S.ayar.model === m.id ? ' selected' : '') + '>' + esc(m.ad) + '</option>').join('') + '</select><div class="ac">Çalışanların “maaşı” bu modelin çalışma derinliğidir (low → max). Varsayılan Opus 5.5.</div></div>' +
       '<div class="form-satir"><label for="a-butce">Aylık bütçe (USD)</label><input class="girdi" id="a-butce" type="number" min="0" step="1" value="' + esc(S.ayar.aylikButce == null ? 20 : S.ayar.aylikButce) + '"><div class="ac">Bu ay bu tutara ulaşılınca ofis yeni iş almaz. 0 = sınırsız.</div></div>' +
       '<div class="satir"><button class="btn ana-btn" id="a-kaydet">Kaydet</button><button class="btn" id="a-test">Bağlantıyı test et</button></div><div class="durum-metin" id="a-durum"></div></div>' +
-    '<div class="bolum"><h3>Hedeflerim (Mentalite Koçu için)</h3><div class="form-satir"><textarea class="girdi" id="a-hedef" rows="4" placeholder="Örn: 3 ay içinde İK platformunu tüm müdürlerin her gün kullandığı bir araç yapmak…">' + esc(S.ayar.hedefler || '') + '</textarea></div><div class="satir"><button class="btn" id="a-hedef-kaydet">Kaydet ve koçtan strateji iste</button></div></div>' +
+    '<div class="bolum"><h3>Hedeflerim (İK Stratejisti için)</h3><div class="form-satir"><textarea class="girdi" id="a-hedef" rows="4" placeholder="Örn: 3 ay içinde ilk 90 gündeki ayrılışları yarıya indirmek…">' + esc(S.ayar.hedefler || '') + '</textarea></div><div class="satir"><button class="btn" id="a-hedef-kaydet">Kaydet ve stratejistten plan iste</button></div><div class="kart-alt" style="margin-top:6px">Hedefleriniz fikir turlarının gündemini de belirler.</div></div>' +
     '<div class="bolum"><h3>ElevenLabs (Video Editörü seslendirmesi)</h3>' +
       '<div class="form-satir"><label for="a-el">ElevenLabs API anahtarı</label><input class="girdi" id="a-el" type="password" autocomplete="off" placeholder="' + (S.anahtarlar.elevenlabs ? 'Kayıtlı: ' + esc(maskele(S.anahtarlar.elevenlabs)) : 'elevenlabs.io › Profile › API Keys') + '"></div>' +
       '<div class="form-satir"><label for="a-ses">Ses kimliği (Voice ID)</label><input class="girdi" id="a-ses" value="' + esc(S.ayar.sesId || '') + '" placeholder="elevenlabs.io › Voices › sesin yanındaki ID"><div class="ac">Türkçe için “eleven_multilingual_v2” modeli kullanılır.</div></div>' +
       '<div class="satir"><button class="btn" id="a-el-kaydet">Kaydet</button><button class="btn" id="a-el-dene">Sesi dene</button></div><div class="durum-metin" id="a-el-durum"></div></div>' +
-    '<div class="bolum"><h3>Zamanlanmış işler</h3><div class="kart-alt">' + (ccMi() ? 'Claude Code modunda günlük içerik avı, haftalık rakip raporu ve 3 günlük muhasebe raporu o günün ilk Claude Code oturumunda yapılır; ofis açıksa vadesi gelen işi klasöre de bırakır. “Şimdi çalıştır” isteği Claude Code’a iletir.' : 'Her sabah 06:00’da GitHub Actions zamanlayıcısı bu işleri sizin anahtarınızla çalıştırır. Zamanlayıcı gecikirse ofisi açtığınızda sayfa eksik olanı kendisi tamamlar.') + '</div><div id="a-zaman"></div></div>';
+    '<div class="bolum"><h3>Zamanlanmış işler</h3><div class="kart-alt">' + (ccMi() ? 'Claude Code modunda günlük içerik avı ve haftalık mevzuat bülteni o günün ilk Claude Code oturumunda yapılır; ofis açıksa vadesi gelen işi klasöre de bırakır. “Şimdi çalıştır” isteği Claude Code’a iletir. Oturum açık kaldıkça ekip boş zamanlarında fikir turları yapar (Fikir Masası).' : 'Her sabah 06:00’da GitHub Actions zamanlayıcısı bu işleri sizin anahtarınızla çalıştırır. Zamanlayıcı gecikirse ofisi açtığınızda sayfa eksik olanı kendisi tamamlar.') + '</div><div id="a-zaman"></div></div>';
   zamanTablosuCiz();
   ic.querySelectorAll('input[name="a-motor"]').forEach((r) => r.onchange = async () => {
     await veri.ayarGuncelle({ motor: r.value });
@@ -767,7 +919,7 @@ function ayarlarCiz(ic) {
     await veri.ayarGuncelle({ hedefler: h });
     if (!h) { bildirim('Hedefler temizlendi.'); return; }
     if (!gorevHazirMi()) return;
-    Promise.resolve(akis.stratejiIste(h)).then(() => bildirim(ccMi() ? 'Strateji isteği Claude Code’a iletildi; Claude Code’a <b>ofis</b> yazın.' : 'Mentalite Koçu stratejinizi hazırlıyor; bitince panoya asacak.')).catch((e) => bildirim(esc(e.message || e), true));
+    Promise.resolve(akis.stratejiIste(h)).then(() => bildirim(ccMi() ? 'Strateji isteği Claude Code’a iletildi; Claude Code’a <b>ofis</b> yazın.' : 'İK Stratejisti planınızı hazırlıyor; bitince panoya asacak.')).catch((e) => bildirim(esc(e.message || e), true));
   };
   $('a-el-kaydet').onclick = async () => {
     const d = $('a-el-durum');

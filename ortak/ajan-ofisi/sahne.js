@@ -6,12 +6,12 @@
 import { ROLLER, ROL, ODALAR, kademeBilgisi } from './kadro.js';
 
 const NS = 'http://www.w3.org/2000/svg';
-const W = 1600, H = 900, CY = 380;
+export const W = 1600, H = 900, CY = 380;
 const P = new URLSearchParams(location.search);
 export const HIZ = Math.max(0.25, Math.min(200, Number(P.get('hiz')) || 1));
 
-/* ---------------------------------------------------------------- kat planı */
-const ODA_PLAN = {
+/* ---------------------------------------------------------------- kat planı (2B ve 3B sahne ortak kullanır) */
+export const ODA_PLAN = {
   arastirma: { x: 20, y: 20, w: 450, h: 300, kapi: { x: 245, y: 320 }, ky: 250 },
   kreatif: { x: 490, y: 20, w: 590, h: 300, kapi: { x: 785, y: 320 }, ky: 250 },
   gm: { x: 1100, y: 20, w: 480, h: 300, kapi: { x: 1250, y: 320 }, ky: 262 },
@@ -20,32 +20,49 @@ const ODA_PLAN = {
   teknoloji: { x: 920, y: 440, w: 320, h: 440, kapi: { x: 1080, y: 440 }, ky: 505 },
   yonetim: { x: 1260, y: 440, w: 320, h: 440, kapi: { x: 1420, y: 440 }, ky: 505 }
 };
-const MASA = {
-  icerik_avcisi: { x: 130, y: 175 }, rakip_analisti: { x: 360, y: 175 },
-  model_fotografcisi: { x: 600, y: 175 }, video_editor: { x: 785, y: 175 }, reklam_kreatifcisi: { x: 970, y: 175 },
+export const MASA = {
+  icerik_avcisi: { x: 130, y: 175 }, mevzuat_danismani: { x: 360, y: 175 },
+  sunum_tasarimcisi: { x: 600, y: 175 }, video_editor: { x: 785, y: 175 }, reklam_kreatifcisi: { x: 970, y: 175 },
   genel_mudur: { x: 1440, y: 92, via: [{ x: 1566, y: 92 }, { x: 1566, y: 262 }] },
-  mentalite_kocu: { x: 110, y: 560 }, viral_tahmincisi: { x: 290, y: 560 },
+  ik_stratejisti: { x: 110, y: 560 }, viral_tahmincisi: { x: 290, y: 560 },
   web_gelistirici: { x: 1010, y: 560 }, yazilimci: { x: 1160, y: 560 },
-  ofis_muduru: { x: 1350, y: 560 }, muhasebeci: { x: 1500, y: 560 }
+  ofis_muduru: { x: 1350, y: 560 }, veri_analisti: { x: 1500, y: 560 }
 };
-const SANDALYE = [
+/* Masa yüzeyinin merkezi (çalışan masa başında bu noktaya bakar) */
+export function masaMerkezi(rol) {
+  const m = MASA[rol]; if (!m) return null;
+  if (rol === 'genel_mudur') return { x: 1440, y: 167 };
+  return { x: m.x, y: ALT_ODA(ROL[rol].oda) ? m.y + 58 : m.y - 66 };
+}
+export const TOPLANTI_MASASI = { x: 650, y: 645, rx: 130, ry: 70 };
+export const SANDALYE = [
   { x: 560, y: 548 }, { x: 605, y: 548 }, { x: 650, y: 548 }, { x: 695, y: 548 }, { x: 740, y: 548 },
   { x: 497, y: 600 }, { x: 497, y: 645 }, { x: 497, y: 690 },
   { x: 803, y: 600 }, { x: 803, y: 645 }, { x: 803, y: 690 }
 ];
 const ALT_ODA = (oda) => ODA_PLAN[oda].y > 300;
 
+/* tur: 3B sahne duruşu seçer (masa/sandalye → oturur, bak → baktığı nokta) */
+const KAHVE_YER = [{ x: 876, y: 398 }, { x: 946, y: 398 }, { x: 836, y: 402 }, { x: 986, y: 402 }, { x: 911, y: 372 }];
 export const KONUM = {
-  masa: (rol) => Object.assign({ oda: ROL[rol].oda }, MASA[rol]),
+  masa: (rol) => Object.assign({ oda: ROL[rol].oda, tur: 'masa', rol }, MASA[rol], { bak: masaMerkezi(rol) }),
   masaOnu: (rol) => {
-    if (rol === 'genel_mudur') return { oda: 'gm', x: 1440, y: 232 };
+    if (rol === 'genel_mudur') return { oda: 'gm', x: 1440, y: 232, bak: { x: 1440, y: 167 } };
     const m = MASA[rol]; const alt = ALT_ODA(ROL[rol].oda);
-    return { oda: ROL[rol].oda, x: m.x + 46, y: alt ? m.y - 6 : m.y + 8 };
+    return { oda: ROL[rol].oda, x: m.x + 46, y: alt ? m.y - 6 : m.y + 8, bak: { x: m.x, y: m.y } };
   },
-  sandalye: (i) => Object.assign({ oda: 'toplanti' }, SANDALYE[i % SANDALYE.length]),
-  tahtaOnu: () => ({ oda: 'toplanti', x: 650, y: 772, via: [{ x: 862, y: 772 }, { x: 862, y: 500 }] }),
-  pano: () => ({ oda: 'koridor', x: 96, y: 392 }),
-  kahve: (i) => ({ oda: 'koridor', x: i ? 946 : 876, y: 398 }),
+  sandalye: (i) => Object.assign({ oda: 'toplanti', tur: 'sandalye', bak: { x: TOPLANTI_MASASI.x, y: TOPLANTI_MASASI.y } }, SANDALYE[i % SANDALYE.length]),
+  tahtaOnu: () => ({ oda: 'toplanti', x: 650, y: 772, via: [{ x: 862, y: 772 }, { x: 862, y: 500 }], bak: { x: TOPLANTI_MASASI.x, y: TOPLANTI_MASASI.y } }),
+  pano: () => ({ oda: 'koridor', x: 96, y: 392, bak: { x: 99, y: 430 } }),
+  kahve: (i) => Object.assign({ oda: 'koridor', bak: { x: 911, y: 416 } }, KAHVE_YER[(i | 0) % KAHVE_YER.length]),
+  /* Fikir masası = toplantı masası; fikir kartı masanın kuzey kenarına bırakılır */
+  fikirMasasi: () => ({ oda: 'toplanti', x: 650, y: 560, via: [{ x: 862, y: 560 }], bak: { x: TOPLANTI_MASASI.x, y: TOPLANTI_MASASI.y } }),
+  /* Bir çalışanın masasının çevresinde i. konuk yeri (oda içinde kalır) */
+  yakin: (rol, i) => {
+    const m = KONUM.masaOnu(rol); const o = ODA_PLAN[m.oda];
+    const dx = [0, -48, 48, -96, 96][(i | 0) % 5];
+    return { oda: m.oda, x: Math.max(o.x + 30, Math.min(o.x + o.w - 30, m.x + dx)), y: m.y, bak: { x: MASA[rol].x, y: MASA[rol].y } };
+  },
   giris: () => ({ oda: 'koridor', x: 26, y: CY })
 };
 
@@ -89,10 +106,10 @@ function el(tag, at, ebeveyn) {
 function yazi(ebeveyn, x, y, metin, at) { const t = el('text', Object.assign({ x, y }, at || {}), ebeveyn); t.textContent = metin; return t; }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
-const KADIN = new Set(['Selin', 'Deniz', 'Ece', 'Defne', 'Melis', 'Irmak', 'Sinem', 'Nazlı', 'İpek', 'Derya', 'Sude', 'Lale', 'Asya', 'Ezgi', 'Damla', 'Nehir', 'Gizem', 'Tuba', 'Ilgın', 'Yağmur', 'Beren']);
-const TEN = ['#f2cfac', '#e6b48a', '#c98d5f', '#f6dcc3', '#d9a273'];
-const SAC = ['#2a1c12', '#4a3324', '#6e4f33', '#1d1d1f', '#8b6a49', '#3a2a22'];
-function tohum(s) { let h = 2166136261; for (const c of String(s)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return Math.abs(h); }
+export const KADIN = new Set(['Selin', 'Deniz', 'Ece', 'Defne', 'Melis', 'Irmak', 'Sinem', 'Nazlı', 'İpek', 'Derya', 'Sude', 'Lale', 'Asya', 'Ezgi', 'Damla', 'Nehir', 'Gizem', 'Tuba', 'Ilgın', 'Yağmur', 'Beren', 'Bilge', 'Ceren', 'Aslı']);
+export const TEN = ['#f2cfac', '#e6b48a', '#c98d5f', '#f6dcc3', '#d9a273'];
+export const SAC = ['#2a1c12', '#4a3324', '#6e4f33', '#1d1d1f', '#8b6a49', '#3a2a22'];
+export function tohum(s) { let h = 2166136261; for (const c of String(s)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return Math.abs(h); }
 
 /* ---------------------------------------------------------------- sahne */
 export function sahneKur(kap, { kadro, onAjanTik, kayit } = {}) {
@@ -167,6 +184,12 @@ export function sahneKur(kap, { kadro, onAjanTik, kayit } = {}) {
   el('rect', { x: 520, y: 575, width: 260, height: 140, rx: 70, fill: 'url(#ahsap)', stroke: '#7a5a37', 'stroke-width': 2, filter: 'url(#golge)' }, mob);
   el('rect', { x: 560, y: 610, width: 180, height: 70, rx: 35, fill: '#b9966a', opacity: .55 }, mob);
   SANDALYE.forEach((s) => el('circle', { cx: s.x, cy: s.y, r: 13, fill: '#41506a', opacity: .9 }, mob));
+  /* fikir masası: masadaki kâğıt destesi + sayı */
+  const fikirG = el('g', { class: 'fikir-deste', visibility: 'hidden' }, mob);
+  el('rect', { x: 628, y: 598, width: 40, height: 28, rx: 2, fill: '#ffffff', stroke: '#b9c3d2', transform: 'rotate(-6 648 612)' }, fikirG);
+  el('rect', { x: 632, y: 600, width: 40, height: 28, rx: 2, fill: '#fbf7ef', stroke: '#c9b48f' }, fikirG);
+  const fikirSay = yazi(fikirG, 676, 598, '', { class: 'fikir-say' });
+  yazi(mob, 650, 668, 'FİKİR MASASI', { 'text-anchor': 'middle', class: 'sahne-etiket kucuk' });
   const tahtaG = el('g', { class: 'tahta' }, mob);
   el('rect', { x: 466, y: 798, width: 368, height: 72, rx: 5, fill: '#ffffff', stroke: '#8f9bb0', 'stroke-width': 3, filter: 'url(#golge)' }, tahtaG);
   el('rect', { x: 466, y: 866, width: 368, height: 6, rx: 2, fill: '#b9c3d2' }, tahtaG);
@@ -297,6 +320,17 @@ export function sahneKur(kap, { kadro, onAjanTik, kayit } = {}) {
     isinlan(rol, k) { const a = A[rol]; if (!a) return; if (a.coz) { const c = a.coz; a.coz = null; c(false); } a.yol = []; a.konum = k; a.x = k.x; a.y = k.y; },
     yuruyorMu(rol) { const a = A[rol]; return !!(a && a.yol.length); },
     panoSayisi(n) { panoSay.textContent = n ? String(n) : ''; },
+    fikirSayisi(n) { fikirG.setAttribute('visibility', n ? 'visible' : 'hidden'); fikirSay.textContent = n ? String(n) : ''; },
+    /* Fikir turu kartı (sahnenin sol üstü): { konu, katilimcilar[], durum } ya da null */
+    fikirKarti(f) {
+      let k = katman.querySelector('.ofis-fikir');
+      if (!f) { if (k) k.classList.add('gizle'); return; }
+      if (!k) { k = document.createElement('div'); k.className = 'ofis-fikir'; katman.appendChild(k); }
+      k.classList.remove('gizle');
+      k.innerHTML = '<div class="of-ust">Fikir turu' + (f.durum ? ' · ' + esc(f.durum) : '') + '</div><div class="of-konu">' + esc(f.konu || '') + '</div>' +
+        '<div class="of-kisiler">' + (f.katilimcilar || []).map((r) => '<span style="--r:' + (ROL[r] ? ROL[r].renk : '#16294a') + '">' + esc((A[r] && A[r].ad) || '') + '</span>').join('') + '</div>';
+    },
+    kamera: null, ucBoyut: false,
     tahta(t) {
       tahtaYazi.innerHTML = '';
       let kart = katman.querySelector('.ofis-tahta');

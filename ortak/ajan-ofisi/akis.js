@@ -5,12 +5,15 @@
    ============================================================================ */
 import {
   ROLLER, ROL, KADEMELER, kademeBilgisi, unvan, yeniAdSec,
-  planIstegi, adimIstegi, puanIstegi, icerikAviIstegi, rakipRaporuIstegi, muhasebeIstegi, stratejiIstegi,
+  planIstegi, adimIstegi, puanIstegi, icerikAviIstegi, mevzuatBulteniIstegi, muhasebeIstegi, stratejiIstegi,
   planTemizle, puanTemizle, teslimNotuAyir, kodBlogu, videoPlaniAyir,
-  vadesiGelenler, ZAMANLI_ISLER, trTarih, isoHafta, ayAnahtari, harcamaOzeti, zamanliSonuc,
-  performans, kadroKararlari, kadroPuanIsle, SOHBETLER, ROL_SOHBETLERI, TESEKKURLER, ONAYLAR, sistemMetni,
-  azamiTahmin, VARSAYILAN_MODEL, MOTOR_CC, CC_TUR_ROL, ccIsDosyasi, ccSonucTemizle, maasHesap, sahipKadroKarari, sahipMaasArtisi
+  vadesiGelenler, ZAMANLI_ISLER, trTarih, isoHafta, ayAnahtari, harcamaOzeti, zamanliSonuc, haftalikIsMi,
+  performans, kadroKararlari, kadroPuanIsle, TESEKKURLER, ONAYLAR, sistemMetni,
+  azamiTahmin, VARSAYILAN_MODEL, MOTOR_CC, CC_TUR_ROL, CC_TUR_PANO, ccIsDosyasi, ccSonucTemizle, maasHesap, sahipKadroKarari, sahipMaasArtisi,
+  YAPILANMA, EMEKLI_ROLLER
 } from './kadro.js';
+/* HTML taslağı (mockup) üreten rol: 25.11.2026'dan beri Sunum Tasarımcısı (eski: Model Fotoğrafçısı) */
+const TASLAK_ROLLERI = ['sunum_tasarimcisi', 'model_fotografcisi'];
 
 const rastgele = (d) => d[Math.floor(Math.random() * d.length)];
 const kisalt = (s, n) => { s = String(s || '').replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n - 1).trim() + '…' : s; };
@@ -168,7 +171,7 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
         };
         oncekiler.push(kayitA); adimlar = oncekiler;
         await veri.isGuncelle(id, { adimlar: oncekiler.slice(), nabizMs: Date.now() });
-        if (rol === 'model_fotografcisi') { const html = kodBlogu(govde, 'html'); if (html) await veri.notEkle({ tur: 'model', rol, ad: c.ad, baslik: plan.baslik, icerik: govde, html, isId: id, maliyet: s.kullanim.maliyet }); }
+        if (TASLAK_ROLLERI.indexOf(rol) >= 0) { const html = kodBlogu(govde, 'html'); if (html) await veri.notEkle({ tur: 'model', rol, ad: c.ad, baslik: plan.baslik, icerik: govde, html, isId: id, maliyet: s.kullanim.maliyet }); }
         if (rol === 'video_editor') { const vp = videoPlaniAyir(govde); if (vp) await veri.notEkle({ tur: 'video', rol, ad: c.ad, baslik: vp.baslik || plan.baslik, icerik: govde, plan: vp, isId: id, maliyet: s.kullanim.maliyet }); }
         mesgulYap([rol], false);
         const sonraki = plan.adimlar[k + 1];
@@ -378,7 +381,7 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
     try {
       let istek;
       if (id === 'icerik') istek = icerikAviIstegi(trTarih(), ayar);
-      else if (id === 'rakip') istek = rakipRaporuIstegi(isoHafta(), ayar);
+      else if (haftalikIsMi(id)) istek = mevzuatBulteniIstegi(isoHafta(), ayar);
       else {
         const kayitlar = await veri.harcamaListesi(30);
         istek = muhasebeIstegi(harcamaOzeti(kayitlar));
@@ -390,7 +393,7 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
       await veri.notEkle(Object.assign({ tur: id, rol, ad: c.ad, baslik, icerik: z.icerik, kaynaklar: s.kaynaklar, maliyet: s.kullanim.maliyet, kaynak: 'sayfa' }, z.ek));
       await veri.zamanBitir(id, anahtar, kilitId);
       sahne.durum(rol, 'bos');
-      await panoyaAs(rol, id === 'icerik' ? 'Bugünkü içerik notunuz panoda.' : id === 'rakip' ? 'Haftalık rakip raporu panoya asıldı.' : 'Muhasebe raporu ve tasarruf ayarları hazır.');
+      await panoyaAs(rol, CC_TUR_PANO[id] || 'Notunuz panoda.');
       bildir({ tur: 'not', baslik });
     } catch (e) {
       sahne.durum(rol, 'bos');
@@ -410,13 +413,13 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
     }
   }
   function simdiCalistir(id) {
-    const anahtar = id === 'rakip' ? isoHafta() : trTarih();
+    const anahtar = haftalikIsMi(id) ? isoHafta() : trTarih();
     return kuyruk(ZAMANLI_ISLER.find((z) => z.id === id).ad, () => zamanliIs(id, anahtar, { zorla: true }));
   }
 
   function stratejiIste(hedefler) {
     return kuyruk('Strateji', async () => {
-      const rol = 'mentalite_kocu'; const c = calisan(rol);
+      const rol = 'ik_stratejisti'; const c = calisan(rol);
       mesgulYap([rol], true); sahne.durum(rol, 'calisiyor');
       try {
         const s = await cagir(rol, stratejiIstegi(hedefler, durum.ayar()), { tur: 'strateji' });
@@ -474,7 +477,7 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
   /* Zamanlanmış / tek seferlik görevler (içerik, rakip, muhasebe, strateji, ofis raporu) için iş dosyası */
   async function ccGorevIste(tur, { anahtar, ek } = {}) {
     if (!kopru || kopru.durum() !== 'hazir') { const e = new Error('Ajan Ofisi klasörü bağlı değil.'); e.kod = 'klasor'; throw e; }
-    const ank = anahtar || (tur === 'rakip' ? isoHafta() : trTarih());
+    const ank = anahtar || (haftalikIsMi(tur) ? isoHafta() : trTarih());
     const id = tur + '-' + ank + (anahtar ? '' : '-' + Date.now().toString(36));
     await kopru.isYaz(id + '.json', ccIsDosyasi({ isId: id, tur, anahtar: ank, kadro: durum.kadro(), ayar: durum.ayar(), ek }));
     olay({ tur: 'is', rol: CC_TUR_ROL[tur], metin: (ZAMANLI_ISLER.find((z) => z.id === tur) || { ad: tur }).ad + ' Claude Code’a iletildi' });
@@ -505,7 +508,7 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
     kuyruk('Claude Code: ' + (s.plan ? s.plan.baslik : (ZAMANLI_ISLER.find((z) => z.id === s.tur) || { ad: s.tur }).ad), async () => {
       ccSirada.delete(s.isId);
       const son = ccSon.get(s.isId);
-      if (son.tur === 'is') await ccIsOyna(son); else await ccNotOyna(son);
+      if (son.tur === 'is') await ccIsOyna(son); else if (son.tur === 'fikir') await ccFikirOyna(son); else await ccNotOyna(son);
     });
     return true;
   }
@@ -576,7 +579,7 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
       st.adim = k + 1;
       await veri.isGuncelle(s.isId, { adimlar: kayitlar, oynatma: Object.assign({}, st), nabizMs: Date.now() });
       veri.harcamaEkle({ rol, ad: c.ad, kademe: c.kademe | 0, model: MOTOR_CC, effort: kayitA.effort, giris: 0, cikis: 0, okuma: 0, yazma: 0, arama: 0, maliyet: 0, sureMs: kayitA.sureMs, isId: s.isId, tur: 'adim', hata: null, ay: ayAnahtari(), tsMs: Date.now(), motor: MOTOR_CC }).catch(() => {});
-      if (rol === 'model_fotografcisi') { const html = kodBlogu(a.cikti, 'html'); if (html) await veri.notEkle({ tur: 'model', rol, ad: c.ad, baslik: plan.baslik, icerik: a.cikti, html, isId: s.isId, maliyet: 0, kaynak: MOTOR_CC }); }
+      if (TASLAK_ROLLERI.indexOf(rol) >= 0) { const html = kodBlogu(a.cikti, 'html'); if (html) await veri.notEkle({ tur: 'model', rol, ad: c.ad, baslik: plan.baslik, icerik: a.cikti, html, isId: s.isId, maliyet: 0, kaynak: MOTOR_CC }); }
       if (rol === 'video_editor') { const vp = videoPlaniAyir(a.cikti); if (vp) await veri.notEkle({ tur: 'video', rol, ad: c.ad, baslik: vp.baslik || plan.baslik, icerik: a.cikti, plan: vp, isId: s.isId, maliyet: 0, kaynak: MOTOR_CC }); }
       olay({ tur: 'calisma', rol, metin: c.ad + ' (' + ROL[rol].ad + ') teslim etti' });
       mesgulYap([rol], false);
@@ -659,64 +662,130 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
       if (ZAMANLI_ISLER.some((z) => z.id === s.tur) && s.anahtar) await veri.zamanTamam(s.tur, s.anahtar).catch(() => {});
       if (s.dosya) await kopru.arsivle(s.dosya).catch(() => {});
     } finally { mesgulYap([rol], false); }
-    await panoyaAs(rol, s.tur === 'icerik' ? 'Bugünkü içerik notunuz panoda.' : s.tur === 'rakip' ? 'Haftalık rakip raporu panoya asıldı.' : s.tur === 'muhasebe' ? 'Muhasebe raporu panoda.' : s.tur === 'strateji' ? 'Hedeflerin için stratejini hazırladım, panoda.' : 'Ofis performans raporu panoda.');
+    await panoyaAs(rol, CC_TUR_PANO[s.tur] || 'Notunuz panoda.');
     bildir({ tur: 'not', baslik: s.not.baslik || '' });
   }
 
-  /* ------------------------------------------------ ofis içi sohbet döngüsü (olgu iddiası içermez) */
-  let sohbetAcik = true;
-  async function sohbetTuru() {
-    const bos = ROLLER.map((r) => r.id).filter((r) => bosMu(r) && sahne.ajan(r).gorunur);
-    if (bos.length < 2) return;
-    const senaryo = Math.random();
-    const a = rastgele(bos);
-    let b;
-    if (senaryo < 0.45) {
-      const ayniOda = bos.filter((r) => r !== a && ROL[r].oda === ROL[a].oda);
-      if (!ayniOda.length) return;
-      b = rastgele(ayniOda);
-    } else if (senaryo < 0.75) {
-      b = rastgele(bos.filter((r) => r !== a));
-    } else {
-      b = rastgele(bos.filter((r) => r !== a && ROL[r].oda !== ROL[a].oda && r !== 'genel_mudur'));
-    }
-    if (!b) return;
-    /* Jeton: bu kişilerden biri işe çağrılırsa (mesgulYap) sohbet olduğu yerde biter;
-       sohbet onları geri yürütmez — iş akışı kendi hedefine götürür. */
-    const j = { kesildi: false };
-    sohbette.set(a, j); sohbette.set(b, j);
-    const devam = () => !j.kesildi;
+  /* ------------------------------------------------ FİKİR TURU (25.11.2026)
+     Claude Code, ofis boştayken ekipten 2–4 kişiyi gerçek işlerimizle ilgili bir konuda konuşturur (tur:'fikir').
+     Burada oynatılır: katılımcılar toplantı masasına / kahveye / bir masaya toplanır, konuşma sırayla geçer;
+     değerli fikir FİKİR MASASI'na (toplantı masası) bırakılır ve kaydedilir. Kayıt isId ile tektir (tekrar oynamaz). */
+  const FIKIR_SANDALYE = [0, 4, 2, 9, 6];
+  async function ccFikirOyna(s) {
+    const f = s.fikir;
+    const arsiv = async () => { if (s.dosya) await kopru.arsivle(s.dosya).catch(() => {}); };
+    if (s.durum !== 'tamam' && s.durum !== 'hata') return;                       /* yazımı sürüyor */
+    if (s.durum === 'hata' || !f) { olay({ tur: 'hata', metin: 'Fikir turu dosyası kullanılamadı: ' + (s.hata || 'biçim hatalı') }); await arsiv(); return; }
+    if ((durum.fikirler ? durum.fikirler() : []).some((x) => x.id === s.isId)) { await arsiv(); return; }   /* zaten içe aktarıldı */
+    const kat = f.katilimcilar.filter((r) => sahne.ajan(r) && sahne.ajan(r).gorunur);
+    if (kat.length < 2) { await arsiv(); return; }
+    const sahip = kat.indexOf(f.oneri.sahip) >= 0 ? f.oneri.sahip : kat[0];
+    const hedef = (r, i) => (f.yer === 'kahve' ? K.kahve(i) : f.yer === 'oda' ? (i === 0 ? K.masa(kat[0]) : K.yakin(kat[0], i)) : K.sandalye(FIKIR_SANDALYE[i % FIKIR_SANDALYE.length]));
+    mesgulYap(kat, true);
     try {
-      if (senaryo < 0.45) {
-        const s = gununNotuSatiri(a) || rastgele((ROL_SOHBETLERI[ROL[a].oda] || []).concat(SOHBETLER));
-        await sahne.konus(a, s[0], null); if (devam()) await sahne.konus(b, s[1], null);
-      } else if (senaryo < 0.75) {
-        await Promise.all([sahne.yuru(a, K.kahve(0)), sahne.yuru(b, K.kahve(1))]);
-        const s = rastgele(SOHBETLER);
-        if (devam()) await sahne.konus(a, s[0], null);
-        if (devam()) await sahne.konus(b, s[1], null);
-        await Promise.all([a, b].map((r) => (mesgul.has(r) ? null : sahne.yuru(r, K.masa(r)))));
+      sahne.fikirKarti({ konu: f.konu, katilimcilar: kat, durum: 'tartışılıyor' });
+      olay({ tur: 'fikir', rol: kat[0], metin: 'Fikir turu başladı: ' + kisalt(f.konu, 90) });
+      await Promise.all(kat.map((r, i) => sahne.yuru(r, hedef(r, i))));
+      for (const k of f.konusmalar) if (sahne.ajan(k.rol)) await sahne.konus(k.rol, k.metin, null);
+      const kayitDurum = f.sonuc === 'masaya' ? 'masada' : f.sonuc;
+      await veri.fikirKaydet(s.isId, {
+        konu: f.konu, yer: f.yer, katilimcilar: kat, katilimciAdlari: kat.map((r) => calisan(r).ad), konusmalar: f.konusmalar,
+        sonuc: f.sonuc, durum: kayitDurum, oneri: Object.assign({}, f.oneri, { sahip, sahipAd: calisan(sahip).ad }), itiraz: f.itiraz, tarihMs: Date.now()
+      });
+      if (f.sonuc === 'masaya') {
+        sahne.fikirKarti({ konu: f.konu, katilimcilar: kat, durum: 'fikir masasına bırakılıyor' });
+        sahne.dosya(sahip, true);
+        await sahne.yuru(sahip, K.fikirMasasi());
+        sahne.dosya(sahip, false);
+        await sahne.konus(sahip, 'Fikir masasına bıraktım: “' + kisalt(f.oneri.baslik, 80) + '”. Onayınızı bekliyor.', 3400);
+      } else if (f.sonuc === 'arastirilacak') {
+        await sahne.konus(sahip, 'Masaya koymadan önce eksiklerini tamamlayalım; araştırılacaklar listesine yazdım.', 2800);
       } else {
-        await sahne.yuru(a, K.masaOnu(b));
-        const s = rastgele(SOHBETLER);
-        if (devam()) await sahne.konus(a, s[0], null);
-        if (devam()) await sahne.konus(b, s[1], null);
-        if (!mesgul.has(a)) await sahne.yuru(a, K.masa(a));
+        await sahne.konus(kat[kat.length - 1], 'Bu fikri şimdilik eliyoruz; gerekçesini fikir defterine yazdım.', 2600);
       }
-    } finally { if (sohbette.get(a) === j) sohbette.delete(a); if (sohbette.get(b) === j) sohbette.delete(b); }
+    } finally {
+      sahne.fikirKarti(null);
+      await Promise.all(kat.map((r) => sahne.yuru(r, K.masa(r))));
+      mesgulYap(kat, false);
+    }
+    olay({ tur: 'fikir', rol: sahip, metin: kisalt(f.oneri.baslik, 90) + ' → ' + (f.sonuc === 'masaya' ? 'fikir masasında' : f.sonuc === 'arastirilacak' ? 'araştırılacak' : 'elendi') });
+    bildir({ tur: 'fikir', baslik: f.oneri.baslik, sonuc: f.sonuc });
+    await arsiv();
   }
-  function gununNotuSatiri(rol) {
-    if (rol !== 'icerik_avcisi' && rol !== 'rakip_analisti') return null;
-    const bugun = trTarih();
-    const n = (durum.notlar() || []).find((x) => x.rol === rol && x.tarihMs && trTarih(new Date(x.tarihMs)) === bugun);
-    if (!n) return null;
-    return ['Bugünkü notumun başlığı: “' + kisalt(n.baslik, 60) + '”. Panoya astım.', 'Okuyacağım, sonra konuşalım.'];
+
+  /* ------------------------------------------------ OFİS YENİDEN YAPILANMASI (25.11.2026, bir kez oynar)
+     İş kayıtlarına göre ekip işinde görev almayan 4 rol emekliye ayrılır, yerlerine 4 yeni uzman gelir (EMEKLI_ROLLER).
+     Önce kadro kaydedilir (sayfa yenilense de tekrar etmez), sonra toplantı oynatılır. */
+  const TANITIM = {
+    mevzuat_danismani: 'İş Kanunu, İSG, KVKK ve SGK değişikliklerini izleyeceğim; her pazartesi mevzuat bülteni panonuzda olacak, belgelerdeki hukuki riskleri de ben bulacağım.',
+    ik_stratejisti: 'İşe alım, ilk 90 gün, performans, prim ve turnover için ölçülebilir öneriler getireceğim; her öneriyi göstergesiyle birlikte.',
+    sunum_tasarimcisi: 'Aylık kurul sunumunuzun kurgusu, mesaj başlıklı slaytlar ve ekran taslakları bende.',
+    veri_analisti: 'Excel raporlarınızdaki ve panolardaki sayıların tutarlılığını ben denetleyeceğim; çözümü önce Excel’in içinde arayacağım.'
+  };
+  function yapilanma() {
+    return kuyruk('Ofis yeniden yapılanıyor', async () => {
+      const kd = durum.kadro(); if (!kd || kd.yapilanma === YAPILANMA) return;
+      const simdi = Date.now(); const calisanlar = Object.assign({}, kd.calisanlar || {});
+      const cikanlar = [], girenler = [], kayitlar = [];
+      for (const [eskiRol, b] of Object.entries(EMEKLI_ROLLER)) {
+        const eski = calisanlar[eskiRol]; const yR = ROL[b.yerine]; if (!yR) continue;
+        const yeni = (calisanlar[b.yerine] && calisanlar[b.yerine].iseGirisMs) ? calisanlar[b.yerine] : { ad: yR.baslangicAd, kademe: yR.baslangicKademe, no: 1, iseGirisMs: simdi, puanlar: [] };
+        calisanlar[b.yerine] = yeni; delete calisanlar[eskiRol];
+        if (eski) cikanlar.push({ ad: eski.ad, gorev: b.ad });
+        girenler.push({ rol: b.yerine, ad: yeni.ad });
+        kayitlar.push({ tarihMs: simdi, rol: b.yerine, cikan: eski ? eski.ad : '—', giren: yeni.ad, ort: null, eskiKademe: eski ? (eski.kademe | 0) : null, yeniKademe: yeni.kademe | 0,
+          sahipKarari: true, yapilanma: true, neden: 'Ofis yeniden yapılandı: ' + b.ad + ' görevi kaldırıldı, yerine ' + yR.ad + ' geldi' });
+      }
+      await veri.kadroKaydet(Object.assign({}, kd, { calisanlar, gecmis: (kd.gecmis || []).concat(kayitlar).slice(-60), yapilanma: YAPILANMA }));
+      const gm = 'genel_mudur'; const herkes = ROLLER.map((r) => r.id); const yeniler = girenler.map((g) => g.rol);
+      for (const g of girenler) sahne.isimGuncelle(g.rol, g.ad, ROL[g.rol].baslangicKademe);
+      mesgulYap(herkes, true);
+      try {
+        for (const r of yeniler) { sahne.gizle(r, true); sahne.isinlan(r, K.giris()); }
+        await sahne.konus(gm, 'Herkes toplantı salonuna lütfen. Ofiste yeni bir düzene geçiyoruz.', 2600);
+        sahne.tahta({ baslik: 'Ofis yeniden yapılanıyor', adimlar: yeniler.map((r) => ({ rol: r, gorev: ROL[r].gorev })) });
+        let i = 0; const yuru = [sahne.yuru(gm, K.tahtaOnu())];
+        for (const r of herkes) if (r !== gm && yeniler.indexOf(r) < 0) yuru.push(sahne.yuru(r, K.sandalye(i++)));
+        await Promise.all(yuru);
+        if (cikanlar.length) await sahne.konus(gm, 'İki haftalık iş kayıtlarımıza baktım: ' + cikanlar.map((c) => c.gorev).join(', ') + ' görevleri ekip işlerine hiç ya da çok az girdi. ' + cikanlar.map((c) => c.ad).join(', ') + ', emeğiniz için teşekkürler; görevleriniz bugün sona eriyor.', null);
+        await sahne.konus(gm, 'Yerlerine işimizin gerçek ihtiyacına göre ' + girenler.length + ' yeni uzman katılıyor. Hoş geldiniz!', 2800);
+        for (const g of girenler) {
+          sahne.gizle(g.rol, false);
+          await sahne.yuru(g.rol, K.sandalye(i++));
+          await sahne.konus(g.rol, 'Merhaba, ben ' + g.ad + ', ' + ROL[g.rol].ad + '. ' + (TANITIM[g.rol] || ''), null);
+        }
+        await sahne.konus('viral_tahmincisi', 'Benim unvanım da değişti: artık Kalite Denetçisiyim. Puanlamanın yanında tutarlılık, güvenlik ve kişisel veri denetimi de bende.', null);
+        await sahne.konus('reklam_kreatifcisi', 'Ben de Kreatif Metin Yazarı olarak devam ediyorum: video anlatımı, duyuru ve lansman metinleri.', null);
+        await sahne.konus('ofis_muduru', 'Fikir masası benden. Boş zamanlarda gerçek işlerimizle ilgili fikir üretip tartışacağız; değerli olanları bu masaya bırakıp onayınıza sunacağız.', null);
+        await sahne.konus(gm, 'Boş konuşma yok, fikir var. Herkes masasına, kolay gelsin!', 2600);
+        sahne.tahta(null);
+        await Promise.all(herkes.map((r) => sahne.yuru(r, K.masa(r))));
+      } finally { mesgulYap(herkes, false); for (const r of yeniler) sahne.gizle(r, false); }
+      olay({ tur: 'kadro', metin: 'Ofis yeniden yapılandı: ' + girenler.map((g) => g.ad + ' (' + ROL[g.rol].ad + ')').join(', ') + ' katıldı' });
+      bildir({ tur: 'yapilanma', cikanlar, girenler });
+    });
+  }
+
+  /* ------------------------------------------------ boş zaman: SESSİZ ofis hayatı
+     25.11.2026: hazır "boş sohbet" kaldırıldı. Ofis boştayken kimse anlamsız konuşmaz; arada biri kahve alıp masasına
+     döner. Ekibin gerçek konuşmaları yalnız fikir turlarında (tur:'fikir') ve işlerde olur. */
+  let hayatAcik = true;
+  async function sessizTur() {
+    const bos = ROLLER.map((r) => r.id).filter((r) => r !== 'genel_mudur' && bosMu(r) && sahne.ajan(r).gorunur);
+    if (!bos.length) return;
+    const a = rastgele(bos);
+    const j = { kesildi: false }; sohbette.set(a, j);
+    try {
+      await sahne.yuru(a, K.kahve(Math.random() < 0.5 ? 0 : 1));
+      if (!j.kesildi) await sahne.bekle(5000 + Math.random() * 5000);
+      if (!j.kesildi && !mesgul.has(a)) await sahne.yuru(a, K.masa(a));
+    } finally { if (sohbette.get(a) === j) sohbette.delete(a); }
   }
   (async function dongu() {
     for (;;) {
-      await new Promise((r) => setTimeout(r, (9000 + Math.random() * 9000) / Math.min(sahne.HIZ, 20)));
-      if (!sohbetAcik || document.hidden) continue;
-      try { await sohbetTuru(); } catch (e) { /* sohbet hatası akışı durdurmaz */ }
+      await new Promise((r) => setTimeout(r, (35000 + Math.random() * 40000) / Math.min(sahne.HIZ, 20)));
+      if (!hayatAcik || document.hidden) continue;
+      try { await sessizTur(); } catch (e) { /* hata akışı durdurmaz */ }
     }
   })();
 
@@ -737,6 +806,6 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
       const veriOzet = ROLLER.map((r) => { const x = perf[r.id]; const k = calisan(r.id); return { departman: r.ad, calisan: k.ad, unvan: unvan(r.id, k.kademe), katki: x.katki, ortPuan: x.ortPuan, iseGiristenBeriOrt: x.girisOrt, calismaDk: Math.round(x.sureSn / 60), durum: x.durum }; });
       return ccGorevIste('ofis', { ek: { performans: veriOzet } });
     },
-    ccSonuc, ccMi, mesgulMu, sohbet: (v) => { sohbetAcik = !!v; }, cagir
+    ccSonuc, ccMi, mesgulMu, sohbet: (v) => { hayatAcik = !!v; }, cagir, yapilanma
   };
 }

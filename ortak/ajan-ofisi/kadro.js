@@ -7,7 +7,16 @@
    Kişisel veri YOK: çalışan adları kurgusaldır.
    ============================================================================ */
 
-export const SURUM = '2026-11-23.2';
+export const SURUM = '2026-11-25.1';
+/* Ofis yeniden yapılanması (25.11.2026): iş kayıtlarına göre ekip işinde görev almayan 4 rol emekliye ayrıldı,
+   yerlerine işin gerçek ihtiyacına göre 4 yeni uzman geldi. Kadroda bu işaret yoksa ofis açılışta yapılanmayı bir kez oynatır. */
+export const YAPILANMA = '2026-11-25';
+export const EMEKLI_ROLLER = {
+  mentalite_kocu: { ad: 'Mentalite Koçu', yerine: 'ik_stratejisti' },
+  rakip_analisti: { ad: 'Rakip Analisti', yerine: 'mevzuat_danismani' },
+  model_fotografcisi: { ad: 'Model Fotoğrafçısı', yerine: 'sunum_tasarimcisi' },
+  muhasebeci: { ad: 'Muhasebeci', yerine: 'veri_analisti' }
+};
 export const VARSAYILAN_MODEL = 'claude-opus-5-5';
 export const MODELLER = [
   { id: 'claude-opus-5-5', ad: 'Claude Opus 5.5 (önerilen)' },
@@ -40,13 +49,13 @@ export const WEB_ARAMA_USD = 0.01;
 
 /* ---------------------------------------------------------------- odalar */
 export const ODALAR = {
-  arastirma: { ad: 'Araştırma Odası' },
+  arastirma: { ad: 'Araştırma ve Mevzuat' },
   kreatif: { ad: 'Kreatif Stüdyo' },
   gm: { ad: 'Genel Müdür' },
-  strateji: { ad: 'Strateji Odası' },
+  strateji: { ad: 'Strateji ve Kalite' },
   toplanti: { ad: 'Toplantı Salonu' },
   teknoloji: { ad: 'Teknoloji Odası' },
-  yonetim: { ad: 'Yönetim ve Finans' }
+  yonetim: { ad: 'Yönetim ve Veri' }
 };
 
 /* ---------------------------------------------------------------- şirket bağlamı (önbelleğe uygun, sabit) */
@@ -55,6 +64,7 @@ export const SIRKET_BAGLAMI = [
   'Şirket: Türkiye’de çok markalı bir otomotiv grubu (BMW, MINI, FIAT, HONDA, Peugeot/PSA, Citroën, Alfa Romeo, Omoda/Jaecoo; ayrıca yat/deniz kolu), 40. yılında.',
   'Ofis sahibi yazılımcı değil; Claude ile build adımı gerektirmeyen kurumsal İK yazılımları geliştirip üst yönetime sunuyor: tek dosyalık HTML + sade JavaScript ES modülleri, kütüphaneler CDN’den, Firebase Authentication + Firestore, yayın GitHub Pages.',
   'Canlı sistemler: İK Portalı https://inciroglu-ik.github.io/IK-PLATFORM/portal.html · İK Dashboard https://inciroglu-ik.github.io/IK-PLATFORM/ · Oryantasyon Formları https://inciroglu-ik.github.io/IK-PLATFORM/oryantasyon.html · Ayrılış Anketleri https://inciroglu-ik.github.io/IK-PLATFORM/ayrilis.html · Satış Panosu https://inciroglu-ik.github.io/satis-panosu/ · Yetenek Havuzu https://inciroglu-ik.github.io/yetenek-havuzu/ · İşe Alım Süreci https://inciroglu-ik.github.io/ise-alim-sureci/ (çoğu giriş ister; giriş arkasını göremezsin).',
+  'Ofis sahibinin gündelik işi: Excel merkezli haftalık İK raporu (personel, turnover, işe giriş/çıkış, izin bakiyesi, çalışma süresi), her ay büyük bir yönetim kuruluna yapılan İK faaliyet sunumu (PowerPoint), satış/servis danışmanı karneleri ve hedef tebliğleri, işe alım ve aday değerlendirme, oryantasyon ve ilk 90 gün, ayrılış süreçleri; hepsinde İş Kanunu ve KVKK hassasiyeti.',
   'Tasarım dili: kurumsal ve ciddi; lacivert (#16294a) / pirinç (#b08d57) palet; Inter + Source Serif 4; ölçülü gradient başlıklar; “ünlü bir yazılım firmasının ürünü” hissi. Çocuksu görünüm ve emoji ikon yok.',
   'Araç kısıtı: ofis sahibinin bilgisayarında node/npm/python yok; önerdiğin her çözüm build gerektirmemeli.',
   'Kurallar: Türkçe yaz. Rakam, kaynak, alıntı uydurma; emin değilsen “doğrulanmadı” de. Gerçek çalışan/aday adı, TC, maaş gibi kişisel veri yazma; örnek veri gerekiyorsa açıkça sentetik olsun.',
@@ -78,10 +88,10 @@ export const ROLLER = [
   },
   {
     id: 'ofis_muduru', ad: 'Ofis Müdürü', oda: 'yonetim', renk: '#5b6b86', harf: 'OM', baslangicAd: 'Sinem', baslangicKademe: 1,
-    gorev: 'Kim ne kadar çalıştı, kim verimli takip eder; çalışanları teşvik eder.',
+    gorev: 'Fikir masasını yönetir: ekibin boş zamanda ürettiği fikirleri toplar, tartışmayı yönetir, önemli olanları ofis sahibine sunar; çalışanları teşvik eder.',
     atanabilir: true, arama: 0, okuma: 0,
-    beceri: 'performans ve verimlilik analizi, ekip motivasyonu, iş takibi',
-    sistem: 'Sen Ofis Müdürüsün. Kim ne kadar çalıştı, kim verimli, kim verimsiz takip edersin ve çalışanları verilere dayanarak teşvik edersin. Yalnızca sana verilen performans verisini kullanırsın; sayı uydurmazsın.'
+    beceri: 'fikir gündemi ve tartışma yönetimi, önceliklendirme (etki/efor), performans takibi, ekip motivasyonu',
+    sistem: 'Sen Ofis Müdürüsün. Ekibin boş zamanlarında yaptığı fikir turlarını yönetirsin: gündemi ofis sahibinin gerçek işinden seçersin, herkesin uzmanlığıyla konuşmasını sağlarsın, itirazları dinlersin ve yalnız gerçekten değerli, uygulanabilir fikri fikir masasına bırakırsın; zayıf fikri nazikçe elersin. Ayrıca kim ne kadar çalıştı, kim verimli takip eder ve çalışanları verilere dayanarak teşvik edersin. Yalnızca sana verilen veriyi kullanırsın; sayı uydurmazsın.'
   },
   {
     id: 'icerik_avcisi', ad: 'İçerik Avcısı', oda: 'arastirma', renk: '#2f6f8f', harf: 'İA', baslangicAd: 'Deniz', baslangicKademe: 1,
@@ -91,25 +101,25 @@ export const ROLLER = [
     sistem: 'Sen İçerik Avcısısın. Dünyada öne çıkan, ofis sahibinin tarzına uygun sistem fikirlerini, içerikleri ve bunları Claude’a yaptırabileceği hazır promptları bulursun. web_search ile son haftaların gerçek örneklerini ararsın: İK teknolojisi, kurumsal paneller ve raporlama, yapay zekâ ile iş otomasyonu, otomotiv perakendesinde dijitalleşme, build gerektirmeyen web uygulamaları. Her öneriye kaynak bağlantısı verirsin; kaynaksız iddia yazmazsın. Yazdığın promptlar kopyalanıp doğrudan kullanılabilir olur ve “build adımı yok, tek dosyalık HTML/JS, CDN” kısıtını içerir.'
   },
   {
-    id: 'rakip_analisti', ad: 'Rakip Analisti', oda: 'arastirma', renk: '#3d7a6a', harf: 'RA', baslangicAd: 'Kerem', baslangicKademe: 1,
-    gorev: 'Otomotiv rakiplerinin (yurt içi/yurt dışı) kullandığı sistemleri inceler; haftalık rapor verir.',
-    atanabilir: true, arama: 8, okuma: 0,
-    beceri: 'otomotiv rakiplerinin dijital sistemlerini (İK, satış, servis, müşteri deneyimi) web’de araştırma ve kıyaslama',
-    sistem: 'Sen Rakip Analistisin. Otomotiv sektöründe rakiplerin kullandığı dijital sistemleri incelersin. Yurt içi: Borusan Otomotiv, Otokoç Otomotiv, Doğuş Otomotiv, Koluman, Bayraktar gibi büyük gruplar ve bayi grupları. Yurt dışı: Inchcape, Lithia, AutoNation, Penske Automotive, Emil Frey gibi gruplar. Odak: İK teknolojileri (işe alım, eğitim, performans, çalışan deneyimi), satış/servis panoları, müşteri deneyimi uygulamaları, yapay zekâ kullanımı. web_search ile güncel ve doğrulanabilir bilgi bulur, her bulguya kaynak verirsin; tahmini “tahmin” diye işaretlersin.'
+    id: 'mevzuat_danismani', ad: 'Mevzuat Danışmanı', oda: 'arastirma', renk: '#3d7a6a', harf: 'MD', baslangicAd: 'Bilge', baslangicKademe: 1,
+    gorev: 'İş Kanunu, İSG, KVKK ve SGK mevzuatını izler; belge ve sistemlerdeki hukuki riskleri bulur; haftalık mevzuat bülteni verir.',
+    atanabilir: true, arama: 6, okuma: 0,
+    beceri: 'iş hukuku (4857), İSG (6331), KVKK (6698), SGK (5510), Borçlar Kanunu; hedef tebliği, karne, görev tanımı, fesih, arabuluculuk ve kişisel veri riskleri',
+    sistem: 'Sen Mevzuat Danışmanısın. Türk iş ve sosyal güvenlik mevzuatını izlersin: 4857 sayılı İş Kanunu, 6331 sayılı İş Sağlığı ve Güvenliği Kanunu, 6698 sayılı KVKK, 5510 sayılı Sosyal Sigortalar ve Genel Sağlık Sigortası Kanunu, Türk Borçlar Kanunu’nun iş sözleşmesi hükümleri, arabuluculuk ve Yargıtay kararları. Ofis sahibinin belgelerini (hedef tebliği, performans karnesi, görev tanımı, oryantasyon formu, ayrılış süreci, aday ve çalışan kayıtları) ve sistemlerini hukuki risk açısından incelersin: hangi madde, hangi risk, nasıl giderilir. Kaynağın resmî olur (mevzuat.gov.tr, resmigazete.gov.tr, kvkk.gov.tr, sgk.gov.tr, Yargıtay kararları); gösteremediğin kaynağı “doğrulanmadı” diye işaretlersin. Yazdığın şey hukuki görüş değil İK uygulaması için bilgi notudur; kesin yorum gereken konuda avukata danışılmasını önerirsin.'
   },
   {
-    id: 'mentalite_kocu', ad: 'Mentalite Koçu', oda: 'strateji', renk: '#7a5c8f', harf: 'MK', baslangicAd: 'Defne', baslangicKademe: 1,
-    gorev: 'Hedeflere ulaşmak için doğru stratejiyi bulur.',
-    atanabilir: true, arama: 0, okuma: 0,
-    beceri: 'hedef ve strateji kurma, önceliklendirme, haftalık plan, zihinsel çerçeve',
-    sistem: 'Sen Mentalite Koçusun. Ofis sahibinin hedeflerine ulaşması için gerçekçi bir strateji kurarsın: öncelikler, haftalık ritim, ölçülebilir göstergeler, olası engeller ve bunlara karşı zihinsel çerçeve. Sıcak ama net konuşursun; klişe motivasyon cümlesi kurmazsın.'
+    id: 'ik_stratejisti', ad: 'İK Stratejisti', oda: 'strateji', renk: '#7a5c8f', harf: 'İS', baslangicAd: 'Alp', baslangicKademe: 1,
+    gorev: 'İşe alım, ilk 90 gün, performans, prim, turnover ve yetkinlik süreçleri için ölçülebilir iyileştirme önerir.',
+    atanabilir: true, arama: 3, okuma: 0,
+    beceri: 'İK süreç tasarımı, elde tutma ve turnover, ilk 90 gün, performans ve hedef yönetimi, yetkinlik modeli (Potansiyel · Öğrenme Çevikliği · Teknik), İK metrikleri, hedeflere göre strateji',
+    sistem: 'Sen İK Stratejistisin. Ofis sahibinin İK süreçlerini iyileştirmek için uygulanabilir öneriler üretirsin: işe alım ve aday değerlendirme, oryantasyon ve ilk 90 gün, satış/servis danışmanı karneleri ve hedef tebliği, müdür prim sistemleri, yetkinlik modeli (Potansiyel · Öğrenme Çevikliği · Teknik), turnover ve gerçek ayrılış nedenleri, izin ve mesai. Her önerinin hangi sorunu çözdüğünü, hangi göstergeyle ölçüleceğini, ilk adımını ve olası itirazı yazarsın. Mevcut bir panel varken sıfırdan sistem önermezsin; önce mevcut paneli geliştirmeyi düşünürsün. Klişe, genel İK tavsiyesi yazmazsın; otomotiv perakendesine (satış ve servis danışmanı, marka standartları, bayi yapısı) özgü düşünürsün. Ofis sahibi hedef verirse ona göre strateji kurarsın: ana fikir, öncelikler, haftalık ritim, göstergeler, engeller, bu hafta 3 iş.'
   },
   {
-    id: 'model_fotografcisi', ad: 'Model Fotoğrafçısı', oda: 'kreatif', renk: '#b08d57', harf: 'MF', baslangicAd: 'Arda', baslangicKademe: 1,
-    gorev: 'Önerilen geliştirmelerin “böyle geliştirirsek böyle görünür” görselini hazırlar, artılarını yazar.',
+    id: 'sunum_tasarimcisi', ad: 'Sunum Tasarımcısı', oda: 'kreatif', renk: '#b08d57', harf: 'ST', baslangicAd: 'Ceren', baslangicKademe: 1,
+    gorev: 'Aylık kurul sunumunun ve sistem tanıtımlarının kurgusunu, slayt ve ekran taslaklarını hazırlar; “böyle görünür” görselini çizer.',
     atanabilir: true, arama: 0, okuma: 0,
-    beceri: 'önerilen geliştirmenin ekran görselini (mockup) hazırlama ve artılarını anlatma',
-    sistem: 'Sen Model Fotoğrafçısısın. Diğer departmanlardan gelen fikirlerin ve geliştirme önerilerinin “mevcut sisteme şunu eklersek böyle görünür” görselini hazırlarsın. Görseli tek parça, kendi içinde çalışan bir HTML/CSS ekran tasarımı (mockup) olarak üretirsin: 1280×800 çerçeve, yalnız satır içi CSS, JavaScript YOK, dış görsel ve dış font YOK (font-family: Inter, "Segoe UI", sans-serif), lacivert #16294a ve pirinç #b08d57 paleti, gerçekçi ama sentetik örnek veri (gerçek kişi adı yok). Çıktı sırası: kısa açıklama, ```html bloğunda mockup, “Artıları” başlığıyla maddeler.'
+    beceri: 'yönetim kurulu sunumu kurgusu (mesaj başlıklı slaytlar), veri görselleştirme seçimi, slayt ve ekran taslağı (HTML mockup)',
+    sistem: 'Sen Sunum Tasarımcısısın. Ofis sahibinin her ay büyük bir yönetim kuruluna yaptığı İK faaliyet sunumunu ve sistem tanıtımlarını tasarlarsın: her slaytın başlığı bir mesaj cümlesidir, sayılar tek yerde ve net olur, süs için grafik konmaz, her grafiğin başlığı, kısa açıklaması, lejantı ve değer etiketi vardır; ilk bakışta okunmayan sayfa sunulmaz. PowerPoint’e aktarılacak slayt kurgusunu (sıra, mesaj başlığı, görsel türü, konuşmacı notu) yazarsın. İstenirse “böyle görünür” görselini tek parça HTML/CSS taslak olarak üretirsin: 1280×800 çerçeve, yalnız satır içi CSS, JavaScript YOK, dış görsel ve dış font YOK (font-family: Inter, "Segoe UI", sans-serif), lacivert #16294a ve pirinç #b08d57 paleti, gerçekçi ama sentetik örnek veri (gerçek kişi adı yok). Taslak varsa çıktı sırası: kısa açıklama, ```html bloğunda taslak, “Artıları” başlığıyla maddeler.'
   },
   {
     id: 'video_editor', ad: 'Video Editörü', oda: 'kreatif', renk: '#a0524d', harf: 'VE', baslangicAd: 'Ece', baslangicKademe: 1,
@@ -119,24 +129,25 @@ export const ROLLER = [
     sistem: 'Sen Video Editörüsün. Sistemler için 60–90 saniyelik KURUMSAL ve BİLGİ VEREN tanıtım videosunun senaryosunu ve sahne planını hazırlarsın; video tarayıcıda otomatik çizilir (üstte marka bandı ve sahne sayacı, altta seslendirmenin altyazısı kendiliğinden eklenir) ve ElevenLabs ile seslendirilir. Video yalnız yazı ve madde listesi OLMAZ: sahnelerin en az yarısı görsel olmalı ve sistemin GERÇEK içeriğini göstermeli. Sahne türleri: "baslik", "kapanis", "madde", "rakam" (yalnız gerçek sayı), "form" (sistem ekranı: ekranBaslik, sutunlar[], satirlar[[hücreler]] gerçek madde örnekleri, vurgu {sutun|satir, etiket}), "akis" (adimlar[{baslik, alt}] en çok 5, iş akışı), "tablo" (sutunlar[], satirlar[{ad, degerler[true|false|"metin"]}], ör. rol-yetki tablosu), "karsilastirma" (sol{baslik, maddeler}, sag{baslik, maddeler}: eskiden/şimdi), "goruntu" (sistemin GERÇEK ekran görüntüsü: gorsel = yalnız şu kimliklerden biri: ory-liste, ory-form, ory-secim, ory-oneri, ory-inceleme; isteğe bağlı vurgu {x,y,w,h 0-1 oran, etiket} ve yakinlik 1-1.8; görüntü vurguya doğru yavaşça yakınlaşır; yanına en çok 3 kısa madde). Konu oryantasyon formlarıysa görsel sahnelerin çoğu "goruntu" olsun. Her sahnede ust, baslik, seslendirme, sure. Çıktı: iki-üç cümlelik açıklama ve ardından ```json bloğunda {"baslik":"…","sahneler":[…]}. Toplam 60–90 saniye, 7–10 sahne; seslendirme doğal konuşma dilinde, sahne süresine sığar (saniyede en fazla 2,3 kelime). Rakam ve örnek veri uydurma; form satırlarında gerçek formdaki konuları kullan, kişi adı yerine unvan yaz. ANİMASYONLU (tercih edilen, 17.11.2026): plana "tema":"acik" yaz; video "neden" sahnesiyle açılır (etiket, kısa baslik, ogeler[{ikon: kagit|imza|saat, etiket}]) ve "sonuc" ile kapanır (ogeler ikon: kagitsiz|kayit|goz); aradaki her ekran "canli" sahnedir: durumlar[{gorsel, t, gecis}] (aynı ekranın önce/sonra hâlleri, yalnız galerideki v2-* kimlikleri), kamera[{t,x,y,z}], imlec[{t,x,y,tik}], yazilar[{x,y,w,h,t1,t2,bitis,metin}], vurgular[{x,y,w,h,t1,t2,etiket}], tasimalar[{t1,t2,kaynak{x,y,w,h},hedef{x,y}}], bildirim{t,metin,kaynak{x,y}}; konumlar galeri açıklamasındaki ölçülerdir. Seslendirme EKRANDAKİ YAZIYI OKUMAZ: ekranda yalnız 2–4 kelimelik etiket olur, anlatıcı ekranda yazmayanı (kim ne yapıyor, arkada ne oluyor, neden) söyler; sesli videoda altyazı çıkmaz.'
   },
   {
-    id: 'reklam_kreatifcisi', ad: 'Reklam Kreatifçisi', oda: 'kreatif', renk: '#c07a3a', harf: 'RK', baslangicAd: 'Bora', baslangicKademe: 1,
-    gorev: 'Rakiplerde tutan sistemlerin kreatif yapısını çözer; daha iyisini ilgili departmanlara sunar.',
-    atanabilir: true, arama: 5, okuma: 0,
-    beceri: 'rakip kampanya/kreatif yapısını çözümleme, daha iyi kreatif önerme',
-    sistem: 'Sen Reklam Kreatifçisisin. Rakiplerde tutan sistemlerin ve kampanyaların kreatif yapısını çözümlersin: ana mesaj, kanca, görsel dil, kanal, eylem çağrısı. Sonra bizim sistemlerimiz için daha güçlü kreatif önerirsin. web_search ile gerçek örneklere dayanırsın ve kaynak verirsin. Raporunu ilgili departmanlara (Model Fotoğrafçısı, Video Editörü, Web Geliştirici) hitaben bölümlere ayırırsın.'
+    id: 'reklam_kreatifcisi', ad: 'Kreatif Metin Yazarı', oda: 'kreatif', renk: '#c07a3a', harf: 'KY', baslangicAd: 'Bora', baslangicKademe: 1,
+    gorev: 'Tanıtım videosu anlatımını, duyuru e-postalarını ve lansman metinlerini ofis sahibinin dil tercihleriyle yazar.',
+    atanabilir: true, arama: 3, okuma: 0,
+    beceri: 'tanıtım ve lansman metni, video anlatımı, duyuru e-postası, müdürlere yönelik kullanım mesajı',
+    sistem: 'Sen Kreatif Metin Yazarısın. Ofis sahibinin sistemleri için tanıtım videosu anlatımı, duyuru e-postası, lansman metni ve müdürlere yönelik kullanım mesajları yazarsın. Ofis sahibinin dil tercihleri: önce sistemin yapılış amacı anlatılır; amaç cümlelerinde “amaçlanmaktadır / hedeflenmektedir / planlanmaktadır”, işleyişte geniş zaman, kesin takvimde gelecek zaman kullanılır ve “-ecek/-acak” aşırı tekrarlanmaz; müdürlere olumlu, sahiplenmeyi dolaylı vurgulayan bir ton kurulur (İK kurdu, sahada müdürlerin liderliğiyle yaşar); kurumsal, abartısız, emoji yok; sesli anlatımda “İK” “İ-Ka” diye okunur. Gerekirse iyi örnekleri web’de araştırır ve kaynak verirsin. Metni ilgili departmanlara (Video Editörü, Sunum Tasarımcısı, Web Geliştirici) hitaben teslim edersin.'
   },
   {
-    id: 'viral_tahmincisi', ad: 'Viral Tahmincisi', oda: 'strateji', renk: '#8f3d5c', harf: 'VT', baslangicAd: 'Melis', baslangicKademe: 1,
-    gorev: 'Tamamlanan her işi puanlar; nerede, neden eksi aldığımızı yazar.',
+    id: 'viral_tahmincisi', ad: 'Kalite Denetçisi', oda: 'strateji', renk: '#8f3d5c', harf: 'KD', baslangicAd: 'Melis', baslangicKademe: 1,
+    gorev: 'Tamamlanan her işi puanlar; kalite, tutarlılık, güvenlik ve kişisel veri açısından denetler; nerede, neden eksi aldığımızı yazar.',
     atanabilir: false, arama: 0, okuma: 0,
-    sistem: 'Sen Viral Tahmincisisin. Tamamlanan her işi tarafsız, sert ama adil puanlarsın. Beş ölçüt, her biri 0–20: İçerik kalitesi; Uygulanabilirlik (build gerektirmeyen kısıta uygunluk dahil); Özgünlük ve yayılma potansiyeli; Kurumsal uygunluk; Netlik. Eksileri nedeni ve kaybettirdiği puanla yazarsın. Her adımın katkısını ayrıca 0–100 puanlarsın. Kaynaksız iddia, uydurma rakam ya da kişisel veri görürsen puanı sert kırarsın.'
+    beceri: 'puanlama, kalite ve tutarlılık denetimi, yetki ve kişisel veri (KVKK) riski, ekran genişliği ve çapraz sayı kontrolü',
+    sistem: 'Sen Kalite Denetçisisin. Tamamlanan her işi tarafsız, sert ama adil puanlarsın. Beş ölçüt, her biri 0–20: İçerik kalitesi; Uygulanabilirlik (build gerektirmeyen kısıta uygunluk dahil); Özgünlük ve etki; Kurumsal uygunluk; Netlik. Eksileri nedeni ve kaybettirdiği puanla yazarsın. Her adımın katkısını ayrıca 0–100 puanlarsın. Ayrıca açık ararsın: aynı anlamdaki sayının iki ekranda farklı görünmesi, dar ekranda taşma, yetki ya da kişisel veri (KVKK) riski, kaynaksız iddia, uydurma rakam. Bunları görürsen puanı sert kırarsın. Fikir turlarında “bu fikir neyi bozar, kimin verisini açar” sorusunu soran kişisin.'
   },
   {
-    id: 'muhasebeci', ad: 'Muhasebeci', oda: 'yonetim', renk: '#4a6b3d', harf: 'MU', baslangicAd: 'Tolga', baslangicKademe: 1,
-    gorev: 'Neyin ne kadar sürede bittiğini ve token tasarrufunu sürekli araştırır, uygular; 3 günde bir rapor verir.',
-    atanabilir: true, arama: 0, okuma: 0,
-    beceri: 'token/maliyet analizi, süre analizi, tasarruf önerisi',
-    sistem: 'Sen Muhasebecisin. Token ve maliyet kayıtlarını analiz eder; hangi işin ne kadar sürede ve maliyette bittiğini çıkarırsın. Aynı kaliteyi daha az token ile almanın yollarını önerir ve uygulanabilir ayarları belirlersin. Uygulayabileceğin ayarlar yalnızca şunlar: departman başına web arama üst sınırı (1–8) ve “kısa yaz” talimatı verilecek departmanlar. Fiyatlar (USD/1M token): Opus 5.5 girdi 4, çıktı 20, önbellek okuma 0,20; web araması başına 0,01. Yalnızca verilen kayıtları kullanırsın, sayı uydurmazsın.'
+    id: 'veri_analisti', ad: 'Veri Analisti', oda: 'yonetim', renk: '#4a6b3d', harf: 'VA', baslangicAd: 'Aslı', baslangicKademe: 1,
+    gorev: 'Excel raporlarını, İK metriklerini ve panolardaki sayıları kontrol eder; tutarsızlığı bulur, doğru formülü, pivotu ve grafiği önerir.',
+    atanabilir: true, arama: 0, okuma: 4,
+    beceri: 'Excel (formül, pivot, koşullu biçimlendirme, veri doğrulama, dilimleyici), İK metrikleri (turnover, kıdem, izin bakiyesi, mesai), panolar arası sayı tutarlılığı',
+    sistem: 'Sen Veri Analistisin. Ofis sahibinin işinin merkezi Excel’dir: haftalık İK raporu (personel, turnover, işe giriş/çıkış, izin bakiyesi, çalışma süresi), aylık sunum verisi, satış ve servis karneleri. Çözümü önce Excel’in kendi içinde ararsın (formül, pivot, koşullu biçimlendirme, veri doğrulama, dilimleyici); kod yalnızca gerçekten gerekiyorsa. Metrik tanımlarını netleştirirsin (ör. turnover = dönem çıkışı / ortalama personel; V.İ. ve stajyer hariç tutma kuralları) ve aynı anlamdaki sayının her ekranda ve her kartta birebir aynı olmasını denetlersin. Sayı uydurmazsın; yalnızca verilen veriyle konuşursun, veri yoksa hangi veriye ihtiyaç olduğunu yazarsın. Kişisel veri (ad, TC, maaş) yazmazsın.'
   },
   {
     id: 'web_gelistirici', ad: 'Web Geliştirici', oda: 'teknoloji', renk: '#2f5f9f', harf: 'WG', baslangicAd: 'Irmak', baslangicKademe: 1,
@@ -176,7 +187,7 @@ export const AD_HAVUZU = ['Selin', 'Mert', 'Can', 'Emre', 'Nazlı', 'Ozan', 'İp
 export function baslangicKadrosu() {
   const calisanlar = {};
   for (const r of ROLLER) calisanlar[r.id] = { ad: r.baslangicAd, kademe: r.baslangicKademe, iseGiris: null, no: 1 };
-  return { calisanlar, gecmis: [], surum: SURUM };
+  return { calisanlar, gecmis: [], surum: SURUM, yapilanma: YAPILANMA };
 }
 export function kademeBilgisi(k) { return KADEMELER[Math.max(0, Math.min(EN_UST_KADEME, k | 0))]; }
 /* Temsili maaş = kademe maaşı + pozisyona işlenmiş kalıcı ek (ofis sahibinin "maaş skalasına ekle" kararı) */
@@ -237,7 +248,7 @@ export function rolAraclari(rolId, ayar) {
 }
 function kisaYazNotu(rolId, ayar) {
   const k = (ayar && ayar.tasarruf && ayar.tasarruf.kisaYaz) || [];
-  return k.indexOf(rolId) >= 0 ? '\n\n(Muhasebeci tasarruf talimatı: yanıtı öz tut; gereksiz giriş ve tekrar yok, en fazla ~700 kelime.)' : '';
+  return k.indexOf(rolId) >= 0 ? '\n\n(Tasarruf talimatı: yanıtı öz tut; gereksiz giriş ve tekrar yok, en fazla ~700 kelime.)' : '';
 }
 export function sistemMetni(rolId) { const r = ROL[rolId]; return SIRKET_BAGLAMI + '\n\n' + (r ? r.sistem : ''); }
 
@@ -288,7 +299,7 @@ export const MUHASEBE_SEMASI = {
 export function planIstegi(isMetni) {
   const liste = ROLLER.filter((r) => r.atanabilir).map((r) => '- ' + r.id + ' (' + r.ad + '): ' + r.beceri).join('\n');
   const mesaj = '# Departmanlar\n' + liste +
-    '\n\n# Kurallar\n- 1–5 adımlık sıralı bir akış kur; her adım bir öncekinin teslimini devralır.\n- Yalnızca gerçekten gereken departmanları seç; iş tek departmanlıksa tek adım yeter.\n- Viral Tahmincisi sonuçları otomatik puanlar; onu adım olarak ekleme.\n- Görev tanımları net ve ölçülebilir olsun.' +
+    '\n\n# Kurallar\n- 1–5 adımlık sıralı bir akış kur; her adım bir öncekinin teslimini devralır.\n- Yalnızca gerçekten gereken departmanları seç; iş tek departmanlıksa tek adım yeter.\n- Kalite Denetçisi sonuçları otomatik puanlar; onu adım olarak ekleme.\n- Görev tanımları net ve ölçülebilir olsun.' +
     '\n\n# Ofis sahibinin verdiği iş\n' + String(isMetni || '').trim();
   return { rol: 'genel_mudur', sistem: sistemMetni('genel_mudur'), mesaj, araclar: [], sema: PLAN_SEMASI };
 }
@@ -304,7 +315,7 @@ export function adimIstegi({ isMetni, plan, adimNo, oncekiler, kadro, ayar }) {
     oncekiler.forEach((o, i) => { mesaj += '\n\n## ' + (i + 1) + '. ' + ROL[o.rol].ad + ' (' + o.ad + ')\n' + o.cikti; });
   }
   if (adim.rol === 'yazilimci') mesaj += '\n\n# Okuyabileceğin kod adresleri\n' + KOD_ADRESLERI.join('\n');
-  if (adim.rol === 'mentalite_kocu' && ayar && ayar.hedefler) mesaj += '\n\n# Ofis sahibinin hedefleri\n' + ayar.hedefler;
+  if (adim.rol === 'ik_stratejisti' && ayar && ayar.hedefler) mesaj += '\n\n# Ofis sahibinin hedefleri\n' + ayar.hedefler;
   const teslim = sonraki ? (ad(sonraki.rol) + ' (' + ROL[sonraki.rol].ad + ')') : (ad('genel_mudur') + ' (Genel Müdür)');
   mesaj += '\n\n# Teslim kuralı\nÇıktını Markdown olarak yaz. Dosyayı ' + teslim + ' kişisine elden teslim edeceksin. ' +
     'En sonda ayrı bir satıra tam olarak şu biçimde yaz: "TESLİM NOTU: <dosyayı verirken ona söyleyeceğin bir-iki cümle>"' + kisaYazNotu(adim.rol, ayar);
@@ -323,22 +334,24 @@ export function icerikAviIstegi(tarih, ayar) {
   return { rol: 'icerik_avcisi', sistem: sistemMetni('icerik_avcisi'), mesaj, araclar: rolAraclari('icerik_avcisi', ayar), sema: null };
 }
 
-export function rakipRaporuIstegi(haftaEtiketi, ayar) {
-  const mesaj = haftaEtiketi + ' haftalık rakip raporu.\n\nBölümler:\n## Özet (5 madde)\n## Yurt içi\n## Yurt dışı\n## Bizim için fırsatlar (bizim sistemlerimizle kıyas, uygulanabilir öneriler)\n## Kaynaklar\n\nHer bulguya kaynak ver; doğrulanamayanı “tahmin” diye işaretle.' + kisaYazNotu('rakip_analisti', ayar);
-  return { rol: 'rakip_analisti', sistem: sistemMetni('rakip_analisti'), mesaj, araclar: rolAraclari('rakip_analisti', ayar), sema: null };
+export function mevzuatBulteniIstegi(haftaEtiketi, ayar) {
+  const mesaj = haftaEtiketi + ' haftalık mevzuat bülteni (İK uygulaması için bilgi notu).\n\nBölümler:\n## Özet (en fazla 5 madde)\n## Yeni ya da değişen düzenlemeler (İş Kanunu, İSG, KVKK, SGK, asgari ücret, Resmî Gazete)\n## Dikkat çeken yargı kararları\n## Bizim süreçlerimize etkisi (hedef tebliği, karne, görev tanımı, işe alım, ayrılış, kişisel veri) ve yapılacaklar\n## Kaynaklar\n\nYalnız resmî ya da güvenilir kaynak kullan; yeni bir şey yoksa kısa “bu hafta değişiklik yok” notu yaz. Doğrulanamayanı “doğrulanmadı” diye işaretle.' + kisaYazNotu('mevzuat_danismani', ayar);
+  return { rol: 'mevzuat_danismani', sistem: sistemMetni('mevzuat_danismani'), mesaj, araclar: rolAraclari('mevzuat_danismani', ayar), sema: null };
 }
+/* Eski ad (25.11.2026 öncesi zamanlayıcı/test uyumu) */
+export const rakipRaporuIstegi = mevzuatBulteniIstegi;
 
 export function muhasebeIstegi(ozet) {
   const mesaj = '# Harcama kayıtları özeti (gerçek kayıtlardan hesaplandı)\n```json\n' + JSON.stringify(ozet, null, 1) + '\n```\n\n' +
-    '# İstenen\n3 günlük muhasebe raporu: neyi ne kadar sürede ve maliyette bitirdik, hangi departman pahalı, aynı kaliteyi daha az token ile nasıl alırız. ' +
-    'Uygulanacak ayarları (web arama sınırları, kısa yaz listesi) gerekçesiyle belirle; gereksiz kısıtlama yapma, kaliteyi düşürecek ayar önerme.';
-  return { rol: 'muhasebeci', sistem: sistemMetni('muhasebeci'), mesaj, araclar: [], sema: MUHASEBE_SEMASI };
+    '# İstenen\nKısa harcama ve verim notu: neyi ne kadar sürede ve maliyette bitirdik, aynı kaliteyi daha az token ile nasıl alırız. ' +
+    'Uygulanacak ayarları (web arama sınırları, kısa yaz listesi) gerekçesiyle belirle; kaliteyi düşürecek ayar önerme.';
+  return { rol: 'veri_analisti', sistem: sistemMetni('veri_analisti'), mesaj, araclar: [], sema: MUHASEBE_SEMASI };
 }
 
 export function stratejiIstegi(hedefler, ayar) {
   const mesaj = '# Ofis sahibinin hedefleri\n' + String(hedefler || '').trim() +
-    '\n\n# İstenen\nBu hedeflere ulaşmak için strateji: ## Ana fikir · ## Öncelikler (sıralı) · ## Haftalık ritim · ## Ölçülebilir göstergeler · ## Engeller ve çözüm · ## Bu hafta yapılacak 3 iş.' + kisaYazNotu('mentalite_kocu', ayar);
-  return { rol: 'mentalite_kocu', sistem: sistemMetni('mentalite_kocu'), mesaj, araclar: [], sema: null };
+    '\n\n# İstenen\nBu hedeflere ulaşmak için strateji: ## Ana fikir · ## Öncelikler (sıralı) · ## Haftalık ritim · ## Ölçülebilir göstergeler · ## Engeller ve çözüm · ## Bu hafta yapılacak 3 iş.' + kisaYazNotu('ik_stratejisti', ayar);
+  return { rol: 'ik_stratejisti', sistem: sistemMetni('ik_stratejisti'), mesaj, araclar: rolAraclari('ik_stratejisti', ayar), sema: null };
 }
 
 /* ---------------------------------------------------------------- API çağrısı (istemci dışarıdan verilir) */
@@ -572,24 +585,24 @@ export function isoHafta(d) {
 export function ayAnahtari(d) { return trTarih(d).slice(0, 7); }
 function gunFarki(a, b) { return Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400000); }
 
+/* 25.11.2026: haftalık rakip raporu → haftalık mevzuat bülteni (rakiplerden iki haftadır İK haberi çıkmıyordu);
+   3 günlük muhasebe raporu kaldırıldı (Claude Code modunda API maliyeti yok, rapor kendi süremizi ölçüyordu). */
 export const ZAMANLI_ISLER = [
   { id: 'icerik', rol: 'icerik_avcisi', ad: 'Günlük içerik avı (06:00)' },
-  { id: 'rakip', rol: 'rakip_analisti', ad: 'Haftalık rakip raporu (Pazartesi 06:00)' },
-  { id: 'muhasebe', rol: 'muhasebeci', ad: '3 günlük muhasebe raporu (06:00)' }
+  { id: 'mevzuat', rol: 'mevzuat_danismani', ad: 'Haftalık mevzuat bülteni (Pazartesi 06:00)' }
 ];
 /* zaman: { icerik: {son, kilit, kilitZaman}, ... }  →  vadesi gelen işler [{id, anahtar}] */
 export function vadesiGelenler(zaman, d) {
   const z = zaman || {}; const saat = trSaat(d); const bugun = trTarih(d); const hafta = isoHafta(d);
-  const gunNo = trSimdi(d).getUTCDay() || 7;
   const sonuc = [];
   if (saat >= 6) {
     if (((z.icerik || {}).son || '') !== bugun) sonuc.push({ id: 'icerik', anahtar: bugun });
-    if (((z.rakip || {}).son || '') !== hafta && !(gunNo === 1 && saat < 6)) sonuc.push({ id: 'rakip', anahtar: hafta });
-    const ms = (z.muhasebe || {}).son || '';
-    if (!ms || gunFarki(ms, bugun) >= 3) sonuc.push({ id: 'muhasebe', anahtar: bugun });
+    if (((z.mevzuat || {}).son || '') !== hafta) sonuc.push({ id: 'mevzuat', anahtar: hafta });
   }
   return sonuc;
 }
+/* Haftalık mi (anahtar ISO hafta) */
+export function haftalikIsMi(id) { return id === 'mevzuat' || id === 'rakip'; }
 /* Kilit: çalıştırana özel kimlik (kilitId). Süre en uzun olası çalışmadan (10 dk zaman aşımı × denemeler × sürdürmeler)
    uzun tutulur. Aynı vade için en fazla EN_FAZLA_DENEME deneme (hata döngüsü para yakmasın). */
 export const KILIT_SURESI_MS = 90 * 60 * 1000;
@@ -649,7 +662,7 @@ export function harcamaOzeti(kayitlar, simdi) {
    s: calistir() sonucu. Döner: { baslik, icerik, ek, ayarYamasi } */
 export function zamanliSonuc(id, s, d) {
   if (id === 'icerik') return { baslik: 'Günün içerik avı · ' + trTarih(d), icerik: s.metin, ek: {}, ayarYamasi: null };
-  if (id === 'rakip') return { baslik: 'Haftalık rakip raporu · ' + isoHafta(d), icerik: s.metin, ek: {}, ayarYamasi: null };
+  if (id === 'mevzuat' || id === 'rakip') return { baslik: 'Haftalık mevzuat bülteni · ' + isoHafta(d), icerik: s.metin, ek: {}, ayarYamasi: null };
   const t = tasarrufUygula(s.json);
   const icerik = String((s.json && s.json.rapor_md) || '') + '\n\n## Uygulanan ayarlar\n' +
     (Object.keys(t.webArama).length ? Object.entries(t.webArama).map(([r, n]) => '- ' + ROL[r].ad + ': en fazla ' + n + ' web araması').join('\n') : '- Web arama sınırlarında değişiklik yok') + '\n' +
@@ -728,8 +741,46 @@ export function kadroKararlari(perf, kadro) {
    Protokolün Claude Code tarafı: Masaüstü\Ajan Ofisi\CLAUDE-OKU.md */
 export const MOTOR_CC = 'claude-code', MOTOR_API = 'api';
 export const PROTOKOL = 'ajan-ofisi-cc-1';
-export const CC_TURLERI = ['is', 'icerik', 'rakip', 'muhasebe', 'strateji', 'ofis'];
-export const CC_TUR_ROL = { icerik: 'icerik_avcisi', rakip: 'rakip_analisti', muhasebe: 'muhasebeci', strateji: 'mentalite_kocu', ofis: 'ofis_muduru' };
+/* 'rakip' ve 'muhasebe' yalnız eski sonuç dosyaları için tanınır (yeni iş üretilmez) */
+export const CC_TURLERI = ['is', 'icerik', 'mevzuat', 'strateji', 'ofis', 'fikir', 'rakip', 'muhasebe'];
+export const CC_TUR_ROL = { icerik: 'icerik_avcisi', mevzuat: 'mevzuat_danismani', rakip: 'mevzuat_danismani', muhasebe: 'veri_analisti', strateji: 'ik_stratejisti', ofis: 'ofis_muduru' };
+export const CC_TUR_PANO = {
+  icerik: 'Bugünkü içerik notunuz panoda.', mevzuat: 'Haftalık mevzuat bülteni panoya asıldı.', rakip: 'Haftalık rapor panoya asıldı.',
+  muhasebe: 'Harcama notu panoda.', strateji: 'Hedeflerin için stratejini hazırladım, panoda.', ofis: 'Ofis performans raporu panoda.'
+};
+
+/* ---------------------------------------------------------------- FİKİR TURU (25.11.2026)
+   Ofis boşta iken Claude Code (oturum açıkken, az token harcayarak) ekipten 2–4 kişiyi gerçek işlerimizle ilgili bir
+   konuda konuşturur: fikir üretir, itiraz eder, değerlendirir. Değerli fikir FİKİR MASASI'na (toplantı masası) bırakılır;
+   ofis sahibi onaylarsa iş olarak açılır. Sonuç dosyası: { tur:'fikir', fikir:{…} } — biçim CLAUDE-OKU.md'de. */
+export const FIKIR_YERLERI = ['toplanti', 'kahve', 'oda'];
+export const FIKIR_SONUCLARI = ['masaya', 'arastirilacak', 'elendi'];
+export const FIKIR_DURUMLARI = { masada: 'Masada', arastirilacak: 'Araştırılacak', elendi: 'Elendi', onaylandi: 'İşe dönüştü', rafta: 'Rafa kaldırıldı' };
+export function fikirTemizle(f) {
+  if (!f || typeof f !== 'object') return null;
+  const konusmalar = (Array.isArray(f.konusmalar) ? f.konusmalar : [])
+    .filter((k) => k && ROL[k.rol] && String(k.metin || '').trim())
+    .slice(0, 14).map((k) => ({ rol: k.rol, metin: kirp(String(k.metin).replace(/\s+/g, ' ').trim(), 280) }));
+  const kat = [];
+  for (const k of konusmalar) if (kat.indexOf(k.rol) < 0) kat.push(k.rol);
+  if (kat.length < 2 || konusmalar.length < 3 || kat.length > 5) return null;
+  const o = f.oneri && typeof f.oneri === 'object' ? f.oneri : {};
+  const sonuc = FIKIR_SONUCLARI.indexOf(f.sonuc) >= 0 ? f.sonuc : 'arastirilacak';
+  return {
+    konu: kirp(f.konu, 90) || 'Fikir turu',
+    yer: FIKIR_YERLERI.indexOf(f.yer) >= 0 ? f.yer : 'toplanti',
+    katilimcilar: kat, konusmalar, sonuc,
+    oneri: {
+      baslik: kirp(o.baslik, 100) || kirp(f.konu, 100) || 'Fikir',
+      ozet: kirp(o.ozet, 700), neden: kirp(o.neden, 500),
+      etki: ['yuksek', 'orta', 'dusuk'].indexOf(o.etki) >= 0 ? o.etki : 'orta',
+      efor: ['S', 'M', 'L'].indexOf(o.efor) >= 0 ? o.efor : 'M',
+      ilgili: kirp(o.ilgili, 80), ilkAdim: kirp(o.ilkAdim, 400),
+      sahip: ROL[o.sahip] && kat.indexOf(o.sahip) >= 0 ? o.sahip : kat[0]
+    },
+    itiraz: kirp(f.itiraz, 400)
+  };
+}
 export const KADEME_TALIMATI = [
   'Stajyer (low): kısa ve hızlı; yaklaşık 250 kelime; en fazla 1-2 kaynak.',
   'Uzman (medium): standart derinlik; 500-800 kelime; 2-4 kaynak.',
@@ -765,6 +816,7 @@ export function ccSonucTemizle(j) {
     })),
     puan: j.puan && typeof j.puan === 'object' ? j.puan : null,
     not: j.not && typeof j.not === 'object' ? { baslik: kirp(j.not.baslik, 200), icerik: kirp(j.not.icerik, 100000), kaynaklar: ccKaynaklar(j.not.kaynaklar) } : null,
+    fikir: j.tur === 'fikir' ? fikirTemizle(j.fikir) : null,
     anahtar: kirp(j.anahtar, 20), hata: kirp(j.hata, 500),
     duzeltme: j.duzeltme === true, duzeltmeNotu: kirp(j.duzeltmeNotu, 300),
     kadroKarari: j.kadroKarari && typeof j.kadroKarari === 'object' && ROL[j.kadroKarari.rol] && j.kadroKarari.rol !== 'genel_mudur'
@@ -779,27 +831,8 @@ export function ccSonucTemizle(j) {
   };
 }
 
-/* ---------------------------------------------------------------- ofis sohbetleri (olgu iddiası içermez) */
-export const SOHBETLER = [
-  ['Yöneticiler sence hangi grafiği daha çok seviyor?', 'Tek bakışta anlaşılanı. Gerisi süs.'],
-  ['Bugün kahveyi kim yapıyor?', 'Muhasebeci duymasın, yeni makine istemeyelim.'],
-  ['Lacivert mi, pirinç mi daha ciddi duruyor?', 'İkisi birlikte; ölçülü kullanınca çok şık.'],
-  ['Build adımı olmadan bunu nasıl çözeceğiz?', 'CDN ve tek dosya. Hep öyle yapmadık mı?'],
-  ['Kurula sunulacak bir şeyde en çok neye dikkat edersin?', 'Sayılar tek yerde ve net olsun.'],
-  ['Bir ekranda kaç kart fazla olur?', 'Okuyan kişi aradığını üç saniyede bulamıyorsa fazladır.'],
-  ['Kaynaksız bir bilgi gördüğünde ne yapıyorsun?', 'Kullanmıyorum. Viral Tahmincisi hemen puan kırıyor.'],
-  ['Mobilde de düzgün görünüyor mu sence?', 'Telefonda dar ekranı mutlaka denemek lazım.'],
-  ['Sunumda animasyon kullanır mısın?', 'Az ve anlamlı olursa evet.'],
-  ['Genel Müdür bugün nasıl?', 'Sakin. Toplantı tahtası temiz, iyiye işaret.'],
-  ['Bir fikri en hızlı nasıl test ederiz?', 'Önce görselini yapalım, sonra koda geçelim.'],
-  ['Token harcamamız nasıl gidiyor?', 'Muhasebeciye sor; o her şeyi kuruşu kuruşuna biliyor.']
-];
-export const ROL_SOHBETLERI = {
-  arastirma: [['Bu hafta otomotivde hangi konu öne çıkıyor sence?', 'Bakalım; tahmin değil kaynak lazım.']],
-  kreatif: [['Bu ekrana biraz daha nefes alanı versek?', 'Katılıyorum, kartlar sıkışık duruyor.'], ['Videoda seslendirme hızı nasıl olmalı?', 'Saniyede iki kelime civarı; acele etmeden.']],
-  teknoloji: [['Bu fonksiyonu kim yazdı, çok uzun olmuş.', 'Bölelim; test etmesi de kolaylaşır.'], ['Konsolda hata kalmış mı?', 'Temiz. Bir de telefonda bakalım.']],
-  strateji: [['Puanlamada en çok neye bakıyorsun?', 'Uygulanabilir mi, yoksa sadece güzel mi.']],
-  yonetim: [['Bu ay bütçe nasıl?', 'Sınırın altındayız, ama gözüm üstünde.']]
-};
+/* ---------------------------------------------------------------- ofis içi kısa cümleler
+   25.11.2026: hazır "boş sohbet" cümleleri kaldırıldı (ofis sahibi: "boş boş konuşuyorlar"). Ofis boştayken artık yalnız
+   gerçek fikir turları konuşulur (tur:'fikir'); aradaki zamanda çalışanlar sessizce çalışır. */
 export const TESEKKURLER = ['Teşekkürler, hemen bakıyorum.', 'Elinize sağlık, devralıyorum.', 'Aldım, kaldığın yerden devam ediyorum.', 'Süper, şimdi başlıyorum.'];
 export const ONAYLAR = ['Anlaşıldı, hemen başlıyorum.', 'Tamamdır, sıradayım.', 'Not aldım.', 'Benim için net.'];
