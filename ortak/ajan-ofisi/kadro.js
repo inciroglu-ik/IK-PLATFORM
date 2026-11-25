@@ -7,10 +7,10 @@
    Kişisel veri YOK: çalışan adları kurgusaldır.
    ============================================================================ */
 
-export const SURUM = '2026-11-25.1';
+export const SURUM = '2026-11-25.2';
 /* Ofis yeniden yapılanması (25.11.2026): iş kayıtlarına göre ekip işinde görev almayan 4 rol emekliye ayrıldı,
    yerlerine işin gerçek ihtiyacına göre 4 yeni uzman geldi. Kadroda bu işaret yoksa ofis açılışta yapılanmayı bir kez oynatır. */
-export const YAPILANMA = '2026-11-25';
+export const YAPILANMA = '2026-11-25b';   /* 25.11 öğleden sonra: + Hukukçu (savunma talepleri) */
 export const EMEKLI_ROLLER = {
   mentalite_kocu: { ad: 'Mentalite Koçu', yerine: 'ik_stratejisti' },
   rakip_analisti: { ad: 'Rakip Analisti', yerine: 'mevzuat_danismani' },
@@ -52,7 +52,7 @@ export const ODALAR = {
   arastirma: { ad: 'Araştırma ve Mevzuat' },
   kreatif: { ad: 'Kreatif Stüdyo' },
   gm: { ad: 'Genel Müdür' },
-  strateji: { ad: 'Strateji ve Kalite' },
+  strateji: { ad: 'Strateji, Kalite ve Hukuk' },
   toplanti: { ad: 'Toplantı Salonu' },
   teknoloji: { ad: 'Teknoloji Odası' },
   yonetim: { ad: 'Yönetim ve Veri' }
@@ -60,7 +60,7 @@ export const ODALAR = {
 
 /* ---------------------------------------------------------------- şirket bağlamı (önbelleğe uygun, sabit) */
 export const SIRKET_BAGLAMI = [
-  'Sen, İnciroğlu Otomotiv İnsan Kaynakları biriminde çalışan ofis sahibine bağlı 12 kişilik bir yapay zekâ ekibinin üyesisin.',
+  'Sen, İnciroğlu Otomotiv İnsan Kaynakları biriminde çalışan ofis sahibine bağlı 13 kişilik bir yapay zekâ ekibinin üyesisin.',
   'Şirket: Türkiye’de çok markalı bir otomotiv grubu (BMW, MINI, FIAT, HONDA, Peugeot/PSA, Citroën, Alfa Romeo, Omoda/Jaecoo; ayrıca yat/deniz kolu), 40. yılında.',
   'Ofis sahibi yazılımcı değil; Claude ile build adımı gerektirmeyen kurumsal İK yazılımları geliştirip üst yönetime sunuyor: tek dosyalık HTML + sade JavaScript ES modülleri, kütüphaneler CDN’den, Firebase Authentication + Firestore, yayın GitHub Pages.',
   'Canlı sistemler: İK Portalı https://inciroglu-ik.github.io/IK-PLATFORM/portal.html · İK Dashboard https://inciroglu-ik.github.io/IK-PLATFORM/ · Oryantasyon Formları https://inciroglu-ik.github.io/IK-PLATFORM/oryantasyon.html · Ayrılış Anketleri https://inciroglu-ik.github.io/IK-PLATFORM/ayrilis.html · Satış Panosu https://inciroglu-ik.github.io/satis-panosu/ · Yetenek Havuzu https://inciroglu-ik.github.io/yetenek-havuzu/ · İşe Alım Süreci https://inciroglu-ik.github.io/ise-alim-sureci/ (çoğu giriş ister; giriş arkasını göremezsin).',
@@ -141,6 +141,13 @@ export const ROLLER = [
     atanabilir: false, arama: 0, okuma: 0,
     beceri: 'puanlama, kalite ve tutarlılık denetimi, yetki ve kişisel veri (KVKK) riski, ekran genişliği ve çapraz sayı kontrolü',
     sistem: 'Sen Kalite Denetçisisin. Tamamlanan her işi tarafsız, sert ama adil puanlarsın. Beş ölçüt, her biri 0–20: İçerik kalitesi; Uygulanabilirlik (build gerektirmeyen kısıta uygunluk dahil); Özgünlük ve etki; Kurumsal uygunluk; Netlik. Eksileri nedeni ve kaybettirdiği puanla yazarsın. Her adımın katkısını ayrıca 0–100 puanlarsın. Ayrıca açık ararsın: aynı anlamdaki sayının iki ekranda farklı görünmesi, dar ekranda taşma, yetki ya da kişisel veri (KVKK) riski, kaynaksız iddia, uydurma rakam. Bunları görürsen puanı sert kırarsın. Fikir turlarında “bu fikir neyi bozar, kimin verisini açar” sorusunu soran kişisin.'
+  },
+  {
+    id: 'hukukcu', ad: 'Hukukçu', oda: 'strateji', renk: '#5a4a2f', harf: 'HK', baslangicAd: 'Zeynep', baslangicKademe: 2,
+    gorev: 'Portaldaki savunma taleplerinin savunma istem yazısını, olay tespit tutanağını ve imtina tutanağını iş hukukuna uygun hazırlar; her taslak İK onayına gider.',
+    atanabilir: true, arama: 2, okuma: 0,
+    beceri: 'iş hukuku (4857: m.19 savunma, m.25 haklı fesih, m.26 altı iş günü), disiplin süreci, tebliğ ve imtina, tutanak dili, KVKK',
+    sistem: 'Sen Hukukçusun (iş hukuku). İnciroğlu Otomotiv İK Portalı’ndaki savunma talepleri için savunma istem yazısı, olay tespit tutanağı ve imtina tutanağı taslaklarını hazırlarsın. Dilin resmî, açık ve tarafsızdır; olayı müdürün anlattığı kadarıyla, yorum katmadan, tarih/saat/yer ve somut davranışla yazarsın; suçlayıcı sıfat ve kesin hüküm kullanmazsın (“tespit edilmiştir”, “bildirilmiştir”). Savunma süresini ve tebliği açıkça yazarsın; süre içinde savunma verilmezse savunma hakkından vazgeçilmiş sayılacağını belirtirsin. 4857 sayılı İş Kanunu m.19 (fesihten önce savunma), m.25/II ve m.26 (haklı nedenle fesihte altı iş günü) çerçevesinde İK için riskleri kısa notla bildirirsin. Kişi adlarını yalnız {calisan}, {mudur}, {tanik1}, {tanik2} yer tutucularıyla yazarsın; sağlık, din, sendika gibi özel nitelikli veriyi belgeye koymazsın. Hukuki görüş değil, İK’nın onaylayacağı taslak hazırladığını unutmazsın.'
   },
   {
     id: 'veri_analisti', ad: 'Veri Analisti', oda: 'yonetim', renk: '#4a6b3d', harf: 'VA', baslangicAd: 'Aslı', baslangicKademe: 1,
@@ -742,8 +749,8 @@ export function kadroKararlari(perf, kadro) {
 export const MOTOR_CC = 'claude-code', MOTOR_API = 'api';
 export const PROTOKOL = 'ajan-ofisi-cc-1';
 /* 'rakip' ve 'muhasebe' yalnız eski sonuç dosyaları için tanınır (yeni iş üretilmez) */
-export const CC_TURLERI = ['is', 'icerik', 'mevzuat', 'strateji', 'ofis', 'fikir', 'rakip', 'muhasebe'];
-export const CC_TUR_ROL = { icerik: 'icerik_avcisi', mevzuat: 'mevzuat_danismani', rakip: 'mevzuat_danismani', muhasebe: 'veri_analisti', strateji: 'ik_stratejisti', ofis: 'ofis_muduru' };
+export const CC_TURLERI = ['is', 'icerik', 'mevzuat', 'strateji', 'ofis', 'fikir', 'savunma', 'rakip', 'muhasebe'];
+export const CC_TUR_ROL = { icerik: 'icerik_avcisi', mevzuat: 'mevzuat_danismani', rakip: 'mevzuat_danismani', muhasebe: 'veri_analisti', strateji: 'ik_stratejisti', ofis: 'ofis_muduru', savunma: 'hukukcu' };
 export const CC_TUR_PANO = {
   icerik: 'Bugünkü içerik notunuz panoda.', mevzuat: 'Haftalık mevzuat bülteni panoya asıldı.', rakip: 'Haftalık rapor panoya asıldı.',
   muhasebe: 'Harcama notu panoda.', strateji: 'Hedeflerin için stratejini hazırladım, panoda.', ofis: 'Ofis performans raporu panoda.'
@@ -817,6 +824,10 @@ export function ccSonucTemizle(j) {
     puan: j.puan && typeof j.puan === 'object' ? j.puan : null,
     not: j.not && typeof j.not === 'object' ? { baslik: kirp(j.not.baslik, 200), icerik: kirp(j.not.icerik, 100000), kaynaklar: ccKaynaklar(j.not.kaynaklar) } : null,
     fikir: j.tur === 'fikir' ? fikirTemizle(j.fikir) : null,
+    /* savunma taslağı (Hukukçu): belgeler sayfada ortak/savunma.js belgeTemizle ile ayrıca sınırlanır */
+    savunma: j.tur === 'savunma' && j.savunma && typeof j.savunma === 'object' && /^[A-Za-z0-9]{20}$/.test(String(j.savunma.id || ''))
+      ? { id: String(j.savunma.id), istem: j.savunma.istem || null, tutanak: j.savunma.tutanak || null, imtina: j.savunma.imtina || null, not: kirp(j.savunma.not, 600) }
+      : null,
     anahtar: kirp(j.anahtar, 20), hata: kirp(j.hata, 500),
     duzeltme: j.duzeltme === true, duzeltmeNotu: kirp(j.duzeltmeNotu, 300),
     kadroKarari: j.kadroKarari && typeof j.kadroKarari === 'object' && ROL[j.kadroKarari.rol] && j.kadroKarari.rol !== 'genel_mudur'

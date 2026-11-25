@@ -139,7 +139,14 @@ service cloud.firestore {
     function gorusmeKorumasi(h) {
       return !exists(yol('gorusmeAyar', 'erisim')) || !(h in gorusmeListe()) || kurucuHesap() || (gecerli() && benimHid() == h);
     }
-    function listeKorumasi(h) { return primKorumasi(h) && gorusmeKorumasi(h); }
+    // SAVUNMA KORUMASI (25.11.2026): Savunma Talepleri İK ekibi listesindeki (savunmaAyar/erisim) hesaplar da aynı biçimde korunur.
+    function svListe() { return get(yol('savunmaAyar', 'erisim')).data.hidler; }
+    function svKorumasi(h) {
+      return !exists(yol('savunmaAyar', 'erisim')) || !(h in svListe()) || kurucuHesap() || (gecerli() && benimHid() == h);
+    }
+    function listeKorumasi(h) { return primKorumasi(h) && gorusmeKorumasi(h) && svKorumasi(h); }
+    // Savunma Talepleri İK ekibi = kurucu hesap + savunmaAyar/erisim listesi (kullanımı: SAVUNMA TALEPLERİ bölümü ve svEposta)
+    function svIk() { return kurucuHesap() || (gecerli() && exists(yol('savunmaAyar', 'erisim')) && benimHid() in svListe()); }
     match /hesaplar/{h} {
       allow get: if ik() || (gecerli() && benimHid() == h);
       allow list: if ik();
@@ -614,10 +621,27 @@ service cloud.firestore {
         && (!exists(tYol) || get(tYol).data.sonBildirim != id)
         && y.kime == t.zincir[y.sablon].eposta;
     }
+    // Savunma talebi e-postası (25.11.2026): ptEposta ile aynı mantık. İÇERİK İSTEMCİDEN GELMEZ (konu/gövde boş; gönderici
+    // scripts/savunma-eposta.js ile talep kaydından üretir, ekleri savunmalar/{id}/ekler'den alır). Her geçiş en fazla bir e-posta:
+    // 'onay' (İK onayı → talebi açan müdür, talepte kayıtlı mudurEposta) · 'kapanis' (müdür taranmış belgeyi yükledi ya da imtina
+    // işaretledi → çalışanın direktörü, talepte kayıtlı direktorEposta).
+    function svEposta(id, y) {
+      let sYol = yol('savunmalar', y.ilgili);
+      let s = getAfter(sYol).data;
+      return gecerli()
+        && y.kaynak == 'savunma'
+        && y.ilgili.matches('[A-Za-z0-9]{20}')
+        && y.konu == '' && y.html == '' && y.olusturan == hesap().ad
+        && y.sablon in ['onay', 'kapanis']
+        && s.sonBildirim == id
+        && exists(sYol) && get(sYol).data.sonBildirim != id
+        && ((y.sablon == 'onay' && s.durum == 'onaylandi' && svIk() && y.kime == s.mudurEposta)
+          || (y.sablon == 'kapanis' && s.durum == 'kapandi' && (svIk() || s.mudur.hid == benimHid()) && y.kime == s.direktorEposta));
+    }
     match /epostaKuyrugu/{id} {
       allow read: if ik();
       allow create: if request.resource.data.keys().hasOnly(['kime', 'kimeAd', 'konu', 'html', 'kaynak', 'ilgili', 'durum', 'olusturma', 'olusturan', 'sablon'])
-        && (!('sablon' in request.resource.data) || request.resource.data.sablon in ['direktor', 'ik'])
+        && (!('sablon' in request.resource.data) || request.resource.data.sablon in ['direktor', 'ik', 'onay', 'kapanis'])
         && request.resource.data.kime is string && request.resource.data.kime.matches('[a-z0-9._%+-]+@inciroglu[.]com[.]tr')
         && metin(request.resource.data.kimeAd, 120) && !request.resource.data.kimeAd.matches('.*[@,;"].*')
         && metin(request.resource.data.konu, 200)
@@ -625,7 +649,7 @@ service cloud.firestore {
         && metin(request.resource.data.kaynak, 40) && metin(request.resource.data.ilgili, 120) && metin(request.resource.data.olusturan, 120)
         && request.resource.data.durum == 'bekliyor'
         && request.resource.data.olusturma == request.time
-        && (ik() || ptEposta(id, request.resource.data));
+        && (ik() || ptEposta(id, request.resource.data) || svEposta(id, request.resource.data));
       allow update: if ik() && resource.data.durum == 'bekliyor' && request.resource.data.durum == 'iptal'
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['durum']);
       allow delete: if false;
@@ -1052,6 +1076,161 @@ service cloud.firestore {
           && request.resource.data.veri.matches('[A-Za-z0-9+/=]+');
         allow list: if false;
         allow delete: if kurucuHesap();
+      }
+    }
+
+    // ====================================================== SAVUNMA TALEPLERİ (25.11.2026)
+    // Müdür (ve ekibi olan direktör) yalnız kendi ekibindeki çalışan için talep açar: ekip = savunmaKadro/{hid}.adlar (İK ekibi
+    // personel listesindeki "Müdürlük" alanından üretir). Direktörler TÜM talepleri görür; Hukukçu taslaklarını (ik/taslak) ve
+    // onaylanmış PDF'leri (ekler) GÖREMEZ. İK ekibi = kurucu hesap + savunmaAyar/erisim listesi (en çok 10 kişi; listeyi yalnız kurucu
+    // değiştirir). Durum akışı: ik_onayinda → (İK) onaylandi | reddedildi · (müdür) iptal; onaylandi → (müdür ya da İK) kapandi.
+    function svErisimGecerli(y) {
+      return y.keys().hasOnly(['hidler', 'guncelleme', 'guncelleyen']) && y.keys().hasAll(['hidler', 'guncelleme', 'guncelleyen'])
+        && y.hidler is list && y.hidler.size() >= 1 && y.hidler.size() <= 10
+        && benimHid() in y.hidler
+        && y.guncelleme == request.time && y.guncelleyen == hesap().ad;
+    }
+    function svEslemeGecerli(y) {
+      return y.keys().hasOnly(['eposta', 'ekMudurluk', 'guncelleme', 'guncelleyen']) && y.keys().hasAll(['eposta', 'ekMudurluk', 'guncelleme', 'guncelleyen'])
+        && y.eposta is map && y.eposta.size() <= 300 && y.ekMudurluk is map && y.ekMudurluk.size() <= 100
+        && y.guncelleme == request.time && y.guncelleyen == hesap().ad;
+    }
+    match /savunmaAyar/{b} {
+      allow get: if (b == 'erisim' || b == 'esleme') && svIk();
+      allow create, update: if (b == 'erisim' && kurucuHesap() && svErisimGecerli(request.resource.data))
+        || (b == 'esleme' && svIk() && svEslemeGecerli(request.resource.data));
+      allow list, delete: if false;
+    }
+    function svKadroGecerli(y) {
+      return y.keys().hasOnly(['ad', 'liste', 'adlar', 'guncelleme', 'guncelleyen']) && y.keys().hasAll(['ad', 'liste', 'adlar', 'guncelleme', 'guncelleyen'])
+        && metin(y.ad, 120) && y.liste is list && y.liste.size() <= 200 && y.adlar is list && y.adlar.size() == y.liste.size()
+        && y.guncelleme == request.time && y.guncelleyen == hesap().ad;
+    }
+    match /savunmaKadro/{h} {
+      allow get: if (gecerli() && benimHid() == h) || svIk();
+      allow list: if svIk();
+      allow create, update: if svIk() && svKadroGecerli(request.resource.data);
+      allow delete: if svIk();
+    }
+    function svTarih(v) { return v is string && v.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}'); }
+    function svKisi(c) {
+      return c is map && c.keys().hasOnly(['ad', 'departman', 'bolum', 'unvan', 'direktor']) && c.keys().hasAll(['ad', 'departman', 'bolum', 'unvan', 'direktor'])
+        && metin(c.ad, 120) && c.ad.size() > 1 && metin(c.departman, 80) && metin(c.bolum, 40) && metin(c.unvan, 120) && metin(c.direktor, 120);
+    }
+    function svTanik(l, i) { return l.size() <= i || metin(l[i], 80); }
+    function svOlay(o) {
+      return o is map && o.keys().hasOnly(['konu', 'tarih', 'saat', 'yer', 'aciklama', 'taniklar']) && o.keys().hasAll(['konu', 'tarih', 'saat', 'yer', 'aciklama', 'taniklar'])
+        && o.konu in svKonular() && svTarih(o.tarih)
+        && o.saat is string && (o.saat == '' || o.saat.matches('([01][0-9]|2[0-3]):[0-5][0-9]'))
+        && metin(o.yer, 120) && metin(o.aciklama, 3000) && o.aciklama.size() >= 20
+        && o.taniklar is list && o.taniklar.size() <= 3 && svTanik(o.taniklar, 0) && svTanik(o.taniklar, 1) && svTanik(o.taniklar, 2);
+    }
+    // ortak/savunma.js KONULAR ile birebir
+    function svKonular() {
+      return ['Devamsızlık (izinsiz işe gelmeme)', 'İşe geç gelme / erken ayrılma', 'Görev ve talimatlara aykırı davranış', 'Görevin ihmali veya özensiz yapılması',
+              'İş sağlığı ve güvenliği kurallarına aykırılık', 'Müşteriye karşı uygunsuz davranış', 'İş arkadaşına karşı uygunsuz davranış',
+              'Şirket varlığına zarar / kayıp', 'İşyeri kurallarına aykırılık', 'Diğer'];
+    }
+    // Geçmiş yalnız SONA eklenir: eski kayıtlar aynen kalır; yeni kayıt {z, ad, metin}, ad = yazan hesabın adı.
+    function svGecmis(y, o) {
+      return y.gecmis is list && y.gecmis.size() == o.gecmis.size() + 1 && y.gecmis.size() <= 200
+        && y.gecmis[0:o.gecmis.size()] == o.gecmis
+        && y.gecmis[o.gecmis.size()] is map && y.gecmis[o.gecmis.size()].keys().hasOnly(['z', 'ad', 'metin'])
+        && y.gecmis[o.gecmis.size()].ad == hesap().ad && metin(y.gecmis[o.gecmis.size()].metin, 300)
+        && y.gecmis[o.gecmis.size()].z is string && y.gecmis[o.gecmis.size()].z.size() <= 40;
+    }
+    function svDegisen(y, o, izinli) { return y.diff(o).affectedKeys().hasOnly(izinli); }
+    function svEposta2(v) { return v is string && (v == '' || v.matches('[a-z0-9._%+-]+@inciroglu[.]com[.]tr')); }
+    function svImza(m) { return m is map && m.keys().hasOnly(['ad', 'zaman', 'not']) && m.ad == hesap().ad && m.zaman == request.time && metin(m.get('not', ''), 1000); }
+    function svOnay(y, o) {
+      return svIk() && o.durum == 'ik_onayinda' && y.durum == 'onaylandi'
+        && svDegisen(y, o, ['durum', 'ik', 'mudurEposta', 'direktorEposta', 'sure', 'gecmis', 'guncelleme', 'sonBildirim'])
+        && svImza(y.ik) && svEposta2(y.mudurEposta) && svEposta2(y.direktorEposta)
+        && y.sure is int && y.sure >= 1 && y.sure <= 7 && svGecmis(y, o);
+    }
+    function svRed(y, o) {
+      return svIk() && o.durum == 'ik_onayinda' && y.durum == 'reddedildi'
+        && svDegisen(y, o, ['durum', 'red', 'gecmis', 'guncelleme']) && svImza(y.red) && svGecmis(y, o);
+    }
+    function svIptal(y, o) {
+      return gecerli() && o.mudur.hid == benimHid() && o.durum == 'ik_onayinda' && y.durum == 'iptal'
+        && svDegisen(y, o, ['durum', 'gecmis', 'guncelleme']) && svGecmis(y, o);
+    }
+    function svDosya(d) {
+      return d is map && d.keys().hasOnly(['ad', 'boyut', 'parca']) && d.keys().hasAll(['ad', 'boyut', 'parca'])
+        && metin(d.ad, 200) && d.ad.matches('(?i).+[.]pdf') && d.boyut is int && d.boyut > 0 && d.boyut <= 6700000
+        && d.parca is int && d.parca >= 1 && d.parca <= 10;
+    }
+    // Kapanış: imtinada dosya alanı yok; taramada dosya bilgisi + ilk ve son parça GERÇEKTEN yüklenmiş olmalı.
+    function svTaramaVar(id, d) {
+      return exists(/databases/$(database)/documents/savunmalar/$(id)/tarama/x_0)
+        && exists(/databases/$(database)/documents/savunmalar/$(id)/tarama/$('x_' + string(d.parca - 1)));
+    }
+    function svKapanis(id, y, o) {
+      let k = y.kapanis;
+      return (svIk() || (gecerli() && o.mudur.hid == benimHid())) && o.durum == 'onaylandi' && y.durum == 'kapandi'
+        && svDegisen(y, o, ['durum', 'kapanis', 'gecmis', 'guncelleme', 'sonBildirim'])
+        && k is map && k.keys().hasOnly(['tur', 'ad', 'zaman', 'not', 'dosya']) && k.keys().hasAll(['tur', 'ad', 'zaman', 'not'])
+        && k.tur in ['tarama', 'imtina'] && k.ad == hesap().ad && k.zaman == request.time && metin(k.not, 1000)
+        && ((k.tur == 'imtina' && !('dosya' in k)) || (k.tur == 'tarama' && svDosya(k.get('dosya', null)) && svTaramaVar(id, k.dosya)))
+        && svGecmis(y, o);
+    }
+    function svFiziki(y, o) {
+      return svIk() && o.durum in ['onaylandi', 'kapandi']
+        && svDegisen(y, o, ['fiziki', 'gecmis', 'guncelleme'])
+        && (y.fiziki == null || (y.fiziki is map && y.fiziki.keys().hasOnly(['ad', 'zaman']) && y.fiziki.ad == hesap().ad && y.fiziki.zaman == request.time))
+        && svGecmis(y, o);
+    }
+    function svYeni(y) {
+      return yonetim()
+        && y.keys().hasOnly(['no', 'durum', 'mudur', 'calisan', 'olay', 'gecmis', 'olusturma', 'guncelleme', 'sonBildirim'])
+        && y.keys().hasAll(['no', 'durum', 'mudur', 'calisan', 'olay', 'gecmis', 'olusturma', 'guncelleme', 'sonBildirim'])
+        && y.durum == 'ik_onayinda' && metin(y.no, 20)
+        && y.mudur is map && y.mudur.keys().hasOnly(['hid', 'ad', 'unvan']) && y.mudur.hid == benimHid() && y.mudur.ad == hesap().ad && metin(y.mudur.unvan, 80)
+        && svKisi(y.calisan) && exists(yol('savunmaKadro', benimHid())) && y.calisan in get(yol('savunmaKadro', benimHid())).data.liste
+        && svOlay(y.olay)
+        && y.gecmis is list && y.gecmis.size() == 1 && y.gecmis[0] is map && y.gecmis[0].keys().hasOnly(['z', 'ad', 'metin']) && y.gecmis[0].ad == hesap().ad
+        && y.olusturma == request.time && y.guncelleme == request.time && y.sonBildirim == '';
+    }
+    function svOkur(s) { return svIk() || rol('direktor') || (gecerli() && s.mudur.hid == benimHid()); }
+    match /savunmalar/{id} {
+      allow get, list: if svOkur(resource.data);
+      allow create: if otomatikKimlik(id) && svYeni(request.resource.data);
+      allow update: if request.resource.data.guncelleme == request.time && request.resource.data.olusturma == resource.data.olusturma
+        && (svOnay(request.resource.data, resource.data) || svRed(request.resource.data, resource.data) || svIptal(request.resource.data, resource.data)
+          || svKapanis(id, request.resource.data, resource.data) || svFiziki(request.resource.data, resource.data));
+      allow delete: if false;
+      // Hukukçu taslakları (savunma istem yazısı, tutanak, imtina tutanağı): YALNIZ İK ekibi (direktör ve müdür göremez).
+      match /ik/{b} {
+        allow get: if b == 'taslak' && svIk();
+        allow create, update: if b == 'taslak' && svIk()
+          && request.resource.data.keys().hasOnly(['istem', 'tutanak', 'imtina', 'kaynak', 'hukukcu', 'guncelleme', 'guncelleyen'])
+          && request.resource.data.kaynak in ['sablon', 'hukukcu', 'ik']
+          && request.resource.data.guncelleme == request.time;
+        allow list, delete: if false;
+      }
+      // Onaylanmış PDF'ler (e-postaya eklenir): İK yazar (YALNIZ talep İK onayındayken; onaydan sonra değişmez);
+      // İK ve talebi açan müdür okur (direktör okuyamaz).
+      match /ekler/{b} {
+        allow get: if b in ['istem', 'tutanak'] && (svIk() || (gecerli() && get(yol('savunmalar', id)).data.mudur.hid == benimHid()));
+        allow create, update: if b in ['istem', 'tutanak'] && svIk() && get(yol('savunmalar', id)).data.durum == 'ik_onayinda'
+          && request.resource.data.keys().hasOnly(['veri', 'ad', 'boyut']) && request.resource.data.keys().hasAll(['veri', 'ad', 'boyut'])
+          && request.resource.data.veri is string && request.resource.data.veri.size() > 0 && request.resource.data.veri.size() <= 900000
+          && request.resource.data.veri.matches('[A-Za-z0-9+/=]+') && metin(request.resource.data.ad, 200) && request.resource.data.boyut is int;
+        allow list, delete: if false;
+      }
+      // Taranmış imzalı belge (PDF, en çok 10 parça × 900.000 base64 karakter ≈ 6,7 MB): YALNIZ talep "onaylandi" iken yazılır
+      // (talebi açan müdür ya da İK ekibi); kapanmış talebin belgesi değişmez. Okuyan: talebi açan müdür, direktörler ve İK ekibi.
+      match /tarama/{p} {
+        allow get: if svIk() || rol('direktor') || (gecerli() && get(yol('savunmalar', id)).data.mudur.hid == benimHid());
+        allow create, update: if p.matches('x_[0-9]')
+          && request.resource.data.keys().hasOnly(['veri']) && request.resource.data.keys().hasAll(['veri'])
+          && request.resource.data.veri is string && request.resource.data.veri.size() > 0 && request.resource.data.veri.size() <= 900000
+          && request.resource.data.veri.matches('[A-Za-z0-9+/=]+')
+          && get(yol('savunmalar', id)).data.durum == 'onaylandi'
+          && (svIk() || (gecerli() && get(yol('savunmalar', id)).data.mudur.hid == benimHid()));
+        allow list: if false;
+        allow delete: if svIk();
       }
     }
   }

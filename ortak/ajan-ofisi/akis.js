@@ -508,7 +508,7 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
     kuyruk('Claude Code: ' + (s.plan ? s.plan.baslik : (ZAMANLI_ISLER.find((z) => z.id === s.tur) || { ad: s.tur }).ad), async () => {
       ccSirada.delete(s.isId);
       const son = ccSon.get(s.isId);
-      if (son.tur === 'is') await ccIsOyna(son); else if (son.tur === 'fikir') await ccFikirOyna(son); else await ccNotOyna(son);
+      if (son.tur === 'is') await ccIsOyna(son); else if (son.tur === 'fikir') await ccFikirOyna(son); else if (son.tur === 'savunma') await ccSavunmaOyna(son); else await ccNotOyna(son);
     });
     return true;
   }
@@ -666,6 +666,29 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
     bildir({ tur: 'not', baslik: s.not.baslik || '' });
   }
 
+  /* ------------------------------------------------ SAVUNMA TASLAĞI (25.11.2026, Hukukçu)
+     Ofis, portalda İK onayı bekleyen savunma taleplerini (taslağı yalnız şablon olanları) Claude Code işine çevirir
+     (isler\savunma-<id>.json, kişi adları yer tutucuyla). Claude Code Hukukçu olarak taslakları talebe özel yazar
+     (tur:'savunma'); burada sayfa (veri.savunmaTaslakYaz) yer tutucuları gerçek adlarla doldurup İK'nın göreceği
+     savunmalar/{id}/ik/taslak'a "Hukukçu gözden geçirdi" olarak yazar. İK taslağı elle düzenlediyse üzerine yazılmaz. */
+  async function ccSavunmaOyna(s) {
+    const rol = 'hukukcu';
+    const arsiv = async () => { if (s.dosya) await kopru.arsivle(s.dosya).catch(() => {}); };
+    if (s.durum !== 'tamam' && s.durum !== 'hata') return;
+    if (s.durum === 'hata' || !s.savunma || !veri.savunmaTaslakYaz) { olay({ tur: 'hata', rol, metin: 'Savunma taslağı yazılamadı: ' + (s.hata || 'biçim hatalı') }); await arsiv(); return; }
+    mesgulYap([rol], true);
+    let r = null;
+    try {
+      sahne.durum(rol, 'calisiyor'); await sahne.bekle(2400);
+      try { r = await veri.savunmaTaslakYaz(s.savunma); } catch (e) { r = { ok: false, neden: (e && e.message) || String(e) }; }
+      sahne.durum(rol, 'bos');
+      await sahne.konus(rol, r && r.ok ? (r.no || 'Savunma') + ' talebinin savunma istem yazısı, olay tespit tutanağı ve imtina tutanağı hazır; İK onayına koydum.' : 'Bu talebin taslağını güncelleyemedim: ' + ((r && r.neden) || 'bilinmeyen hata'), 3200);
+      await arsiv();
+    } finally { mesgulYap([rol], false); }
+    olay({ tur: r && r.ok ? 'kadro' : 'hata', rol, metin: r && r.ok ? 'Savunma taslağı İK onayına kondu: ' + (r.no || '') : 'Savunma taslağı yazılamadı: ' + ((r && r.neden) || '') });
+    bildir({ tur: 'not', baslik: r && r.ok ? 'Savunma taslağı hazır: ' + (r.no || '') : 'Savunma taslağı yazılamadı' });
+  }
+
   /* ------------------------------------------------ FİKİR TURU (25.11.2026)
      Claude Code, ofis boştayken ekipten 2–4 kişiyi gerçek işlerimizle ilgili bir konuda konuşturur (tur:'fikir').
      Burada oynatılır: katılımcılar toplantı masasına / kahveye / bir masaya toplanır, konuşma sırayla geçer;
@@ -720,7 +743,8 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
     mevzuat_danismani: 'İş Kanunu, İSG, KVKK ve SGK değişikliklerini izleyeceğim; her pazartesi mevzuat bülteni panonuzda olacak, belgelerdeki hukuki riskleri de ben bulacağım.',
     ik_stratejisti: 'İşe alım, ilk 90 gün, performans, prim ve turnover için ölçülebilir öneriler getireceğim; her öneriyi göstergesiyle birlikte.',
     sunum_tasarimcisi: 'Aylık kurul sunumunuzun kurgusu, mesaj başlıklı slaytlar ve ekran taslakları bende.',
-    veri_analisti: 'Excel raporlarınızdaki ve panolardaki sayıların tutarlılığını ben denetleyeceğim; çözümü önce Excel’in içinde arayacağım.'
+    veri_analisti: 'Excel raporlarınızdaki ve panolardaki sayıların tutarlılığını ben denetleyeceğim; çözümü önce Excel’in içinde arayacağım.',
+    hukukcu: 'Portaldaki savunma talepleri bende: savunma istem yazısı, olay tespit tutanağı ve gerektiğinde imtina tutanağı iş hukukuna uygun hazırlanacak; her taslak İnsan Kaynakları onayına gider.'
   };
   function yapilanma() {
     return kuyruk('Ofis yeniden yapılanıyor', async () => {
@@ -729,6 +753,7 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
       const cikanlar = [], girenler = [], kayitlar = [];
       for (const [eskiRol, b] of Object.entries(EMEKLI_ROLLER)) {
         const eski = calisanlar[eskiRol]; const yR = ROL[b.yerine]; if (!yR) continue;
+        if (!eski && calisanlar[b.yerine]) continue;              /* bu değişim daha önce yapıldı (25.11 sabah) */
         const yeni = (calisanlar[b.yerine] && calisanlar[b.yerine].iseGirisMs) ? calisanlar[b.yerine] : { ad: yR.baslangicAd, kademe: yR.baslangicKademe, no: 1, iseGirisMs: simdi, puanlar: [] };
         calisanlar[b.yerine] = yeni; delete calisanlar[eskiRol];
         if (eski) cikanlar.push({ ad: eski.ad, gorev: b.ad });
@@ -736,28 +761,44 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
         kayitlar.push({ tarihMs: simdi, rol: b.yerine, cikan: eski ? eski.ad : '—', giren: yeni.ad, ort: null, eskiKademe: eski ? (eski.kademe | 0) : null, yeniKademe: yeni.kademe | 0,
           sahipKarari: true, yapilanma: true, neden: 'Ofis yeniden yapılandı: ' + b.ad + ' görevi kaldırıldı, yerine ' + yR.ad + ' geldi' });
       }
+      /* kadroda hiç olmayan yeni pozisyonlar (25.11 öğleden sonra: Hukukçu) işe alınır */
+      for (const r of ROLLER) {
+        if (calisanlar[r.id]) continue;
+        const yeni = { ad: r.baslangicAd, kademe: r.baslangicKademe, no: 1, iseGirisMs: simdi, puanlar: [] };
+        calisanlar[r.id] = yeni; girenler.push({ rol: r.id, ad: yeni.ad });
+        kayitlar.push({ tarihMs: simdi, rol: r.id, cikan: '—', giren: yeni.ad, ort: null, eskiKademe: null, yeniKademe: yeni.kademe | 0,
+          sahipKarari: true, yapilanma: true, neden: 'Ofis sahibinin isteğiyle yeni pozisyon: ' + r.ad });
+      }
+      if (!girenler.length && !cikanlar.length) { await veri.kadroKaydet(Object.assign({}, kd, { yapilanma: YAPILANMA })); return; }
       await veri.kadroKaydet(Object.assign({}, kd, { calisanlar, gecmis: (kd.gecmis || []).concat(kayitlar).slice(-60), yapilanma: YAPILANMA }));
       const gm = 'genel_mudur'; const herkes = ROLLER.map((r) => r.id); const yeniler = girenler.map((g) => g.rol);
       for (const g of girenler) sahne.isimGuncelle(g.rol, g.ad, ROL[g.rol].baslangicKademe);
       mesgulYap(herkes, true);
       try {
         for (const r of yeniler) { sahne.gizle(r, true); sahne.isinlan(r, K.giris()); }
-        await sahne.konus(gm, 'Herkes toplantı salonuna lütfen. Ofiste yeni bir düzene geçiyoruz.', 2600);
-        sahne.tahta({ baslik: 'Ofis yeniden yapılanıyor', adimlar: yeniler.map((r) => ({ rol: r, gorev: ROL[r].gorev })) });
+        const tam = cikanlar.length > 0;              /* tam yapılanma (sabah) ya da yalnız yeni pozisyon (öğleden sonra: Hukukçu) */
+        await sahne.konus(gm, tam ? 'Herkes toplantı salonuna lütfen. Ofiste yeni bir düzene geçiyoruz.' : 'Herkes toplantı salonuna lütfen. Ekibimize yeni bir arkadaş katılıyor.', 2600);
+        sahne.tahta({ baslik: tam ? 'Ofis yeniden yapılanıyor' : 'Ekibe katılan', adimlar: yeniler.map((r) => ({ rol: r, gorev: ROL[r].gorev })) });
         let i = 0; const yuru = [sahne.yuru(gm, K.tahtaOnu())];
         for (const r of herkes) if (r !== gm && yeniler.indexOf(r) < 0) yuru.push(sahne.yuru(r, K.sandalye(i++)));
         await Promise.all(yuru);
         if (cikanlar.length) await sahne.konus(gm, 'İki haftalık iş kayıtlarımıza baktım: ' + cikanlar.map((c) => c.gorev).join(', ') + ' görevleri ekip işlerine hiç ya da çok az girdi. ' + cikanlar.map((c) => c.ad).join(', ') + ', emeğiniz için teşekkürler; görevleriniz bugün sona eriyor.', null);
-        await sahne.konus(gm, 'Yerlerine işimizin gerçek ihtiyacına göre ' + girenler.length + ' yeni uzman katılıyor. Hoş geldiniz!', 2800);
+        await sahne.konus(gm, tam ? 'Yerlerine işimizin gerçek ihtiyacına göre ' + girenler.length + ' yeni uzman katılıyor. Hoş geldiniz!'
+          : 'Ofis sahibimizin isteğiyle portala Savunma Talepleri modülü açıldı; müdürlerin savunma taleplerini hukuka uygun belgelere dönüştürmek için aramıza ' + girenler.map((g) => ROL[g.rol].ad).join(', ') + ' katılıyor. Hoş geldin!', 2800);
         for (const g of girenler) {
           sahne.gizle(g.rol, false);
           await sahne.yuru(g.rol, K.sandalye(i++));
           await sahne.konus(g.rol, 'Merhaba, ben ' + g.ad + ', ' + ROL[g.rol].ad + '. ' + (TANITIM[g.rol] || ''), null);
         }
-        await sahne.konus('viral_tahmincisi', 'Benim unvanım da değişti: artık Kalite Denetçisiyim. Puanlamanın yanında tutarlılık, güvenlik ve kişisel veri denetimi de bende.', null);
-        await sahne.konus('reklam_kreatifcisi', 'Ben de Kreatif Metin Yazarı olarak devam ediyorum: video anlatımı, duyuru ve lansman metinleri.', null);
-        await sahne.konus('ofis_muduru', 'Fikir masası benden. Boş zamanlarda gerçek işlerimizle ilgili fikir üretip tartışacağız; değerli olanları bu masaya bırakıp onayınıza sunacağız.', null);
-        await sahne.konus(gm, 'Boş konuşma yok, fikir var. Herkes masasına, kolay gelsin!', 2600);
+        if (tam) {
+          await sahne.konus('viral_tahmincisi', 'Benim unvanım da değişti: artık Kalite Denetçisiyim. Puanlamanın yanında tutarlılık, güvenlik ve kişisel veri denetimi de bende.', null);
+          await sahne.konus('reklam_kreatifcisi', 'Ben de Kreatif Metin Yazarı olarak devam ediyorum: video anlatımı, duyuru ve lansman metinleri.', null);
+          await sahne.konus('ofis_muduru', 'Fikir masası benden. Boş zamanlarda gerçek işlerimizle ilgili fikir üretip tartışacağız; değerli olanları bu masaya bırakıp onayınıza sunacağız.', null);
+          await sahne.konus(gm, 'Boş konuşma yok, fikir var. Herkes masasına, kolay gelsin!', 2600);
+        } else {
+          if (ROL.mevzuat_danismani && yeniler.indexOf('hukukcu') >= 0) await sahne.konus('mevzuat_danismani', 'Mevzuat değişikliklerini sana anında iletirim; taslaklarda birlikte çalışırız.', null);
+          await sahne.konus(gm, 'Herkes masasına, kolay gelsin!', 2200);
+        }
         sahne.tahta(null);
         await Promise.all(herkes.map((r) => sahne.yuru(r, K.masa(r))));
       } finally { mesgulYap(herkes, false); for (const r of yeniler) sahne.gizle(r, false); }

@@ -329,6 +329,7 @@ import { akisKur } from './ortak/ajan-ofisi/akis.js';
 import { md, esc, guvenliUrl } from './ortak/ajan-ofisi/md.js';
 import { videoUret, planSuresi, desteklenenBicim, seslendir } from './ortak/ajan-ofisi/video.js';
 import { kopruKur } from './ortak/ajan-ofisi/kopru.js';
+import * as SV from './ortak/savunma.js';
 
 const $ = (id) => document.getElementById(id);
 const para = (n) => '$' + (Number(n) || 0).toFixed((Number(n) || 0) < 1 ? 3 : 2);
@@ -431,8 +432,62 @@ const veri = {
   zamanTamam: (id, anahtar) => setDoc(yolDoc('zamanlama'), { [id]: { son: anahtar, bitisMs: Date.now(), kaynak: 'claude-code' } }, { merge: true }),
   /* Fikir masası (25.11.2026): ajanOfisi/ofis/fikirler/{isId} — kimlik fikir turunun isId'si (aynı tur iki kez kaydedilmez) */
   fikirKaydet: (id, o) => setDoc(doc(db, 'ajanOfisi', 'ofis', 'fikirler', String(id).replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 120)), o),
-  fikirGuncelle: (id, p) => updateDoc(doc(db, 'ajanOfisi', 'ofis', 'fikirler', id), p)
+  fikirGuncelle: (id, p) => updateDoc(doc(db, 'ajanOfisi', 'ofis', 'fikirler', id), p),
+  /* Savunma taslağı (25.11.2026, Hukukçu): yer tutucular gerçek adlarla doldurulur ve savunmalar/{id}/ik/taslak'a yazılır.
+     Talep artık İK onayında değilse ya da İK taslağı elle düzenlediyse yazılmaz. Ofis sahibi (kurucu) İK ekibindedir. */
+  savunmaTaslakYaz: async (sv) => {
+    const s = await getDoc(doc(db, 'savunmalar', sv.id));
+    if (!s.exists()) return { ok: false, neden: 'talep bulunamadı' };
+    const t = s.data();
+    if (t.durum !== 'ik_onayinda') return { ok: false, no: t.no, neden: 'talep artık İK onayında değil' };
+    const tk = await getDoc(doc(db, 'savunmalar', sv.id, 'ik', 'taslak'));
+    if (tk.exists() && tk.data().kaynak === 'ik') return { ok: false, no: t.no, neden: 'İK taslağı elle düzenlemiş; üzerine yazılmadı' };
+    const tan = (t.olay && t.olay.taniklar) || [];
+    const ad = { '{calisan}': SV.adGoster((t.calisan || {}).ad), '{mudur}': SV.adGoster((t.mudur || {}).ad), '{tanik1}': SV.adGoster(tan[0] || ''), '{tanik2}': SV.adGoster(tan[1] || '') };
+    const doldur = (v) => (typeof v === 'string' ? v.replace(/\{(calisan|mudur|tanik1|tanik2)\}/gi, (m) => ad[m.toLowerCase()] || '') : Array.isArray(v) ? v.map(doldur) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, doldur(x)])) : v);
+    const yedek = SV.taslakSeti(t, t.sure || SV.SURE_VARSAYILAN, null);
+    const belge = (b, y) => { const d = b ? SV.belgeTemizle(doldur(b)) : null; return d && SV.belgeGecerli(d) ? d : y; };
+    await setDoc(doc(db, 'savunmalar', sv.id, 'ik', 'taslak'), {
+      istem: belge(sv.istem, yedek.istem), tutanak: belge(sv.tutanak, yedek.tutanak), imtina: belge(sv.imtina, yedek.imtina),
+      kaynak: 'hukukcu', hukukcu: { not: String(sv.not || '').replace(/[<>]/g, '').slice(0, 600), zaman: Date.now() },
+      guncelleme: serverTimestamp(), guncelleyen: String((H && H.ad) || 'Ajan Ofisi')
+    });
+    return { ok: true, no: t.no };
+  }
 };
+/* Savunma talepleri → Hukukçu işi (25.11.2026): İK onayı bekleyen, taslağı yalnız şablon olan talepler için isler\savunma-<id>.json.
+   Kişi adları yer tutucuyla yazılır ({calisan}, {mudur}, {tanik1}, {tanik2}); olay açıklaması müdürün metnidir (yerel klasör). */
+const SAVUNMA_ISTENDI = new Set();
+async function savunmaTara() {
+  if (!akis || kopru.durum() !== 'hazir') return;
+  let qs;
+  try { qs = await getDocs(query(collection(db, 'savunmalar'), where('durum', '==', 'ik_onayinda'))); } catch (e) { return; }   /* kural yayınlanmadı / yetki yok */
+  for (const d of qs.docs) {
+    const id = d.id, t = d.data(), isId = 'savunma-' + id;
+    if (SAVUNMA_ISTENDI.has(id)) continue;
+    try {
+      const tk = await getDoc(doc(db, 'savunmalar', id, 'ik', 'taslak'));
+      if (tk.exists() && tk.data().kaynak !== 'sablon') { SAVUNMA_ISTENDI.add(id); continue; }
+      if (await kopru.dosyaVarMi('isler', isId + '.json') || await kopru.dosyaVarMi('sonuclar', isId + '.json')) { SAVUNMA_ISTENDI.add(id); continue; }
+      const yer = Object.assign({}, t, { calisan: Object.assign({}, t.calisan, { ad: '{calisan}' }), mudur: Object.assign({}, t.mudur, { ad: '{mudur}' }), olay: Object.assign({}, t.olay, { taniklar: ((t.olay || {}).taniklar || []).map((x, i) => '{tanik' + (i + 1) + '}') }) });
+      const sablon = SV.taslakSeti(yer, t.sure || SV.SURE_VARSAYILAN, null);
+      const ham = (s) => String(s || '').replace(/\{(calisan|mudur|tanik1|tanik2)\}/gi, (m) => m.toLowerCase());
+      const tasi = (b) => JSON.parse(ham(JSON.stringify(b)));
+      await kopru.isYaz(isId + '.json', {
+        protokol: K.PROTOKOL || 'ajan-ofisi-cc-1', isId, tur: 'savunma', metin: 'Savunma taslağı: ' + (t.no || id), anahtar: '',
+        olusturmaMs: Date.now(), kadro: { hukukcu: (S.kadro.calisanlar || {}).hukukcu || null },
+        talep: { id, no: t.no || '', konu: (t.olay || {}).konu || '', tarih: (t.olay || {}).tarih || '', saat: (t.olay || {}).saat || '', yer: (t.olay || {}).yer || '',
+          aciklama: (t.olay || {}).aciklama || '', tanikSayisi: ((t.olay || {}).taniklar || []).length,
+          calisanUnvan: (t.calisan || {}).unvan || '', departman: (t.calisan || {}).departman || '', bolum: (t.calisan || {}).bolum || '', mudurUnvan: (t.mudur || {}).unvan || '' },
+        sablon: { istem: tasi(sablon.istem), tutanak: tasi(sablon.tutanak), imtina: tasi(sablon.imtina) },
+        sonucDosyasi: 'sonuclar/' + isId + '.json',
+        talimat: 'Claude Code: Masaüstü\\Ajan Ofisi\\CLAUDE-OKU.md > "Savunma taslağı (tur: savunma)" bölümüne göre Hukukçu olarak işle.'
+      });
+      SAVUNMA_ISTENDI.add(id);
+      kayit({ tur: 'is', rol: 'hukukcu', metin: 'Savunma talebi Hukukçuya iletildi: ' + (t.no || id) });
+    } catch (e) { /* sonraki taramada yeniden denenir */ }
+  }
+}
 const durum = {
   kadro: () => S.kadro, ayar: () => S.ayar, isler: () => S.isler, notlar: () => S.notlar, fikirler: () => S.fikirler,
   ayHarcama: () => S.harcama.reduce((s, h) => s + (h.maliyet || 0), 0)
@@ -488,7 +543,7 @@ async function sahneyiKur() {
   try { if (!s) { $('sahne').innerHTML = ''; $('sahne').className = ''; } sahne = s || sahneKur($('sahne'), ortak); }
   catch (e) { sahneKuruluyor = false; YUK.hata = 'Sahne kurulamadı: ' + String((e && e.message) || e).slice(0, 250); yukGoster(); return; }
   akis = akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru });
-  if (TEST) window.__OFIS = { S, sahne, akis, veri, K, kopru };
+  if (TEST) window.__OFIS = { S, sahne, akis, veri, K, kopru, savunmaTara };
   sahne.fikirSayisi(S.fikirler.filter((f) => f.durum === 'masada').length);
   sahne.panoSayisi(S.notlar.filter((n) => Date.now() - (n.tarihMs || 0) < 86400000 && ['model', 'video'].indexOf(n.tur) < 0).length);
   setInterval(sonucTara, 4000);
@@ -548,7 +603,8 @@ function hazirKontrol() {
   if (S.hazir.kadro && S.hazir.ayar && S.hazir.anahtar && S.hazir.zaman && !S.hazir.ilkKontrol) {
     S.hazir.ilkKontrol = true;
     akis.zamanKontrol(S.zaman);
-    setInterval(() => { harcamaAbone(); akis.zamanKontrol(S.zaman); }, 10 * 60 * 1000);
+    setInterval(() => { harcamaAbone(); akis.zamanKontrol(S.zaman); savunmaTara(); }, 10 * 60 * 1000);
+    setTimeout(savunmaTara, 4000);
     /* Ofis yeniden yapılanması (25.11.2026): kadroda işaret yoksa bir kez oynar (kadro önce kaydedilir, tekrar etmez) */
     if (S.kadro.yapilanma !== K.YAPILANMA && !new URLSearchParams(location.search).has('yapilanmaYok')) akis.yapilanma();
     window.__TEST_HAZIR = true;

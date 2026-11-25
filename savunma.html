@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Savunma Talepleri · İnciroğlu Otomotiv</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0f1b2d">
+<link rel="icon" href="pano/amblem.svg" type="image/svg+xml">
+<link rel="icon" href="pano/amblem-192.png" sizes="192x192">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="pano/kokpit.css">
+<link rel="stylesheet" href="pano/pano.css">
+<style>
+body.savunma { --icerik-max: 1380px; }
+body.savunma .ust-marka { display: flex; }
+body.savunma #kaputYuva:empty { display: none; }
+.sv-arac { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin: 4px 0 14px; }
+.sv-arac-sol, .sv-arac-sag { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sv-arac-sag { flex-wrap: nowrap; }
+.sv-cip { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--cizgi-2); background: #fff; font: 600 12.5px/1 var(--font-sans); color: var(--metin-2); cursor: pointer; }
+.sv-cip b { font-variant-numeric: tabular-nums; color: var(--metin-1); }
+.sv-cip[aria-pressed="true"] { border-color: var(--lac-800); background: var(--lac-800); color: #fff; }
+.sv-cip[aria-pressed="true"] b { color: #fff; }
+.sv-cip:focus-visible, .sv-satir:focus-visible { outline: none; box-shadow: var(--odak-halkasi); }
+.sv-ara { min-width: 220px; width: 260px; }
+.sv-tablo-kap { background: var(--yuzey-kart); border: 1px solid var(--cizgi-1); border-radius: 14px; overflow: auto; box-shadow: var(--golge-1, 0 1px 2px rgba(16,24,40,.05)); }
+.sv-tablo { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.sv-tablo th { text-align: left; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--metin-3); padding: 11px 14px; border-bottom: 1px solid var(--cizgi-2); background: var(--n-25); white-space: nowrap; }
+.sv-tablo td { padding: 11px 14px; border-bottom: 1px solid var(--cizgi-1); vertical-align: top; }
+.sv-satir { cursor: pointer; }
+.sv-satir:hover td { background: var(--n-25); }
+.sv-ad { font-weight: 600; color: var(--metin-1); }
+.sv-alt { display: block; font-size: 12px; color: var(--metin-3); margin-top: 2px; }
+.sv-no { font-variant-numeric: tabular-nums; color: var(--metin-2); white-space: nowrap; }
+.sv-durum { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.sv-durum::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.sv-durum.uy { background: var(--uy-50); color: var(--uy-700); }
+.sv-durum.bilgi { background: var(--bilgi-100); color: var(--pir-700); }
+.sv-durum.ok { background: var(--ok-50); color: var(--ok-700); }
+.sv-durum.ht { background: var(--ht-50); color: var(--ht-700); }
+.sv-durum.n { background: var(--n-100); color: var(--n-600); }
+.sv-bos { padding: 36px 20px; text-align: center; color: var(--metin-3); font-size: 14px; }
+.sv-bilgi { border-radius: 12px; padding: 12px 16px; font-size: 13.5px; line-height: 1.6; background: var(--bilgi-100); color: var(--pir-800); border: 1px solid var(--pir-200); margin-bottom: 14px; }
+.sv-bilgi.uyari { background: var(--uy-50); color: var(--uy-700); border-color: var(--uy-200); }
+.sv-bilgi.hata { background: var(--ht-50); color: var(--ht-700); border-color: var(--ht-200); }
+.sv-izgara { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 440px); gap: 18px; align-items: start; }
+.sv-kart { background: var(--yuzey-kart); border: 1px solid var(--cizgi-1); border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 2px rgba(16,24,40,.05); }
+.sv-kart + .sv-kart { margin-top: 14px; }
+.sv-kart h3 { margin: 0 0 4px; font-size: 15px; font-weight: 700; color: var(--metin-marka); }
+.sv-kart .sv-kart-alt { font-size: 12.5px; color: var(--metin-3); margin-bottom: 12px; }
+.sv-dl { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 7px 14px; margin: 0; font-size: 13.5px; }
+.sv-dl dt { color: var(--metin-3); }
+.sv-dl dd { margin: 0; color: var(--metin-1); overflow-wrap: anywhere; }
+.sv-metin { white-space: pre-wrap; font-size: 14px; line-height: 1.65; color: var(--metin-1); overflow-wrap: anywhere; }
+.sv-gecmis { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.sv-gecmis li { display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: 10px; font-size: 13px; }
+.sv-gecmis li::before { content: ''; width: 9px; height: 9px; margin-top: 5px; border-radius: 50%; background: var(--pir-500); }
+.sv-gecmis small { display: block; color: var(--metin-3); font-size: 11.5px; }
+.sv-form { display: grid; gap: 14px; }
+.sv-alan { display: grid; gap: 6px; }
+.sv-alan > label { font-size: 12.5px; font-weight: 600; color: var(--metin-2); }
+.sv-alan .ipucu { font-size: 12px; color: var(--metin-3); line-height: 1.5; }
+.sv-alan textarea { min-height: 150px; resize: vertical; font: 400 14px/1.6 var(--font-sans); padding: 10px 12px; border: 1px solid var(--cizgi-3); border-radius: 10px; }
+.sv-alan textarea:focus, .sv-alan input:focus, .sv-alan select:focus { outline: none; box-shadow: var(--odak-halkasi); border-color: var(--pir-500); }
+.sv-iki { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.sv-sayac { font-size: 11.5px; color: var(--metin-3); text-align: right; }
+.sv-dugmeler { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.sv-sekme { display: flex; gap: 4px; border-bottom: 1px solid var(--cizgi-2); margin-bottom: 12px; flex-wrap: wrap; }
+.sv-sekme button { border: 0; background: none; padding: 9px 12px; font: 600 13px var(--font-sans); color: var(--metin-3); border-bottom: 2px solid transparent; cursor: pointer; }
+.sv-sekme button[aria-selected="true"] { color: var(--metin-marka); border-bottom-color: var(--lac-800); }
+.sv-belge-ust { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.sv-kaynak { font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--n-100); color: var(--n-600); }
+.sv-kaynak.hukukcu { background: var(--ok-50); color: var(--ok-700); }
+.sv-paragraf { width: 100%; min-height: 92px; resize: vertical; font: 400 13.5px/1.6 var(--font-sans); padding: 9px 11px; border: 1px solid var(--cizgi-3); border-radius: 9px; margin-bottom: 8px; }
+.sv-belge-bas { font: 600 15px var(--font-serif); color: var(--metin-marka); text-align: center; margin: 4px 0 10px; }
+.sv-ust-tablo { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-bottom: 10px; }
+.sv-ust-tablo td { border: 1px solid var(--cizgi-1); padding: 5px 8px; }
+.sv-ust-tablo td:first-child { width: 120px; color: var(--metin-3); font-weight: 600; }
+.sv-uyari-not { font-size: 12px; line-height: 1.55; color: var(--uy-700); background: var(--uy-50); border: 1px solid var(--uy-200); border-radius: 10px; padding: 9px 12px; margin: 10px 0; }
+.sv-dosya { display: flex; align-items: center; gap: 10px; border: 1px dashed var(--cizgi-3); border-radius: 12px; padding: 12px; background: var(--n-25); }
+.sv-dosya input[type=file] { font-size: 13px; max-width: 100%; }
+.sv-onay-kutu { display: flex; gap: 9px; align-items: flex-start; font-size: 13.5px; line-height: 1.5; cursor: pointer; }
+.sv-onay-kutu input { margin-top: 3px; accent-color: var(--lac-800); width: 16px; height: 16px; }
+.sv-liste-satir { display: grid; grid-template-columns: minmax(0, 1fr) minmax(200px, 300px); gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--cizgi-1); font-size: 13.5px; }
+.sv-liste-satir small { color: var(--metin-3); display: block; font-size: 12px; }
+.sv-etiket { display: inline-flex; gap: 6px; align-items: center; background: var(--pir-50); border: 1px solid var(--pir-200); color: var(--pir-800); border-radius: 999px; padding: 3px 4px 3px 10px; font-size: 12px; margin: 2px 4px 2px 0; }
+.sv-etiket button { border: 0; background: none; cursor: pointer; color: inherit; font-size: 14px; line-height: 1; padding: 0 5px; }
+.sv-modal-ort { position: fixed; inset: 0; background: rgba(15, 27, 45, .45); display: grid; place-items: center; z-index: 1000; padding: 16px; }
+.sv-modal { width: min(560px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: #fff; border-radius: 16px; box-shadow: 0 24px 60px rgba(0,0,0,.25); }
+.sv-modal-ust { padding: 16px 20px 6px; } .sv-modal-ust h3 { margin: 0; font-size: 16px; color: var(--metin-marka); }
+.sv-modal-govde { padding: 6px 20px 8px; font-size: 14px; line-height: 1.6; color: var(--metin-2); }
+.sv-modal-alt { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; padding: 12px 20px 16px; }
+@media (max-width: 1000px) { .sv-izgara { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 640px) {
+  .sv-dl { grid-template-columns: minmax(0, 1fr); gap: 2px; } .sv-dl dd { margin-bottom: 8px; }
+  .sv-tablo .sv-gizle-dar { display: none; }
+  .sv-liste-satir { grid-template-columns: minmax(0, 1fr); }
+  .sv-ara { min-width: 0; width: 100%; } .sv-arac-sag { flex-wrap: wrap; width: 100%; }
+}
+</style>
+</head>
+<!--
+  Savunma Talepleri (İK Portalı) — 25.11.2026
+  Müdür kendi ekibindeki çalışan için savunma talebi açar (ekip = Kolay İK Çalışan Listesi "Müdürlük" alanı; İK ekibi personel
+  listesinden üretir: savunmaKadro/{hid}). Talep İK'ya düşer; Hukukçu şablonu (ortak/savunma.js) savunma istem yazısını ve olay tespit
+  tutanağını anında hazırlar, ofis sahibi "ofis" yazınca Ajan Ofisi'ndeki Hukukçu talebe özel gözden geçirir (ik/taslak, kaynak hukukcu).
+  İK belgeleri onaylayınca PDF'ler (pdfmake, tarayıcıda) ekler/ altına yazılır ve müdüre otomatik e-posta (ekli 2 PDF + yükleme
+  bağlantısı) kuyruğa girer. Müdür imzalı belgeleri tarayıp PDF olarak yükler ya da "çalışan imtina etti" işaretler → talep kapanır,
+  çalışanın direktörüne otomatik bilgilendirme e-postası gider. İK "fiziki evrak iletildi" işaretini ayrıca tutar; imtina tutanağını indirir.
+  GÖRENLER: talebi açan müdür (kendi talepleri), direktörler (tümü; taslak ve onay PDF'leri hariç), İK ekibi (kurucu + savunmaAyar/erisim).
+  Kişisel veri bu depoda YOKTUR; Firestore savunmalar koleksiyonundadır. Kurallar: guvenlik/firestore.rules → SAVUNMA TALEPLERİ.
+-->
+<body class="savunma">
+<div class="acilis" id="acilis" role="status" aria-live="polite">
+  <div class="acilis-ic">
+    <span class="amblem buyuk" role="img" aria-label="İnciroğlu Otomotiv İK amblemi"></span>
+    <div class="acilis-baslik">Savunma Talepleri</div>
+    <div class="acilis-metin" id="acilisMetin">Oturum denetleniyor…</div>
+    <div class="acilis-cubuk"><i></i></div>
+  </div>
+</div>
+<div class="ana">
+  <div class="ust-alan kokpit">
+    <header class="ust-bant">
+      <div class="ic ust-ic">
+        <div class="ust-marka"><span class="amblem" role="img" aria-label="İnciroğlu Otomotiv İK amblemi"></span></div>
+        <div class="uyg-ad"><span>Savunma Talepleri</span><small id="ustAlt">İnsan Kaynakları</small></div>
+        <div class="ust-sag" id="ustSag"></div>
+      </div>
+    </header>
+    <div id="kaputYuva"></div>
+  </div>
+  <main class="ic icerik" id="icerik"></main>
+</div>
+
+<script type="module">
+import { doc, getDoc, getDocs, setDoc, updateDoc, collection, query, where, onSnapshot, serverTimestamp, writeBatch, arrayUnion } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { db, kimlikBaslat, cikisYap, adBasliklari } from "./ortak/kimlik.js";
+import * as O from "./pano/ortak.js";
+import * as S from "./ortak/savunma.js";
+
+const $ = (id) => document.getElementById(id);
+const el = O.el;
+const acilisMetni = (t) => { const m = $('acilisMetin'); if (m) m.textContent = t; };
+const acilisGizle = () => { const a = $('acilis'); if (a) { a.classList.add('gizle'); setTimeout(() => a.remove(), 600); } };
+
+/* ============================================================== OTURUM + ROLLER */
+const ROLLER = ['ik', 'direktor', 'satis_mudur', 'servis_mudur', 'idari_mudur', 'mudur'];
+const ROL_ADI = { ik: 'İnsan Kaynakları', direktor: 'Direktör', satis_mudur: 'Satış Müdürü', servis_mudur: 'Servis Müdürü', idari_mudur: 'İdari Müdür', mudur: 'Departman Müdürü' };
+const OTURUM = await kimlikBaslat({ uygulama: 'Savunma Talepleri', roller: ROLLER });
+const HESAP = OTURUM.hesap, HID = OTURUM.hid, HAM_AD = String(HESAP.ad || ''), AD = adBasliklari(HAM_AD);
+const KURUCU = HESAP.olusturan === 'kurulum' && (HESAP.roller || []).indexOf('ik') >= 0;
+const DIREKTOR = (HESAP.roller || []).indexOf('direktor') >= 0;
+const ROL_AD = ROL_ADI[ROLLER.find((r) => (HESAP.roller || []).indexOf(r) >= 0)] || '';
+const UNVAN = ROL_ADI[['satis_mudur', 'servis_mudur', 'idari_mudur', 'mudur', 'direktor'].find((r) => (HESAP.roller || []).indexOf(r) >= 0)] || 'Yönetici';
+acilisMetni('Yetki denetleniyor…');
+
+let IKEKIP = KURUCU, ERISIM = null;
+try { const s = await getDoc(doc(db, 'savunmaAyar', 'erisim')); ERISIM = s.exists() ? s.data() : null; IKEKIP = KURUCU || !!(ERISIM && Array.isArray(ERISIM.hidler) && ERISIM.hidler.indexOf(HID) >= 0); }
+catch (e) { /* erişim listesi yalnız İK ekibine okunur: okunamıyorsa İK ekibi değil */ }
+let KADRO = null;
+try { const s = await getDoc(doc(db, 'savunmaKadro', HID)); KADRO = s.exists() ? s.data() : null; } catch (e) { KADRO = null; }
+
+/* ============================================================== DURUM */
+const TALEP = new Map();
+let TALEP_HAZIR = false, TALEP_HATA = null, ESLEME = null, MESGUL = false;   /* ESLEME_HATA aşağıda */
+const F = { durum: 'acik', ara: '' };
+const TASLAK = new Map();                /* id → { istem, tutanak, imtina, kaynak } (İK ekranında düzenlenen) */
+const EPOSTA_DURUM = new Map();
+
+function hataMetni(e) {
+  const k = (e && e.code) || '';
+  if (k === 'permission-denied') return 'Yetkiniz yok ya da güvenlik kuralı henüz yayınlanmamış. İnsan Kaynakları ile görüşün.';
+  if (k === 'unavailable' || k === 'deadline-exceeded') return 'Bağlantı kurulamadı. İnternet bağlantınızı kontrol edip yeniden deneyin.';
+  return (e && e.message) || 'Beklenmeyen bir hata oluştu.';
+}
+function zaman(ts) { try { const d = ts && typeof ts.toDate === 'function' ? ts.toDate() : (ts && ts.seconds ? new Date(ts.seconds * 1000) : (ts ? new Date(ts) : null)); return d && !isNaN(d) ? d : null; } catch (e) { return null; } }
+const zamanMetni = (ts) => { const d = zaman(ts); return d ? d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''; };
+const kisiAd = (s) => S.adGoster(s);
+const gecmisOge = (metin) => ({ z: new Date().toISOString(), ad: HAM_AD, metin: String(metin).slice(0, 300) });
+
+function modal({ baslik, govde, dugmeler = [] }) {
+  const ort = el('div', { class: 'sv-modal-ort', role: 'dialog', 'aria-modal': 'true', 'aria-label': baslik });
+  const kutu = el('div', { class: 'sv-modal' }, el('div', { class: 'sv-modal-ust' }, el('h3', { text: baslik })), el('div', { class: 'sv-modal-govde' }, govde));
+  const alt = el('div', { class: 'sv-modal-alt' });
+  const kapat = () => { ort.remove(); document.removeEventListener('keydown', tus); };
+  const tus = (e) => { if (e.key === 'Escape') kapat(); };
+  dugmeler.forEach((d) => alt.append(el('button', { class: 'btn ' + (d.sinif || ''), type: 'button', text: d.metin, on: { click: () => (d.tikla ? d.tikla(kapat) : kapat()) } })));
+  kutu.append(alt); ort.append(kutu);
+  ort.addEventListener('click', (e) => { if (e.target === ort) kapat(); });
+  document.addEventListener('keydown', tus);
+  document.body.append(ort);
+  const ilk = kutu.querySelector('textarea, input, select'); if (ilk) setTimeout(() => ilk.focus(), 30);
+  return { kapat, kutu };
+}
+
+/* ============================================================== VERİ */
+const tq = IKEKIP || DIREKTOR ? collection(db, 'savunmalar') : query(collection(db, 'savunmalar'), where('mudur.hid', '==', HID));
+let ZAMANLAYICI = null;
+function guncellendi() {
+  if (!TALEP_HAZIR) return;
+  acilisGizle();
+  clearTimeout(ZAMANLAYICI);
+  ZAMANLAYICI = setTimeout(() => { const r = rota(); if ((r.sayfa === 'yeni' || r.sayfa === 'ayarlar') && $('svForm')) return; if (r.sayfa === 't' && document.activeElement && /TEXTAREA|INPUT/.test(document.activeElement.tagName)) return; ciz(); }, 60);
+}
+onSnapshot(tq, (qs) => { TALEP.clear(); qs.forEach((d) => TALEP.set(d.id, Object.assign({}, d.data(), { id: d.id }))); TALEP_HAZIR = true; TALEP_HATA = null; guncellendi(); },
+  (e) => { TALEP_HATA = e; TALEP_HAZIR = true; guncellendi(); });
+/* eşleme okunamazsa (bağlantı / yetki) BOŞ sayılmaz: ESLEME_HATA işaretlenir, ayarlar kaydedilemez (adresler silinmesin) */
+let ESLEME_HATA = false;
+if (IKEKIP) getDoc(doc(db, 'savunmaAyar', 'esleme')).then((s) => { ESLEME = s.exists() ? s.data() : { eposta: {}, ekMudurluk: {} }; ESLEME_HATA = false; }).catch(() => { ESLEME = null; ESLEME_HATA = true; });
+const talepler = () => Array.from(TALEP.values()).sort((a, b) => ((zaman(b.olusturma) || 0) - (zaman(a.olusturma) || 0)));
+
+/* ============================================================== YÖNLENDİRME */
+function rota() {
+  const h = (location.hash || '').replace(/^#\/?/, '');
+  const p = h.split('/').filter(Boolean);
+  let id = p[1] || ''; try { id = decodeURIComponent(id); } catch (e) { id = ''; }
+  return { sayfa: p[0] || 'talepler', id };
+}
+window.addEventListener('hashchange', () => { if (MESGUL) return; ciz(); window.scrollTo(0, 0); });
+function git(h) { if (location.hash === h) ciz(); else location.hash = h; }
+
+function ustBantKur() {
+  const sag = $('ustSag'); sag.textContent = '';
+  const bas = AD.split(/\s+/).filter(Boolean);
+  sag.append(el('div', { class: 'kisi' }, el('span', { class: 'avatar', text: ((bas[0] || '?')[0] + ((bas[bas.length - 1] || ' ')[0] || '')).toLocaleUpperCase('tr') }),
+    el('div', { class: 'kisi-ad' }, el('div', { text: AD }), el('span', { class: 'rozet', text: IKEKIP ? 'İK Ekibi' : ROL_AD }))));
+  if (window.top === window.self) sag.append(el('button', { class: 'btn btn-koyu', type: 'button', html: O.ikon('cikis') + '<span class="etk">Çıkış</span>', on: { click: () => cikisYap('cikis') } }));
+}
+function ciz() {
+  ustBantKur();
+  const kok = $('icerik'); kok.textContent = ''; $('kaputYuva').textContent = '';
+  const r = rota();
+  if (r.sayfa === 'yeni') return yeniSayfa(kok);
+  if (r.sayfa === 't') return talepSayfasi(kok, r.id);
+  if (r.sayfa === 'ayarlar' && IKEKIP) return ayarSayfasi(kok);
+  return listeSayfasi(kok);
+}
+function kaput(baslik, ozet) { O.kaput($('kaputYuva'), { ustEtiket: 'İK Portalı · Savunma Talepleri', baslik, ozetHtml: ozet || '' }); }
+const durumCip = (d) => { const x = S.DURUM[d] || { ad: d, sinif: 'n' }; return el('span', { class: 'sv-durum ' + x.sinif, text: x.ad }); };
+
+/* ============================================================== 1) LİSTE */
+const FILTRE = [
+  { v: 'acik', ad: 'Açık', f: (t) => t.durum === 'ik_onayinda' || t.durum === 'onaylandi' },
+  { v: 'ik_onayinda', ad: 'İK onayında', f: (t) => t.durum === 'ik_onayinda' },
+  { v: 'onaylandi', ad: 'İmza bekleniyor', f: (t) => t.durum === 'onaylandi' },
+  { v: 'kapandi', ad: 'Tamamlandı', f: (t) => t.durum === 'kapandi' },
+  { v: 'diger', ad: 'Reddedilen / geri çekilen', f: (t) => t.durum === 'reddedildi' || t.durum === 'iptal' },
+  { v: 'hepsi', ad: 'Tümü', f: () => true }
+];
+function listeSayfasi(kok) {
+  const T = talepler();
+  const bekleyen = T.filter((t) => t.durum === 'ik_onayinda').length, imza = T.filter((t) => t.durum === 'onaylandi').length;
+  kaput('Savunma Talepleri', IKEKIP ? 'İK onayınızı bekleyen <b>' + bekleyen + '</b> talep, imza bekleyen <b>' + imza + '</b> talep var.'
+    : DIREKTOR ? 'Tüm savunma talepleri ve durumları. Hukukçu taslakları yalnız İnsan Kaynakları tarafından görülür.'
+    : 'Ekibinizdeki çalışanlar için açtığınız savunma talepleri. Onaylanan talebin belgeleri e-postanıza gelir; imzalatıp buraya yükleyin.');
+  if (TALEP_HATA) kok.append(el('div', { class: 'sv-bilgi hata', text: 'Talepler okunamadı: ' + hataMetni(TALEP_HATA) }));
+  const arac = el('div', { class: 'sv-arac' });
+  const sol = el('div', { class: 'sv-arac-sol' });
+  FILTRE.forEach((f) => sol.append(el('button', { class: 'sv-cip', type: 'button', 'aria-pressed': String(F.durum === f.v), html: O.esc(f.ad) + ' <b>' + T.filter(f.f).length + '</b>', on: { click: () => { F.durum = f.v; ciz(); } } })));
+  const sag = el('div', { class: 'sv-arac-sag' });
+  const ara = el('input', { class: 'girdi sv-ara', type: 'search', placeholder: 'Çalışan, departman, talep no…', value: F.ara, 'aria-label': 'Taleplerde ara' });
+  ara.addEventListener('input', () => { F.ara = ara.value; clearTimeout(ara._z); ara._z = setTimeout(() => { const p = ara.selectionStart; ciz(); const a2 = document.querySelector('.sv-ara'); if (a2) { a2.focus(); try { a2.setSelectionRange(p, p); } catch (e) { /* */ } } }, 180); });
+  sag.append(ara);
+  if (KADRO) sag.append(el('button', { class: 'btn btn-lacivert', type: 'button', html: '<span>+ Yeni savunma talebi</span>', on: { click: () => git('#/yeni') } }));
+  if (IKEKIP) sag.append(el('button', { class: 'btn', type: 'button', text: 'Ayarlar', on: { click: () => git('#/ayarlar') } }));
+  arac.append(sol, sag); kok.append(arac);
+  if (!KADRO && !IKEKIP && !DIREKTOR) kok.append(el('div', { class: 'sv-bilgi uyari', html: '<b>Ekip listeniz henüz hazırlanmadı.</b> Savunma talebi açabilmeniz için İnsan Kaynakları’nın ekip listelerini güncellemesi gerekir. Sürerse İnsan Kaynakları ile görüşün.' }));
+  const f = FILTRE.find((x) => x.v === F.durum) || FILTRE[0];
+  const q = O.aramaAnahtari(F.ara);
+  const L = T.filter(f.f).filter((t) => !q || O.aramaAnahtari([t.no, (t.calisan || {}).ad, (t.calisan || {}).departman, (t.calisan || {}).unvan, (t.mudur || {}).ad, (t.olay || {}).konu].join(' ')).includes(q));
+  const kap = el('div', { class: 'sv-tablo-kap' });
+  if (!L.length) { kap.append(el('div', { class: 'sv-bos', text: T.length ? 'Bu süzgece uyan talep yok.' : (KADRO ? 'Henüz savunma talebi yok. “Yeni savunma talebi” ile başlayabilirsiniz.' : 'Henüz savunma talebi yok.') })); kok.append(kap); return; }
+  const tb = el('tbody');
+  L.forEach((t) => {
+    const c = t.calisan || {};
+    const tr = el('tr', { class: 'sv-satir', tabindex: '0', on: { click: () => git('#/t/' + t.id), keydown: (e) => { if (e.key === 'Enter') git('#/t/' + t.id); } } },
+      el('td', { class: 'sv-no', text: t.no || '' }),
+      el('td', null, el('span', { class: 'sv-ad', text: kisiAd(c.ad) }), el('span', { class: 'sv-alt', text: [S.depGoster(c.unvan), S.depGoster(c.departman)].filter(Boolean).join(' · ') })),
+      el('td', { class: 'sv-gizle-dar', text: (t.olay || {}).konu || '' }),
+      el('td', { class: 'sv-gizle-dar sv-no', text: S.tarihTr((t.olay || {}).tarih) }),
+      el('td', { class: 'sv-gizle-dar', text: kisiAd((t.mudur || {}).ad) }),
+      el('td', null, durumCip(t.durum), t.fiziki ? el('span', { class: 'sv-alt', text: 'Fiziki evrak İK’da' }) : null),
+      el('td', { class: 'sv-gizle-dar sv-no', text: zamanMetni(t.guncelleme) }));
+    tb.append(tr);
+  });
+  kap.append(el('table', { class: 'sv-tablo' }, el('thead', null, el('tr', null, ...['No', 'Çalışan', 'Konu', 'Olay tarihi', 'Talep eden', 'Durum', 'Son işlem'].map((h, i) => el('th', { class: [2, 3, 4, 6].indexOf(i) >= 0 ? 'sv-gizle-dar' : null, text: h })))), tb));
+  kok.append(kap);
+}
+
+/* ============================================================== 2) YENİ TALEP (müdür) */
+function yeniSayfa(kok) {
+  kaput('Yeni savunma talebi', 'Ekibinizden bir çalışan için olayı anlatın. Talep İnsan Kaynakları’na düşer; savunma istem yazısı ve tutanak hukuka uygun biçimde hazırlanıp onaylandığında e-postanıza gelir.');
+  if (!KADRO || !(KADRO.liste || []).length) { kok.append(el('div', { class: 'sv-bilgi uyari', html: '<b>Ekip listeniz bulunamadı.</b> İnsan Kaynakları ekip listelerini güncellediğinde bu ekrandan talep açabilirsiniz.' }), el('a', { class: 'btn', href: '#/talepler', text: '← Taleplere dön' })); return; }
+  const form = el('form', { class: 'sv-kart sv-form', id: 'svForm', novalidate: true });
+  const alan = (etiket, girdi, ipucu) => el('div', { class: 'sv-alan' }, el('label', { text: etiket, for: girdi.id || null }), girdi, ipucu ? el('div', { class: 'ipucu', text: ipucu }) : null);
+  const kisi = el('select', { class: 'secim', id: 'svKisi', required: true }, el('option', { value: '', text: 'Çalışan seçin…' }), ...KADRO.liste.map((p, i) => el('option', { value: String(i), text: kisiAd(p.ad) + ' — ' + [S.depGoster(p.unvan), S.depGoster(p.departman)].filter(Boolean).join(' · ') })));
+  const konu = el('select', { class: 'secim', id: 'svKonu', required: true }, el('option', { value: '', text: 'Konu seçin…' }), ...S.KONULAR.map((k) => el('option', { value: k, text: k })));
+  const tarih = el('input', { class: 'girdi', id: 'svTarih', type: 'date', required: true, max: S.bugunIso(), value: S.bugunIso() });
+  const saat = el('input', { class: 'girdi', id: 'svSaat', type: 'time' });
+  const yer = el('input', { class: 'girdi', id: 'svYer', type: 'text', maxlength: String(S.SINIR.yer), placeholder: 'Ör. servis atölyesi, showroom' });
+  const aciklama = el('textarea', { id: 'svAciklama', maxlength: String(S.SINIR.aciklama), required: true, placeholder: 'Olay ne zaman, nerede, nasıl oldu? Kim gördü? Daha önce sözlü uyarı yapıldı mı?' });
+  const sayac = el('div', { class: 'sv-sayac', text: '0 / ' + S.SINIR.aciklama });
+  aciklama.addEventListener('input', () => { sayac.textContent = aciklama.value.length + ' / ' + S.SINIR.aciklama; });
+  const t1 = el('input', { class: 'girdi', id: 'svTanik1', type: 'text', maxlength: String(S.SINIR.tanik), placeholder: '1. tanık ad soyad (varsa)' });
+  const t2 = el('input', { class: 'girdi', id: 'svTanik2', type: 'text', maxlength: String(S.SINIR.tanik), placeholder: '2. tanık ad soyad (varsa)' });
+  form.append(
+    alan('Çalışan', kisi, 'Listede yalnız ekibinizdeki çalışanlar var (Kolay İK’daki müdürlük bilgisine göre).'),
+    alan('Konu', konu),
+    el('div', { class: 'sv-iki' }, alan('Olay tarihi', tarih), alan('Saat (isteğe bağlı)', saat), alan('Yer (isteğe bağlı)', yer)),
+    el('div', { class: 'sv-alan' }, el('label', { for: 'svAciklama', text: 'Olayın açıklaması' }), aciklama, sayac,
+      el('div', { class: 'ipucu', text: 'Yalnız olayla ilgili somut bilgileri yazın (en az 20 karakter). Sağlık, din, sendika gibi özel nitelikli kişisel verileri yazmayın. Bu metin tutanağa ve savunma istem yazısına aynen girer.' })),
+    el('div', { class: 'sv-iki' }, alan('1. tanık', t1), alan('2. tanık', t2)),
+    el('div', { class: 'sv-uyari-not', text: 'Haklı nedenle fesih düşünülen hallerde işveren fesih hakkını olayı öğrendiği günden itibaren 6 iş günü içinde kullanmalıdır (4857 s. İş K. m.26). Talebi gecikmeden açın.' }));
+  const gonder = el('button', { class: 'btn btn-lacivert', type: 'submit', text: 'Talebi İK’ya gönder' });
+  form.append(el('div', { class: 'sv-dugmeler' }, gonder, el('a', { class: 'btn btn-hayalet', href: '#/talepler', text: 'Vazgeç' })));
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const p = KADRO.liste[+kisi.value];
+    const ac = aciklama.value.replace(/[<>]/g, '').trim();
+    const hata = !p ? 'Çalışan seçin.' : !konu.value ? 'Konu seçin.' : !/^\d{4}-\d{2}-\d{2}$/.test(tarih.value) || tarih.value > S.bugunIso() ? 'Geçerli bir olay tarihi girin.' : ac.length < 20 ? 'Olayın açıklaması en az 20 karakter olmalı.' : '';
+    if (hata) { O.bildirim(hata); return; }
+    if (MESGUL) return; MESGUL = true; gonder.disabled = true; gonder.textContent = 'Gönderiliyor…';
+    try {
+      const ref = doc(collection(db, 'savunmalar'));
+      const temiz = (s, n) => Array.from(String(s || '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim()).slice(0, n).join('');
+      const t = {
+        no: S.talepNo(ref.id), durum: 'ik_onayinda',
+        mudur: { hid: HID, ad: HAM_AD, unvan: UNVAN },
+        calisan: { ad: p.ad, departman: p.departman, bolum: p.bolum, unvan: p.unvan, direktor: p.direktor },   /* kadrodaki kayıtla birebir (kural: calisan in kadro.liste) */
+        olay: { konu: konu.value, tarih: tarih.value, saat: saat.value || '', yer: temiz(yer.value, S.SINIR.yer), aciklama: ac.slice(0, S.SINIR.aciklama), taniklar: [t1.value, t2.value].map((x) => temiz(x, S.SINIR.tanik)).filter(Boolean) },
+        gecmis: [gecmisOge('Talep oluşturuldu ve İnsan Kaynakları onayına gönderildi')],
+        olusturma: serverTimestamp(), guncelleme: serverTimestamp(), sonBildirim: ''
+      };
+      await setDoc(ref, t);
+      MESGUL = false;
+      O.bildirim('Savunma talebi İnsan Kaynakları’na gönderildi.');
+      git('#/t/' + ref.id);
+    } catch (err) { MESGUL = false; gonder.disabled = false; gonder.textContent = 'Yeniden dene'; modal({ baslik: 'Talep gönderilemedi', govde: el('div', { text: hataMetni(err) }), dugmeler: [{ metin: 'Tamam', sinif: 'btn-lacivert' }] }); }
+  });
+  kok.append(form);
+}
+
+/* ============================================================== PDF (pdfmake, gerektiğinde yüklenir) */
+let PDF_YUK = null;
+function pdfHazir() {
+  if (window.pdfMake && window.pdfMake.vfs) return Promise.resolve(window.pdfMake);
+  if (PDF_YUK) return PDF_YUK;
+  const yukle = (src) => new Promise((ok, ret) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => ret(new Error('PDF kitaplığı yüklenemedi')); document.head.append(s); });
+  PDF_YUK = yukle('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/pdfmake.min.js').then(() => yukle('https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/vfs_fonts.js')).then(() => window.pdfMake)
+    .catch((e) => { PDF_YUK = null; throw e; });
+  return PDF_YUK;
+}
+async function pdfBase64(belge, t) { const pm = await pdfHazir(); return new Promise((ok, ret) => { try { pm.createPdf(S.pdfTanimi(belge, { no: t.no, tarih: S.tarihTr(S.bugunIso()), calisan: kisiAd((t.calisan || {}).ad) })).getBase64(ok); } catch (e) { ret(e); } }); }
+async function pdfIndir(belge, t) { const pm = await pdfHazir(); pm.createPdf(S.pdfTanimi(belge, { no: t.no, tarih: S.tarihTr(S.bugunIso()), calisan: kisiAd((t.calisan || {}).ad) })).download(S.dosyaAdi(t.no, belge.baslik)); }
+function base64Ac(b64, ad, indir) {
+  const bin = atob(b64); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  const url = URL.createObjectURL(new Blob([u], { type: 'application/pdf' }));
+  if (indir) { const a = el('a', { href: url, download: ad }); document.body.append(a); a.click(); a.remove(); }
+  else { const a = el('a', { href: url, target: '_blank', rel: 'noopener' }); document.body.append(a); a.click(); a.remove(); }   /* yeni sekmede açılır (indirmeden) */
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+async function ekAc(t, ad) {
+  try { const s = await getDoc(doc(db, 'savunmalar', t.id, 'ekler', ad)); if (!s.exists()) { O.bildirim('Belge bulunamadı.'); return; } base64Ac(s.data().veri, s.data().ad || (ad + '.pdf'), true); }
+  catch (e) { O.bildirim('Belge açılamadı: ' + hataMetni(e)); }
+}
+async function taramaAc(t) {
+  const d = (t.kapanis || {}).dosya; if (!d) return;
+  try {
+    const parcalar = [];
+    for (let i = 0; i < d.parca; i++) { const s = await getDoc(doc(db, 'savunmalar', t.id, 'tarama', 'x_' + i)); if (!s.exists()) throw new Error('Dosyanın bir parçası eksik.'); parcalar.push(s.data().veri); }
+    base64Ac(parcalar.join(''), d.ad, false);
+  } catch (e) { O.bildirim('Taranmış belge açılamadı: ' + hataMetni(e)); }
+}
+
+/* ============================================================== 3) TALEP AYRINTISI */
+function talepSayfasi(kok, id) {
+  const t = TALEP.get(id);
+  if (!t) { kaput('Talep bulunamadı'); kok.append(el('div', { class: 'sv-bilgi uyari', text: TALEP_HATA ? hataMetni(TALEP_HATA) : 'Bu talep yok ya da görme yetkiniz bulunmuyor.' }), el('a', { class: 'btn', href: '#/talepler', text: '← Taleplere dön' })); return; }
+  const c = t.calisan || {}, o = t.olay || {};
+  const BENIM = (t.mudur || {}).hid === HID;
+  kaput(kisiAd(c.ad) + ' · ' + (t.no || ''), (S.DURUM[t.durum] || {}).ad ? '<b>' + O.esc(S.DURUM[t.durum].ad) + '</b> · ' + O.esc(o.konu || '') : '');
+  kok.append(el('div', { class: 'sv-arac' }, el('a', { class: 'btn btn-hayalet', href: '#/talepler', text: '← Tüm talepler' }), durumCip(t.durum)));
+  const iz = el('div', { class: 'sv-izgara' });
+  const sol = el('div'), sag = el('div');
+  const dl = el('dl', { class: 'sv-dl' });
+  [['Çalışan', kisiAd(c.ad)], ['Unvan', S.depGoster(c.unvan)], ['Departman', [S.depGoster(c.departman), c.bolum].filter(Boolean).join(' / ')], ['Direktör', kisiAd(c.direktor)], ['Konu', o.konu],
+    ['Olay', [S.tarihTr(o.tarih), o.saat, o.yer].filter(Boolean).join(' · ')], ['Tanıklar', (o.taniklar || []).map(kisiAd).join(', ') || '—'], ['Talep eden', kisiAd((t.mudur || {}).ad)], ['Talep tarihi', zamanMetni(t.olusturma)]]
+    .forEach((r) => dl.append(el('dt', { text: r[0] }), el('dd', { text: r[1] || '—' })));
+  sol.append(el('section', { class: 'sv-kart' }, el('h3', { text: 'Talep bilgileri' }), dl));
+  sol.append(el('section', { class: 'sv-kart' }, el('h3', { text: 'Olayın açıklaması' }), el('div', { class: 'sv-metin', text: o.aciklama || '' })));
+  if (t.red) sol.append(el('section', { class: 'sv-kart' }, el('h3', { text: 'İnsan Kaynakları notu' }), el('div', { class: 'sv-metin', text: t.red.not || 'Talep reddedildi.' })));
+  if (t.kapanis) {
+    const k = t.kapanis;
+    const kk = el('section', { class: 'sv-kart' }, el('h3', { text: k.tur === 'imtina' ? 'Çalışan imtina etti' : 'İmzalı belgeler yüklendi' }),
+      el('div', { class: 'sv-kart-alt', text: kisiAd(k.ad) + ' · ' + zamanMetni(k.zaman) }), k.not ? el('div', { class: 'sv-metin', text: k.not }) : null);
+    if (k.dosya) kk.append(el('div', { class: 'sv-dugmeler' }, el('button', { class: 'btn', type: 'button', text: 'Taranmış belgeyi aç (' + Math.max(1, Math.round(k.dosya.boyut / 1024)) + ' KB)', on: { click: () => taramaAc(t) } })));
+    sol.append(kk);
+  }
+  const gl = el('ol', { class: 'sv-gecmis' });
+  (t.gecmis || []).slice().reverse().forEach((g) => gl.append(el('li', null, el('div', null, el('span', { text: g.metin }), el('small', { text: kisiAd(g.ad) + ' · ' + zamanMetni(g.z) })))));
+  sol.append(el('section', { class: 'sv-kart' }, el('h3', { text: 'Geçmiş' }), gl));
+
+  if (IKEKIP) ikPaneli(sag, t);
+  else if (BENIM) mudurPaneli(sag, t);
+  else sag.append(el('section', { class: 'sv-kart' }, el('h3', { text: 'Durum' }), el('div', { class: 'sv-metin', text: (S.DURUM[t.durum] || {}).ad || t.durum }),
+    t.fiziki ? el('div', { class: 'sv-kart-alt', text: 'Islak imzalı evrak İK’ya ulaştı · ' + zamanMetni(t.fiziki.zaman) }) : null));
+  iz.append(sol, sag); kok.append(iz);
+}
+
+/* ---- müdür paneli */
+function mudurPaneli(sag, t) {
+  if (t.durum === 'ik_onayinda') {
+    sag.append(el('section', { class: 'sv-kart' }, el('h3', { text: 'İnsan Kaynakları incelemesinde' }),
+      el('div', { class: 'sv-kart-alt', text: 'Savunma istem yazısı ve olay tespit tutanağı hazırlanıyor. İK onayladığında belgeler e-postanıza gelir ve burada indirilebilir.' }),
+      el('div', { class: 'sv-dugmeler' }, el('button', { class: 'btn btn-hayalet', type: 'button', text: 'Talebi geri çek', on: { click: () => geriCek(t) } }))));
+    return;
+  }
+  if (t.durum === 'onaylandi') return yuklemePaneli(sag, t, false);
+  sag.append(el('section', { class: 'sv-kart' }, el('h3', { text: 'Durum' }), el('div', { class: 'sv-metin', text: (S.DURUM[t.durum] || {}).ad || t.durum }),
+    t.durum === 'kapandi' ? el('div', { class: 'sv-kart-alt', text: t.direktorEposta ? 'Direktöre bilgilendirme e-postası gönderildi.' : '' }) : null,
+    t.fiziki ? el('div', { class: 'sv-kart-alt', text: 'Islak imzalı evrak İK’ya ulaştı · ' + zamanMetni(t.fiziki.zaman) }) : null));
+}
+function geriCek(t) {
+  modal({ baslik: 'Talep geri çekilsin mi?', govde: el('div', { text: 'Talep İnsan Kaynakları onayından çıkar ve “Geri çekildi” olarak kalır.' }), dugmeler: [{ metin: 'Vazgeç', sinif: 'btn-hayalet' }, { metin: 'Geri çek', sinif: 'btn-lacivert', tikla: async (k) => {
+    k();
+    try { await updateDoc(doc(db, 'savunmalar', t.id), { durum: 'iptal', gecmis: arrayUnion(gecmisOge('Talep, talebi açan yönetici tarafından geri çekildi')), guncelleme: serverTimestamp() }); O.bildirim('Talep geri çekildi.'); }
+    catch (e) { O.bildirim('Geri çekilemedi: ' + hataMetni(e)); }
+  } }] });
+}
+/* imzalı belge yükleme / imtina (müdür; İK de müdür adına yapabilir) */
+function yuklemePaneli(sag, t, ikAdina) {
+  const k = el('section', { class: 'sv-kart' }, el('h3', { text: ikAdina ? 'İmzalı belge (müdür adına)' : 'Belgeler onaylandı · imza bekleniyor' }),
+    el('div', { class: 'sv-kart-alt', text: 'Savunma istem yazısını çalışana tebliğ edip imzalatın; tutanağı tanıklarla imzalayın. Çalışanın yazılı savunmasıyla birlikte tüm sayfaları tek PDF olarak tarayıp yükleyin. Yüklenmedikçe talep tamamlanmış sayılmaz.' }));
+  k.append(el('div', { class: 'sv-dugmeler' }, el('button', { class: 'btn', type: 'button', text: 'Savunma istem yazısı (PDF)', on: { click: () => ekAc(t, 'istem') } }), el('button', { class: 'btn', type: 'button', text: 'Olay tespit tutanağı (PDF)', on: { click: () => ekAc(t, 'tutanak') } })));
+  const dosya = el('input', { type: 'file', accept: 'application/pdf,.pdf', 'aria-label': 'Taranmış PDF' });
+  const imtina = el('input', { type: 'checkbox' });
+  const not = el('textarea', { class: 'sv-paragraf', maxlength: String(S.SINIR.not), placeholder: 'Not (isteğe bağlı): ör. tebliğ tarihi, imtina eden kişinin sözlü beyanı' });
+  const btn = el('button', { class: 'btn btn-lacivert', type: 'button', text: 'Talebi tamamla' });
+  k.append(el('div', { class: 'sv-alan', style: { marginTop: '12px' } }, el('label', { text: 'Taranmış imzalı belgeler (tek PDF, en çok 6,5 MB)' }), el('div', { class: 'sv-dosya' }, dosya)),
+    el('label', { class: 'sv-onay-kutu', style: { margin: '12px 0 6px' } }, imtina, el('span', null, el('b', { text: 'Çalışan imzadan / savunma vermekten imtina etti. ' }), el('span', { text: 'İşaretlerseniz dosya gerekmez; imtina tutanağı İnsan Kaynakları tarafından hazırlanır.' }))),
+    not, el('div', { class: 'sv-dugmeler' }, btn));
+  imtina.addEventListener('change', () => { dosya.disabled = imtina.checked; });
+  btn.addEventListener('click', () => kapat(t, dosya.files && dosya.files[0], imtina.checked, not.value, btn));
+  sag.append(k);
+}
+async function kapat(t, f, imtina, not, btn) {
+  if (!imtina && !f) { O.bildirim('Taranmış PDF dosyasını seçin ya da imtina kutucuğunu işaretleyin.'); return; }
+  let b64 = '', boyut = 0, ad = '';
+  if (!imtina) {
+    if (!/\.pdf$/i.test(f.name)) { O.bildirim('Yalnız PDF yükleyebilirsiniz.'); return; }
+    if (f.size > 6700000) { O.bildirim('Dosya 6,5 MB’den büyük. Tarayıcıda daha düşük çözünürlükle (ör. 150 dpi, siyah-beyaz) tarayın.'); return; }
+    try {
+      const ilk = new Uint8Array(await f.slice(0, 4).arrayBuffer());
+      if (!(ilk[0] === 0x25 && ilk[1] === 0x50 && ilk[2] === 0x44 && ilk[3] === 0x46)) { O.bildirim('Seçilen dosya geçerli bir PDF değil.'); return; }
+      b64 = await new Promise((ok, ret) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1] || ''); r.onerror = () => ret(r.error); r.readAsDataURL(f); });
+    } catch (e) { O.bildirim('Dosya okunamadı: ' + ((e && e.message) || e)); return; }
+    boyut = f.size; ad = (t.no + '_imzali_belgeler.pdf');
+  }
+  const soru = imtina ? 'Çalışanın imtina ettiği kaydedilecek ve çalışanın direktörüne otomatik bilgilendirme e-postası gidecek.' : 'Taranmış belge yüklenecek, talep tamamlanacak ve çalışanın direktörüne otomatik bilgilendirme e-postası gidecek.';
+  modal({ baslik: 'Talep tamamlansın mı?', govde: el('div', { text: soru + (t.direktorEposta ? '' : ' (Direktör e-posta adresi tanımlı olmadığından e-posta gitmeyecek; İK bilgilendirilir.)') }), dugmeler: [{ metin: 'Vazgeç', sinif: 'btn-hayalet' }, { metin: 'Tamamla', sinif: 'btn-lacivert', tikla: async (kpt) => {
+    kpt(); if (MESGUL) return; MESGUL = true; btn.disabled = true; btn.textContent = 'Kaydediliyor…';
+    try {
+      const parca = [];
+      for (let i = 0; i < b64.length; i += 900000) parca.push(b64.slice(i, i + 900000));
+      if (parca.length > 10) throw new Error('Dosya çok büyük.');
+      for (let i = 0; i < parca.length; i++) await setDoc(doc(db, 'savunmalar', t.id, 'tarama', 'x_' + i), { veri: parca[i] });
+      const qref = t.direktorEposta ? doc(collection(db, 'epostaKuyrugu')) : null;
+      const kap = { tur: imtina ? 'imtina' : 'tarama', ad: HAM_AD, zaman: serverTimestamp(), not: String(not || '').replace(/[<>]/g, '').trim().slice(0, S.SINIR.not) };
+      if (!imtina) kap.dosya = { ad, boyut, parca: parca.length };
+      const b = writeBatch(db);
+      b.update(doc(db, 'savunmalar', t.id), { durum: 'kapandi', kapanis: kap, gecmis: arrayUnion(gecmisOge(imtina ? 'Çalışanın imtina ettiği kaydedildi; talep tamamlandı' : 'İmzalı belgeler yüklendi; talep tamamlandı')), guncelleme: serverTimestamp(), sonBildirim: qref ? qref.id : (t.sonBildirim || '') });
+      if (qref) b.set(qref, { kime: t.direktorEposta, kimeAd: String(kisiAd((t.calisan || {}).direktor) || 'Direktör').replace(/[@,;"<>]/g, ' ').slice(0, 120), konu: '', html: '', sablon: 'kapanis', kaynak: 'savunma', ilgili: t.id, durum: 'bekliyor', olusturma: serverTimestamp(), olusturan: HAM_AD });
+      await b.commit();
+      MESGUL = false; O.bildirim('Talep tamamlandı' + (qref ? '; direktöre bilgilendirme e-postası kuyruğa alındı.' : '.'));
+    } catch (e) { MESGUL = false; btn.disabled = false; btn.textContent = 'Yeniden dene'; modal({ baslik: 'Tamamlanamadı', govde: el('div', { text: hataMetni(e) }), dugmeler: [{ metin: 'Tamam', sinif: 'btn-lacivert' }] }); }
+  } }] });
+}
+
+/* ---- İK paneli */
+function ikPaneli(sag, t) {
+  if (t.durum === 'ik_onayinda') return taslakPaneli(sag, t);
+  const k = el('section', { class: 'sv-kart' }, el('h3', { text: 'İnsan Kaynakları' }));
+  if (t.durum === 'onaylandi' || t.durum === 'kapandi') {
+    k.append(el('div', { class: 'sv-kart-alt', text: 'Onaylayan: ' + kisiAd((t.ik || {}).ad) + ' · ' + zamanMetni((t.ik || {}).zaman) + ' · savunma süresi ' + (t.sure || S.SURE_VARSAYILAN) + ' iş günü' }));
+    k.append(el('div', { class: 'sv-dugmeler' }, el('button', { class: 'btn', type: 'button', text: 'Savunma istem yazısı', on: { click: () => ekAc(t, 'istem') } }), el('button', { class: 'btn', type: 'button', text: 'Olay tespit tutanağı', on: { click: () => ekAc(t, 'tutanak') } }),
+      el('button', { class: 'btn' + (t.kapanis && t.kapanis.tur === 'imtina' ? ' btn-lacivert' : ''), type: 'button', text: 'İmtina tutanağı (PDF)', on: { click: () => imtinaIndir(t) } })));
+    const ep = el('div', { class: 'sv-kart-alt', style: { marginTop: '10px' } });
+    k.append(ep); epostaDurumu(ep, t);
+    const fiz = el('input', { type: 'checkbox' }); fiz.checked = !!t.fiziki;
+    k.append(el('label', { class: 'sv-onay-kutu', style: { marginTop: '12px' } }, fiz, el('span', null, el('b', { text: 'Fiziki evrak İK’ya iletildi' }), el('span', { class: 'sv-alt', text: t.fiziki ? kisiAd(t.fiziki.ad) + ' · ' + zamanMetni(t.fiziki.zaman) : 'Islak imzalı asıllar İK’ya ulaştığında işaretleyin.' }))));
+    fiz.addEventListener('change', async () => {
+      try { await updateDoc(doc(db, 'savunmalar', t.id), { fiziki: fiz.checked ? { ad: HAM_AD, zaman: serverTimestamp() } : null, gecmis: arrayUnion(gecmisOge(fiz.checked ? 'Islak imzalı evrak İK’ya ulaştı' : 'Fiziki evrak işareti kaldırıldı')), guncelleme: serverTimestamp() }); O.bildirim('Kaydedildi.'); }
+      catch (e) { fiz.checked = !fiz.checked; O.bildirim('Kaydedilemedi: ' + hataMetni(e)); }
+    });
+  } else k.append(el('div', { class: 'sv-metin', text: (S.DURUM[t.durum] || {}).ad || t.durum }));
+  sag.append(k);
+  if (t.durum === 'onaylandi') yuklemePaneli(sag, t, true);
+}
+async function epostaDurumu(kap, t) {
+  if (!t.sonBildirim) { kap.textContent = t.durum === 'onaylandi' && !t.mudurEposta ? 'Müdür e-posta adresi tanımlı değildi; onay e-postası gönderilmedi.' : ''; return; }
+  const ETK = { bekliyor: 'kuyrukta (10 dakika içinde gider)', gonderiliyor: 'gönderiliyor', gonderildi: 'gönderildi', hata: 'gönderilemedi', iptal: 'iptal edildi' };
+  try { const s = await getDoc(doc(db, 'epostaKuyrugu', t.sonBildirim)); const d = s.exists() ? s.data() : null; kap.textContent = 'Son otomatik e-posta (' + (d && d.sablon === 'kapanis' ? 'direktöre' : 'müdüre') + '): ' + (d ? (ETK[d.durum] || d.durum) : 'bulunamadı'); }
+  catch (e) { kap.textContent = ''; }
+}
+async function imtinaIndir(t) {
+  try { const k = await taslakOku(t); await pdfIndir(k.imtina, t); } catch (e) { O.bildirim('İmtina tutanağı hazırlanamadı: ' + hataMetni(e)); }
+}
+async function taslakOku(t) {
+  if (TASLAK.has(t.id)) return TASLAK.get(t.id);
+  let kayitli = null;
+  try { const s = await getDoc(doc(db, 'savunmalar', t.id, 'ik', 'taslak')); kayitli = s.exists() ? s.data() : null; } catch (e) { kayitli = null; }
+  const set = S.taslakSeti(t, t.sure || S.SURE_VARSAYILAN, kayitli);
+  set.hukukcu = kayitli && kayitli.hukukcu ? kayitli.hukukcu : null;
+  TASLAK.set(t.id, set);
+  return set;
+}
+function eslemeEposta(ad) { const e = ESLEME && ESLEME.eposta ? ESLEME.eposta[S.adAnahtari(ad)] : ''; return S.epostaGecerli(e) ? String(e).toLowerCase() : ''; }
+function taslakPaneli(sag, t) {
+  const k = el('section', { class: 'sv-kart' }, el('h3', { text: 'Hukukçu taslakları' }), el('div', { class: 'sv-kart-alt', text: 'Yalnız İK ekibi görür (direktör ve müdür göremez). Metni düzeltip onaylayın; onayda iki belge PDF olarak müdüre e-postayla gider.' }));
+  const govde = el('div', { text: 'Taslaklar yükleniyor…' });
+  k.append(govde); sag.append(k);
+  taslakOku(t).then((set) => {
+    govde.textContent = '';
+    let secili = 'istem';
+    const sure = el('select', { class: 'secim' }, ...[1, 2, 3, 4, 5, 6, 7].map((n) => el('option', { value: String(n), text: n + ' iş günü' })));
+    sure.value = String(t.sure || S.SURE_VARSAYILAN);
+    const sekme = el('div', { class: 'sv-sekme', role: 'tablist' });
+    const alan = el('div');
+    const kaynak = el('span', { class: 'sv-kaynak' + (set.kaynak === 'hukukcu' ? ' hukukcu' : ''), text: set.kaynak === 'hukukcu' ? 'Hukukçu gözden geçirdi' : set.kaynak === 'ik' ? 'İK düzenledi' : 'Hukukçu şablonu' });
+    const belgeCiz = () => {
+      sekme.querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.v === secili)));
+      alan.textContent = '';
+      const d = set[secili];
+      const ust = el('table', { class: 'sv-ust-tablo' }); d.ust.forEach((r) => ust.append(el('tr', null, el('td', { text: r[0] }), el('td', { text: r[1] }))));
+      alan.append(el('div', { class: 'sv-belge-bas', text: d.baslik }), ust);
+      d.paragraflar.forEach((p, i) => { const ta = el('textarea', { class: 'sv-paragraf', maxlength: String(S.SINIR.paragraf), 'aria-label': (i + 1) + '. paragraf' }); ta.value = p; ta.addEventListener('input', () => { d.paragraflar[i] = ta.value; set.degisti = true; }); alan.append(ta); });
+      if (d.ozel === 'savunma') alan.append(el('div', { class: 'sv-alt', text: '+ “Çalışanın yazılı savunması” alanı ve tebellüğ bölümü PDF’e otomatik eklenir.' }));
+      d.imzalar.forEach((im, i) => { const g = el('input', { class: 'girdi', value: im.ad, placeholder: im.baslik + ' ad soyad', 'aria-label': im.baslik }); g.addEventListener('input', () => { d.imzalar[i].ad = g.value; set.degisti = true; }); alan.append(el('div', { class: 'sv-alan', style: { marginTop: '6px' } }, el('label', { text: im.baslik }), g)); });
+      if (set.hukukcu && set.hukukcu.not) alan.append(el('div', { class: 'sv-uyari-not', text: 'Hukukçu notu: ' + set.hukukcu.not }));
+    };
+    [['istem', 'Savunma istem yazısı'], ['tutanak', 'Olay tespit tutanağı'], ['imtina', 'İmtina tutanağı']].forEach(([v, ad]) => sekme.append(el('button', { type: 'button', role: 'tab', 'data-v': v, text: ad, on: { click: () => { secili = v; belgeCiz(); } } })));
+    /* Süre değişince: düzenlenmemiş şablon yeniden üretilir; düzenlenmiş / Hukukçu taslağında "N (yazıyla) iş günü" ifadesi
+       yeni süreyle değiştirilir; bulunamazsa İK uyarılır (PDF ile e-posta çelişmesin). */
+    sure.addEventListener('change', () => {
+      const n = +sure.value, yazi = ['bir', 'iki', 'üç', 'dört', 'beş', 'altı', 'yedi'][n - 1];
+      if (set.kaynak === 'sablon' && !set.degisti) { set.istem = S.istemSablonu(t, n); belgeCiz(); return; }
+      let bulundu = false;
+      set.istem.paragraflar = set.istem.paragraflar.map((p) => p.replace(/\b[1-7] \((bir|iki|üç|dört|beş|altı|yedi)\) iş günü/g, () => { bulundu = true; return n + ' (' + yazi + ') iş günü'; }));
+      set.degisti = true; belgeCiz();
+      O.bildirim(bulundu ? 'Savunma istem yazısındaki süre ' + n + ' iş günü olarak güncellendi.' : 'Yazıda süre ifadesi bulunamadı; savunma süresini paragraflarda elle düzeltin.');
+    });
+    govde.append(el('div', { class: 'sv-belge-ust' }, kaynak, el('label', { class: 'sv-alt' }, 'Savunma süresi ', sure)), sekme, alan);
+    belgeCiz();
+    govde.append(el('div', { class: 'sv-uyari-not', text: 'Hatırlatma (hukuki görüş değildir): davranış veya verim nedeniyle fesihten önce savunma alınması zorunludur (4857 s. İş K. m.19). Haklı nedenle fesihte hak, olayın öğrenilmesinden itibaren 6 iş günü içinde kullanılmalıdır (m.26). İşyerinizde TİS / disiplin yönetmeliği varsa süreleri ona göre seçin.' }));
+    const mEp = el('input', { class: 'girdi', type: 'email', value: eslemeEposta((t.mudur || {}).ad), placeholder: 'mudur@inciroglu.com.tr' });
+    const dEp = el('input', { class: 'girdi', type: 'email', value: eslemeEposta((t.calisan || {}).direktor), placeholder: 'direktor@inciroglu.com.tr' });
+    govde.append(el('div', { class: 'sv-iki', style: { marginTop: '10px' } },
+      el('div', { class: 'sv-alan' }, el('label', { text: 'Müdür e-postası (onay + PDF’ler)' }), mEp),
+      el('div', { class: 'sv-alan' }, el('label', { text: 'Direktör e-postası (kapanış bilgisi)' }), dEp)));
+    const pdfBtn = el('button', { class: 'btn', type: 'button', text: 'PDF önizle', on: { click: async () => { try { await pdfIndir(set[secili], t); } catch (e) { O.bildirim(hataMetni(e)); } } } });
+    const kayBtn = el('button', { class: 'btn', type: 'button', text: 'Taslağı kaydet', on: { click: () => taslakKaydet(t, set) } });
+    const onBtn = el('button', { class: 'btn btn-lacivert', type: 'button', text: 'Onayla ve müdüre gönder', on: { click: () => onayVer(t, set, +sure.value, mEp.value, dEp.value, onBtn) } });
+    const redBtn = el('button', { class: 'btn btn-hayalet', type: 'button', text: 'Reddet', on: { click: () => reddet(t) } });
+    govde.append(el('div', { class: 'sv-dugmeler', style: { marginTop: '12px' } }, onBtn, kayBtn, pdfBtn, redBtn));
+  }).catch((e) => { govde.textContent = 'Taslaklar hazırlanamadı: ' + hataMetni(e); });
+}
+async function taslakKaydet(t, set) {
+  try {
+    await setDoc(doc(db, 'savunmalar', t.id, 'ik', 'taslak'), { istem: S.belgeTemizle(set.istem), tutanak: S.belgeTemizle(set.tutanak), imtina: S.belgeTemizle(set.imtina), kaynak: set.kaynak === 'hukukcu' && !set.degisti ? 'hukukcu' : 'ik', hukukcu: set.hukukcu || null, guncelleme: serverTimestamp(), guncelleyen: HAM_AD });
+    O.bildirim('Taslak kaydedildi.');
+  } catch (e) { O.bildirim('Kaydedilemedi: ' + hataMetni(e)); }
+}
+function reddet(t) {
+  const not = el('textarea', { class: 'sv-paragraf', maxlength: String(S.SINIR.not), placeholder: 'Müdüre görünecek açıklama (ör. olay savunma gerektirmiyor, sözlü uyarı yeterli)' });
+  modal({ baslik: 'Talep reddedilsin mi?', govde: el('div', null, el('div', { text: 'Müdür talebin reddedildiğini ve notunuzu portalda görür.' }), not), dugmeler: [{ metin: 'Vazgeç', sinif: 'btn-hayalet' }, { metin: 'Reddet', sinif: 'btn-lacivert', tikla: async (k) => {
+    k();
+    try { await updateDoc(doc(db, 'savunmalar', t.id), { durum: 'reddedildi', red: { ad: HAM_AD, zaman: serverTimestamp(), not: not.value.replace(/[<>]/g, '').trim().slice(0, S.SINIR.not) }, gecmis: arrayUnion(gecmisOge('Talep İnsan Kaynakları tarafından reddedildi')), guncelleme: serverTimestamp() }); O.bildirim('Talep reddedildi.'); }
+    catch (e) { O.bildirim('Reddedilemedi: ' + hataMetni(e)); }
+  } }] });
+}
+async function onayVer(t, set, sure, mEp, dEp, btn) {
+  mEp = String(mEp || '').trim().toLowerCase(); dEp = String(dEp || '').trim().toLowerCase();
+  if (mEp && !S.epostaGecerli(mEp)) { O.bildirim('Müdür e-postası @inciroglu.com.tr ile bitmeli.'); return; }
+  if (dEp && !S.epostaGecerli(dEp)) { O.bildirim('Direktör e-postası @inciroglu.com.tr ile bitmeli.'); return; }
+  const uyari = [!mEp ? 'Müdür e-postası boş: onay e-postası GİTMEZ (belgeleri müdür portalda indirebilir).' : '', !dEp ? 'Direktör e-postası boş: kapanışta direktöre e-posta gitmez.' : ''].filter(Boolean).join(' ');
+  modal({ baslik: 'Belgeler onaylansın mı?', govde: el('div', null, el('div', { text: 'Savunma istem yazısı ve olay tespit tutanağı PDF olarak hazırlanıp talebe eklenecek' + (mEp ? ' ve müdüre otomatik e-postayla gönderilecek.' : '.') + (uyari ? ' ' + uyari : '') }),
+    el('dl', { class: 'sv-dl', style: { marginTop: '10px' } }, el('dt', { text: 'Müdür (onay + PDF)' }), el('dd', { text: mEp || '—' }), el('dt', { text: 'Direktör (kapanış)' }), el('dd', { text: dEp || '—' }), el('dt', { text: 'Savunma süresi' }), el('dd', { text: sure + ' iş günü' }))), dugmeler: [{ metin: 'Vazgeç', sinif: 'btn-hayalet' }, { metin: 'Onayla', sinif: 'btn-lacivert', tikla: async (k) => {
+    k(); if (MESGUL) return; MESGUL = true; btn.disabled = true; btn.textContent = 'PDF hazırlanıyor…';
+    try {
+      const istem = S.belgeTemizle(set.istem), tutanak = S.belgeTemizle(set.tutanak);
+      const tt = Object.assign({}, t, { sure });
+      const [b1, b2] = await Promise.all([pdfBase64(istem, tt), pdfBase64(tutanak, tt)]);
+      if (b1.length > 900000 || b2.length > 900000) throw new Error('PDF beklenenden büyük.');
+      btn.textContent = 'Kaydediliyor…';
+      await setDoc(doc(db, 'savunmalar', t.id, 'ik', 'taslak'), { istem, tutanak, imtina: S.belgeTemizle(set.imtina), kaynak: set.kaynak === 'hukukcu' && !set.degisti ? 'hukukcu' : (set.degisti ? 'ik' : set.kaynak), hukukcu: set.hukukcu || null, guncelleme: serverTimestamp(), guncelleyen: HAM_AD });
+      await setDoc(doc(db, 'savunmalar', t.id, 'ekler', 'istem'), { veri: b1, ad: S.dosyaAdi(t.no, istem.baslik), boyut: Math.round(b1.length * 3 / 4) });
+      await setDoc(doc(db, 'savunmalar', t.id, 'ekler', 'tutanak'), { veri: b2, ad: S.dosyaAdi(t.no, tutanak.baslik), boyut: Math.round(b2.length * 3 / 4) });
+      const qref = mEp ? doc(collection(db, 'epostaKuyrugu')) : null;
+      const b = writeBatch(db);
+      b.update(doc(db, 'savunmalar', t.id), { durum: 'onaylandi', ik: { ad: HAM_AD, zaman: serverTimestamp() }, mudurEposta: mEp, direktorEposta: dEp, sure, gecmis: arrayUnion(gecmisOge('Belgeler İnsan Kaynakları tarafından onaylandı' + (mEp ? '; müdüre e-postayla gönderildi' : ''))), guncelleme: serverTimestamp(), sonBildirim: qref ? qref.id : (t.sonBildirim || '') });
+      if (qref) b.set(qref, { kime: mEp, kimeAd: String(kisiAd((t.mudur || {}).ad)).replace(/[@,;"<>]/g, ' ').slice(0, 120), konu: '', html: '', sablon: 'onay', kaynak: 'savunma', ilgili: t.id, durum: 'bekliyor', olusturma: serverTimestamp(), olusturan: HAM_AD });
+      await b.commit();
+      TASLAK.delete(t.id);
+      MESGUL = false; O.bildirim('Belgeler onaylandı' + (qref ? '; müdüre e-posta kuyruğa alındı.' : '.'));
+    } catch (e) { MESGUL = false; btn.disabled = false; btn.textContent = 'Onayla ve müdüre gönder'; modal({ baslik: 'Onaylanamadı', govde: el('div', { text: hataMetni(e) }), dugmeler: [{ metin: 'Tamam', sinif: 'btn-lacivert' }] }); }
+  } }] });
+}
+
+/* ============================================================== 4) AYARLAR (İK ekibi) */
+async function ayarSayfasi(kok) {
+  kaput('Savunma Talepleri · Ayarlar', 'İK ekibi, ekip listeleri ve e-posta adresleri.');
+  kok.append(el('div', { class: 'sv-arac' }, el('a', { class: 'btn btn-hayalet', href: '#/talepler', text: '← Talepler' })));
+  const form = el('div', { id: 'svForm' }); kok.append(form);
+  /* hesaplar (yalnız İK rolü listeler) + personel listesi */
+  let hesaplar = [], personel = [], hata = '';
+  try { const qs = await getDocs(collection(db, 'hesaplar')); qs.forEach((d) => hesaplar.push(Object.assign({ hid: d.id }, d.data()))); } catch (e) { hata = 'Hesap listesi okunamadı (İK rolü gerekir): ' + hataMetni(e); }
+  try { const s = await getDoc(doc(db, 'satisVeri', 'mrPersonel')); personel = s.exists() && Array.isArray(s.data().aktif) ? s.data().aktif : []; } catch (e) { hata = hata || ('Personel listesi okunamadı: ' + hataMetni(e)); }
+  if (!ESLEME) { try { const s = await getDoc(doc(db, 'savunmaAyar', 'esleme')); ESLEME = s.exists() ? s.data() : { eposta: {}, ekMudurluk: {} }; ESLEME_HATA = false; } catch (e) { ESLEME = { eposta: {}, ekMudurluk: {} }; ESLEME_HATA = true; } }
+  if (ESLEME_HATA) hata = hata || 'Kayıtlı e-posta adresleri okunamadı.';
+  /* bir liste okunamadıysa kaydetme kapalı: eksik listeyle kaydetmek kayıtlı adresleri / vekâletleri siler */
+  const KAYIT_KAPALI = !!hata;
+  if (hata) form.append(el('div', { class: 'sv-bilgi uyari', text: hata + ' Bu yüzden ekip listesi ve e-posta kaydetme düğmeleri kapalı; sayfayı yenileyip tekrar deneyin.' }));
+  const hAd = new Map(hesaplar.map((h) => [h.hid, h.ad]));
+  const yonetici = hesaplar.filter((h) => h.aktif !== false && (h.roller || []).some((r) => ['mudur', 'satis_mudur', 'servis_mudur', 'idari_mudur', 'direktor'].indexOf(r) >= 0)).sort((a, b) => String(a.ad).localeCompare(String(b.ad), 'tr'));
+  const adlar = S.yoneticiAdlari(personel);
+  const ek = JSON.parse(JSON.stringify((ESLEME && ESLEME.ekMudurluk) || {}));
+  const ep = Object.assign({}, (ESLEME && ESLEME.eposta) || {});
+
+  /* (a) İK ekibi */
+  const ekip = new Set((ERISIM && ERISIM.hidler) || [HID]);
+  const ekipKart = el('section', { class: 'sv-kart' }, el('h3', { text: 'İK ekibi' }), el('div', { class: 'sv-kart-alt', text: 'Tüm talepleri, Hukukçu taslaklarını görür ve onaylar. Listeyi yalnız kurulum İK hesabı değiştirir (en çok 10 kişi).' }));
+  const ekipListe = el('div'); ekipKart.append(ekipListe);
+  const ekipCiz = () => { ekipListe.textContent = ''; ekip.forEach((h) => ekipListe.append(el('span', { class: 'sv-etiket' }, kisiAd(hAd.get(h) || h), KURUCU && h !== HID ? el('button', { type: 'button', 'aria-label': 'Çıkar', text: '×', on: { click: () => { ekip.delete(h); ekipCiz(); } } }) : null))); };
+  ekipCiz();
+  if (KURUCU) {
+    const sec = el('select', { class: 'secim' }, el('option', { value: '', text: 'Kişi ekle…' }), ...hesaplar.filter((h) => h.aktif !== false).sort((a, b) => String(a.ad).localeCompare(String(b.ad), 'tr')).map((h) => el('option', { value: h.hid, text: kisiAd(h.ad) })));
+    sec.addEventListener('change', () => { if (sec.value) { if (ekip.size >= 10) O.bildirim('En çok 10 kişi.'); else ekip.add(sec.value); sec.value = ''; ekipCiz(); } });
+    ekipKart.append(el('div', { class: 'sv-dugmeler' }, sec, el('button', { class: 'btn btn-lacivert', type: 'button', text: 'İK ekibini kaydet', on: { click: async () => {
+      try { ekip.add(HID); await setDoc(doc(db, 'savunmaAyar', 'erisim'), { hidler: Array.from(ekip).slice(0, 10), guncelleme: serverTimestamp(), guncelleyen: HAM_AD }); O.bildirim('İK ekibi kaydedildi.'); }
+      catch (e) { O.bildirim('Kaydedilemedi: ' + hataMetni(e)); }
+    } } })));
+  }
+  form.append(ekipKart);
+
+  /* (b) ekip listeleri */
+  const kadroKart = el('section', { class: 'sv-kart' }, el('h3', { text: 'Ekip listeleri' }),
+    el('div', { class: 'sv-kart-alt', text: 'Müdür, Kolay İK Çalışan Listesi’nde “Müdürlük” alanında adı yazan çalışanları görür. Kaynak: İK Sistemi personel listesi (' + personel.length + ' aktif çalışan). Vekâlet için müdüre ek müdürlük ekleyin.' }));
+  const kadroSonuc = el('div', { class: 'sv-alt' });
+  const satirlar = el('div');
+  yonetici.forEach((h) => {
+    const say = personel.filter((p) => [h.ad].concat(ek[h.hid] || []).map(S.adAnahtari).indexOf(S.adAnahtari(p.mudurluk)) >= 0 && S.adAnahtari(p.ad) !== S.adAnahtari(h.ad)).length;
+    const etk = el('div');
+    const etkCiz = () => { etk.textContent = ''; (ek[h.hid] || []).forEach((m) => etk.append(el('span', { class: 'sv-etiket' }, '+ ' + kisiAd(m), el('button', { type: 'button', text: '×', 'aria-label': 'Kaldır', on: { click: () => { ek[h.hid] = (ek[h.hid] || []).filter((x) => x !== m); if (!ek[h.hid].length) delete ek[h.hid]; etkCiz(); } } })))); };
+    etkCiz();
+    const sec = el('select', { class: 'secim' }, el('option', { value: '', text: 'Ek müdürlük (vekâlet)…' }), ...adlar.mudurlukler.filter((m) => S.adAnahtari(m) !== S.adAnahtari(h.ad)).map((m) => el('option', { value: m, text: kisiAd(m) })));
+    sec.addEventListener('change', () => { if (sec.value) { ek[h.hid] = Array.from(new Set((ek[h.hid] || []).concat([sec.value]))).slice(0, 5); sec.value = ''; etkCiz(); } });
+    satirlar.append(el('div', { class: 'sv-liste-satir' }, el('div', null, el('b', { text: kisiAd(h.ad) }), el('small', { text: (h.roller || []).map((r) => ROL_ADI[r] || r).join(', ') + ' · ekibinde ' + say + ' kişi' }), etk), sec));
+  });
+  kadroKart.append(satirlar);
+  const kadroBtn = el('button', { class: 'btn btn-lacivert', type: 'button', text: 'Ekip listelerini güncelle', on: { click: async () => {
+    if (!personel.length || !hesaplar.length) { O.bildirim('Personel ya da hesap listesi okunamadı.'); return; }
+    kadroBtn.disabled = true; kadroBtn.textContent = 'Güncelleniyor…';
+    try {
+      await eslemeKaydet(ep, ek);
+      const K = S.kadroKur(personel, hesaplar, ek);
+      const mevcut = await getDocs(collection(db, 'savunmaKadro'));
+      /* Güvenlik kuralı her yazımda erişim listesini okur; toplu yazmada istek başına belge okuma sınırı (20) aşılmasın diye
+         işlemler 4'erli parçalarla gönderilir (ayrilis.html / oryantasyon-sorumlu.html ile aynı yaklaşım). */
+      const isler = Object.keys(K).map((hid) => (b) => b.set(doc(db, 'savunmaKadro', hid), Object.assign({}, K[hid], { guncelleme: serverTimestamp(), guncelleyen: HAM_AD })));
+      mevcut.forEach((d) => { if (!K[d.id]) isler.push((b) => b.delete(d.ref)); });
+      for (let i = 0; i < isler.length; i += 4) { const b = writeBatch(db); isler.slice(i, i + 4).forEach((f) => f(b)); await b.commit(); }
+      const kisi = Object.values(K).reduce((a, x) => a + x.liste.length, 0);
+      const bagli = new Set(); Object.values(K).forEach((x) => x.liste.forEach((p) => bagli.add(S.adAnahtari(p.ad))));
+      const sahipsiz = personel.filter((p) => p.mudurluk && !bagli.has(S.adAnahtari(p.ad))).length;
+      kadroSonuc.textContent = Object.keys(K).length + ' yönetici için ekip listesi yazıldı (' + kisi + ' çalışan). Müdürlüğündeki kişinin portal hesabı olmayan ' + sahipsiz + ' çalışan listede yok.';
+      O.bildirim('Ekip listeleri güncellendi.');
+    } catch (e) { O.bildirim('Güncellenemedi: ' + hataMetni(e)); }
+    kadroBtn.disabled = false; kadroBtn.textContent = 'Ekip listelerini güncelle';
+  } } });
+  kadroBtn.disabled = KAYIT_KAPALI;
+  kadroKart.append(el('div', { class: 'sv-dugmeler' }, kadroBtn), kadroSonuc);
+  form.append(kadroKart);
+
+  /* (c) e-posta adresleri */
+  const epKart = el('section', { class: 'sv-kart' }, el('h3', { text: 'E-posta adresleri' }), el('div', { class: 'sv-kart-alt', text: 'Onay e-postası talebi açan müdüre, kapanış bilgisi çalışanın direktörüne gider. Yalnız @inciroglu.com.tr adresleri.' }));
+  const kisiler = new Map();
+  yonetici.forEach((h) => kisiler.set(S.adAnahtari(h.ad), { ad: h.ad, tur: 'Yönetici' }));
+  adlar.direktorler.forEach((d) => { const k = S.adAnahtari(d); if (!kisiler.has(k)) kisiler.set(k, { ad: d, tur: 'Direktör' }); else kisiler.get(k).tur = 'Direktör / yönetici'; });
+  const epGirdi = new Map();
+  Array.from(kisiler.entries()).sort((a, b) => String(a[1].ad).localeCompare(String(b[1].ad), 'tr')).forEach(([k, v]) => {
+    const g = el('input', { class: 'girdi', type: 'email', value: ep[k] || '', placeholder: 'ad.soyad@inciroglu.com.tr' });
+    epGirdi.set(k, g);
+    epKart.append(el('div', { class: 'sv-liste-satir' }, el('div', null, el('b', { text: kisiAd(v.ad) }), el('small', { text: v.tur })), g));
+  });
+  const doldur = el('button', { class: 'btn', type: 'button', text: 'Personel Talepleri ayarlarından doldur', on: { click: async () => {
+    try {
+      const s = await getDoc(doc(db, 'talepAyar', 'zincir')); const z = s.exists() ? s.data() : {}; let n = 0;
+      const koy = (kisi) => { if (!kisi || !kisi.ad || !S.epostaGecerli(kisi.eposta)) return; const g = epGirdi.get(S.adAnahtari(kisi.ad)); if (g && !g.value) { g.value = kisi.eposta; n++; } };
+      Object.values(z.departmanlar || {}).forEach((d) => koy(d.direktor)); koy(z.ikDirektor);
+      O.bildirim(n + ' adres dolduruldu. Kaydetmeyi unutmayın.');
+    } catch (e) { O.bildirim('Okunamadı: ' + hataMetni(e)); }
+  } } });
+  const kaydet = el('button', { class: 'btn btn-lacivert', type: 'button', text: 'E-posta ve vekâletleri kaydet', on: { click: async () => {
+    const yeni = {}; let bozuk = 0;
+    epGirdi.forEach((g, k) => { const v = g.value.trim().toLowerCase(); if (!v) return; if (S.epostaGecerli(v)) yeni[k] = v; else bozuk++; });
+    if (bozuk) { O.bildirim(bozuk + ' adres geçersiz (@inciroglu.com.tr olmalı).'); return; }
+    try { await eslemeKaydet(yeni, ek); Object.keys(ep).forEach((x) => delete ep[x]); Object.assign(ep, yeni); O.bildirim('Kaydedildi.'); } catch (e) { O.bildirim('Kaydedilemedi: ' + hataMetni(e)); }
+  } } });
+  kaydet.disabled = KAYIT_KAPALI;
+  epKart.append(el('div', { class: 'sv-dugmeler' }, kaydet, doldur));
+  form.append(epKart);
+}
+async function eslemeKaydet(eposta, ekMudurluk) {
+  const temizEk = {}; Object.keys(ekMudurluk || {}).forEach((h) => { const l = (ekMudurluk[h] || []).filter(Boolean).slice(0, 5); if (l.length) temizEk[h] = l; });
+  const veri = { eposta: eposta || {}, ekMudurluk: temizEk, guncelleme: serverTimestamp(), guncelleyen: HAM_AD };
+  await setDoc(doc(db, 'savunmaAyar', 'esleme'), veri);
+  ESLEME = { eposta: veri.eposta, ekMudurluk: temizEk };
+}
+
+if (TALEP_HAZIR) ciz();
+setTimeout(() => { if (!TALEP_HAZIR) { acilisGizle(); ciz(); } }, 8000);
+if (TEST_KANCA()) window.__SV = { S, TALEP, ciz, rota, IKEKIP: () => IKEKIP, KADRO: () => KADRO };
+function TEST_KANCA() { return !!window.__TEST; }
+</script>
+</body>
+</html>

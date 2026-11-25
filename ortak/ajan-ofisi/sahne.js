@@ -26,7 +26,9 @@ export const MASA = {
   genel_mudur: { x: 1440, y: 92, via: [{ x: 1566, y: 92 }, { x: 1566, y: 262 }] },
   ik_stratejisti: { x: 110, y: 560 }, viral_tahmincisi: { x: 290, y: 560 },
   web_gelistirici: { x: 1010, y: 560 }, yazilimci: { x: 1160, y: 560 },
-  ofis_muduru: { x: 1350, y: 560 }, veri_analisti: { x: 1500, y: 560 }
+  ofis_muduru: { x: 1350, y: 560 }, veri_analisti: { x: 1500, y: 560 },
+  /* 25.11.2026: Hukukçu, Strateji odasının ikinci sırası; iki masanın arasındaki koridordan girer */
+  hukukcu: { x: 110, y: 760, via: [{ x: 200, y: 760 }, { x: 200, y: 505 }] }
 };
 /* Masa yüzeyinin merkezi (çalışan masa başında bu noktaya bakar) */
 export function masaMerkezi(rol) {
@@ -106,7 +108,7 @@ function el(tag, at, ebeveyn) {
 function yazi(ebeveyn, x, y, metin, at) { const t = el('text', Object.assign({ x, y }, at || {}), ebeveyn); t.textContent = metin; return t; }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
-export const KADIN = new Set(['Selin', 'Deniz', 'Ece', 'Defne', 'Melis', 'Irmak', 'Sinem', 'Nazlı', 'İpek', 'Derya', 'Sude', 'Lale', 'Asya', 'Ezgi', 'Damla', 'Nehir', 'Gizem', 'Tuba', 'Ilgın', 'Yağmur', 'Beren', 'Bilge', 'Ceren', 'Aslı']);
+export const KADIN = new Set(['Zeynep', 'Selin', 'Deniz', 'Ece', 'Defne', 'Melis', 'Irmak', 'Sinem', 'Nazlı', 'İpek', 'Derya', 'Sude', 'Lale', 'Asya', 'Ezgi', 'Damla', 'Nehir', 'Gizem', 'Tuba', 'Ilgın', 'Yağmur', 'Beren', 'Bilge', 'Ceren', 'Aslı']);
 export const TEN = ['#f2cfac', '#e6b48a', '#c98d5f', '#f6dcc3', '#d9a273'];
 export const SAC = ['#2a1c12', '#4a3324', '#6e4f33', '#1d1d1f', '#8b6a49', '#3a2a22'];
 export function tohum(s) { let h = 2166136261; for (const c of String(s)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return Math.abs(h); }
