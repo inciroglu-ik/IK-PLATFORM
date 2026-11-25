@@ -41,31 +41,42 @@ export function kopruKur() {
     await w.write(metin); await w.close();
   }
   const guvenliAd = (ad) => String(ad || '').replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 120);
+  /* 25.11.2026: doğru klasör mü? Ajan Ofisi kökünde Claude Code protokolü (CLAUDE-OKU.md) bulunur. İçindeki
+     "sonuclar" / "isler" klasörü yanlışlıkla seçilirse işler ve sonuçlar birbirini bulamaz. Yanıt gelmezse engel olmaz. */
+  async function kokDogruMu(h) {
+    try {
+      return await Promise.race([h.getFileHandle('CLAUDE-OKU.md').then(() => true), new Promise((coz) => setTimeout(() => coz(true), 5000))]);
+    } catch (e) { return !(e && (e.name === 'NotFoundError' || e.name === 'TypeMismatchError')); }
+  }
+  const YANLIS_METIN = (ad) => '“' + ad + '” klasörü Ajan Ofisi klasörü değil. Masaüstü › Ajan Ofisi klasörünün kendisini seçin (içindeki “sonuclar” ya da “isler” klasörünü değil).';
 
   return {
     destek,
     durum: () => durum,
     klasorAdi: () => (kok && kok.name) || '',
     async baslat() {
-      if (mock) { kok = mock; durum = 'hazir'; await altKlasorler(); return durum; }
+      if (mock) { kok = mock; durum = (mock.dogrula && !(await kokDogruMu(kok))) ? 'yanlis' : 'hazir'; if (durum === 'hazir') await altKlasorler(); return durum; }
       if (!destek) return (durum = 'desteklenmiyor');
       kok = await tutamakAl();
       if (!kok) return (durum = 'yok');
       try { durum = (await Promise.race([kok.queryPermission({ mode: 'readwrite' }), new Promise((coz) => setTimeout(() => coz('zaman'), 5000))])) === 'granted' ? 'hazir' : 'izin'; }
       catch (e) { durum = 'izin'; }
+      if (durum === 'hazir' && !(await kokDogruMu(kok))) durum = 'yanlis';
       if (durum === 'hazir') { try { await altKlasorler(); } catch (e) { durum = 'izin'; } }
       return durum;
     },
-    /* Kullanıcı tıklamasıyla çağrılmalı (tarayıcı izni) */
+    /* Kullanıcı tıklamasıyla çağrılmalı (tarayıcı izni). Seçici masaüstünde açılır (yeni kimlik: eski seçim hatırlanmaz). */
     async bagla() {
       if (!destek) throw new Error('Bu tarayıcı klasör erişimini desteklemiyor. Chrome ya da Edge kullanın.');
-      const h = await window.showDirectoryPicker({ id: 'ajan-ofisi', mode: 'readwrite', startIn: 'desktop' });
+      const h = await window.showDirectoryPicker({ id: 'ajan-ofisi-kok', mode: 'readwrite', startIn: 'desktop' });
+      if (!(await kokDogruMu(h))) { const e = new Error(YANLIS_METIN(h.name)); e.name = 'YanlisKlasor'; throw e; }
       kok = h; await tutamakKoy(h); await altKlasorler(); durum = 'hazir';
       return durum;
     },
     async izinIste() {
       if (!kok) return this.bagla();
       durum = (await kok.requestPermission({ mode: 'readwrite' })) === 'granted' ? 'hazir' : 'izin';
+      if (durum === 'hazir' && !(await kokDogruMu(kok))) durum = 'yanlis';
       if (durum === 'hazir') await altKlasorler();
       return durum;
     },

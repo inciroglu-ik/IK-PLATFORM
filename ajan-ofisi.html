@@ -531,6 +531,7 @@ function seritCiz() {
     if (d === 'desteklenmiyor') html = '<span>Claude Code köprüsü için ofisi <b>Chrome</b> ya da <b>Edge</b> ile açın (bu tarayıcı klasör erişimini desteklemiyor).</span>';
     else if (d === 'yok') html = '<span>Ekibin beyni <b>Claude Code</b>. İşlerin gidip geleceği <b>Masaüstü › Ajan Ofisi</b> klasörünü bir kez bağlayın.</span><button class="btn kucuk ana-btn" style="margin-left:auto" data-klasor="bagla">Klasörü bağla</button>';
     else if (d === 'izin') html = '<span>Tarayıcı, <b>Ajan Ofisi</b> klasörüne erişim iznini yeniden soruyor.</span><button class="btn kucuk ana-btn" style="margin-left:auto" data-klasor="izin">İzin ver</button>';
+    else if (d === 'yanlis') html = '<span>Yanlış klasör bağlı: <b>“' + esc(kopru.klasorAdi()) + '”</b>. <b>Masaüstü › Ajan Ofisi</b> klasörünün kendisini seçin (içindeki “sonuclar” ya da “isler” klasörünü değil).</span><button class="btn kucuk ana-btn" style="margin-left:auto" data-klasor="bagla">Doğru klasörü seç</button>';
     else if (S.bekleyenCC) html = '<span><b>' + S.bekleyenCC + ' iş</b> Claude Code’u bekliyor. VS Code’da Claude Code’a <b>ofis</b> yazın; ekip çalışırken burada izleyebilirsiniz.</span>';
   } else if (!S.anahtarlar.claude) {
     html = '<span>Ekibin beyni Claude API seçili ama <b>API anahtarı</b> girilmemiş.</span><button class="btn kucuk ana-btn" style="margin-left:auto" data-ac="ayarlar">Ayarlar’ı aç</button>';
@@ -630,7 +631,7 @@ function ustBilgi() {
   $('cip-harcama-bugun').hidden = cc; $('cip-harcama-ay').hidden = cc; $('cip-beyin').hidden = !cc;
   if (cc) {
     const d = kopru.durum();
-    $('cip-beyin-metin').innerHTML = 'Beyin: <b>Claude Code</b>' + (d === 'hazir' ? (S.bekleyenCC ? ' · ' + S.bekleyenCC + ' iş bekliyor' : ' · klasör bağlı') : ' · klasör bağlı değil');
+    $('cip-beyin-metin').innerHTML = 'Beyin: <b>Claude Code</b>' + (d === 'hazir' ? (S.bekleyenCC ? ' · ' + S.bekleyenCC + ' iş bekliyor' : ' · klasör bağlı') : d === 'yanlis' ? ' · yanlış klasör' : ' · klasör bağlı değil');
     $('cip-beyin').classList.toggle('uyari', d !== 'hazir' || !!S.bekleyenCC);
   }
   const ay = durum.ayHarcama(); const bugun = K.trTarih();
@@ -905,7 +906,7 @@ function zamanTablosuCiz() {
 function ayarlarCiz(ic) {
   const z = S.zaman || {};
   const kd = kopru.durum();
-  const kdMetin = kd === 'hazir' ? '“' + kopru.klasorAdi() + '” bağlı' : kd === 'izin' ? 'izin gerekiyor' : kd === 'desteklenmiyor' ? 'bu tarayıcı desteklemiyor (Chrome/Edge)' : 'bağlı değil';
+  const kdMetin = kd === 'hazir' ? '“' + kopru.klasorAdi() + '” bağlı' : kd === 'yanlis' ? 'yanlış klasör (“' + kopru.klasorAdi() + '”), Ajan Ofisi’ni seçin' : kd === 'izin' ? 'izin gerekiyor' : kd === 'desteklenmiyor' ? 'bu tarayıcı desteklemiyor (Chrome/Edge)' : 'bağlı değil';
   ic.innerHTML =
     '<div class="bolum"><h3>Ekibin beyni</h3>' +
       '<label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="radio" name="a-motor" value="claude-code"' + (ccMi() ? ' checked' : '') + '><span><b>Claude Code</b> — aboneliğiniz, ayrı fatura yok</span></label>' +
