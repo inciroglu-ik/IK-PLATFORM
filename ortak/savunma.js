@@ -147,11 +147,14 @@ export function belgeGecerli(d) {
   return !!(d && typeof d.baslik === 'string' && Array.isArray(d.paragraflar) && d.paragraflar.length >= 1 && d.paragraflar.length <= SINIR.paragrafSay
     && d.paragraflar.every((p) => typeof p === 'string' && p.length <= SINIR.paragraf) && Array.isArray(d.ust) && Array.isArray(d.imzalar));
 }
-/** Firestore'a yazılacak belge (temizlenmiş, sınırlı) */
+/** Üst bilgi satırı: şablon/Hukukçu [etiket, değer] dizisi yazar; Firestore'da { e, d } nesnesi durur (Firestore dizi içinde
+    dizi kabul etmez — 26.11.2026 hatası). Ekran ve PDF iki biçimi de bununla okur. */
+export const ustSatir = (r) => (Array.isArray(r) ? [r[0], r[1]] : [r && r.e, r && r.d]);
+/** Firestore'a yazılacak belge (temizlenmiş, sınırlı; üst bilgi satırları { e, d } nesnesi) */
 export function belgeTemizle(d) {
   return {
     baslik: temiz(d.baslik, 80),
-    ust: (d.ust || []).slice(0, 8).map((r) => [temiz(r[0], 40), temiz(r[1], 200)]),
+    ust: (d.ust || []).slice(0, 8).map((r) => { const s = ustSatir(r); return { e: temiz(s[0], 40), d: temiz(s[1], 200) }; }),
     paragraflar: (d.paragraflar || []).slice(0, SINIR.paragrafSay).map((p) => Array.from(String(p == null ? '' : p).replace(/[<>]/g, '').replace(/\r/g, '').trim()).slice(0, SINIR.paragraf).join('')).filter((p) => p),
     ozel: d.ozel === 'savunma' ? 'savunma' : null,
     imzalar: (d.imzalar || []).slice(0, 6).map((i) => ({ baslik: temiz(i.baslik, 60), ad: temiz(i.ad, 80), unvan: temiz(i.unvan, 80) }))
@@ -167,7 +170,7 @@ export function pdfTanimi(d, o = {}) {
   icerik.push({ canvas: [{ type: 'line', x1: 0, y1: 0, x2: 483, y2: 0, lineWidth: 1, lineColor: LAC }], margin: [0, 0, 0, 16] });
   icerik.push({ text: d.baslik, alignment: 'center', bold: true, fontSize: 14, color: LAC, margin: [0, 0, 0, 14] });
   if (d.ust && d.ust.length) {
-    icerik.push({ table: { widths: [110, '*'], body: d.ust.map((r) => [{ text: r[0], bold: true, color: GRI, fontSize: 9.5 }, { text: r[1] || '—', fontSize: 10 }]) },
+    icerik.push({ table: { widths: [110, '*'], body: d.ust.map(ustSatir).map((r) => [{ text: r[0] || '', bold: true, color: GRI, fontSize: 9.5 }, { text: r[1] || '—', fontSize: 10 }]) },
       layout: { hLineColor: () => ACIK, vLineColor: () => ACIK, paddingTop: () => 4, paddingBottom: () => 4 }, margin: [0, 0, 0, 14] });
   }
   d.paragraflar.forEach((p) => icerik.push({ text: p, alignment: 'justify', fontSize: 10.5, lineHeight: 1.3, margin: [0, 0, 0, 8] }));

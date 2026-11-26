@@ -535,7 +535,7 @@ function taslakPaneli(sag, t) {
       sekme.querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.v === secili)));
       alan.textContent = '';
       const d = set[secili];
-      const ust = el('table', { class: 'sv-ust-tablo' }); d.ust.forEach((r) => ust.append(el('tr', null, el('td', { text: r[0] }), el('td', { text: r[1] }))));
+      const ust = el('table', { class: 'sv-ust-tablo' }); d.ust.map(S.ustSatir).forEach((r) => ust.append(el('tr', null, el('td', { text: r[0] || '' }), el('td', { text: r[1] || '' }))));
       alan.append(el('div', { class: 'sv-belge-bas', text: d.baslik }), ust);
       d.paragraflar.forEach((p, i) => { const ta = el('textarea', { class: 'sv-paragraf', maxlength: String(S.SINIR.paragraf), 'aria-label': (i + 1) + '. paragraf' }); ta.value = p; ta.addEventListener('input', () => { d.paragraflar[i] = ta.value; set.degisti = true; }); alan.append(ta); });
       if (d.ozel === 'savunma') alan.append(el('div', { class: 'sv-alt', text: '+ “Çalışanın yazılı savunması” alanı ve tebellüğ bölümü PDF’e otomatik eklenir.' }));
