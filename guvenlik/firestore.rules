@@ -1158,28 +1158,43 @@ service cloud.firestore {
     }
     function svDosya(d) {
       return d is map && d.keys().hasOnly(['ad', 'boyut', 'parca']) && d.keys().hasAll(['ad', 'boyut', 'parca'])
-        && metin(d.ad, 200) && d.ad.matches('(?i).+[.]pdf') && d.boyut is int && d.boyut > 0 && d.boyut <= 6700000
+        && metin(d.ad, 200) && d.ad.matches('.+[.][pP][dD][fF]') && d.boyut is int && d.boyut > 0 && d.boyut <= 6700000
         && d.parca is int && d.parca >= 1 && d.parca <= 10;
     }
     // Kapanış: imtinada dosya alanı yok; taramada dosya bilgisi + ilk ve son parça GERÇEKTEN yüklenmiş olmalı.
+    // (26.11.2026) Yol yalnız $(değişken) kalıbıyla kurulur (yol() ile aynı); parça adı sabit listeden seçilir.
+    function svTaramaYol(id, p) { return /databases/$(database)/documents/savunmalar/$(id)/tarama/$(p); }
     function svTaramaVar(id, d) {
-      return exists(/databases/$(database)/documents/savunmalar/$(id)/tarama/x_0)
-        && exists(/databases/$(database)/documents/savunmalar/$(id)/tarama/$('x_' + string(d.parca - 1)));
+      return exists(svTaramaYol(id, 'x_0'))
+        && exists(svTaramaYol(id, ['x_0', 'x_1', 'x_2', 'x_3', 'x_4', 'x_5', 'x_6', 'x_7', 'x_8', 'x_9'][d.parca - 1]));
     }
+    function svKapanisVeri(id, k) {
+      return k is map && k.keys().hasOnly(['tur', 'ad', 'zaman', 'not', 'dosya']) && k.keys().hasAll(['tur', 'ad', 'zaman', 'not'])
+        && k.tur in ['tarama', 'imtina'] && k.ad == hesap().ad && k.zaman == request.time && metin(k.not, 1000)
+        && ((k.tur == 'imtina' && !('dosya' in k)) || (k.tur == 'tarama' && ('dosya' in k) && svDosya(k.dosya) && svTaramaVar(id, k.dosya)));
+    }
+    // (26.11.2026) "kapanis" alanı yalnız gerçekten varsa okunur: yoksa Firestore alan hatası verir ve tüm güncelleme reddedilir.
     function svKapanis(id, y, o) {
-      let k = y.kapanis;
       return (svIk() || (gecerli() && o.mudur.hid == benimHid())) && o.durum == 'onaylandi' && y.durum == 'kapandi'
         && svDegisen(y, o, ['durum', 'kapanis', 'gecmis', 'guncelleme', 'sonBildirim'])
-        && k is map && k.keys().hasOnly(['tur', 'ad', 'zaman', 'not', 'dosya']) && k.keys().hasAll(['tur', 'ad', 'zaman', 'not'])
-        && k.tur in ['tarama', 'imtina'] && k.ad == hesap().ad && k.zaman == request.time && metin(k.not, 1000)
-        && ((k.tur == 'imtina' && !('dosya' in k)) || (k.tur == 'tarama' && svDosya(k.get('dosya', null)) && svTaramaVar(id, k.dosya)))
+        && ('kapanis' in y) && svKapanisVeri(id, y.kapanis)
         && svGecmis(y, o);
     }
     function svFiziki(y, o) {
       return svIk() && o.durum in ['onaylandi', 'kapandi']
         && svDegisen(y, o, ['fiziki', 'gecmis', 'guncelleme'])
+        && ('fiziki' in y)
         && (y.fiziki == null || (y.fiziki is map && y.fiziki.keys().hasOnly(['ad', 'zaman']) && y.fiziki.ad == hesap().ad && y.fiziki.zaman == request.time))
         && svGecmis(y, o);
+    }
+    // (26.11.2026) Durum geçişine göre YALNIZ ilgili denetim çalışır (öteki dallar ilk koşulda "false" ile kısa devre yapar;
+    // böylece bir dalın alan hatası başka bir geçişi reddettiremez).
+    function svGecis(id, y, o) {
+      return (y.durum == 'onaylandi' && o.durum == 'ik_onayinda' && svOnay(y, o))
+        || (y.durum == 'reddedildi' && o.durum == 'ik_onayinda' && svRed(y, o))
+        || (y.durum == 'iptal' && o.durum == 'ik_onayinda' && svIptal(y, o))
+        || (y.durum == 'kapandi' && o.durum == 'onaylandi' && svKapanis(id, y, o))
+        || (y.durum == o.durum && svFiziki(y, o));
     }
     function svYeni(y) {
       return yonetim()
@@ -1197,8 +1212,7 @@ service cloud.firestore {
       allow get, list: if svOkur(resource.data);
       allow create: if otomatikKimlik(id) && svYeni(request.resource.data);
       allow update: if request.resource.data.guncelleme == request.time && request.resource.data.olusturma == resource.data.olusturma
-        && (svOnay(request.resource.data, resource.data) || svRed(request.resource.data, resource.data) || svIptal(request.resource.data, resource.data)
-          || svKapanis(id, request.resource.data, resource.data) || svFiziki(request.resource.data, resource.data));
+        && svGecis(id, request.resource.data, resource.data);
       allow delete: if false;
       // Hukukçu taslakları (savunma istem yazısı, tutanak, imtina tutanağı): YALNIZ İK ekibi (direktör ve müdür göremez).
       match /ik/{b} {
