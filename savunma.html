@@ -177,6 +177,28 @@ function hataMetni(e) {
   if (k === 'unavailable' || k === 'deadline-exceeded') return 'Bağlantı kurulamadı. İnternet bağlantınızı kontrol edip yeniden deneyin.';
   return (e && e.message) || 'Beklenmeyen bir hata oluştu.';
 }
+/* Hata penceresi + yetki tanısı (26.11.2026): kaybolan bildirim yerine pencere. Yetki hatasında hangi işlemin reddedildiği ve
+   güvenlik kuralının bu oturumu İK ekibi sayıp saymadığı (savunmaAyar/erisim okunabiliyor mu) gösterilir. Kişisel veri yok:
+   yalnız oturum sahibinin kendi adı. */
+async function hataPenceresi(baslik, islem, e) {
+  try { console.warn('[savunma]', islem, e && e.code, e && e.message); } catch (x) { /* yok */ }
+  const tamam = [{ metin: 'Tamam', sinif: 'btn-lacivert' }];
+  if (!e || e.code !== 'permission-denied') { modal({ baslik, govde: el('div', null, el('div', { text: hataMetni(e) }), el('div', { class: 'sv-alt', style: { marginTop: '8px' }, text: 'İşlem: ' + islem })), dugmeler: tamam }); return; }
+  let kural = 'denetlenemedi';
+  try { await getDoc(doc(db, 'savunmaAyar', 'erisim')); kural = 'var'; } catch (x) { kural = x && x.code === 'permission-denied' ? 'yok' : 'denetlenemedi'; }
+  const listede = !!(ERISIM && Array.isArray(ERISIM.hidler) && ERISIM.hidler.indexOf(HID) >= 0);
+  const yorum = kural === 'yok'
+    ? (IKEKIP ? 'Sayfa sizi İK ekibi olarak açtı, ancak güvenlik kuralı şu anda bu oturumu İK ekibi saymıyor. Sağ üstten çıkış yapıp yeniden giriş yapın ve tekrar deneyin; sürerse bu pencerenin ekran görüntüsünü gönderin.'
+      : 'Bu işlem yalnız Savunma İK ekibine açık. Kurulum İK hesabı Ayarlar › İK ekibi bölümünden sizi eklemeli.')
+    : kural === 'var' ? 'Hesabınız güvenlik kuralına göre İK ekibinde; kayıt, kuralın veri denetimine takıldı. Bu pencerenin ekran görüntüsünü gönderin: hangi adımın takıldığı aşağıda yazıyor.'
+      : 'Yetki denetimi yapılamadı (bağlantı). Sayfayı yenileyip tekrar deneyin.';
+  modal({ baslik, govde: el('div', null, el('div', { text: yorum }), el('dl', { class: 'sv-dl', style: { marginTop: '10px' } },
+    el('dt', { text: 'İşlem' }), el('dd', { text: islem }),
+    el('dt', { text: 'Oturum' }), el('dd', { text: AD + (KURUCU ? ' · kurulum İK hesabı' : '') + (IKEKIP ? ' · sayfada İK ekibi' : '') }),
+    el('dt', { text: 'İK ekibi listesinde' }), el('dd', { text: KURUCU ? 'gerekmiyor (kurulum hesabı)' : (listede ? 'evet' : 'hayır') }),
+    el('dt', { text: 'Kurala göre İK yetkisi' }), el('dd', { text: kural }),
+    el('dt', { text: 'Hata kodu' }), el('dd', { text: 'permission-denied' }))), dugmeler: tamam });
+}
 function zaman(ts) { try { const d = ts && typeof ts.toDate === 'function' ? ts.toDate() : (ts && ts.seconds ? new Date(ts.seconds * 1000) : (ts ? new Date(ts) : null)); return d && !isNaN(d) ? d : null; } catch (e) { return null; } }
 const zamanMetni = (ts) => { const d = zaman(ts); return d ? d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''; };
 const kisiAd = (s) => S.adGoster(s);
@@ -407,7 +429,8 @@ function talepSayfasi(kok, id) {
   if (IKEKIP) ikPaneli(sag, t);
   else if (BENIM) mudurPaneli(sag, t);
   else sag.append(el('section', { class: 'sv-kart' }, el('h3', { text: 'Durum' }), el('div', { class: 'sv-metin', text: (S.DURUM[t.durum] || {}).ad || t.durum }),
-    t.fiziki ? el('div', { class: 'sv-kart-alt', text: 'Islak imzalı evrak İK’ya ulaştı · ' + zamanMetni(t.fiziki.zaman) }) : null));
+    t.fiziki ? el('div', { class: 'sv-kart-alt', text: 'Islak imzalı evrak İK’ya ulaştı · ' + zamanMetni(t.fiziki.zaman) }) : null,
+    el('div', { class: 'sv-kart-alt', text: 'Bu ekranda görüntüleme yetkiniz var. Onay ve “Talebi tamamla” işlemlerini talebi açan müdür ile Savunma İK ekibi yapar.' })));
   iz.append(sol, sag); kok.append(iz);
 }
 
@@ -428,7 +451,7 @@ function geriCek(t) {
   modal({ baslik: 'Talep geri çekilsin mi?', govde: el('div', { text: 'Talep İnsan Kaynakları onayından çıkar ve “Geri çekildi” olarak kalır.' }), dugmeler: [{ metin: 'Vazgeç', sinif: 'btn-hayalet' }, { metin: 'Geri çek', sinif: 'btn-lacivert', tikla: async (k) => {
     k();
     try { await updateDoc(doc(db, 'savunmalar', t.id), { durum: 'iptal', gecmis: arrayUnion(gecmisOge('Talep, talebi açan yönetici tarafından geri çekildi')), guncelleme: serverTimestamp() }); O.bildirim('Talep geri çekildi.'); }
-    catch (e) { O.bildirim('Geri çekilemedi: ' + hataMetni(e)); }
+    catch (e) { hataPenceresi('Geri çekilemedi', 'Talebi geri çek · ' + t.no + ' (durum: ' + t.durum + ')', e); }
   } }] });
 }
 /* imzalı belge yükleme / imtina (müdür; İK de müdür adına yapabilir) */
@@ -463,11 +486,13 @@ async function kapat(t, f, imtina, not, btn) {
   const soru = imtina ? 'Çalışanın imtina ettiği kaydedilecek ve çalışanın direktörüne otomatik bilgilendirme e-postası gidecek.' : 'Taranmış belge yüklenecek, talep tamamlanacak ve çalışanın direktörüne otomatik bilgilendirme e-postası gidecek.';
   modal({ baslik: 'Talep tamamlansın mı?', govde: el('div', { text: soru + (t.direktorEposta ? '' : ' (Direktör e-posta adresi tanımlı olmadığından e-posta gitmeyecek; İK bilgilendirilir.)') }), dugmeler: [{ metin: 'Vazgeç', sinif: 'btn-hayalet' }, { metin: 'Tamamla', sinif: 'btn-lacivert', tikla: async (kpt) => {
     kpt(); if (MESGUL) return; MESGUL = true; btn.disabled = true; btn.textContent = 'Kaydediliyor…';
+    let adim = 'hazırlık';
     try {
       const parca = [];
       for (let i = 0; i < b64.length; i += 900000) parca.push(b64.slice(i, i + 900000));
       if (parca.length > 10) throw new Error('Dosya çok büyük.');
-      for (let i = 0; i < parca.length; i++) await setDoc(doc(db, 'savunmalar', t.id, 'tarama', 'x_' + i), { veri: parca[i] });
+      for (let i = 0; i < parca.length; i++) { adim = 'taranmış belge yükleme (parça ' + (i + 1) + '/' + parca.length + ')'; await setDoc(doc(db, 'savunmalar', t.id, 'tarama', 'x_' + i), { veri: parca[i] }); }
+      adim = 'talebi kapatma' + (t.direktorEposta ? ' + direktör e-postası' : '');
       const qref = t.direktorEposta ? doc(collection(db, 'epostaKuyrugu')) : null;
       const kap = { tur: imtina ? 'imtina' : 'tarama', ad: HAM_AD, zaman: serverTimestamp(), not: String(not || '').replace(/[<>]/g, '').trim().slice(0, S.SINIR.not) };
       if (!imtina) kap.dosya = { ad, boyut, parca: parca.length };
@@ -476,7 +501,7 @@ async function kapat(t, f, imtina, not, btn) {
       if (qref) b.set(qref, { kime: t.direktorEposta, kimeAd: String(kisiAd((t.calisan || {}).direktor) || 'Direktör').replace(/[@,;"<>]/g, ' ').slice(0, 120), konu: '', html: '', sablon: 'kapanis', kaynak: 'savunma', ilgili: t.id, durum: 'bekliyor', olusturma: serverTimestamp(), olusturan: HAM_AD });
       await b.commit();
       MESGUL = false; O.bildirim('Talep tamamlandı' + (qref ? '; direktöre bilgilendirme e-postası kuyruğa alındı.' : '.'));
-    } catch (e) { MESGUL = false; btn.disabled = false; btn.textContent = 'Yeniden dene'; modal({ baslik: 'Tamamlanamadı', govde: el('div', { text: hataMetni(e) }), dugmeler: [{ metin: 'Tamam', sinif: 'btn-lacivert' }] }); }
+    } catch (e) { MESGUL = false; btn.disabled = false; btn.textContent = 'Yeniden dene'; hataPenceresi('Tamamlanamadı', 'Talebi tamamla › ' + adim + ' · ' + t.no + (imtina ? ' (imtina)' : ''), e); }
   } }] });
 }
 
@@ -494,7 +519,7 @@ function ikPaneli(sag, t) {
     k.append(el('label', { class: 'sv-onay-kutu', style: { marginTop: '12px' } }, fiz, el('span', null, el('b', { text: 'Fiziki evrak İK’ya iletildi' }), el('span', { class: 'sv-alt', text: t.fiziki ? kisiAd(t.fiziki.ad) + ' · ' + zamanMetni(t.fiziki.zaman) : 'Islak imzalı asıllar İK’ya ulaştığında işaretleyin.' }))));
     fiz.addEventListener('change', async () => {
       try { await updateDoc(doc(db, 'savunmalar', t.id), { fiziki: fiz.checked ? { ad: HAM_AD, zaman: serverTimestamp() } : null, gecmis: arrayUnion(gecmisOge(fiz.checked ? 'Islak imzalı evrak İK’ya ulaştı' : 'Fiziki evrak işareti kaldırıldı')), guncelleme: serverTimestamp() }); O.bildirim('Kaydedildi.'); }
-      catch (e) { fiz.checked = !fiz.checked; O.bildirim('Kaydedilemedi: ' + hataMetni(e)); }
+      catch (e) { fiz.checked = !fiz.checked; hataPenceresi('Kaydedilemedi', 'Fiziki evrak işareti · ' + t.no + ' (durum: ' + t.durum + ')', e); }
     });
   } else k.append(el('div', { class: 'sv-metin', text: (S.DURUM[t.durum] || {}).ad || t.durum }));
   sag.append(k);
@@ -511,20 +536,25 @@ async function imtinaIndir(t) {
 }
 async function taslakOku(t) {
   if (TASLAK.has(t.id)) return TASLAK.get(t.id);
-  let kayitli = null;
-  try { const s = await getDoc(doc(db, 'savunmalar', t.id, 'ik', 'taslak')); kayitli = s.exists() ? s.data() : null; } catch (e) { kayitli = null; }
+  let kayitli = null, okumaHata = null;
+  try { const s = await getDoc(doc(db, 'savunmalar', t.id, 'ik', 'taslak')); kayitli = s.exists() ? s.data() : null; } catch (e) { kayitli = null; okumaHata = e; }
   const set = S.taslakSeti(t, t.sure || S.SURE_VARSAYILAN, kayitli);
   set.hukukcu = kayitli && kayitli.hukukcu ? kayitli.hukukcu : null;
+  /* kayıtlı taslak okunamadıysa (yetki / bağlantı) sessizce şablon gösterilmez: panelde uyarı çıkar, önbelleğe alınmaz */
+  if (okumaHata) { set.okumaHata = okumaHata; return set; }
   TASLAK.set(t.id, set);
   return set;
 }
 function eslemeEposta(ad) { const e = ESLEME && ESLEME.eposta ? ESLEME.eposta[S.adAnahtari(ad)] : ''; return S.epostaGecerli(e) ? String(e).toLowerCase() : ''; }
 function taslakPaneli(sag, t) {
-  const k = el('section', { class: 'sv-kart' }, el('h3', { text: 'Hukukçu taslakları' }), el('div', { class: 'sv-kart-alt', text: 'Yalnız İK ekibi görür (direktör ve müdür göremez). Metni düzeltip onaylayın; onayda iki belge PDF olarak müdüre e-postayla gider.' }));
+  const k = el('section', { class: 'sv-kart' }, el('h3', { text: 'Hukukçu taslakları' }), el('div', { class: 'sv-kart-alt', text: 'Yalnız İK ekibi görür (direktör ve müdür göremez). Metni düzeltip onaylayın; onayda iki belge PDF olarak müdüre e-postayla gider. Onaydan sonra bu sütunda imzalı belgeyi yükleme / imtina ve “Talebi tamamla” bölümü açılır.' }));
   const govde = el('div', { text: 'Taslaklar yükleniyor…' });
   k.append(govde); sag.append(k);
   taslakOku(t).then((set) => {
     govde.textContent = '';
+    if (set.okumaHata) govde.append(el('div', { class: 'sv-bilgi uyari' }, el('b', { text: 'Kayıtlı taslak okunamadı. ' }),
+      el('span', { text: 'Aşağıdaki metin Hukukçu şablonudur; Hukukçu’nun ya da İK’nın kaydettiği metin değildir. ' }),
+      el('button', { class: 'btn btn-hayalet', type: 'button', text: 'Nedenini göster', on: { click: () => hataPenceresi('Taslak okunamadı', 'Hukukçu taslağını okuma · ' + t.no, set.okumaHata) } })));
     let secili = 'istem';
     const sure = el('select', { class: 'secim' }, ...[1, 2, 3, 4, 5, 6, 7].map((n) => el('option', { value: String(n), text: n + ' iş günü' })));
     sure.value = String(t.sure || S.SURE_VARSAYILAN);
@@ -569,17 +599,18 @@ function taslakPaneli(sag, t) {
   }).catch((e) => { govde.textContent = 'Taslaklar hazırlanamadı: ' + hataMetni(e); });
 }
 async function taslakKaydet(t, set) {
+  const kaynak = set.kaynak === 'hukukcu' && !set.degisti ? 'hukukcu' : 'ik';
   try {
-    await setDoc(doc(db, 'savunmalar', t.id, 'ik', 'taslak'), { istem: S.belgeTemizle(set.istem), tutanak: S.belgeTemizle(set.tutanak), imtina: S.belgeTemizle(set.imtina), kaynak: set.kaynak === 'hukukcu' && !set.degisti ? 'hukukcu' : 'ik', hukukcu: set.hukukcu || null, guncelleme: serverTimestamp(), guncelleyen: HAM_AD });
+    await setDoc(doc(db, 'savunmalar', t.id, 'ik', 'taslak'), { istem: S.belgeTemizle(set.istem), tutanak: S.belgeTemizle(set.tutanak), imtina: S.belgeTemizle(set.imtina), kaynak, hukukcu: set.hukukcu || null, guncelleme: serverTimestamp(), guncelleyen: HAM_AD });
     O.bildirim('Taslak kaydedildi.');
-  } catch (e) { O.bildirim('Kaydedilemedi: ' + hataMetni(e)); }
+  } catch (e) { hataPenceresi('Taslak kaydedilemedi', 'Taslağı kaydet · ' + t.no + ' (durum: ' + t.durum + ', kaynak: ' + kaynak + ')', e); }
 }
 function reddet(t) {
   const not = el('textarea', { class: 'sv-paragraf', maxlength: String(S.SINIR.not), placeholder: 'Müdüre görünecek açıklama (ör. olay savunma gerektirmiyor, sözlü uyarı yeterli)' });
   modal({ baslik: 'Talep reddedilsin mi?', govde: el('div', null, el('div', { text: 'Müdür talebin reddedildiğini ve notunuzu portalda görür.' }), not), dugmeler: [{ metin: 'Vazgeç', sinif: 'btn-hayalet' }, { metin: 'Reddet', sinif: 'btn-lacivert', tikla: async (k) => {
     k();
     try { await updateDoc(doc(db, 'savunmalar', t.id), { durum: 'reddedildi', red: { ad: HAM_AD, zaman: serverTimestamp(), not: not.value.replace(/[<>]/g, '').trim().slice(0, S.SINIR.not) }, gecmis: arrayUnion(gecmisOge('Talep İnsan Kaynakları tarafından reddedildi')), guncelleme: serverTimestamp() }); O.bildirim('Talep reddedildi.'); }
-    catch (e) { O.bildirim('Reddedilemedi: ' + hataMetni(e)); }
+    catch (e) { hataPenceresi('Reddedilemedi', 'Talebi reddet · ' + t.no + ' (durum: ' + t.durum + ')', e); }
   } }] });
 }
 async function onayVer(t, set, sure, mEp, dEp, btn) {
@@ -590,15 +621,20 @@ async function onayVer(t, set, sure, mEp, dEp, btn) {
   modal({ baslik: 'Belgeler onaylansın mı?', govde: el('div', null, el('div', { text: 'Savunma istem yazısı ve olay tespit tutanağı PDF olarak hazırlanıp talebe eklenecek' + (mEp ? ' ve müdüre otomatik e-postayla gönderilecek.' : '.') + (uyari ? ' ' + uyari : '') }),
     el('dl', { class: 'sv-dl', style: { marginTop: '10px' } }, el('dt', { text: 'Müdür (onay + PDF)' }), el('dd', { text: mEp || '—' }), el('dt', { text: 'Direktör (kapanış)' }), el('dd', { text: dEp || '—' }), el('dt', { text: 'Savunma süresi' }), el('dd', { text: sure + ' iş günü' }))), dugmeler: [{ metin: 'Vazgeç', sinif: 'btn-hayalet' }, { metin: 'Onayla', sinif: 'btn-lacivert', tikla: async (k) => {
     k(); if (MESGUL) return; MESGUL = true; btn.disabled = true; btn.textContent = 'PDF hazırlanıyor…';
+    let adim = 'PDF hazırlama';
     try {
       const istem = S.belgeTemizle(set.istem), tutanak = S.belgeTemizle(set.tutanak);
       const tt = Object.assign({}, t, { sure });
       const [b1, b2] = await Promise.all([pdfBase64(istem, tt), pdfBase64(tutanak, tt)]);
       if (b1.length > 900000 || b2.length > 900000) throw new Error('PDF beklenenden büyük.');
       btn.textContent = 'Kaydediliyor…';
+      adim = '1/4 taslak kaydı';
       await setDoc(doc(db, 'savunmalar', t.id, 'ik', 'taslak'), { istem, tutanak, imtina: S.belgeTemizle(set.imtina), kaynak: set.kaynak === 'hukukcu' && !set.degisti ? 'hukukcu' : (set.degisti ? 'ik' : set.kaynak), hukukcu: set.hukukcu || null, guncelleme: serverTimestamp(), guncelleyen: HAM_AD });
+      adim = '2/4 savunma istem yazısı PDF’i';
       await setDoc(doc(db, 'savunmalar', t.id, 'ekler', 'istem'), { veri: b1, ad: S.dosyaAdi(t.no, istem.baslik), boyut: Math.round(b1.length * 3 / 4) });
+      adim = '3/4 tutanak PDF’i';
       await setDoc(doc(db, 'savunmalar', t.id, 'ekler', 'tutanak'), { veri: b2, ad: S.dosyaAdi(t.no, tutanak.baslik), boyut: Math.round(b2.length * 3 / 4) });
+      adim = '4/4 onay kaydı' + (mEp ? ' + müdür e-postası' : '');
       const qref = mEp ? doc(collection(db, 'epostaKuyrugu')) : null;
       const b = writeBatch(db);
       b.update(doc(db, 'savunmalar', t.id), { durum: 'onaylandi', ik: { ad: HAM_AD, zaman: serverTimestamp() }, mudurEposta: mEp, direktorEposta: dEp, sure, gecmis: arrayUnion(gecmisOge('Belgeler İnsan Kaynakları tarafından onaylandı' + (mEp ? '; müdüre e-postayla gönderildi' : ''))), guncelleme: serverTimestamp(), sonBildirim: qref ? qref.id : (t.sonBildirim || '') });
@@ -606,7 +642,7 @@ async function onayVer(t, set, sure, mEp, dEp, btn) {
       await b.commit();
       TASLAK.delete(t.id);
       MESGUL = false; O.bildirim('Belgeler onaylandı' + (qref ? '; müdüre e-posta kuyruğa alındı.' : '.'));
-    } catch (e) { MESGUL = false; btn.disabled = false; btn.textContent = 'Onayla ve müdüre gönder'; modal({ baslik: 'Onaylanamadı', govde: el('div', { text: hataMetni(e) }), dugmeler: [{ metin: 'Tamam', sinif: 'btn-lacivert' }] }); }
+    } catch (e) { MESGUL = false; btn.disabled = false; btn.textContent = 'Onayla ve müdüre gönder'; hataPenceresi('Onaylanamadı', 'Onayla › ' + adim + ' · ' + t.no + ' (durum: ' + t.durum + ')', e); }
   } }] });
 }
 
@@ -641,7 +677,7 @@ async function ayarSayfasi(kok) {
     sec.addEventListener('change', () => { if (sec.value) { if (ekip.size >= 10) O.bildirim('En çok 10 kişi.'); else ekip.add(sec.value); sec.value = ''; ekipCiz(); } });
     ekipKart.append(el('div', { class: 'sv-dugmeler' }, sec, el('button', { class: 'btn btn-lacivert', type: 'button', text: 'İK ekibini kaydet', on: { click: async () => {
       try { ekip.add(HID); await setDoc(doc(db, 'savunmaAyar', 'erisim'), { hidler: Array.from(ekip).slice(0, 10), guncelleme: serverTimestamp(), guncelleyen: HAM_AD }); O.bildirim('İK ekibi kaydedildi.'); }
-      catch (e) { O.bildirim('Kaydedilemedi: ' + hataMetni(e)); }
+      catch (e) { hataPenceresi('Kaydedilemedi', 'İK ekibi listesi (' + Math.min(ekip.size, 10) + ' kişi)', e); }
     } } })));
   }
   form.append(ekipKart);
@@ -664,21 +700,23 @@ async function ayarSayfasi(kok) {
   const kadroBtn = el('button', { class: 'btn btn-lacivert', type: 'button', text: 'Ekip listelerini güncelle', on: { click: async () => {
     if (!personel.length || !hesaplar.length) { O.bildirim('Personel ya da hesap listesi okunamadı.'); return; }
     kadroBtn.disabled = true; kadroBtn.textContent = 'Güncelleniyor…';
+    let adim = 'e-posta/vekâlet kaydı';
     try {
       await eslemeKaydet(ep, ek);
       const K = S.kadroKur(personel, hesaplar, ek);
+      adim = 'mevcut ekip listelerini okuma';
       const mevcut = await getDocs(collection(db, 'savunmaKadro'));
       /* Güvenlik kuralı her yazımda erişim listesini okur; toplu yazmada istek başına belge okuma sınırı (20) aşılmasın diye
          işlemler 4'erli parçalarla gönderilir (ayrilis.html / oryantasyon-sorumlu.html ile aynı yaklaşım). */
       const isler = Object.keys(K).map((hid) => (b) => b.set(doc(db, 'savunmaKadro', hid), Object.assign({}, K[hid], { guncelleme: serverTimestamp(), guncelleyen: HAM_AD })));
       mevcut.forEach((d) => { if (!K[d.id]) isler.push((b) => b.delete(d.ref)); });
-      for (let i = 0; i < isler.length; i += 4) { const b = writeBatch(db); isler.slice(i, i + 4).forEach((f) => f(b)); await b.commit(); }
+      for (let i = 0; i < isler.length; i += 4) { adim = 'ekip listesi yazımı (' + (i / 4 + 1) + '/' + Math.ceil(isler.length / 4) + ')'; const b = writeBatch(db); isler.slice(i, i + 4).forEach((f) => f(b)); await b.commit(); }
       const kisi = Object.values(K).reduce((a, x) => a + x.liste.length, 0);
       const bagli = new Set(); Object.values(K).forEach((x) => x.liste.forEach((p) => bagli.add(S.adAnahtari(p.ad))));
       const sahipsiz = personel.filter((p) => p.mudurluk && !bagli.has(S.adAnahtari(p.ad))).length;
       kadroSonuc.textContent = Object.keys(K).length + ' yönetici için ekip listesi yazıldı (' + kisi + ' çalışan). Müdürlüğündeki kişinin portal hesabı olmayan ' + sahipsiz + ' çalışan listede yok.';
       O.bildirim('Ekip listeleri güncellendi.');
-    } catch (e) { O.bildirim('Güncellenemedi: ' + hataMetni(e)); }
+    } catch (e) { hataPenceresi('Güncellenemedi', 'Ekip listelerini güncelle › ' + adim, e); }
     kadroBtn.disabled = false; kadroBtn.textContent = 'Ekip listelerini güncelle';
   } } });
   kadroBtn.disabled = KAYIT_KAPALI;
@@ -708,7 +746,7 @@ async function ayarSayfasi(kok) {
     const yeni = {}; let bozuk = 0;
     epGirdi.forEach((g, k) => { const v = g.value.trim().toLowerCase(); if (!v) return; if (S.epostaGecerli(v)) yeni[k] = v; else bozuk++; });
     if (bozuk) { O.bildirim(bozuk + ' adres geçersiz (@inciroglu.com.tr olmalı).'); return; }
-    try { await eslemeKaydet(yeni, ek); Object.keys(ep).forEach((x) => delete ep[x]); Object.assign(ep, yeni); O.bildirim('Kaydedildi.'); } catch (e) { O.bildirim('Kaydedilemedi: ' + hataMetni(e)); }
+    try { await eslemeKaydet(yeni, ek); Object.keys(ep).forEach((x) => delete ep[x]); Object.assign(ep, yeni); O.bildirim('Kaydedildi.'); } catch (e) { hataPenceresi('Kaydedilemedi', 'E-posta ve vekâletler (' + Object.keys(yeni).length + ' adres)', e); }
   } } });
   kaydet.disabled = KAYIT_KAPALI;
   epKart.append(el('div', { class: 'sv-dugmeler' }, kaydet, doldur));
