@@ -62,7 +62,8 @@ body.savunma #kaputYuva:empty { display: none; }
 .sv-form { display: grid; gap: 14px; }
 .sv-alan { display: grid; gap: 6px; }
 .sv-alan > label { font-size: 12.5px; font-weight: 600; color: var(--metin-2); }
-.sv-alan .ipucu { font-size: 12px; color: var(--metin-3); line-height: 1.5; }
+.sv-alan .ipucu { position: static; opacity: 1; transform: none; background: none; box-shadow: none; padding: 0; min-width: 0; max-width: none; border-radius: 0; pointer-events: auto; z-index: auto; font-size: 12px; color: var(--metin-3); line-height: 1.5; }   /* kokpit.css .ipucu (kayan balon, opacity 0) burada form açıklaması olarak görünür */
+.sv-alan[hidden], #svForm [hidden] { display: none !important; }   /* .sv-alan display:grid gizli niteliğini ezmesin (27.11.2026) */
 .sv-alan textarea { min-height: 150px; resize: vertical; font: 400 14px/1.6 var(--font-sans); padding: 10px 12px; border: 1px solid var(--cizgi-3); border-radius: 10px; }
 .sv-alan textarea:focus, .sv-alan input:focus, .sv-alan select:focus { outline: none; box-shadow: var(--odak-halkasi); border-color: var(--pir-500); }
 .sv-iki { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
@@ -110,6 +111,12 @@ body.savunma #kaputYuva:empty { display: none; }
 .sv-not-bolum h4, .sv-hukukcu h4 { margin: 0 0 6px; font-size: 12.5px; font-weight: 700; letter-spacing: .02em; color: var(--metin-2); }
 .sv-not-liste { margin: 0; padding-left: 18px; display: grid; gap: 5px; font-size: 13px; line-height: 1.55; color: var(--metin-1); }
 .sv-hukukcu { margin-top: 14px; border: 1px solid var(--ok-200, #bfe3c7); background: var(--ok-50); border-radius: 12px; padding: 10px 12px; }
+.sv-yorum { margin: 4px 0 12px; border: 1px solid var(--pir-200); background: var(--bilgi-100); border-radius: 12px; padding: 10px 12px; }
+.sv-yorum > summary { cursor: pointer; font-weight: 700; font-size: 13px; color: var(--pir-800); }
+.sv-yorum-sec { margin-top: 10px; border: 1px solid var(--cizgi-1); background: var(--yuzey-kart); border-radius: 10px; padding: 10px 12px; }
+.sv-yorum-sec.secili { border-color: var(--ok-700); box-shadow: 0 0 0 1px var(--ok-700) inset; }
+.sv-yorum-ad { font-weight: 700; font-size: 12.5px; margin-bottom: 4px; }
+.sv-yorum-metin { font-size: 12.5px; line-height: 1.6; color: var(--metin-1); margin: 4px 0; overflow-wrap: anywhere; }
 @media (max-width: 1000px) { .sv-izgara { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 640px) {
   .sv-dl { grid-template-columns: minmax(0, 1fr); gap: 2px; } .sv-dl dd { margin-bottom: 8px; }
@@ -160,7 +167,7 @@ body.savunma #kaputYuva:empty { display: none; }
 import { doc, getDoc, getDocs, setDoc, updateDoc, collection, query, where, onSnapshot, serverTimestamp, writeBatch, arrayUnion } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { db, kimlikBaslat, cikisYap, adBasliklari } from "./ortak/kimlik.js";
 import * as O from "./pano/ortak.js";
-import * as S from "./ortak/savunma.js?v=20261127c";   /* sürüm eki: yeni sayfa eski önbellekli şablonla açılmasın */
+import * as S from "./ortak/savunma.js?v=20261127d";   /* sürüm eki: yeni sayfa eski önbellekli şablonla açılmasın */
 
 const $ = (id) => document.getElementById(id);
 const el = O.el;
@@ -183,6 +190,15 @@ try { const s = await getDoc(doc(db, 'savunmaAyar', 'erisim')); ERISIM = s.exist
 catch (e) { /* erişim listesi yalnız İK ekibine okunur: okunamıyorsa İK ekibi değil */ }
 let KADRO = null;
 try { const s = await getDoc(doc(db, 'savunmaKadro', HID)); KADRO = s.exists() ? s.data() : null; } catch (e) { KADRO = null; }
+/* Tüm aktif çalışanlar ("Olayın 2. şahsı" seçimi): kişisel veri içermeyen personel özeti (ad, departman, bölüm, unvan, giriş).
+   Tüm yönetim rolleri okur (kural: satisVeri/mrPersonelOzet). Yalnız iş arkadaşı formunda, gerektiğinde bir kez okunur. */
+let TUM_PERSONEL = [], TUM_PERSONEL_P = null;
+function tumPersonel() {
+  if (!TUM_PERSONEL_P) TUM_PERSONEL_P = getDoc(doc(db, 'satisVeri', 'mrPersonelOzet'))
+    .then((s) => { TUM_PERSONEL = s.exists() && Array.isArray(s.data().aktif) ? s.data().aktif.filter((p) => p && p.ad) : []; })
+    .catch((e) => { console.warn('Personel özeti okunamadı', e); TUM_PERSONEL = []; TUM_PERSONEL_P = null; });
+  return TUM_PERSONEL_P || Promise.resolve();
+}
 
 /* ============================================================== DURUM */
 const TALEP = new Map();
@@ -369,25 +385,58 @@ function yeniSayfa(kok, duz) {
   aciklama.addEventListener('input', sayacYaz);
   const t1 = el('input', { class: 'girdi', id: 'svTanik1', type: 'text', maxlength: String(S.SINIR.tanik), placeholder: '1. tanık ad soyad (varsa)' });
   const t2 = el('input', { class: 'girdi', id: 'svTanik2', type: 'text', maxlength: String(S.SINIR.tanik), placeholder: '2. tanık ad soyad (varsa)' });
-  /* İŞ ARKADAŞINA KARŞI UYGUNSUZ DAVRANIŞ (27.11.2026 kullanıcı kuralı): olayın diğer tarafı ve karşılıklılık yazılmadan gönderilemez */
-  const karsi = el('input', { class: 'girdi', id: 'svKarsi', type: 'text', maxlength: '120', list: 'svKarsiListe', placeholder: 'Olayın diğer tarafı olan iş arkadaşının adı soyadı (ve unvanı)' });
-  const karsiListe = el('datalist', { id: 'svKarsiListe' }, ...((KADRO && KADRO.liste) || []).map((p) => el('option', { value: kisiAd(p.ad) + ' (' + S.depGoster(p.unvan) + ')' })));
+  /* İŞ ARKADAŞINA KARŞI UYGUNSUZ DAVRANIŞ (27.11.2026 kullanıcı kuralı): "Olayın 2. şahsı" ve karşılıklılık yazılmadan gönderilemez.
+     2. şahıs listesi: TÜM aktif çalışanlar (personel özeti satisVeri/mrPersonelOzet; tüm yönetim rolleri okur), ad soyad unvanıyla.
+     Listede bulunmayan (yeni giren / liste güncellenmemiş) kişi için "Listede yok" seçilip ad soyad elle yazılır. */
+  const karsi = el('select', { class: 'secim', id: 'svKarsi' }, el('option', { value: '', text: 'Aktif çalışan listesi yükleniyor…' }));
+  const karsiElle = el('input', { class: 'girdi', id: 'svKarsiElle', type: 'text', maxlength: '120', placeholder: 'Ad soyad (ve unvanı)' });
+  const karsiElleAlan = el('div', { class: 'sv-alan', 'data-alan': 'svKarsiElle', hidden: true, style: { marginTop: '6px' } }, karsiElle, el('div', { class: 'sv-alan-hata' }));
+  let KARSI_LISTE = [];
+  const karsiEtiket = (p) => kisiAd(p.ad) + (p.unvan ? ' (' + S.depGoster(p.unvan) + ')' : '');
+  const karsiDegeri = () => (karsi.value === 'elle' ? karsiElle.value : karsi.value === '' ? '' : karsiEtiket(KARSI_LISTE[+karsi.value] || {})).replace(/[<>]/g, '').replace(/\s+/g, ' ').trim();
+  const karsiIpucu = el('div', { class: 'ipucu', text: 'Listede tüm aktif çalışanlar var; her ad unvanıyla birlikte gösterilir.' });
+  const kisiAnahtar = (p) => S.adAnahtari(p && p.ad) + '|' + S.adAnahtari(p && p.unvan);   /* aynı adlı iki çalışan unvanıyla ayrılır */
+  const karsiDoldur = (mevcut) => {
+    const sec = kisi.value === '' ? '' : kisiAnahtar(LISTE[+kisi.value] || {});   /* talebin çalışanı 2. şahıs olarak seçilemez */
+    const once = karsi.value === 'elle' ? 'elle' : karsi.value === '' ? '' : karsiEtiket(KARSI_LISTE[+karsi.value] || {});
+    const gor = new Set();
+    KARSI_LISTE = TUM_PERSONEL.filter((p) => { const a = kisiAnahtar(p); if (!S.adAnahtari(p && p.ad) || a === sec || gor.has(a)) return false; gor.add(a); return true; })
+      .sort((x, y) => S.adAnahtari(x.ad).localeCompare(S.adAnahtari(y.ad), 'tr'));
+    karsiIpucu.textContent = KARSI_LISTE.length ? 'Listede tüm aktif çalışanlar var; her ad unvanıyla birlikte gösterilir.'
+      : 'Aktif çalışan listesi şu anda okunamadı: “Listede yok” seçip ad soyadını (ve unvanını) yazın.';
+    karsi.textContent = '';
+    karsi.append(el('option', { value: '', text: KARSI_LISTE.length ? 'Ad soyad seçin…' : 'Seçin…' }),
+      ...KARSI_LISTE.map((p, i) => el('option', { value: String(i), text: kisiAd(p.ad) + ' — ' + [S.depGoster(p.unvan), S.depGoster(p.departman)].filter(Boolean).join(' · ') })),
+      el('option', { value: 'elle', text: 'Listede yok — ad soyadını yazacağım' }));
+    const hedef = mevcut != null ? mevcut : once;
+    if (hedef === 'elle') karsi.value = 'elle';
+    else if (hedef) {
+      let i = KARSI_LISTE.findIndex((p) => S.adAnahtari(karsiEtiket(p)) === S.adAnahtari(hedef));
+      if (i < 0) i = KARSI_LISTE.findIndex((p) => S.adAnahtari(p.ad) === S.adAnahtari(hedef));
+      if (i >= 0) karsi.value = String(i);
+      else if (mevcut != null) { karsi.value = 'elle'; karsiElle.value = hedef; }   /* düzeltmede kayıtlı ad listede yoksa elle alanında korunur */
+      else karsi.value = '';                                                         /* seçilen kişi artık çalışanın kendisi: seçim boşalır */
+    }
+    karsiElleAlan.hidden = karsi.value !== 'elle';
+  };
   const kars = el('select', { class: 'secim', id: 'svKarsilikli' }, el('option', { value: '', text: 'Seçin…' }), ...S.KARSILIKLI.map((x) => el('option', { value: x.v, text: x.ad })), el('option', { value: 'emin', text: 'Emin değilim' }));
   const karsNot = el('div', { class: 'sv-uyari-not', hidden: true });
   const isArkadasiKutu = el('div', { class: 'sv-kisi-kart', hidden: true },
-    el('div', { class: 'sv-alt', style: { marginBottom: '8px' }, text: 'İş arkadaşına karşı uygunsuz davranışta olayın iki tarafı da yazılmalı ve olayın karşılıklı olup olmadığı netleşmeden talep gönderilemez.' }),
-    el('div', { class: 'sv-iki' }, el('div', { class: 'sv-alan', 'data-alan': 'svKarsi' }, el('label', { for: 'svKarsi', html: 'Olayın diğer tarafı (iş arkadaşı) <span class="sv-zorunlu">*</span>' }), karsi, karsiListe, el('div', { class: 'sv-alan-hata' })),
+    el('div', { class: 'sv-alt', style: { marginBottom: '8px' }, text: 'İş arkadaşına karşı uygunsuz davranışta olayın 2. şahsı seçilmeli ve olayın karşılıklı olup olmadığı netleşmeden talep gönderilemez.' }),
+    el('div', { class: 'sv-iki' }, el('div', { class: 'sv-alan', 'data-alan': 'svKarsi' }, el('label', { for: 'svKarsi', html: 'Olayın 2. şahsı <span class="sv-zorunlu">*</span>' }), karsi,
+      karsiIpucu, el('div', { class: 'sv-alan-hata' }), karsiElleAlan),
       el('div', { class: 'sv-alan', 'data-alan': 'svKarsilikli' }, el('label', { for: 'svKarsilikli', html: 'Olay karşılıklı mı gerçekleşti? <span class="sv-zorunlu">*</span>' }), kars, el('div', { class: 'sv-alan-hata' }))),
     karsNot);
   const isArkadasiGoster = () => { isArkadasiKutu.hidden = konu.value !== S.KONU_IS_ARKADASI; };
   const karsGoster = () => {
     karsNot.hidden = !kars.value || kars.value === 'tek';
     karsNot.textContent = kars.value === 'emin' ? 'Olayın karşılıklı olup olmadığı netleşmeden talep gönderilemez. Tanıklarla görüşüp netleştirin.'
-      : kars.value === 'karsilikli' ? 'Karşılıklı olaylarda diğer çalışan için de ayrı bir savunma talebi açın (ekibinizdeyse bu ekrandan, değilse İnsan Kaynakları’na bildirin).' : '';
+      : kars.value === 'karsilikli' ? 'Karşılıklı olaylarda olayın 2. şahsı için de ayrı bir savunma talebi açın (ekibinizdeyse bu ekrandan, değilse İnsan Kaynakları’na bildirin).' : '';
     if (kars.value === 'tek' || kars.value === 'karsilikli') alanHata('svKarsilikli', '');
   };
   kars.addEventListener('change', karsGoster);
-  karsi.addEventListener('input', () => { if (karsi.value.trim().length >= 3) alanHata('svKarsi', ''); });
+  karsi.addEventListener('change', () => { karsiElleAlan.hidden = karsi.value !== 'elle'; if (karsi.value && karsi.value !== 'elle') alanHata('svKarsi', ''); if (karsi.value === 'elle') karsiElle.focus(); });
+  karsiElle.addEventListener('input', () => { if (karsiElle.value.trim().length >= 3) { alanHata('svKarsi', ''); alanHata('svKarsiElle', ''); } });
   /* Daha önce benzer bir durum yaşandı mı (sözlü olsa dahi müdürün bilgi notu) */
   const onc = el('select', { class: 'secim', id: 'svOnceki', required: true }, el('option', { value: '', text: 'Seçin…' }), ...S.ONCEKI_DURUM.map((x) => el('option', { value: x.v, text: x.ad })));
   const oncNot = el('textarea', { id: 'svOncekiNot', class: 'sv-paragraf', maxlength: '1000', placeholder: 'Ne zaman, ne oldu, nasıl uyarıldı? (sözlü uyarı dahil; ör. “05.11.2026’da geç kaldığı için sözlü olarak uyarıldı”)' });
@@ -408,7 +457,7 @@ function yeniSayfa(kok, duz) {
       el('dt', { text: 'Direktör' }), el('dd', { text: kisiAd(p.direktor) || '—' })),
       el('div', { class: 'sv-alt', style: { marginTop: '6px' }, text: 'Bu bilgiler aktif personel listesinden (Kolay İK) otomatik alınır; yanlışsa İnsan Kaynakları’na bildirin.' }));
   };
-  kisi.addEventListener('change', () => { kisiGoster(); alanHata('svKisi', ''); });
+  kisi.addEventListener('change', () => { kisiGoster(); alanHata('svKisi', ''); karsiDoldur(); });
   /* olay tarihi: geleceğe izin yok; 6 iş günü / 1 yıl hatırlatması (göndermeye engel değil, İK değerlendirir) */
   const tarihGoster = () => {
     const v = tarih.value, ig = /^\d{4}-\d{2}-\d{2}$/.test(v) && v <= S.bugunIso() ? S.isGunuFarki(v, S.bugunIso()) : null;
@@ -427,7 +476,7 @@ function yeniSayfa(kok, duz) {
       ['Hangi kurala aykırı?', 'İhlal edilen kural, talimat ya da görev tanımı.'],
       ['Kim gördü, hangi kayıt var?', 'Tanık, PDKS, iş emri, sistem kaydı (yalnız gerçekten varsa).'],
       ['Etkisi ne oldu?', 'İşin aksaması, müşteri şikâyeti, zarar (yalnız biliniyorsa).'],
-      ['Olayın tarafları', 'Bir iş arkadaşıyla ilgiliyse diğer taraf kim, olay karşılıklı mı oldu?']
+      ['Olayın tarafları', 'Bir iş arkadaşıyla ilgiliyse olayın 2. şahsı kim, olay karşılıklı mı oldu?']
     ].map(([b, m]) => el('li', null, el('b', { text: b + ' ' }), el('span', { text: m })))),
     el('div', { class: 'sv-alt', text: 'Görmediğiniz ya da teyit edilmemiş bilgiyi (kamera kaydı, zarar tutarı vb.) yazmayın. Sağlık, din, sendika gibi özel nitelikli kişisel verileri yazmayın.' }));
   form.append(ozet,
@@ -450,11 +499,13 @@ function yeniSayfa(kok, duz) {
     const o = duz.olay || {};
     kisi.value = '0'; konu.value = o.konu || ''; tarih.value = o.tarih || ''; saat.value = o.saat || ''; yer.value = o.yer || ''; aciklama.value = o.aciklama || '';
     t1.value = (o.taniklar || [])[0] || ''; t2.value = (o.taniklar || [])[1] || '';
-    karsi.value = o.karsiTaraf || ''; kars.value = o.karsilikli || '';
+    kars.value = o.karsilikli || '';
     onc.value = (o.onceki || {}).durum || ''; oncNot.value = (o.onceki || {}).not || ''; oncNotAlan.hidden = !onc.value || onc.value === 'yok';
     kisiGoster(); tarihGoster(); karsGoster();
   }
   isArkadasiGoster(); sayacYaz();
+  /* 2. şahıs listesi personel özeti gelince doldurulur (düzeltmede kayıtlı 2. şahıs seçili gelir) */
+  tumPersonel().then(() => karsiDoldur(duz ? String((duz.olay || {}).karsiTaraf || '') : null));
   const gonder = el('button', { class: 'btn btn-lacivert', type: 'submit', text: duz ? 'Düzeltilmiş formu İK’ya gönder' : 'Talebi İK’ya gönder' });
   form.append(el('div', { class: 'sv-dugmeler' }, gonder, el('a', { class: 'btn btn-hayalet', href: duz ? '#/t/' + duz.id : '#/talepler', text: 'Vazgeç' })));
   function alanHata(id, metin) {
@@ -470,7 +521,8 @@ function yeniSayfa(kok, duz) {
       ['svKisi', !p ? 'Çalışanın adı soyadı seçilmeli.' : ''],
       ['svTarih', !/^\d{4}-\d{2}-\d{2}$/.test(tarih.value) ? 'Olay tarihi girilmeli.' : tarih.value > S.bugunIso() ? 'Olay tarihi bugünden sonra olamaz.' : ''],
       ['svKonu', !konu.value ? 'Uygunsuz durumun türü seçilmeli.' : ''],
-      ['svKarsi', isA && karsi.value.replace(/[<>]/g, '').trim().length < 3 ? 'Olayın diğer tarafının (iş arkadaşının) adı soyadı yazılmalı.' : ''],
+      ['svKarsi', isA && !karsi.value ? 'Olayın 2. şahsı seçilmeli.' : ''],
+      ['svKarsiElle', isA && karsi.value === 'elle' && karsiDegeri().length < 3 ? 'Olayın 2. şahsının adı soyadı yazılmalı.' : ''],
       ['svKarsilikli', isA && !kars.value ? 'Olayın karşılıklı olup olmadığı seçilmeli.' : isA && kars.value === 'emin' ? 'Olayın karşılıklı olup olmadığı netleşmeden talep gönderilemez.' : ''],
       ['svAciklama', ac.length < ENAZ ? 'Uygunsuz durum ayrıntılı yazılmalı (en az ' + ENAZ + ' karakter; şu an ' + ac.length + '). Yukarıdaki maddeleri kullanın.' : ''],
       ['svOnceki', !onc.value ? 'Daha önce benzer bir durum yaşanıp yaşanmadığı seçilmeli.' : ''],
@@ -489,7 +541,7 @@ function yeniSayfa(kok, duz) {
     modal({ baslik: duz ? 'Düzeltilmiş form gönderilsin mi?' : 'Talep bu bilgilerle gönderilsin mi?', govde: el('div', null,
       el('dl', { class: 'sv-dl' }, ...satir('Çalışan', kisiAd(p.ad) + ' — ' + (S.depGoster(p.unvan) || '')), ...satir('Departman', [S.depGoster(p.departman), p.bolum].filter(Boolean).join(' / ')),
         ...satir('Olay tarihi', [S.tarihTr(tarih.value), saat.value, yer.value.trim()].filter(Boolean).join(' · ')), ...satir('Uygunsuz durum', konu.value),
-        ...(isA ? satir('Olayın diğer tarafı', karsi.value.trim()).concat(satir('Karşılıklı mı', S.karsilikliAdi(kars.value))) : []),
+        ...(isA ? satir('Olayın 2. şahsı', karsiDegeri()).concat(satir('Karşılıklı mı', S.karsilikliAdi(kars.value))) : []),
         ...satir('Anlatım', ac.length > 280 ? ac.slice(0, 280) + '…' : ac), ...satir('Önceki benzer durum', S.oncekiDurumAdi(onc.value) + (onc.value !== 'yok' && oncNot.value.trim() ? ' — ' + oncNot.value.trim() : '')),
         ...satir('Tanıklar', [t1.value, t2.value].map((x) => x.trim()).filter(Boolean).join(', '))),
       el('div', { class: 'sv-alt', style: { marginTop: '8px' }, text: 'Gönderdikten sonra metni değiştiremezsiniz; İnsan Kaynakları eksik görürse size e-postayla düzeltme için geri gönderir.' })),
@@ -500,7 +552,7 @@ function yeniSayfa(kok, duz) {
     const temiz = (s, n) => Array.from(String(s || '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim()).slice(0, n).join('');
     const olay = { konu: konu.value, tarih: tarih.value, saat: saat.value || '', yer: temiz(yer.value, S.SINIR.yer), aciklama: ac.slice(0, S.SINIR.aciklama), taniklar: [t1.value, t2.value].map((x) => temiz(x, S.SINIR.tanik)).filter(Boolean),
       onceki: { durum: onc.value, not: onc.value === 'yok' ? '' : String(oncNot.value || '').replace(/[<>]/g, '').trim().slice(0, 1000) } };
-    if (isA) { olay.karsiTaraf = temiz(karsi.value, 120); olay.karsilikli = kars.value; }
+    if (isA) { olay.karsiTaraf = temiz(karsiDegeri(), 120); olay.karsilikli = kars.value; }
     try {
       if (duz) {
         await updateDoc(doc(db, 'savunmalar', duz.id), { durum: 'ik_onayinda', olay, gecmis: arrayUnion(gecmisOge('Müdür formu düzeltti ve İnsan Kaynakları’na yeniden gönderdi')), guncelleme: serverTimestamp() });
@@ -555,7 +607,7 @@ function kontrolKarti(yuva, t, secenek, hukukcu) {
   const n = S.kontrolNotu(t, secenek);
   const liste = (baslik, maddeler) => (maddeler && maddeler.length ? el('div', { class: 'sv-not-bolum' }, el('h4', { text: baslik }), el('ul', { class: 'sv-not-liste' }, ...maddeler.map((m) => el('li', { text: m })))) : null);
   const k = el('section', { class: 'sv-kart' }, el('h3', { text: 'İK Kontrol ve Hukuki Değerlendirme Notu' }),
-    el('div', { class: 'sv-kart-alt', text: 'Yalnız İK ekibi görür. Hukuki görüş değildir; gönderim öncesi kontrol içindir.' }),
+    el('div', { class: 'sv-kart-alt', text: 'Yalnız İK ekibi görür; gönderim öncesi kontrol içindir. “Hukuki dayanak ve Yargıtay yaklaşımı” onay ve eksik bilgi e-postalarına İK görüşü olarak eklenir (göndermeden önce düzeltebilirsiniz).' }),
     el('div', { class: 'sv-not-bolum' }, el('h4', { text: 'Seçilen form türü ve gerekçesi' }), el('div', { class: 'sv-metin', html: '<b>' + O.esc(n.form.ad) + '.</b> ' + O.esc(n.form.gerekce) })),
     liste('Hukuki dayanak ve Yargıtay yaklaşımı', n.dayanak),
     liste('Süre ve ispat riskleri', n.riskler),
@@ -613,7 +665,7 @@ function talepSayfasi(kok, id) {
   const dl = el('dl', { class: 'sv-dl' });
   [['Çalışan', kisiAd(c.ad)], ['Unvan', S.depGoster(c.unvan)], ['Departman', [S.depGoster(c.departman), c.bolum].filter(Boolean).join(' / ')]].concat(c.giris ? [['İşe giriş', S.girisTr(c.giris) || c.giris]] : [], [['Direktör', kisiAd(c.direktor)], ['Konu', o.konu],
     ['Olay', [S.tarihTr(o.tarih), o.saat, o.yer].filter(Boolean).join(' · ')]],
-    o.konu === S.KONU_IS_ARKADASI ? [['Olayın diğer tarafı', kisiAd(o.karsiTaraf) || '— (yazılmamış)'], ['Karşılıklı mı', S.karsilikliAdi(o.karsilikli) || '— (netleşmemiş)']] : [],
+    o.konu === S.KONU_IS_ARKADASI ? [['Olayın 2. şahsı', kisiAd(o.karsiTaraf) || '— (yazılmamış)'], ['Karşılıklı mı', S.karsilikliAdi(o.karsilikli) || '— (netleşmemiş)']] : [],
     [['Önceki benzer durum', o.onceki ? S.oncekiDurumAdi(o.onceki.durum) + (o.onceki.not ? ' — ' + o.onceki.not : '') : '— (bilgi yok)'],
     ['Tanıklar', (o.taniklar || []).map(kisiAd).join(', ') || '—'], ['Talep eden', kisiAd((t.mudur || {}).ad)], ['Talep tarihi', zamanMetni(t.olusturma)]])
     .forEach((r) => dl.append(el('dt', { text: r[0] }), el('dd', { text: r[1] || '—' })));
@@ -628,6 +680,10 @@ function talepSayfasi(kok, id) {
     if (rv.gorus) rk.append(el('div', { class: 'sv-not-bolum' }, el('h4', { text: 'İK görüş ve değerlendirmesi (bilgilendirme notu)' }), el('div', { class: 'sv-metin', style: { fontSize: '13px' }, text: rv.gorus })));
     sol.append(rk);
   }
+  /* Onayla birlikte gönderilen İK görüşü (müdür, direktör ve İK görür; onay e-postasında da vardır) */
+  if (t.ik && t.ik.gorus) sol.append(el('section', { class: 'sv-kart' }, el('h3', { text: 'İK görüş ve değerlendirmesi' }),
+    el('div', { class: 'sv-kart-alt', text: 'Onayla birlikte gönderilen bilgilendirme notu · ' + kisiAd(t.ik.ad) + ' · ' + zamanMetni(t.ik.zaman) }),
+    el('div', { class: 'sv-metin', style: { fontSize: '13px' }, text: t.ik.gorus })));
   /* ARŞİV: aynı çalışanın önceki savunmaları (yalnız İK ekibi; tüm talepleri o görür) */
   if (IKEKIP) {
     const onc = S.oncekiSavunmalar(t, talepler());
@@ -925,8 +981,8 @@ function revizeIste(t, set, kontrol) {
   const onListe = S.revizeEksikleri(not, kontrol ? kontrol.isaretsizIdx() : [], [S.belgeTemizle(set.istem), S.belgeTemizle(set.tutanak)])
     .concat(kontrol ? kontrol.isaretsizEk().map((x) => x.replace(/\.$/, '') + ' — bilgi eksiktir.') : []).slice(0, 15);
   const kutular = onListe.map(() => el('input', { type: 'checkbox', checked: true }));
-  const ekMetin = el('textarea', { class: 'sv-paragraf', maxlength: '1500', placeholder: 'Ek eksik bilgi (her satır bir madde; ör. “Olayın diğer tarafının unvanı bilgisi eksiktir.”)' });
-  const gorus = el('textarea', { class: 'sv-paragraf', maxlength: '4000', style: { minHeight: '180px' } }); gorus.value = S.ikGorusMetni(not, set.hukukcu);
+  const ekMetin = el('textarea', { class: 'sv-paragraf', maxlength: '1500', placeholder: 'Ek eksik bilgi (her satır bir madde; ör. “Olayın 2. şahsının unvanı bilgisi eksiktir.”)' });
+  const gorus = el('textarea', { class: 'sv-paragraf', maxlength: '4000', style: { minHeight: '180px' } }); gorus.value = S.ikGorusMetni(not, set.hukukcu, set.talep || t);
   const mEp = el('input', { class: 'girdi', type: 'email', value: eslemeEposta((t.mudur || {}).ad), placeholder: 'mudur@inciroglu.com.tr' });
   const dEp = el('input', { class: 'girdi', type: 'email', value: eslemeEposta((t.calisan || {}).direktor), placeholder: 'direktor@inciroglu.com.tr' });
   modal({ baslik: 'Müdürden eksik bilgi iste · ' + t.no, govde: el('div', null,
@@ -934,7 +990,7 @@ function revizeIste(t, set, kontrol) {
     onListe.length ? el('div', { class: 'sv-not-bolum' }, ...onListe.map((m, i) => el('label', { class: 'sv-onay-kutu', style: { margin: '5px 0' } }, kutular[i], el('span', { text: m }))))
       : el('div', { class: 'sv-alt', style: { margin: '8px 0' }, text: 'Kontrol listesinde işaretlenmemiş madde yok; eksik bilgiyi aşağıya yazın.' }),
     el('div', { class: 'sv-alan', style: { marginTop: '8px' } }, el('label', { text: 'Ek eksik bilgi' }), ekMetin),
-    el('div', { class: 'sv-alan', style: { marginTop: '8px' } }, el('label', { text: 'İK görüş ve değerlendirmesi (bilgilendirme notu — e-postaya eklenir)' }), gorus),
+    el('div', { class: 'sv-alan', style: { marginTop: '8px' } }, el('label', { text: 'İK görüş ve değerlendirmesi (bilgilendirme notu — müdüre ve direktöre giden e-postaya eklenir; kişi adları rol adıyla yazılır)' }), gorus),
     el('div', { class: 'sv-iki', style: { marginTop: '8px' } }, el('div', { class: 'sv-alan' }, el('label', { text: 'Müdür e-postası' }), mEp), el('div', { class: 'sv-alan' }, el('label', { text: 'Direktör e-postası (bilgi)' }), dEp))),
     dugmeler: [{ metin: 'Vazgeç', sinif: 'btn-hayalet' }, { metin: 'Müdüre gönder', sinif: 'btn-lacivert', tikla: async (k) => {
       const temiz = (s) => String(s || '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 300);
@@ -989,10 +1045,34 @@ function taslakPaneli(sag, t, sol) {
       const d = set[secili];
       const ust = el('table', { class: 'sv-ust-tablo' }); d.ust.map(S.ustSatir).forEach((r) => ust.append(el('tr', null, el('td', { text: r[0] || '' }), el('td', { text: r[1] || '' }))));
       alan.append(el('div', { class: 'sv-belge-bas', text: d.baslik }), ust);
+      if (secili === 'istem') alan.append(yorumKutusu());
       d.paragraflar.forEach((p, i) => { const ta = el('textarea', { class: 'sv-paragraf', maxlength: String(S.SINIR.paragraf), 'aria-label': (i + 1) + '. paragraf' }); ta.value = p; ta.addEventListener('input', () => { d.paragraflar[i] = ta.value; set.degisti = true; }); alan.append(ta); });
       if (d.ozel === 'savunma') alan.append(el('div', { class: 'sv-alt', text: '+ “Tebliğ Alan” bloğu, m.109 tebliğ tutanağı (Tebliğ Alan / Tebliğ Eden / Şahit) ve “Çalışanın yazılı savunması” sayfası PDF’e otomatik eklenir.' }));
       d.imzalar.forEach((im, i) => { const g = el('input', { class: 'girdi', value: im.ad, placeholder: im.baslik + ' ad soyad', 'aria-label': im.baslik }); g.addEventListener('input', () => { d.imzalar[i].ad = g.value; set.degisti = true; }); alan.append(el('div', { class: 'sv-alan', style: { marginTop: '6px' } }, el('label', { text: im.baslik }), g)); });
       if (set.hukukcu && set.hukukcu.not) alan.append(el('div', { class: 'sv-uyari-not', text: 'Hukukçu notu: ' + set.hukukcu.not }));
+    };
+    /* HUKUKİ YORUM SEÇENEKLERİ (27.11.2026 kullanıcı kararı): müdürün açıklaması savunma talebine aynen yazılmaz; ortak/savunma.js olayYorumu
+       açıklamayı İş Kanunu ve Yargıtay uygulaması çerçevesinde yorumlar. B (fesih yönelimli) varsayılan; İK A / B / C arasından seçer,
+       belgedeki olay paragrafı seçilenle değişir. Hukukçu / İK metninde şablon paragrafı yoksa 2. paragrafın yerine yazılır (onayla). */
+    const yorumKutusu = () => {
+      const tz = set.talep || t, y = S.olayYorumu(tz), p = set.istem.paragraflar;
+      const kutu = el('details', { class: 'sv-yorum', open: set.kaynak !== 'hukukcu' ? true : null },
+        el('summary', { text: 'Olay anlatımı · hukuki yorum seçenekleri (' + y.secenekler.length + ')' }),
+        el('div', { class: 'sv-alt', style: { marginTop: '6px' }, text: 'Müdürün açıklaması savunma talebine aynen yazılmaz: olay, ana fikri korunarak 4857 sayılı İş Kanunu ve yerleşik Yargıtay uygulaması çerçevesinde hukuki dille yorumlanır. Seçtiğiniz seçenek belgedeki olay paragrafının yerine geçer; sonra metni düzenleyebilirsiniz. Müdürün anlatımı olgu olarak olay tespit tutanağında kalır.' }));
+      if (!y.tanindi) kutu.append(el('div', { class: 'sv-uyari-not', text: 'Açıklamada belirgin bir eylem tanınamadı: seçenekler genel kaldı (ayrıntı tutanağa gönderildi). Olay paragrafını düzenleyin ya da “Müdürden eksik bilgi iste” ile somut anlatım isteyin.' }));
+      y.secenekler.forEach((s) => {
+        const kul = s.paragraflar.every((x) => p.indexOf(x) >= 0);
+        kutu.append(el('div', { class: 'sv-yorum-sec' + (kul ? ' secili' : '') },
+          el('div', { class: 'sv-yorum-ad', text: s.v + ' · ' + s.ad + (kul ? ' · belgede' : '') }),
+          ...s.paragraflar.map((x) => el('div', { class: 'sv-yorum-metin', text: x })),
+          el('button', { class: 'btn btn-hayalet', type: 'button', text: kul ? 'Belgede kullanılıyor' : 'Bu seçeneği kullan', disabled: kul ? true : null, 'data-yorum': s.v, on: { click: () => {
+            const uygula = (yerine) => { set.istem.paragraflar = S.yorumUygula(set.istem.paragraflar, tz, s.v, yerine); set.yorum = s.v; set.degisti = true; belgeCiz(); O.bildirim(s.v + ' seçeneği savunma talebine yazıldı; metni kontrol edip kaydedin.'); };
+            if (S.yorumBul(set.istem.paragraflar, tz) >= 0) { uygula(false); return; }
+            modal({ baslik: 'Olay paragrafı değiştirilsin mi?', govde: el('div', { text: 'Belgede şablonun olay paragrafı bulunamadı (metin Hukukçu ya da İK tarafından yazılmış). Seçenek belgenin 2. paragrafının yerine yazılacak; diğer paragraflar aynen kalır.' }),
+              dugmeler: [{ metin: 'Vazgeç', sinif: 'btn-hayalet' }, { metin: '2. paragrafın yerine yaz', sinif: 'btn-lacivert', tikla: (kp) => { kp(); uygula(true); } }] });
+          } } })));
+      });
+      return kutu;
     };
     [['istem', 'Savunma talebi'], ['tutanak', 'Olay tespit tutanağı'], ['imtina', 'İmtina tutanağı']].forEach(([v, ad]) => sekme.append(el('button', { type: 'button', role: 'tab', 'data-v': v, text: ad, on: { click: () => { secili = v; belgeCiz(); } } })));
     /* Süre değişince: düzenlenmemiş şablon yeniden üretilir; düzenlenmiş / Hukukçu taslağında "N (yazıyla) iş günü" ifadesi
@@ -1000,7 +1080,7 @@ function taslakPaneli(sag, t, sol) {
     sure.addEventListener('change', () => {
       const n = +sure.value, yazi = ['bir', 'iki', 'üç', 'dört', 'beş', 'altı', 'yedi'][n - 1];
       notCiz(n);
-      if (set.kaynak === 'sablon' && !set.degisti) { set.istem = S.istemSablonu(set.talep || t, n); belgeCiz(); return; }
+      if (set.kaynak === 'sablon' && !set.degisti) { set.istem = S.istemSablonu(set.talep || t, n, set.onceki, set.yorum); belgeCiz(); return; }
       let bulundu = false;
       set.istem.paragraflar = set.istem.paragraflar.map((p) => p.replace(/\b[1-7] \((bir|iki|üç|dört|beş|altı|yedi)\) iş günü/g, () => { bulundu = true; return n + ' (' + yazi + ') iş günü'; }));
       set.degisti = true; belgeCiz();
@@ -1054,8 +1134,15 @@ async function onayVer(t, set, sure, mEp, dEp, btn) {
   const isaretsiz = typeof set.kontrol === 'function' ? set.kontrol() : 0;
   const uyari = [!mEp ? 'Müdür e-postası boş: onay e-postası GİTMEZ (belgeleri müdür portalda indirebilir).' : '', !dEp ? 'Direktör e-postası boş: kapanışta direktöre e-posta gitmez.' : '',
     isaretsiz ? 'İK kontrol listesinde işaretlenmemiş ' + isaretsiz + ' madde var.' : ''].filter(Boolean).join(' ');
+  /* İK GÖRÜŞÜ ONAYA İSTİNADEN (27.11.2026 kullanıcı kararı): "Hukuki dayanak ve Yargıtay yaklaşımı" (+ Hukukçu emsal kararları) İK görüş ve
+     değerlendirmesi olarak onay e-postasına (müdür; direktöre giden bilgi e-postasına da) eklenir ve talepte görünür. İK metni düzeltebilir;
+     boş bırakılırsa görüş gönderilmez. */
+  const gorus = el('textarea', { class: 'sv-paragraf', maxlength: '4000', style: { minHeight: '170px' }, 'aria-label': 'İK görüş ve değerlendirmesi' });
+  gorus.value = S.ikGorusMetni(S.kontrolNotu(set.talep || t, { asama: 'savunma', sure, onceki: set.onceki }), set.hukukcu, set.talep || t);
   modal({ baslik: 'Belgeler onaylansın mı?', govde: el('div', null, el('div', { text: 'Savunma talebi (m.109 tebliğ tutanağıyla) ve olay tespit tutanağı PDF olarak hazırlanıp talebe eklenecek' + (mEp ? ' ve müdüre otomatik e-postayla gönderilecek.' : '.') + (uyari ? ' ' + uyari : '') }),
-    el('dl', { class: 'sv-dl', style: { marginTop: '10px' } }, el('dt', { text: 'Müdür (onay + PDF)' }), el('dd', { text: mEp || '—' }), el('dt', { text: 'Direktör (bilgi, eksiz)' }), el('dd', { text: dEp || '—' }), el('dt', { text: 'Savunma süresi' }), el('dd', { text: sure + ' iş günü' }))), dugmeler: [{ metin: 'Vazgeç', sinif: 'btn-hayalet' }, { metin: 'Onayla', sinif: 'btn-lacivert', tikla: async (k) => {
+    el('dl', { class: 'sv-dl', style: { marginTop: '10px' } }, el('dt', { text: 'Müdür (onay + PDF)' }), el('dd', { text: mEp || '—' }), el('dt', { text: 'Direktör (bilgi, eksiz)' }), el('dd', { text: dEp || '—' }), el('dt', { text: 'Savunma süresi' }), el('dd', { text: sure + ' iş günü' })),
+    el('div', { class: 'sv-alan', style: { marginTop: '10px' } }, el('label', { text: 'İK görüş ve değerlendirmesi (bilgilendirme notu — müdüre ve direktöre giden e-postalara eklenir, talepte müdür ve direktör görür; kişi adları rol adıyla yazılır; boş bırakırsanız gönderilmez)' }), gorus)), dugmeler: [{ metin: 'Vazgeç', sinif: 'btn-hayalet' }, { metin: 'Onayla', sinif: 'btn-lacivert', tikla: async (k) => {
+    const gorusMetni = String(gorus.value || '').replace(/[<>]/g, '').replace(/[ \t]+\n/g, '\n').trim().slice(0, 4000);
     k(); if (MESGUL) return; MESGUL = true; btn.disabled = true; btn.textContent = 'PDF hazırlanıyor…';
     let adim = 'PDF hazırlama';
     try {
@@ -1073,7 +1160,7 @@ async function onayVer(t, set, sure, mEp, dEp, btn) {
       adim = '4/4 onay kaydı' + (mEp ? ' + müdür e-postası' : '');
       const qref = mEp ? doc(collection(db, 'epostaKuyrugu')) : null;
       const b = writeBatch(db);
-      b.update(doc(db, 'savunmalar', t.id), { durum: 'onaylandi', ik: { ad: HAM_AD, zaman: serverTimestamp() }, mudurEposta: mEp, direktorEposta: dEp, sure, gecmis: arrayUnion(gecmisOge('Belgeler İnsan Kaynakları tarafından onaylandı' + (mEp ? '; müdüre e-postayla gönderildi' : ''))), guncelleme: serverTimestamp(), sonBildirim: qref ? qref.id : (t.sonBildirim || '') });
+      b.update(doc(db, 'savunmalar', t.id), { durum: 'onaylandi', ik: Object.assign({ ad: HAM_AD, zaman: serverTimestamp() }, gorusMetni ? { gorus: gorusMetni } : {}), mudurEposta: mEp, direktorEposta: dEp, sure, gecmis: arrayUnion(gecmisOge('Belgeler İnsan Kaynakları tarafından onaylandı' + (mEp ? '; müdüre e-postayla gönderildi' : ''))), guncelleme: serverTimestamp(), sonBildirim: qref ? qref.id : (t.sonBildirim || '') });
       if (qref) b.set(qref, { kime: mEp, kimeAd: String(kisiAd((t.mudur || {}).ad)).replace(/[@,;"<>]/g, ' ').slice(0, 120), konu: '', html: '', sablon: 'onay', kaynak: 'savunma', ilgili: t.id, durum: 'bekliyor', olusturma: serverTimestamp(), olusturan: HAM_AD });
       await b.commit();
       TASLAK.clear();

@@ -1154,12 +1154,17 @@ service cloud.firestore {
     function svDegisen(y, o, izinli) { return y.diff(o).affectedKeys().hasOnly(izinli); }
     function svEposta2(v) { return v is string && (v == '' || v.matches('[a-z0-9._%+-]+@inciroglu[.]com[.]tr')); }
     function svImza(m) { return m is map && m.keys().hasOnly(['ad', 'zaman', 'not']) && m.ad == hesap().ad && m.zaman == request.time && metin(m.get('not', ''), 1000); }
+    // (27.11.2026) Onay imzası: svImza + isteğe bağlı "gorus" (İK görüş ve değerlendirmesi; onay e-postasına eklenir, ≤ 4000, HTML yok)
+    function svOnayImza(m) {
+      return m is map && m.keys().hasOnly(['ad', 'zaman', 'not', 'gorus']) && m.ad == hesap().ad && m.zaman == request.time
+        && metin(m.get('not', ''), 1000) && metin(m.get('gorus', ''), 4000);
+    }
     // (27.11.2026) iş arkadaşı olayında taraflar ve karşılıklılık yazılmadan onay yok (eski kayıtlar: önce revizyonla tamamlanır)
     function svOnay(y, o) {
       return svIk() && o.durum == 'ik_onayinda' && y.durum == 'onaylandi'
         && (o.olay.konu != 'İş arkadaşına karşı uygunsuz davranış' || (('karsiTaraf' in o.olay) && ('karsilikli' in o.olay)))
         && svDegisen(y, o, ['durum', 'ik', 'mudurEposta', 'direktorEposta', 'sure', 'gecmis', 'guncelleme', 'sonBildirim'])
-        && svImza(y.ik) && svEposta2(y.mudurEposta) && svEposta2(y.direktorEposta)
+        && svOnayImza(y.ik) && svEposta2(y.mudurEposta) && svEposta2(y.direktorEposta)
         && y.sure is int && y.sure >= 1 && y.sure <= 7 && svGecmis(y, o);
     }
     function svRed(y, o) {

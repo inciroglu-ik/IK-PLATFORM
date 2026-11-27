@@ -59,12 +59,12 @@ export const ONCEKI_DURUM = [
   { v: 'yazili', ad: 'Evet, daha önce yazılı uyarı / savunma var' }
 ];
 export const oncekiDurumAdi = (v) => (ONCEKI_DURUM.find((x) => x.v === v) || { ad: '' }).ad;
-/** İş arkadaşı talebinde olmazsa olmazlar tamam mı (diğer taraf + karşılıklılık) */
+/** İş arkadaşı talebinde olmazsa olmazlar tamam mı (olayın 2. şahsı + karşılıklılık) */
 export const isArkadasiEksik = (t) => {
   const o = (t && t.olay) || {};
   if (o.konu !== KONU_IS_ARKADASI) return [];
   const e = [];
-  if (!String(o.karsiTaraf || '').trim()) e.push('Olayın diğer tarafının (iş arkadaşının) adı soyadı');
+  if (!String(o.karsiTaraf || '').trim()) e.push('Olayın 2. şahsının (iş arkadaşının) adı soyadı');
   if (['tek', 'karsilikli'].indexOf(o.karsilikli) < 0) e.push('Olayın tek taraflı mı yoksa karşılıklı mı gerçekleştiği');
   return e;
 };
@@ -178,13 +178,195 @@ function dosyaCumlesi(onceki) {
 /* İş arkadaşı olayında taraflar ve karşılıklılık cümlesi (yoksa teyit işareti: onay engellenir) */
 function taraflarCumlesi(b) {
   if (b.konu !== KONU_IS_ARKADASI) return '';
-  const karsi = b.karsiTaraf || teyit('olayın diğer tarafının (iş arkadaşının) adı soyadı ve unvanı');
+  const karsi = b.karsiTaraf || teyit('olayın 2. şahsının (iş arkadaşının) adı soyadı ve unvanı');
   const kars = b.karsilikli === 'tek' ? 'Olay sırasında iş arkadaşınızın size herhangi bir karşılık vermediği, olayın tek taraflı olarak gerçekleştiği bildirilmiştir.'
     : b.karsilikli === 'karsilikli' ? 'Olayın iki taraf arasında karşılıklı olarak gerçekleştiği bildirilmiş olup diğer taraf hakkında da ayrıca işlem yapılmaktadır.'
       : teyit('olayın tek taraflı mı (iş arkadaşı karşılık vermedi) yoksa karşılıklı mı gerçekleştiği');
-  return 'Olayın tarafları: ' + (b.ad || '{calisan}') + ' (ilgili çalışan) ve iş arkadaşınız ' + karsi + ' (olayın diğer tarafı). ' + kars;
+  /* "Ad Soyad (Satış Danışmanı)" → "Ad Soyad (Satış Danışmanı; olayın 2. şahsı)" — çift parantez olmasın */
+  const m = b.karsiTaraf ? /^(.*?)\s*\(([^()]*)\)\s*$/.exec(b.karsiTaraf) : null;
+  const karsiYazi = m ? m[1] + ' (' + m[2] + '; olayın 2. şahsı)' : karsi + ' (olayın 2. şahsı)';
+  return 'Olayın tarafları: ' + (b.ad || '{calisan}') + ' (ilgili çalışan) ve iş arkadaşınız ' + karsiYazi + '. ' + kars;
 }
 const zamanMetni = (b) => b.tarih + (b.saat ? ' tarihinde saat ' + b.saat + ' sularında' : ' tarihinde') + (b.yer ? ', ' + b.yer + ' konumunda' : '');
+
+/* ---------------------------------------------------------------- HUKUKİ YORUM (27.11.2026 kullanıcı kararı)
+   Müdürün olay açıklaması savunma talebine ve uyarı bildirimine OLDUĞU GİBİ yazılmaz. Açıklamadaki eylemler (bağırma, küfür, hakaret,
+   tehdit, fiili saldırı, talimata uymama, işe gelmeme …), süre / saat, ortam (müşterilerin ya da diğer çalışanların huzuru), hedef (iş
+   arkadaşı / müşteri) ve "daha önce uyarıldı" bilgisi tanınır; olay 4857 sayılı İş Kanunu ve yerleşik Yargıtay uygulaması çerçevesinde,
+   ana fikirden sapmadan hukuki dille yeniden yazılır. Girdide olmayan olgu (kamera kaydı, zarar tutarı, yaralanma …) EKLENMEZ.
+   Üç seçenek: B fesih yönelimli (varsayılan) · A ölçülü (tespit ve yükümlülük) · C kısa. Eylem tanınamazsa paragraf ayrıntı için olay
+   tespit tutanağına gönderme yapar ve İK Kontrol Notu uyarır (tanindi:false). Yargıtay kararı NUMARASI yazılmaz (yalnız yerleşik ilke);
+   emsal kararları Hukukçu (Ajan Ofisi) ayrıca ekler. Olay tespit tutanağı olgu belgesidir: müdürün anlatımı orada yazım düzeltilerek kalır. */
+const katla = (s) => ' ' + adAnahtari(s) + ' ';
+/* [anahtar, desen (katlanmış metin), "-dığınız" biçimi, ağır mı] — sıra metindeki mantıksal sıradır */
+const EYLEMLER = [
+  ['gelmeme', /\b(ise gelme\w*|gelmedi\w*|devamsiz\w*|ise gelmey\w*)/, 'işe gelmediğiniz', false],
+  ['gec', /\b(gec gel\w*|gec kal\w*|gecik\w*|gec geldi\w*)/, 'işe geç geldiğiniz', false],
+  ['erken', /\berken (ayril\w*|cik\w*|git\w*)/, 'işten erken ayrıldığınız', false],
+  ['habersiz', /\b(haber verme\w*|habersiz\w*|izinsiz\w*|izin alma\w*|bilgi verme\w*|mazeret\w* bildirme\w*)/, 'yetkili amirinize önceden bilgi vermediğiniz', false],
+  ['telefonYanit', /\btelefon\w* (cevap|yanit|acma|cikma)\w*/, 'telefonla yapılan aramalara yanıt vermediğiniz', false],
+  ['pdks', /\bpdks\w*( \w+){0,3} (yok|bulunma\w*)/, 'PDKS kayıtlarında giriş kaydınızın bulunmadığı', false],
+  ['bagirma', /\b(bagir\w*|yuksek ses\w*|sesini yukselt\w*|hayki\w*)/, 'yüksek sesle bağırdığınız', false],
+  ['kufur', /\b(kufur\w*|kufre\w*|kufred\w*|kufret\w*|sinkaf\w*|sov(du|erek|mek|ust)\w*|argo\w*|mustehcen\w*|agza alinmayacak)/, 'küfür içeren sözler sarf ettiğiniz', true],
+  ['hakaret', /\b(hakaret\w*|asagila\w*|onur\w* kir\w*|haysiyet\w*|aptal\w*|salak\w*|gerizekali\w*)/, 'aşağılayıcı ve hakaret içeren ifadeler kullandığınız', true],
+  ['tehdit', /\b(tehdit\w*|gozdag\w*)/, 'tehdit içeren ifadeler kullandığınız', true],
+  ['saldiri', /\b(vurdu\w*|vurarak|vurmak\w*|vurmaya|itti\w*|itekle\w*|tokat\w*|yumruk\w*|darp\w*|saldir\w*|tekme\w*|yaka paca)/, 'fiili saldırıda bulunduğunuz', true],
+  ['kavga', /\bkavga\w*/, 'kavgaya karıştığınız', true],
+  ['talimat', /\b(talimat\w*|emr\w*)( \w+){0,3} (uyma\w*|yerine getirme\w*|yapma\w*|redd\w*|itiraz\w*)/, 'verilen talimata uymadığınız', false],
+  ['gorevRed', /\b(gorev\w*|is\w*)( \w+){0,3} (yapmadi\w*|yapmayacag\w*|reddet\w*|yerine getirme\w*|yapmay\w*)/, 'size verilen görevi yerine getirmediğiniz', false],
+  ['telefon', /\b(telefon\w*|cep\w*)( \w+){0,2} (kullan\w*|oyna\w*|mesgul\w*|ilgilen\w*|konus\w*)/, 'çalışma süresi içinde kişisel telefonla meşgul olduğunuz', false],
+  ['kkd', /\b(kask\w*|baret\w*|eldiven\w*|koruyucu\w*|kkd|emniyet kemer\w*|is guvenligi\w*)/, 'iş sağlığı ve güvenliği kurallarına ve kişisel koruyucu donanım kullanma yükümlülüğüne uymadığınız', false],
+  ['sigara', /\bsigara\w*/, 'sigara içilmesi yasak olan alanda sigara içtiğiniz', false],
+  ['alkol', /\b(alkol\w*|sarhos\w*|ickili\w*)/, 'işyerine alkollü geldiğiniz', true],
+  ['uyuma', /\b(uyudu\w*|uyurken|uyuyor\w*|uyuklu\w*)/, 'çalışma süresi içinde uyuduğunuz', false],
+  ['hasar', /\b(hasar\w*|kaza\w*|carpt\w*|kirdi\w*|kirild\w*|kaybet\w*|kayb\w*)/, 'Şirket varlığının zarar görmesine / kaybına yol açtığınız', false],
+  ['kiyafet', /\b(kiyafet\w*|uniforma\w*|yaka kart\w*|kilik\w*)/, 'kılık kıyafet kurallarına uymadığınız', false]
+];
+/* Konunun ilk (fiil) cümlesi asıl eylemi zaten söylüyorsa yorum paragrafında tekrarlanmaz */
+const KONU_ASIL = { 'Devamsızlık (izinsiz işe gelmeme)': ['gelmeme'], 'İşe geç gelme / erken ayrılma': ['gec', 'erken'], 'Kılık kıyafet kurallarına aykırılık': ['kiyafet'] };
+const birlestir = (l) => (l.length <= 1 ? l.join('') : l.slice(0, -1).join(', ') + ' ve ' + l[l.length - 1]);
+/** Açıklamadan tanınan bilgiler (metnin kendisi döndürülmez) */
+export function olayIsaretleri(t) {
+  const o = (t && t.olay) || {}, ham = String(o.aciklama || ''), k = katla(ham);
+  const eylem = EYLEMLER.filter((e) => e[1].test(k));
+  const sure = (/(\d{1,3})\s*(dakika|dk\b|saat\b)/i.exec(ham.toLocaleLowerCase('tr')) || []);
+  const saat = (/\b([01]?\d|2[0-3])[:.]([0-5]\d)\b(?![.\/]\d)/.exec(ham) || []);
+  const uslup = /\b(uslup\w*|kaba\w*|saygisiz\w*|terbiyesiz\w*|seviyesiz\w*|nezaketsiz\w*)/.test(k) || (/\buygunsuz\b/.test(k) && eylem.some((e) => ['bagirma', 'kufur', 'hakaret'].indexOf(e[0]) >= 0));
+  return {
+    eylem: eylem.map((e) => e[0]), agir: eylem.some((e) => e[3]), uslup,
+    musteri: /\bmusteri\w*/.test(k),
+    alenen: /\b(toplum (icinde|icerisinde|onunde)|herkesin (onunde|icinde|gozu onunde)|ekib\w* (onunde|icinde)|arkadas\w* onunde|calisan\w* (onunde|yaninda|huzurunda)|alenen|kalabalik\w*)/.test(k),
+    isArkadasi: o.konu === KONU_IS_ARKADASI || /\b(ekip arkadas\w*|is arkadas\w*|calisma arkadas\w*|mesai arkadas\w*|meslektas\w*)/.test(k),
+    hatirlatma: /\b(hatirlat\w*|uyar\w*|ikaz\w*|soylenmesine ragmen|defalarca|tekrar\w*|yine)/.test(k),
+    sure: sure[1] ? sure[1] + ' ' + (/^sa/.test(sure[2]) ? 'saat' : 'dakika') : '', saat: saat[1] ? saat[1].padStart(2, '0') + ':' + saat[2] : ''
+  };
+}
+/* "Ad Soyad (Satış Danışmanı)" → "Satış Danışmanı Ad Soyad isimli iş arkadaşınıza" */
+function karsiHitap(karsi) {
+  const m = /^(.*?)\s*\(([^()]*)\)\s*$/.exec(String(karsi || '').trim());
+  const ad = adGoster(m ? m[1] : karsi), unvan = m ? depGoster(m[2]) : '';
+  return ad ? (unvan ? unvan + ' ' : '') + ad + ' isimli iş arkadaşınıza' : 'iş arkadaşınıza';
+}
+/* Konuya göre hukuki nitelendirme: [A ölçülü, B fesih yönelimli, C kısa dayanak] (i: işaretler) */
+function nitelendirme(konu, i, onceki) {
+  const tekrar = i.hatirlatma || (onceki && onceki.durum && onceki.durum !== 'yok');
+  const hatir = tekrar ? ' Bildirime göre aynı konuda daha önce uyarıldığınız da dikkate alınmaktadır.' : ' İşbu yazı ile bu yükümlülüğünüz ayrıca hatırlatılmaktadır.';
+  const H = ' Aynı davranışın tekrarı halinde, görevlerin hatırlatıldığı halde yerine getirilmemesinde ısrar (4857 sayılı İş Kanunu m.25/II-h) kapsamında iş sözleşmesinin haklı nedenle feshi gündeme gelebilecektir.' + hatir;
+  const SADAKAT = 'iş sözleşmenizden doğan özen ve sadakat yükümlülüğünüze (6098 sayılı Türk Borçlar Kanunu m.396) ve İşyeri Çalışma ve Disiplin Yönetmeliği’ne';
+  if (konu === KONU_IS_ARKADASI) return i.agir || i.eylem.indexOf('alkol') >= 0
+    ? ['Bildirilen davranış, işyerinde çalışanlar arasında bulunması gereken karşılıklı saygı ve iş barışıyla bağdaşmamakta; ' + SADAKAT + ' aykırı nitelik taşımaktadır.',
+      'Bildirilen davranış; iş arkadaşınızın kişilik haklarını zedeleyen, işyerindeki çalışma barışını ve huzurunu bozan nitelikte olup 4857 sayılı İş Kanunu’nun 25. maddesinin (II) numaralı bendinde düzenlenen ahlak ve iyi niyet kurallarına uymayan haller arasında sayılan “işverenin başka bir işçisine sataşma” (m.25/II-d) kapsamında değerlendirilmektedir. Yerleşik Yargıtay içtihatlarında da iş arkadaşına yönelik küfür, hakaret ve sataşma niteliğindeki söz ve davranışlar, işverenden iş ilişkisini sürdürmesinin beklenemeyeceği ve iş sözleşmesinin haklı nedenle feshini gerektirebilecek haller arasında kabul edilmektedir.',
+      '4857 sayılı İş Kanunu m.25/II-d (işverenin başka bir işçisine sataşma)']
+    : ['Bildirilen davranış, işyerinde çalışanlar arasında bulunması gereken karşılıklı saygı ve iş barışıyla bağdaşmamakta; ' + SADAKAT + ' aykırı nitelik taşımaktadır.',
+      'Bildirilen davranış, iş arkadaşınıza yönelik olması ve işyerindeki çalışma barışını bozması nedeniyle 4857 sayılı İş Kanunu’nun 25/II-d maddesinde düzenlenen sataşma niteliği taşıyabileceği gibi, Yargıtay içtihatlarında kabul edildiği üzere işyerinde olumsuzluklara yol açarak iş ilişkisinin sürdürülmesini işveren açısından önemli ölçüde güçleştiren davranış olarak aynı Kanun’un 18. maddesi kapsamında geçerli fesih nedeni de oluşturabilecek niteliktedir.',
+      '4857 sayılı İş Kanunu m.25/II-d ve m.18'];
+  if (konu === 'Müşteriye karşı uygunsuz davranış') return [
+    'Bildirilen davranış, müşterilerimize karşı gösterilmesi gereken özen ve nezakete, ' + SADAKAT + ' aykırıdır.',
+    i.agir ? 'Bildirilen davranış, 4857 sayılı İş Kanunu’nun 25/II maddesinde düzenlenen ahlak ve iyi niyet kurallarına uymayan haller kapsamında değerlendirilmektedir. Yargıtay içtihatlarında Şirket adına hizmet sunulan müşteriye yönelik küfür, hakaret ve tehdit içeren davranışların işverenden iş ilişkisini sürdürmesinin beklenemeyeceği haller arasında kabul edilebildiği görülmektedir.'
+      : 'Bildirilen davranış, işçinin davranışlarından kaynaklanan ve iş ilişkisinin sürdürülmesini işveren açısından önemli ölçüde güçleştiren hal olarak 4857 sayılı İş Kanunu’nun 18. maddesi kapsamında geçerli fesih nedeni oluşturabilecek niteliktedir.' + H,
+    i.agir ? '4857 sayılı İş Kanunu m.25/II (ahlak ve iyi niyet kurallarına uymayan haller)' : '4857 sayılı İş Kanunu m.18'];
+  if (konu === 'Görev ve talimatlara aykırı davranış') return [
+    'Bildirilen davranış, işverenin işin görülmesine ve işyerindeki davranışlara ilişkin talimatlarına uyma borcunuza (6098 sayılı Türk Borçlar Kanunu m.399) ve iş sözleşmenize aykırıdır.',
+    'Görevlerin hatırlatılmasına rağmen yerine getirilmemesinde ısrar edilmesi 4857 sayılı İş Kanunu’nun 25/II-h maddesi uyarınca haklı fesih nedenidir; Yargıtay bu bentte görevin işçiye açıkça hatırlatılmasını ve işçinin buna rağmen ısrar etmesini aramaktadır.' + hatir,
+    '6098 sayılı TBK m.399 ve 4857 sayılı İş Kanunu m.25/II-h'];
+  if (konu === 'Görevin ihmali veya özensiz yapılması') return [
+    'Bildirilen davranış, işinizi özenle yapma yükümlülüğünüze (6098 sayılı Türk Borçlar Kanunu m.396) ve iş sözleşmenize aykırıdır.',
+    'Bildirilen davranış, işçinin davranışlarından kaynaklanan geçerli fesih nedeni (4857 sayılı İş Kanunu m.18) oluşturabilecek; ağır ihmal ve işin güvenliğinin tehlikeye düşürülmesi halinde ise aynı Kanun’un 25/II-ı maddesi kapsamında haklı fesih nedeni sayılabilecek niteliktedir.' + H,
+    '6098 sayılı TBK m.396 ve 4857 sayılı İş Kanunu m.18'];
+  if (konu === 'İş sağlığı ve güvenliği kurallarına aykırılık') return [
+    'Bildirilen davranış, 6331 sayılı İş Sağlığı ve Güvenliği Kanunu’nun 19. maddesinde düzenlenen, aldığınız eğitim ve talimatlar doğrultusunda kendinizin ve diğer çalışanların sağlık ve güvenliğini tehlikeye düşürmeme yükümlülüğünüze aykırıdır.',
+    'Bildirilen davranış, 6331 sayılı Kanun’un 19. maddesine aykırı olup işin güvenliğini tehlikeye düşürme niteliğiyle 4857 sayılı İş Kanunu’nun 25/II-ı maddesi kapsamında değerlendirilmektedir. Yerleşik Yargıtay uygulamasında, iş güvenliği eğitimi ve talimatı verilmiş çalışanın bu kurallara aykırı davranışı iş sözleşmesinin feshini haklı kılabilecek ağırlıkta görülmektedir.',
+    '6331 sayılı İSG Kanunu m.19 ve 4857 sayılı İş Kanunu m.25/II-ı'];
+  if (konu === 'Şirket varlığına zarar / kayıp') return [
+    'Bildirilen olay, iş görme borcunun ifasında gösterilmesi gereken özen yükümlülüğünüze (6098 sayılı Türk Borçlar Kanunu m.396 ve m.400) aykırı nitelik taşımaktadır.',
+    'Bildirilen olay, kusurun ve zararın ağırlığına göre 4857 sayılı İş Kanunu’nun 25/II-ı maddesi kapsamında (otuz günlük ücretle ödenemeyecek hasar ya da kayıp) haklı fesih nedeni oluşturabilecek niteliktedir. Zararın tazminine ilişkin yasal haklarımız saklıdır.',
+    '6098 sayılı TBK m.396, m.400 ve 4857 sayılı İş Kanunu m.25/II-ı'];
+  if (konu === 'Devamsızlık (izinsiz işe gelmeme)') return [
+    'İzinsiz ve mazeretsiz devamsızlık, iş görme borcunuza ve iş sözleşmenize aykırıdır.',
+    'Devamsızlığın 4857 sayılı İş Kanunu’nun 25/II-g maddesinde belirtilen sürelere (ardı ardına iki iş günü, bir ay içinde iki defa herhangi bir tatil gününden sonraki iş günü ya da bir ayda üç iş günü) ulaşması halinde iş sözleşmesi haklı nedenle feshedilebilir. Yargıtay, devamsızlığın haklı bir nedene dayanıp dayanmadığının işçinin savunması alınarak araştırılmasını aradığından, devamsızlığınızın mazeretini belgeleriyle birlikte bildirmeniz istenmektedir.',
+    '4857 sayılı İş Kanunu m.25/II-g'];
+  if (konu === 'İşe geç gelme / erken ayrılma') return [
+    'Bildirilen davranış, çalışma saatlerine uyma yükümlülüğünüze, iş sözleşmenize ve İşyeri Çalışma ve Disiplin Yönetmeliği’ne aykırıdır.',
+    'Bildirilen davranış, işyerinin çalışma düzenini ve iş akışını aksatmaktadır.' + H,
+    'iş sözleşmesi ve İşyeri Çalışma ve Disiplin Yönetmeliği (tekrarında 4857 sayılı İş Kanunu m.25/II-h)'];
+  if (konu === 'Kılık kıyafet kurallarına aykırılık') return [
+    'Bildirilen davranış, tarafınıza duyurulmuş olan kılık kıyafet kurallarına ve İşyeri Çalışma ve Disiplin Yönetmeliği’ne aykırıdır.',
+    'Bildirilen davranış, işyeri düzenine aykırı olup Şirketimizin müşterilerimiz ve diğer çalışanlarımız nezdindeki temsil düzenini bozmaktadır.' + H,
+    'İşyeri Çalışma ve Disiplin Yönetmeliği (tekrarında 4857 sayılı İş Kanunu m.25/II-h)'];
+  if (i.agir || i.eylem.indexOf('alkol') >= 0) return [
+    'Bildirilen davranış, ' + SADAKAT + ' aykırıdır.',
+    'Bildirilen davranış, 4857 sayılı İş Kanunu’nun 25/II maddesinde düzenlenen ahlak ve iyi niyet kurallarına uymayan haller kapsamında değerlendirilmekte olup iş sözleşmesinin haklı nedenle feshini gerektirebilecek ağırlıktadır.',
+    '4857 sayılı İş Kanunu m.25/II'];
+  return [
+    'Bildirilen davranış, ' + SADAKAT + ' aykırıdır.',
+    'Bildirilen davranış, işçinin davranışlarından kaynaklanan ve iş ilişkisinin sürdürülmesini önemli ölçüde güçleştiren hal olarak 4857 sayılı İş Kanunu’nun 18. maddesi kapsamında geçerli fesih nedeni oluşturabilecek niteliktedir.' + H,
+    '4857 sayılı İş Kanunu m.18 (tekrarında m.25/II-h)'];
+}
+export const YORUM_SECENEK = [
+  { v: 'B', ad: 'Fesih yönelimli (İş K. m.25/II, m.18) — önerilen' },
+  { v: 'A', ad: 'Ölçülü (tespit ve yükümlülük)' },
+  { v: 'C', ad: 'Kısa ve öz' }
+];
+/** Olayın hukuki yorumu: { tanindi, isaret, secenekler: [{ v, ad, paragraflar }] }. Paragraflar savunma talebinde fiil cümlesinin
+    ardından gelir; müdürün metni içlerinde AYNEN yer almaz. */
+export function olayYorumu(t) {
+  const b = bilgi(t), i = olayIsaretleri(t), asil = KONU_ASIL[b.konu] || [];
+  const ortam = i.alenen && i.musteri && !(b.konu === 'Müşteriye karşı uygunsuz davranış') ? 'diğer çalışanların ve müşterilerin huzurunda'
+    : i.alenen ? 'diğer çalışanların huzurunda' : i.musteri && b.konu !== 'Müşteriye karşı uygunsuz davranış' ? 'müşterilerin de bulunduğu ortamda' : '';
+  const hedef = b.konu === KONU_IS_ARKADASI ? karsiHitap((t.olay || {}).karsiTaraf) + ' yönelik olarak'
+    : b.konu === 'Müşteriye karşı uygunsuz davranış' ? 'Şirketimizden hizmet alan müşterimize yönelik olarak'
+      : i.isArkadasi && i.eylem.some((e) => ['bagirma', 'kufur', 'hakaret', 'tehdit', 'saldiri', 'kavga'].indexOf(e) >= 0) ? 'iş arkadaşınıza yönelik olarak' : '';
+  const eylemler = EYLEMLER.filter((e) => i.eylem.indexOf(e[0]) >= 0 && asil.indexOf(e[0]) < 0).map((e) => e[2]);
+  if (b.konu === 'İşe geç gelme / erken ayrılma' && (i.sure || i.saat) && i.eylem.indexOf('erken') < 0)
+    eylemler.unshift(i.sure ? 'mesainizin başlamasından yaklaşık ' + i.sure + ' sonra' + (i.saat ? ' (saat ' + i.saat + ')' : '') + ' işbaşı yaptığınız' : 'saat ' + i.saat + ' itibarıyla işbaşı yaptığınız');
+  const uslup = i.uslup ? 'işyeri ciddiyetiyle bağdaşmayan, kaba ve saygısız bir üslupla ' : '';
+  if (!eylemler.length && i.uslup) eylemler.push('işyeri ciddiyetiyle bağdaşmayan, kaba ve saygısız bir üslup kullandığınız');
+  const tanindi = eylemler.length > 0 || asil.some((a) => i.eylem.indexOf(a) >= 0);
+  const on = [zamanMetni(b), ortam, hedef].filter(Boolean).join(', ');
+  let olay;
+  if (eylemler.length) olay = 'Yöneticinizin bildirimine ve olay tespit tutanağına göre ' + on + ' ' + (i.uslup && eylemler[0].indexOf('üslup') < 0 ? uslup : '') + birlestir(eylemler) + ' bildirilmiştir.';
+  else if (asil.length && tanindi) olay = '';
+  else olay = 'Yöneticinizin bildirimine ve olay tespit tutanağına göre ' + on + ' “' + b.konu + '” niteliğinde bir davranışta bulunduğunuz bildirilmiş olup olayın ayrıntıları ekteki olay tespit tutanağında yer almaktadır.';
+  const n = nitelendirme(b.konu, i, b.onceki);
+  const kisa = eylemler.length
+    ? olay.replace(/^Yöneticinizin bildirimine ve olay tespit tutanağına göre /, 'Bildirime göre ').replace(/ bildirilmiştir\.$/, ' bildirilmiş olup bu davranış ') + n[2] + ' kapsamında değerlendirilmektedir.'
+    : (olay ? olay + ' ' : '') + 'Bildirilen davranış ' + n[2] + ' kapsamında değerlendirilmektedir.';
+  return {
+    tanindi, isaret: i, olay,
+    secenekler: YORUM_SECENEK.map((s) => ({ v: s.v, ad: s.ad, paragraflar: (s.v === 'C' ? [kisa] : [olay, s.v === 'A' ? n[0] : n[1]]).filter(Boolean) }))
+  };
+}
+/** Seçilen yorum seçeneğinin paragrafları (bilinmeyen seçenek → B) */
+export function yorumParagraflari(t, secenek) {
+  const y = olayYorumu(t);
+  return (y.secenekler.find((s) => s.v === secenek) || y.secenekler[0]).paragraflar;
+}
+/* Bir paragraf şablonun olay yorumu (herhangi bir seçenek) ya da eski "olayın özeti" satırı mı */
+function yorumMu(y, x) {
+  return /^Yöneticinizin bildirimine göre olayın özeti:/.test(x) || y.secenekler.some((s) => s.paragraflar.indexOf(x) >= 0);
+}
+/** Belgede şablonun olay yorumu paragrafının ilk sırası (yoksa -1) */
+export function yorumBul(paragraflar, t) { const y = olayYorumu(t); return (paragraflar || []).findIndex((x) => yorumMu(y, x)); }
+/** Belgedeki olay yorumu paragraflarını (herhangi bir seçenekten ya da eski "olayın özeti" satırından) bulup seçilen seçenekle değiştirir.
+    Bulamazsa: yerine=true → 2. paragrafın (fiil cümlesinden sonraki) yerine yazar; değilse fiil cümlesinin ardına ekler. */
+export function yorumUygula(paragraflar, t, secenek, yerine) {
+  const y = olayYorumu(t);
+  const p = (paragraflar || []).slice();
+  let ilk = -1;
+  let kalan = p.filter((x, i) => { const sil = yorumMu(y, x); if (sil && ilk < 0) ilk = i; return !sil; });
+  if (ilk < 0 && yerine && kalan.length > 1) { kalan = kalan.slice(0, 1).concat(kalan.slice(2)); ilk = 1; }
+  const yeni = yorumParagraflari(t, secenek);
+  const yer = ilk >= 0 ? ilk : Math.min(1, kalan.length);
+  return kalan.slice(0, yer).concat(yeni, kalan.slice(yer)).slice(0, SINIR.paragrafSay);
+}
+/** Olay tespit tutanağı için: müdürün anlatımı (olgu) korunur, yalnız yazımı düzeltilir (TAMAMI BÜYÜK HARF → cümle düzeni) */
+export function cumleDuzeni(s) {
+  const t = String(s || '').replace(/\s+/g, ' ').trim();
+  const harf = t.replace(/[^\p{L}]/gu, ''), buyuk = harf.replace(/[^\p{Lu}]/gu, '');
+  if (!harf || buyuk.length / harf.length < 0.7) return t;
+  const k = t.replace(/İ/g, 'i').replace(/I/g, 'ı').toLowerCase();
+  return k.replace(/(^|[.!?]\s+)(\p{L})/gu, (m, a, c) => a + (c === 'i' ? 'İ' : c === 'ı' ? 'I' : c.toUpperCase()));
+}
 const GUN_YAZI = ['bir', 'iki', 'üç', 'dört', 'beş', 'altı', 'yedi'];
 /* "Şirketimiz nezdinde 05.03.2024 tarihinden bu yana Servis Danışmanı olarak çalışmaktasınız." (giriş / unvan bilinmiyorsa teyit işareti) */
 const girisCumlesi = (b, kalip) => 'Şirketimiz ' + (kalip || 'nezdinde') + ' ' + (b.giris || teyit('işe giriş tarihi')) + ' tarihinden bu yana ' + (b.unvan || teyit('unvan')) + ' olarak çalışmaktasınız.';
@@ -204,7 +386,7 @@ function fiilCumlesi(b, uyari) {
 /** SAVUNMA TALEBİ (hukuk birimi formu). PDF'te ardından TEBLİĞ ALAN bloğu, m.109 tebliğ tutanağı ve çalışanın yazılı savunması sayfası gelir.
     onceki: aynı çalışanın önceki savunmaları (oncekiSavunmalar). Aynı konudan önceki savunma varsa "hatırlatıldığı halde" (25/II-h)
     unsurunun altyapısı için bu yazıya işlenir. */
-export function istemSablonu(t, sure, onceki) {
+export function istemSablonu(t, sure, onceki, secenek) {
   const b = bilgi(t), gun = Math.min(7, Math.max(1, +sure || SURE_VARSAYILAN));
   const ayni = ayniKonuOnceki(t, onceki);
   const ust = [['Sayın', b.ad], ['Unvanı', b.unvan], ['Departmanı', b.dep + (b.bolum ? ' / ' + b.bolum : '')], ['Konu', 'Savunma talebi hk.']];
@@ -217,7 +399,7 @@ export function istemSablonu(t, sure, onceki) {
     ust,
     paragraflar: [
       girisCumlesi(b) + ' ' + fiilCumlesi(b),
-      'Yöneticinizin bildirimine göre olayın özeti: ' + b.aciklama,
+      ...yorumParagraflari(t, secenek || 'B'),   /* müdürün metni AYNEN yazılmaz: hukuki yorum (27.11.2026) */
       taraflarCumlesi(b),
       tekrar,
       'İşyeri kurallarına ve iş sözleşmenize aykırı olduğu değerlendirilen işbu fiile ilişkin ayrıntılı yazılı savunmanızı, varsa dayanak belgeleriyle birlikte, işbu savunma talebinin tarafınıza tebliğinden itibaren ' + gun + ' (' + GUN_YAZI[gun - 1] + ') iş günü içerisinde Şirketimiz yönetimine (İnsan Kaynakları Departmanına) bildirmenizi rica ederiz. Savunmanızı bu yazının ekindeki “Çalışanın Yazılı Savunması” sayfasına ya da ayrı bir dilekçeye yazabilirsiniz.',
@@ -260,7 +442,7 @@ export function uyariSablonu(t, o) {
     ust: [['Sayın', b.ad], ['Unvanı', b.unvan], ['Departmanı', b.dep + (b.bolum ? ' / ' + b.bolum : '')], ['Konu', 'Uyarı bildirimi hk.' + (t.no ? ' (' + t.no + ')' : '')]],
     paragraflar: [
       girisCumlesi(b, 'bünyesinde') + ' ' + fiilCumlesi(b, true) + ' Bu olay nedeniyle tarafınızdan yazılı savunma istenmiştir.',
-      'Yöneticinizin bildirimine göre olayın özeti: ' + b.aciklama,
+      olayYorumu(t).olay,   /* müdürün metni AYNEN yazılmaz (27.11.2026); hukuki dayanak aşağıda uyarı türünden gelir */
       taraflarCumlesi(b),
       dosyaCumlesi(onceki),
       savunma,
@@ -283,7 +465,7 @@ export function tutanakSablonu(t) {
       .concat([['Tutanak tarihi / saati', '……/……/20……   saat ……:……']]),
     paragraflar: [
       zamanMetni(b) + ' aşağıda açıklanan olay tarafımızca görülmüş ve tespit edilmiştir:',
-      b.aciklama,
+      cumleDuzeni(b.aciklama),   /* tutanak olgu belgesidir: anlatım korunur, yalnız yazım düzeltilir */
       b.konu === KONU_IS_ARKADASI ? 'Olay sırasında sarf edilen sözler (tanıkların duyduğu şekliyle): “………………………………………………………………………………………………”' : '',
       'İşbu tutanak, olayın aynen tespiti amacıyla düzenlenmiş; okunarak aşağıda adı ve imzası bulunan kişilerce birlikte imza altına alınmıştır. Tutanak konusu çalışanın imzadan imtina etmesi halinde bu durum tutanağa ayrıca yazılır. Tanıkların ayrıntılı beyanları ekteki “Tanık Beyanı” sayfalarındadır.'
     ].filter(Boolean),
@@ -373,6 +555,7 @@ export function kontrolNotu(t, o = {}) {
   }
   if (!(t.olay || {}).taniklar || !(t.olay || {}).taniklar.filter(Boolean).length) riskler.push('Tanık bildirilmedi: ispat için olay tespit tutanağı ve varsa kayıt (PDKS, iş emri, sistem kaydı vb.) teyit edilmeli. Girdide olmayan delil (kamera kaydı, zarar tutarı, yaralanma, ticari itibar) belgeye yazılmaz.');
   if (b.aciklama.length < 80) riskler.push('Olay açıklaması kısa: fiil somut değilse (ne, ne zaman, nerede, hangi kurala aykırı) müdürden ayrıntı isteyin.');
+  if (!olayYorumu(t).tanindi) riskler.push('Otomatik hukuki yorum açıklamada belirgin bir eylem tanıyamadı: savunma talebindeki olay paragrafı genel kaldı (ayrıntı tutanağa gönderildi). Paragrafı düzenleyin ya da müdürden somut anlatım isteyin.');
   if (b.konu === 'Devamsızlık (izinsiz işe gelmeme)') riskler.push('Devamsızlık gün sayısını ve tarihlerini teyit edin: tek günlük devamsızlık m.25/II-g eşiğini tek başına karşılamaz.');
   if (asama === 'uyari' && !imtina) riskler.push('Uyarı bildiriminde çalışanın savunmadaki beyanı doğru ve kısa özetlenmeli; savunma belgesi talebe yüklü olmalı.');
   riskler.push('Tebliğ sırasında çalışan imzadan / tebellüğden imtina ederse bu durum AYNI ANDA, en az iki şahit huzurunda imtina tutanağıyla tespit edilmeli (4857 m.109 yazılı bildirim).');
@@ -395,7 +578,7 @@ export function kontrolNotu(t, o = {}) {
     ['PDF’te m.109 tebliğ tutanağı (Tebliğ Alan / Tebliğ Eden / Şahit) var.', null],
     ['Özel nitelikli kişisel veri (sağlık, din, sendika vb.) yok.', null]
   ];
-  if (b.konu === KONU_IS_ARKADASI) maddeler.splice(2, 0, ['Olayın tarafı (ilgili çalışan) ve diğer tarafı yazılı; olayın karşılıklı olup olmadığı netleşti (karşılıklıysa iki taraftan da savunma).', 'Olayın diğer tarafının (iş arkadaşının) adı soyadı ve olayın tek taraflı mı karşılıklı mı gerçekleştiği bilgisi eksiktir.']);
+  if (b.konu === KONU_IS_ARKADASI) maddeler.splice(2, 0, ['Olayın tarafı (ilgili çalışan) ve 2. şahsı yazılı; olayın karşılıklı olup olmadığı netleşti (karşılıklıysa iki taraftan da savunma).', 'Olayın 2. şahsının (iş arkadaşının) adı soyadı ve olayın tek taraflı mı karşılıklı mı gerçekleştiği bilgisi eksiktir.']);
   return { form, dayanak, riskler, eksikler, liste: maddeler.map((m) => m[0]), listeEksik: maddeler.map((m) => m[1]), engeller };
 }
 /** İK'nın müdürden isteyeceği eksik bilgiler (ön seçim): kontrol listesinde işaretlenmemiş maddeler + belgedeki teyit işaretleri +
@@ -408,13 +591,27 @@ export function revizeEksikleri(not, isaretsizIdx, belgeler) {
   (belgeler || []).forEach((d) => teyitEksikleri(d).forEach((x) => ekle(x.replace(/^\[[^:]*:\s*/, '').replace(/\]$/, '').replace(/^./, (c) => c.toLocaleUpperCase('tr')) + ' bilgisi eksiktir.')));
   return l.slice(0, 15);
 }
-/** İK Görüş ve Değerlendirmesi (müdüre e-postayla giden bilgilendirme notu): Hukuki dayanak ve Yargıtay yaklaşımı + Hukukçu emsal kararları */
-export function ikGorusMetni(not, hukukcu) {
+/** Metindeki kişi adlarını rol adıyla değiştirir (çalışan, olayın 2. şahsı, tanık, yönetici). Tam sözcük, Türkçe büyük/küçük yazım
+    biçimleriyle. İK görüşü müdüre VE direktöre gittiği için varsayılan görüş metninde kişi adı bırakılmaz (27.11.2026 denetim). */
+export function adlariMaskele(s, t) {
+  const o = (t && t.olay) || {}, tan = (o.taniklar || []).filter(Boolean);
+  const adlar = [[(t && t.calisan || {}).ad, 'ilgili çalışan'], [String(o.karsiTaraf || '').replace(/\s*\([^()]*\)\s*$/, ''), 'olayın 2. şahsı'], [(t && t.mudur || {}).ad, 'yönetici']]
+    .concat(tan.map((a) => [a, 'tanık'])).filter((x) => x[0] && String(x[0]).trim().length > 2);
+  const kacis = (v) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return adlar.reduce((m, [a, rolAd]) => {
+    const ham = String(a).replace(/\s+/g, ' ').trim();
+    return [ham, adGoster(ham), trUst(ham), ham.replace(/İ/g, 'i').replace(/I/g, 'ı').toLowerCase()].reduce((mm, v) => (v ? mm.replace(new RegExp('(?<![\\p{L}\\p{N}])' + kacis(v) + '(?![\\p{L}\\p{N}])', 'gu'), rolAd) : mm), m);
+  }, String(s == null ? '' : s));
+}
+/** İK Görüş ve Değerlendirmesi (müdüre ve direktöre e-postayla giden bilgilendirme notu): Hukuki dayanak ve Yargıtay yaklaşımı +
+    Hukukçu emsal kararları. t verilirse kişi adları rol adıyla değiştirilir (adlariMaskele). */
+export function ikGorusMetni(not, hukukcu, t) {
   const d = (hukukcu && hukukcu.degerlendirme) || {};
   const sat = ['Hukuki dayanak ve Yargıtay yaklaşımı:'].concat((Array.isArray(d.dayanak) && d.dayanak.length ? d.dayanak : not.dayanak).map((x) => '• ' + x));
   const em = Array.isArray(d.emsal) ? d.emsal : [];
   if (em.length) { sat.push('', 'Benzer örnek Yargıtay kararları:'); em.forEach((e) => sat.push('• ' + (e.baslik || '') + ': ' + (e.ozet || ''))); }
-  return sat.join('\n').replace(/[<>]/g, '').slice(0, 4000);
+  const metin = sat.join('\n');
+  return (t ? adlariMaskele(metin, t) : metin).replace(/[<>]/g, '').slice(0, 4000);
 }
 
 export function belgeGecerli(d) {
