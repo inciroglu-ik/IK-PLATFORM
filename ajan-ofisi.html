@@ -329,7 +329,7 @@ import { akisKur } from './ortak/ajan-ofisi/akis.js';
 import { md, esc, guvenliUrl } from './ortak/ajan-ofisi/md.js';
 import { videoUret, planSuresi, desteklenenBicim, seslendir } from './ortak/ajan-ofisi/video.js';
 import { kopruKur } from './ortak/ajan-ofisi/kopru.js';
-import * as SV from './ortak/savunma.js';
+import * as SV from './ortak/savunma.js?v=20261127a';
 
 const $ = (id) => document.getElementById(id);
 const para = (n) => '$' + (Number(n) || 0).toFixed((Number(n) || 0) < 1 ? 3 : 2);
@@ -435,22 +435,39 @@ const veri = {
   fikirGuncelle: (id, p) => updateDoc(doc(db, 'ajanOfisi', 'ofis', 'fikirler', id), p),
   /* Savunma taslağı (25.11.2026, Hukukçu): yer tutucular gerçek adlarla doldurulur ve savunmalar/{id}/ik/taslak'a yazılır.
      Talep artık İK onayında değilse ya da İK taslağı elle düzenlediyse yazılmaz. Ofis sahibi (kurucu) İK ekibindedir. */
+  /* 27.11.2026: sv.alt === 'uyari' → savunmalar/{id}/ik/uyari (yalnız talep kapanmış ve İK "Hukukçu'ya gönder" demişse: istek true).
+     Hukukçu'nun İK Kontrol Notu (degerlendirme) ve kontrol listesi (kontrol) hukukcu alanına yazılır; İK ekranında gösterilir. */
   savunmaTaslakYaz: async (sv) => {
     const s = await getDoc(doc(db, 'savunmalar', sv.id));
     if (!s.exists()) return { ok: false, neden: 'talep bulunamadı' };
     const t = s.data();
-    if (t.durum !== 'ik_onayinda') return { ok: false, no: t.no, neden: 'talep artık İK onayında değil' };
-    const tk = await getDoc(doc(db, 'savunmalar', sv.id, 'ik', 'taslak'));
-    if (tk.exists() && tk.data().kaynak === 'ik') return { ok: false, no: t.no, neden: 'İK taslağı elle düzenlemiş; üzerine yazılmadı' };
     const tan = (t.olay && t.olay.taniklar) || [];
     const ad = { '{calisan}': SV.adGoster((t.calisan || {}).ad), '{mudur}': SV.adGoster((t.mudur || {}).ad), '{tanik1}': SV.adGoster(tan[0] || ''), '{tanik2}': SV.adGoster(tan[1] || '') };
     const doldur = (v) => (typeof v === 'string' ? v.replace(/\{(calisan|mudur|tanik1|tanik2)\}/gi, (m) => ad[m.toLowerCase()] || '') : Array.isArray(v) ? v.map(doldur) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, doldur(x)])) : v);
-    const yedek = SV.taslakSeti(t, t.sure || SV.SURE_VARSAYILAN, null);
     const belge = (b, y) => { const d = b ? SV.belgeTemizle(doldur(b)) : null; return d && SV.belgeGecerli(d) ? d : y; };
+    const hukukcu = { not: String(doldur(sv.not || '')).replace(/[<>]/g, '').slice(0, 600), degerlendirme: sv.degerlendirme ? doldur(sv.degerlendirme) : null,
+      kontrol: (Array.isArray(sv.kontrol) ? sv.kontrol : []).map((x) => String(doldur(x)).replace(/[<>]/g, '').slice(0, 300)).slice(0, 15), zaman: Date.now() };
+    const kim = String((H && H.ad) || 'Ajan Ofisi');
+    if (sv.alt === 'uyari') {
+      if (t.durum !== 'kapandi') return { ok: false, no: t.no, alt: 'uyari', neden: 'talep kapanmış değil' };
+      const uk = await getDoc(doc(db, 'savunmalar', sv.id, 'ik', 'uyari'));
+      const u = uk.exists() ? uk.data() : null;
+      if (!u || u.istek !== true) return { ok: false, no: t.no, alt: 'uyari', neden: 'İK uyarı taslağını sonradan kendisi kaydetmiş ya da Hukukçu’ya göndermemiş; üzerine yazılmadı' };
+      const tur = SV.UYARI_TURLERI.some((x) => x.v === sv.tur) ? sv.tur : u.tur;
+      const beyan = String(u.beyan || '').replace(/[<>]/g, '').slice(0, SV.SINIR.beyan);
+      await setDoc(doc(db, 'savunmalar', sv.id, 'ik', 'uyari'), {
+        belge: belge(sv.uyari, SV.belgeTemizle(SV.uyariSablonu(t, { tur, beyan }))), tur, beyan, kaynak: 'hukukcu', hukukcu, istek: false,
+        guncelleme: serverTimestamp(), guncelleyen: kim
+      });
+      return { ok: true, no: t.no, alt: 'uyari' };
+    }
+    if (t.durum !== 'ik_onayinda') return { ok: false, no: t.no, neden: 'talep artık İK onayında değil' };
+    const tk = await getDoc(doc(db, 'savunmalar', sv.id, 'ik', 'taslak'));
+    if (tk.exists() && tk.data().kaynak === 'ik') return { ok: false, no: t.no, neden: 'İK taslağı elle düzenlemiş; üzerine yazılmadı' };
+    const yedek = SV.taslakSeti(t, t.sure || SV.SURE_VARSAYILAN, null);
     await setDoc(doc(db, 'savunmalar', sv.id, 'ik', 'taslak'), {
       istem: belge(sv.istem, yedek.istem), tutanak: belge(sv.tutanak, yedek.tutanak), imtina: belge(sv.imtina, yedek.imtina),
-      kaynak: 'hukukcu', hukukcu: { not: String(sv.not || '').replace(/[<>]/g, '').slice(0, 600), zaman: Date.now() },
-      guncelleme: serverTimestamp(), guncelleyen: String((H && H.ad) || 'Ajan Ofisi')
+      kaynak: 'hukukcu', hukukcu, guncelleme: serverTimestamp(), guncelleyen: kim
     });
     return { ok: true, no: t.no };
   }
@@ -469,16 +486,15 @@ async function savunmaTara() {
       const tk = await getDoc(doc(db, 'savunmalar', id, 'ik', 'taslak'));
       if (tk.exists() && tk.data().kaynak !== 'sablon') { SAVUNMA_ISTENDI.add(id); continue; }
       if (await kopru.dosyaVarMi('isler', isId + '.json') || await kopru.dosyaVarMi('sonuclar', isId + '.json')) { SAVUNMA_ISTENDI.add(id); continue; }
-      const yer = Object.assign({}, t, { calisan: Object.assign({}, t.calisan, { ad: '{calisan}' }), mudur: Object.assign({}, t.mudur, { ad: '{mudur}' }), olay: Object.assign({}, t.olay, { taniklar: ((t.olay || {}).taniklar || []).map((x, i) => '{tanik' + (i + 1) + '}') }) });
+      const yer = svYerTutucu(t);
       const sablon = SV.taslakSeti(yer, t.sure || SV.SURE_VARSAYILAN, null);
       const ham = (s) => String(s || '').replace(/\{(calisan|mudur|tanik1|tanik2)\}/gi, (m) => m.toLowerCase());
       const tasi = (b) => JSON.parse(ham(JSON.stringify(b)));
       await kopru.isYaz(isId + '.json', {
-        protokol: K.PROTOKOL || 'ajan-ofisi-cc-1', isId, tur: 'savunma', metin: 'Savunma taslağı: ' + (t.no || id), anahtar: '',
+        protokol: K.PROTOKOL || 'ajan-ofisi-cc-1', isId, tur: 'savunma', alt: 'savunma', metin: 'Savunma taslağı: ' + (t.no || id), anahtar: '',
         olusturmaMs: Date.now(), kadro: { hukukcu: (S.kadro.calisanlar || {}).hukukcu || null },
-        talep: { id, no: t.no || '', konu: (t.olay || {}).konu || '', tarih: (t.olay || {}).tarih || '', saat: (t.olay || {}).saat || '', yer: (t.olay || {}).yer || '',
-          aciklama: (t.olay || {}).aciklama || '', tanikSayisi: ((t.olay || {}).taniklar || []).length,
-          calisanUnvan: (t.calisan || {}).unvan || '', departman: (t.calisan || {}).departman || '', bolum: (t.calisan || {}).bolum || '', mudurUnvan: (t.mudur || {}).unvan || '' },
+        talep: svTalepBilgi(id, t),
+        kontrol: SV.kontrolNotu(yer, { asama: 'savunma', sure: t.sure || SV.SURE_VARSAYILAN }),
         sablon: { istem: tasi(sablon.istem), tutanak: tasi(sablon.tutanak), imtina: tasi(sablon.imtina) },
         sonucDosyasi: 'sonuclar/' + isId + '.json',
         talimat: 'Claude Code: Masaüstü\\Ajan Ofisi\\CLAUDE-OKU.md > "Savunma taslağı (tur: savunma)" bölümüne göre Hukukçu olarak işle.'
@@ -487,6 +503,59 @@ async function savunmaTara() {
       kayit({ tur: 'is', rol: 'hukukcu', metin: 'Savunma talebi Hukukçuya iletildi: ' + (t.no || id) });
     } catch (e) { /* sonraki taramada yeniden denenir */ }
   }
+  /* Uyarı bildirimi (27.11.2026): kapanmış talepte İK "Hukukçu'ya gönder" dediyse (ik/uyari.istek true) → isler\uyari-<id>-<damga>.json.
+     İK'nın mevcut metni de kişi adları yer tutucuya çevrilerek gider (yerel klasöre ad yazılmaz). */
+  let qk = null;
+  try { qk = await getDocs(query(collection(db, 'savunmalar'), where('durum', '==', 'kapandi'))); } catch (e) { qk = null; }
+  for (const d of (qk ? qk.docs : [])) {
+    const id = d.id, t = d.data();
+    try {
+      const uk = await getDoc(doc(db, 'savunmalar', id, 'ik', 'uyari'));
+      if (!uk.exists() || uk.data().istek !== true) continue;
+      const u = uk.data();
+      const damga = (u.guncelleme && typeof u.guncelleme.toMillis === 'function' ? u.guncelleme.toMillis() : 0).toString(36);
+      const isId = 'uyari-' + id + '-' + damga;
+      if (SAVUNMA_ISTENDI.has(isId)) continue;
+      if (await kopru.dosyaVarMi('isler', isId + '.json') || await kopru.dosyaVarMi('sonuclar', isId + '.json')) { SAVUNMA_ISTENDI.add(isId); continue; }
+      const yer = svYerTutucu(t);
+      const gizle = (v) => svAdGizle(v, t);
+      const beyan = gizle(String(u.beyan || ''));
+      await kopru.isYaz(isId + '.json', {
+        protokol: K.PROTOKOL || 'ajan-ofisi-cc-1', isId, tur: 'savunma', alt: 'uyari', metin: 'Uyarı bildirimi taslağı: ' + (t.no || id), anahtar: '',
+        olusturmaMs: Date.now(), kadro: { hukukcu: (S.kadro.calisanlar || {}).hukukcu || null },
+        talep: Object.assign(svTalepBilgi(id, t), { kapanisTur: (t.kapanis || {}).tur || '', uyariTur: u.tur || '', beyan }),
+        kontrol: SV.kontrolNotu(yer, { asama: 'uyari', uyariTur: u.tur }),
+        sablon: { uyari: gizle(SV.uyariSablonu(yer, { tur: u.tur, beyan })) },
+        mevcut: { uyari: gizle(u.belge || null) },
+        sonucDosyasi: 'sonuclar/' + isId + '.json',
+        talimat: 'Claude Code: Masaüstü\\Ajan Ofisi\\CLAUDE-OKU.md > "Savunma taslağı (tur: savunma)" bölümüne göre (alt: uyari) Hukukçu olarak işle.'
+      });
+      SAVUNMA_ISTENDI.add(isId);
+      kayit({ tur: 'is', rol: 'hukukcu', metin: 'Uyarı bildirimi Hukukçuya iletildi: ' + (t.no || id) });
+    } catch (e) { /* sonraki taramada yeniden denenir */ }
+  }
+}
+/* Hukukçu işine giden talep özeti (kişi adı yok; giriş tarihi ve unvan var) */
+function svTalepBilgi(id, t) {
+  const o = t.olay || {}, c = t.calisan || {};
+  return { id, no: t.no || '', konu: o.konu || '', tarih: o.tarih || '', saat: o.saat || '', yer: o.yer || '', aciklama: svAdGizle(o.aciklama || '', t), tanikSayisi: (o.taniklar || []).length,
+    calisanUnvan: c.unvan || '', calisanGiris: c.giris || '', departman: c.departman || '', bolum: c.bolum || '', mudurUnvan: (t.mudur || {}).unvan || '', sure: t.sure || SV.SURE_VARSAYILAN };
+}
+/* Talebin yer tutuculu kopyası: adlar {calisan}/{mudur}/{tanikN}; müdürün açıklamasında geçen bu adlar da çevrilir (şablon paragraflarına girer) */
+function svYerTutucu(t) {
+  return Object.assign({}, t, { calisan: Object.assign({}, t.calisan, { ad: '{calisan}' }), mudur: Object.assign({}, t.mudur, { ad: '{mudur}' }),
+    olay: Object.assign({}, t.olay, { aciklama: svAdGizle((t.olay || {}).aciklama || '', t), taniklar: ((t.olay || {}).taniklar || []).map((x, i) => '{tanik' + (i + 1) + '}') }) });
+}
+/* Metindeki (ya da belge nesnesindeki) çalışan / müdür / tanık adlarını yer tutucuya çevirir (büyük-küçük harf ve Türkçe yazım duyarsız) */
+function svAdGizle(v, t) {
+  const tan = ((t.olay || {}).taniklar || []);
+  const adlar = [[(t.calisan || {}).ad, '{calisan}'], [(t.mudur || {}).ad, '{mudur}'], [tan[0], '{tanik1}'], [tan[1], '{tanik2}'], [tan[2], '{tanik3}']].filter((x) => x[0] && String(x[0]).trim().length > 1);
+  const kacis = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const gizle = (s) => adlar.reduce((m, [a, y]) => [String(a), SV.adGoster(a), String(a).toLocaleUpperCase('tr'), String(a).toLocaleLowerCase('tr')].reduce((mm, v2) => (v2 ? mm.replace(new RegExp(kacis(v2), 'g'), y) : mm), m), s);
+  if (typeof v === 'string') return gizle(v);
+  if (Array.isArray(v)) return v.map((x) => svAdGizle(x, t));
+  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, svAdGizle(x, t)]));
+  return v;
 }
 const durum = {
   kadro: () => S.kadro, ayar: () => S.ayar, isler: () => S.isler, notlar: () => S.notlar, fikirler: () => S.fikirler,

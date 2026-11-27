@@ -682,11 +682,13 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
       sahne.durum(rol, 'calisiyor'); await sahne.bekle(2400);
       try { r = await veri.savunmaTaslakYaz(s.savunma); } catch (e) { r = { ok: false, neden: (e && e.message) || String(e) }; }
       sahne.durum(rol, 'bos');
-      await sahne.konus(rol, r && r.ok ? (r.no || 'Savunma') + ' talebinin savunma istem yazısı, olay tespit tutanağı ve imtina tutanağı hazır; İK onayına koydum.' : 'Bu talebin taslağını güncelleyemedim: ' + ((r && r.neden) || 'bilinmeyen hata'), 3200);
+      const uyari = s.savunma.alt === 'uyari';
+      await sahne.konus(rol, r && r.ok ? (r.no || 'Savunma') + (uyari ? ' talebinin uyarı bildirimi taslağı ve İK kontrol notu hazır; İK’nın incelemesine koydum.' : ' talebinin savunma talebi, tutanaklar ve İK kontrol notu hazır; İK onayına koydum.') : 'Bu talebin taslağını güncelleyemedim: ' + ((r && r.neden) || 'bilinmeyen hata'), 3200);
       await arsiv();
     } finally { mesgulYap([rol], false); }
-    olay({ tur: r && r.ok ? 'kadro' : 'hata', rol, metin: r && r.ok ? 'Savunma taslağı İK onayına kondu: ' + (r.no || '') : 'Savunma taslağı yazılamadı: ' + ((r && r.neden) || '') });
-    bildir({ tur: 'not', baslik: r && r.ok ? 'Savunma taslağı hazır: ' + (r.no || '') : 'Savunma taslağı yazılamadı' });
+    const ad = s.savunma.alt === 'uyari' ? 'Uyarı bildirimi taslağı' : 'Savunma taslağı';
+    olay({ tur: r && r.ok ? 'kadro' : 'hata', rol, metin: r && r.ok ? ad + ' İK onayına kondu: ' + (r.no || '') : ad + ' yazılamadı: ' + ((r && r.neden) || '') });
+    bildir({ tur: 'not', baslik: r && r.ok ? ad + ' hazır: ' + (r.no || '') : ad + ' yazılamadı' });
   }
 
   /* ------------------------------------------------ FİKİR TURU (25.11.2026)
@@ -744,7 +746,7 @@ export function akisKur({ sahne, beyin, veri, durum, kayit, bildir, kopru }) {
     ik_stratejisti: 'İşe alım, ilk 90 gün, performans, prim ve turnover için ölçülebilir öneriler getireceğim; her öneriyi göstergesiyle birlikte.',
     sunum_tasarimcisi: 'Aylık kurul sunumunuzun kurgusu, mesaj başlıklı slaytlar ve ekran taslakları bende.',
     veri_analisti: 'Excel raporlarınızdaki ve panolardaki sayıların tutarlılığını ben denetleyeceğim; çözümü önce Excel’in içinde arayacağım.',
-    hukukcu: 'Portaldaki savunma talepleri bende: savunma istem yazısı, olay tespit tutanağı ve gerektiğinde imtina tutanağı iş hukukuna uygun hazırlanacak; her taslak İnsan Kaynakları onayına gider.'
+    hukukcu: 'Portaldaki savunma talepleri bende: hukuk birimimizin formlarıyla savunma talebi, uyarı bildirimi ve tutanaklar iş hukukuna uygun hazırlanacak; her taslak İnsan Kaynakları onayına gider.'
   };
   function yapilanma() {
     return kuyruk('Ofis yeniden yapılanıyor', async () => {

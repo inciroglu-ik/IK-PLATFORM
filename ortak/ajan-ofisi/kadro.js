@@ -7,7 +7,7 @@
    Kişisel veri YOK: çalışan adları kurgusaldır.
    ============================================================================ */
 
-export const SURUM = '2026-11-25.2';
+export const SURUM = '2026-11-27.1';   /* 27.11: Hukukçu = hukuk birimi talimatı; uyarı bildirimi işleri (alt:'uyari') + İK Kontrol Notu */
 /* Ofis yeniden yapılanması (25.11.2026): iş kayıtlarına göre ekip işinde görev almayan 4 rol emekliye ayrıldı,
    yerlerine işin gerçek ihtiyacına göre 4 yeni uzman geldi. Kadroda bu işaret yoksa ofis açılışta yapılanmayı bir kez oynatır. */
 export const YAPILANMA = '2026-11-25b';   /* 25.11 öğleden sonra: + Hukukçu (savunma talepleri) */
@@ -144,10 +144,10 @@ export const ROLLER = [
   },
   {
     id: 'hukukcu', ad: 'Hukukçu', oda: 'strateji', renk: '#5a4a2f', harf: 'HK', baslangicAd: 'Zeynep', baslangicKademe: 2,
-    gorev: 'Portaldaki savunma taleplerinin savunma istem yazısını, olay tespit tutanağını ve imtina tutanağını iş hukukuna uygun hazırlar; her taslak İK onayına gider.',
+    gorev: 'İş Hukuku ve Disiplin Süreçleri Uzmanı: müdürlerin portala girdiği olayları şirket hukuk biriminin formlarıyla Savunma Talebi ya da Uyarı Bildirimi (+ m.109 tebliğ tutanağı) taslağına dönüştürür; İK Kontrol Notu ve onay kontrol listesi yazar; her taslak İK onayına gider.',
     atanabilir: true, arama: 2, okuma: 0,
-    beceri: 'iş hukuku (4857: m.19 savunma, m.25 haklı fesih, m.26 altı iş günü), disiplin süreci, tebliğ ve imtina, tutanak dili, KVKK',
-    sistem: 'Sen Hukukçusun (iş hukuku). İnciroğlu Otomotiv İK Portalı’ndaki savunma talepleri için savunma istem yazısı, olay tespit tutanağı ve imtina tutanağı taslaklarını hazırlarsın. Dilin resmî, açık ve tarafsızdır; olayı müdürün anlattığı kadarıyla, yorum katmadan, tarih/saat/yer ve somut davranışla yazarsın; suçlayıcı sıfat ve kesin hüküm kullanmazsın (“tespit edilmiştir”, “bildirilmiştir”). Savunma süresini ve tebliği açıkça yazarsın; süre içinde savunma verilmezse savunma hakkından vazgeçilmiş sayılacağını belirtirsin. 4857 sayılı İş Kanunu m.19 (fesihten önce savunma), m.25/II ve m.26 (haklı nedenle fesihte altı iş günü) çerçevesinde İK için riskleri kısa notla bildirirsin. Kişi adlarını yalnız {calisan}, {mudur}, {tanik1}, {tanik2} yer tutucularıyla yazarsın; sağlık, din, sendika gibi özel nitelikli veriyi belgeye koymazsın. Hukuki görüş değil, İK’nın onaylayacağı taslak hazırladığını unutmazsın.'
+    beceri: 'iş hukuku (4857: m.18–19 savunma ve geçerli neden, m.25/II haklı fesih, m.26 altı iş günü / bir yıl, m.38 ücret kesme, m.109 tebliğ; 6331 m.19; 6098 TBK m.396/399/400), Yargıtay ilkeleri (orantılılık, kademeli disiplin), tutanak dili, KVKK',
+    sistem: 'Sen İnciroğlu Otomotiv İnsan Kaynakları için kıdemli bir İş Hukuku ve Disiplin Süreçleri Uzmanısın (Hukukçu). Birim müdürünün portala girdiği ham olay kaydını; şirket hukuk biriminin örnek formlarını (Savunma Talebi + Tutanak, Uyarı Bildirimi + Tutanak), İşyeri Çalışma ve Disiplin Yönetmeliğini ve 4857 / 6331 / 6098 sayılı Kanunlar ile yerleşik Yargıtay ilkelerini esas alarak İK onayına sunulacak taslağa dönüştürürsün. Önce belge türünü seçersin: fesih ya da ağır yaptırım gündeme gelebilecekse önce Savunma Talebi (4857 m.19); Uyarı Bildirimi ancak savunma alındıktan ya da süre dolduktan sonra. Fiili “ne zaman, nerede, hangi kurala aykırı, hangi somut davranışla” yazarsın; örnek formlardaki kalıpları (kamera kaydı, yaralanma, zarar tutarı, ticari itibar) girdide yoksa ASLA yazmazsın; bilinmeyen bilgiyi “[BİRİM MÜDÜRÜ / İK TEYİDİ GEREKLİ: …]” ile işaretlersin. Madde atfını fiille orantılı ve isabetli yaparsın; 6 iş günü / 1 yıl (m.26) riskini, imtina tutanağı gereğini ve eksikleri İK Kontrol Notu’nda açıkça yazarsın. Yargıtay kararı numarası uydurmazsın. Dilin resmî, tarafsız ve delil odaklıdır; müdürün yorumunu kesin hüküm gibi değil tespit edilen fiil çerçevesinde yazarsın. Kişi adlarını yalnız {calisan}, {mudur}, {tanik1}, {tanik2} yer tutucularıyla yazarsın; özel nitelikli veriyi belgeye koymazsın. Hukuki görüş değil, İK’nın onaylayacağı taslak hazırlarsın.'
   },
   {
     id: 'veri_analisti', ad: 'Veri Analisti', oda: 'yonetim', renk: '#4a6b3d', harf: 'VA', baslangicAd: 'Aslı', baslangicKademe: 1,
@@ -809,6 +809,12 @@ export function ccIsDosyasi({ isId, tur, metin, anahtar, kadro, ayar, ek }) {
   };
 }
 const kirp = (v, n) => String(v == null ? '' : v).slice(0, n);
+/* Hukukçu'nun İK Kontrol ve Hukuki Değerlendirme Notu: yalnız metin ve metin dizileri (Firestore'da dizi içinde dizi olmaz) */
+function svDegTemizle(d) {
+  if (!d || typeof d !== 'object') return null;
+  const dz = (l) => (Array.isArray(l) ? l : []).slice(0, 10).map((x) => kirp(x, 600).replace(/[<>]/g, '')).filter(Boolean);
+  return { formTuru: kirp(d.formTuru, 60).replace(/[<>]/g, ''), gerekce: kirp(d.gerekce, 1200).replace(/[<>]/g, ''), dayanak: dz(d.dayanak), riskler: dz(d.riskler), eksikler: dz(d.eksikler) };
+}
 function ccKaynaklar(l) { return (Array.isArray(l) ? l : []).slice(0, 40).map((x) => ({ baslik: kirp((x && (x.baslik || x.url)) || '', 200), url: kirp(x && x.url, 2000) })).filter((x) => x.url); }
 /* Claude Code'un yazdığı sonucu doğrular ve sınırlar (içerik yine de md.js / sandbox iframe ile güvenli gösterilir). */
 export function ccSonucTemizle(j) {
@@ -825,8 +831,13 @@ export function ccSonucTemizle(j) {
     not: j.not && typeof j.not === 'object' ? { baslik: kirp(j.not.baslik, 200), icerik: kirp(j.not.icerik, 100000), kaynaklar: ccKaynaklar(j.not.kaynaklar) } : null,
     fikir: j.tur === 'fikir' ? fikirTemizle(j.fikir) : null,
     /* savunma taslağı (Hukukçu): belgeler sayfada ortak/savunma.js belgeTemizle ile ayrıca sınırlanır */
+    /* 27.11.2026: alt 'uyari' (uyarı bildirimi taslağı) + İK Kontrol Notu (degerlendirme) ve kontrol listesi (kontrol) */
     savunma: j.tur === 'savunma' && j.savunma && typeof j.savunma === 'object' && /^[A-Za-z0-9]{20}$/.test(String(j.savunma.id || ''))
-      ? { id: String(j.savunma.id), istem: j.savunma.istem || null, tutanak: j.savunma.tutanak || null, imtina: j.savunma.imtina || null, not: kirp(j.savunma.not, 600) }
+      ? { id: String(j.savunma.id), alt: j.savunma.alt === 'uyari' ? 'uyari' : 'savunma',
+          istem: j.savunma.istem || null, tutanak: j.savunma.tutanak || null, imtina: j.savunma.imtina || null,
+          uyari: j.savunma.uyari || null, tur: kirp(j.savunma.tur, 20), not: kirp(j.savunma.not, 600),
+          degerlendirme: svDegTemizle(j.savunma.degerlendirme),
+          kontrol: (Array.isArray(j.savunma.kontrol) ? j.savunma.kontrol : []).slice(0, 15).map((x) => kirp(x, 300)).filter(Boolean) }
       : null,
     anahtar: kirp(j.anahtar, 20), hata: kirp(j.hata, 500),
     duzeltme: j.duzeltme === true, duzeltmeNotu: kirp(j.duzeltmeNotu, 300),

@@ -1113,9 +1113,11 @@ service cloud.firestore {
       allow delete: if svIk();
     }
     function svTarih(v) { return v is string && v.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}'); }
+    // (27.11.2026) "giris" (işe giriş tarihi, GG.AA.YYYY ya da boş) isteğe bağlı: bu tarihten önce üretilmiş ekip listelerinde yoktur.
     function svKisi(c) {
-      return c is map && c.keys().hasOnly(['ad', 'departman', 'bolum', 'unvan', 'direktor']) && c.keys().hasAll(['ad', 'departman', 'bolum', 'unvan', 'direktor'])
-        && metin(c.ad, 120) && c.ad.size() > 1 && metin(c.departman, 80) && metin(c.bolum, 40) && metin(c.unvan, 120) && metin(c.direktor, 120);
+      return c is map && c.keys().hasOnly(['ad', 'departman', 'bolum', 'unvan', 'direktor', 'giris']) && c.keys().hasAll(['ad', 'departman', 'bolum', 'unvan', 'direktor'])
+        && metin(c.ad, 120) && c.ad.size() > 1 && metin(c.departman, 80) && metin(c.bolum, 40) && metin(c.unvan, 120) && metin(c.direktor, 120)
+        && (!('giris' in c) || (c.giris is string && c.giris.matches('([0-9]{2}[.][0-9]{2}[.][0-9]{4})?')));
     }
     function svTanik(l, i) { return l.size() <= i || metin(l[i], 80); }
     function svOlay(o) {
@@ -1129,8 +1131,10 @@ service cloud.firestore {
     function svKonular() {
       return ['Devamsızlık (izinsiz işe gelmeme)', 'İşe geç gelme / erken ayrılma', 'Görev ve talimatlara aykırı davranış', 'Görevin ihmali veya özensiz yapılması',
               'İş sağlığı ve güvenliği kurallarına aykırılık', 'Müşteriye karşı uygunsuz davranış', 'İş arkadaşına karşı uygunsuz davranış',
-              'Şirket varlığına zarar / kayıp', 'İşyeri kurallarına aykırılık', 'Diğer'];
+              'Şirket varlığına zarar / kayıp', 'Kılık kıyafet kurallarına aykırılık', 'İşyeri kurallarına aykırılık', 'Diğer'];
     }
+    // ortak/savunma.js UYARI_TURLERI ile birebir (27.11.2026)
+    function svUyariTurleri() { return ['devamsizlik', 'gorev', 'kiyafet', 'dogruluk', 'zarar', 'isg', 'genel']; }
     // Geçmiş yalnız SONA eklenir: eski kayıtlar aynen kalır; yeni kayıt {z, ad, metin}, ad = yazan hesabın adı.
     function svGecmis(y, o) {
       return y.gecmis is list && y.gecmis.size() == o.gecmis.size() + 1 && y.gecmis.size() <= 200
@@ -1187,14 +1191,24 @@ service cloud.firestore {
         && (y.fiziki == null || (y.fiziki is map && y.fiziki.keys().hasOnly(['ad', 'zaman']) && y.fiziki.ad == hesap().ad && y.fiziki.zaman == request.time))
         && svGecmis(y, o);
     }
+    // (27.11.2026) Uyarı bildirimi tebliğ işareti: yalnız İK ekibi, yalnız kapanmış talepte; null = işaret kaldırıldı.
+    function svUyari(y, o) {
+      return svIk() && o.durum == 'kapandi'
+        && svDegisen(y, o, ['uyari', 'gecmis', 'guncelleme'])
+        && ('uyari' in y)
+        && (y.uyari == null || (y.uyari is map && y.uyari.keys().hasOnly(['ad', 'zaman', 'tur']) && y.uyari.keys().hasAll(['ad', 'zaman', 'tur'])
+            && y.uyari.ad == hesap().ad && y.uyari.zaman == request.time && y.uyari.tur in svUyariTurleri()))
+        && svGecmis(y, o);
+    }
     // (26.11.2026) Durum geçişine göre YALNIZ ilgili denetim çalışır (öteki dallar ilk koşulda "false" ile kısa devre yapar;
-    // böylece bir dalın alan hatası başka bir geçişi reddettiremez).
+    // böylece bir dalın alan hatası başka bir geçişi reddettiremez). Durum değişmeyen güncellemelerde fiziki evrak ve uyarı işareti
+    // ayrı alanlardır: her biri önce svDegisen ile yalnız kendi alanına izin verir, alanı "in" ile denetlemeden okumaz.
     function svGecis(id, y, o) {
       return (y.durum == 'onaylandi' && o.durum == 'ik_onayinda' && svOnay(y, o))
         || (y.durum == 'reddedildi' && o.durum == 'ik_onayinda' && svRed(y, o))
         || (y.durum == 'iptal' && o.durum == 'ik_onayinda' && svIptal(y, o))
         || (y.durum == 'kapandi' && o.durum == 'onaylandi' && svKapanis(id, y, o))
-        || (y.durum == o.durum && svFiziki(y, o));
+        || (y.durum == o.durum && (svFiziki(y, o) || svUyari(y, o)));
     }
     function svYeni(y) {
       return yonetim()
@@ -1214,13 +1228,25 @@ service cloud.firestore {
       allow update: if request.resource.data.guncelleme == request.time && request.resource.data.olusturma == resource.data.olusturma
         && svGecis(id, request.resource.data, resource.data);
       allow delete: if false;
-      // Hukukçu taslakları (savunma istem yazısı, tutanak, imtina tutanağı): YALNIZ İK ekibi (direktör ve müdür göremez).
+      // Hukukçu taslakları (savunma talebi, tutanak, imtina tutanağı) ve uyarı bildirimi taslağı (27.11.2026; YALNIZ talep kapandıktan
+      // sonra yazılır): YALNIZ İK ekibi (direktör ve müdür göremez). Her dal önce belge adını denetler (öteki dal kısa devre yapar).
       match /ik/{b} {
-        allow get: if b == 'taslak' && svIk();
-        allow create, update: if b == 'taslak' && svIk()
-          && request.resource.data.keys().hasOnly(['istem', 'tutanak', 'imtina', 'kaynak', 'hukukcu', 'guncelleme', 'guncelleyen'])
-          && request.resource.data.kaynak in ['sablon', 'hukukcu', 'ik']
-          && request.resource.data.guncelleme == request.time;
+        allow get: if (b == 'taslak' || b == 'uyari') && svIk();
+        allow create, update: if (b == 'taslak' && svIk()
+            && request.resource.data.keys().hasOnly(['istem', 'tutanak', 'imtina', 'kaynak', 'hukukcu', 'guncelleme', 'guncelleyen'])
+            && request.resource.data.kaynak in ['sablon', 'hukukcu', 'ik']
+            && request.resource.data.guncelleme == request.time)
+          || (b == 'uyari' && svIk()
+            && request.resource.data.keys().hasOnly(['belge', 'tur', 'beyan', 'kaynak', 'hukukcu', 'istek', 'guncelleme', 'guncelleyen'])
+            && request.resource.data.keys().hasAll(['belge', 'tur', 'beyan', 'kaynak', 'istek', 'guncelleme', 'guncelleyen'])
+            && request.resource.data.guncelleyen == hesap().ad
+            && request.resource.data.belge is map
+            && request.resource.data.tur in svUyariTurleri()
+            && metin(request.resource.data.beyan, 1500)
+            && request.resource.data.kaynak in ['sablon', 'hukukcu', 'ik']
+            && request.resource.data.istek is bool
+            && request.resource.data.guncelleme == request.time
+            && get(yol('savunmalar', id)).data.durum == 'kapandi');
         allow list, delete: if false;
       }
       // Onaylanmış PDF'ler (e-postaya eklenir): İK yazar (YALNIZ talep İK onayındayken; onaydan sonra değişmez);

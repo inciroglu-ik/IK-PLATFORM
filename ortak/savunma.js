@@ -1,13 +1,20 @@
 /* ============================================================================
    SAVUNMA TALEPLERİ · ortak mantık (25.11.2026) — Firebase import ETMEZ (saf işlevler; testte tarayıcıda denenir)
    - Durumlar, konu listesi, alan sınırları (kural: guvenlik/firestore.rules SAVUNMA bölümü ile birebir)
-   - Hukukçu şablonları: savunma istem yazısı (+ yazılı savunma alanı), olay tespit tutanağı, imtina tutanağı.
+   - Hukukçu şablonları (27.11.2026: şirket hukuk biriminin örnek formlarına göre yeniden yazıldı):
+       · SAVUNMA TALEBİ + 4857 m.109 tebliğ tutanağı (+ çalışanın yazılı savunması sayfası)
+       · UYARI BİLDİRİMİ + m.109 tebliğ tutanağı (talep kapandıktan sonra, İK uyarıya karar verirse)
+       · olay tespit tutanağı, imtina tutanağı
+     Örnek formlardaki olaya özgü kalıplar (kamera kaydı, yaralanma, zarar tutarı, ticari itibar) şablona ALINMADI: olay
+     yalnız müdürün bildirdiği metinden gelir. Bilinmeyen bilgi "[BİRİM MÜDÜRÜ / İK TEYİDİ GEREKLİ: …]" ile işaretlenir;
+     işaret kalan belge onaylanamaz / indirilemez (teyitEksikleri).
      Şablon talep bilgileriyle ANINDA doldurulur; ofis sahibi "ofis" yazınca Ajan Ofisi'ndeki Hukukçu taslağı talebe
-     özel gözden geçirip `kaynak:'hukukcu'` olarak yeniden yazar. İK düzeltip onaylar.
-   - Belge modeli: { baslik, ust:[[etiket, değer]], paragraflar:[metin], ozel:'savunma'|'tebellug'|null, imzalar:[{ baslik, ad, unvan }] }
-     Aynı model hem ekranda (HTML önizleme) hem PDF'te (pdfmake, Roboto: Türkçe karakterli) kullanılır.
-   - Hukuki görüş değildir; şablon dili 4857 sayılı İş Kanunu m.19 (savunma alınmadan fesih yapılamaz) ve yerleşik
-     uygulamaya (tebliğ, makul süre, imtina tutanağı) göre yazılmıştır. İşyerine özel TİS/yönetmelik varsa İK uyarlar.
+     özel gözden geçirip `kaynak:'hukukcu'` olarak yeniden yazar (İK Kontrol Notu + kontrol listesiyle). İK düzeltip onaylar.
+   - İK Kontrol Notu (kontrolNotu): form türü ve gerekçesi, dayanak, 6 iş günü / 1 yıl süreleri, eksik bilgi, kontrol listesi.
+   - Belge modeli: { baslik, ust:[[etiket, değer]], paragraflar:[metin], ozel:'savunma'|'uyari'|null, imzalar:[{ baslik, ad, unvan }] }
+     Aynı model hem ekranda (HTML önizleme) hem PDF'te (pdfmake, Roboto: Türkçe karakterli) kullanılır. m.109 tebliğ tutanağı
+     sabit metindir, PDF'e otomatik eklenir (düzenlenemez, eksiksiz kalır).
+   - Hukuki görüş değildir; İK'nın onaylayacağı taslaktır. İşyeri Çalışma ve Disiplin Yönetmeliği / TİS varsa İK uyarlar.
    ============================================================================ */
 
 export const DURUM = {
@@ -26,12 +33,44 @@ export const KONULAR = [
   'Müşteriye karşı uygunsuz davranış',
   'İş arkadaşına karşı uygunsuz davranış',
   'Şirket varlığına zarar / kayıp',
+  'Kılık kıyafet kurallarına aykırılık',
   'İşyeri kurallarına aykırılık',
   'Diğer'
 ];
 /* kural ile birebir: metin sınırları */
-export const SINIR = { aciklama: 3000, yer: 120, tanik: 80, not: 1000, paragraf: 2500, paragrafSay: 12, ad: 120 };
-export const SURE_VARSAYILAN = 2;          /* savunma için tebliğden itibaren iş günü (İK değiştirebilir, 1–7) */
+export const SINIR = { aciklama: 3000, yer: 120, tanik: 80, not: 1000, paragraf: 2500, paragrafSay: 12, ad: 120, beyan: 1500 };
+export const SURE_VARSAYILAN = 3;          /* savunma için tebliğden itibaren iş günü (hukuk birimi formu: üç iş günü; İK değiştirebilir, 1–7) */
+export const SIRKET = 'İnciroğlu Otomotiv San. ve Tic. A.Ş.';
+/* Uyarı bildirimi türleri (hukuk biriminin uyarı formları). Kural: guvenlik/firestore.rules svUyariTurleri ile birebir. */
+export const UYARI_TURLERI = [
+  { v: 'devamsizlik', ad: 'Devamsızlık' },
+  { v: 'gorev', ad: 'Görevini gereği gibi yerine getirmeme / talimata aykırılık' },
+  { v: 'kiyafet', ad: 'Kılık kıyafete aykırı davranış' },
+  { v: 'dogruluk', ad: 'Doğruluk ve bağlılığa uymayan davranış' },
+  { v: 'zarar', ad: 'Mala zarar verme' },
+  { v: 'isg', ad: 'İş güvenliğini tehlikeye düşürme' },
+  { v: 'genel', ad: 'Genel (işyeri kurallarına aykırılık)' }
+];
+const KONU_UYARI = {
+  'Devamsızlık (izinsiz işe gelmeme)': 'devamsizlik', 'İşe geç gelme / erken ayrılma': 'genel', 'Görev ve talimatlara aykırı davranış': 'gorev',
+  'Görevin ihmali veya özensiz yapılması': 'gorev', 'İş sağlığı ve güvenliği kurallarına aykırılık': 'isg', 'Müşteriye karşı uygunsuz davranış': 'dogruluk',
+  'İş arkadaşına karşı uygunsuz davranış': 'genel', 'Şirket varlığına zarar / kayıp': 'zarar', 'Kılık kıyafet kurallarına aykırılık': 'kiyafet',
+  'İşyeri kurallarına aykırılık': 'genel', 'Diğer': 'genel'
+};
+/** Konuya göre önerilen uyarı türü (İK değiştirebilir) */
+export const uyariTuruOner = (konu) => KONU_UYARI[konu] || 'genel';
+export const uyariTurAdi = (v) => (UYARI_TURLERI.find((x) => x.v === v) || { ad: v || '' }).ad;
+/* Eksik bilgi işareti: belgede kalırsa onay / PDF engellenir */
+export const teyit = (s) => '[BİRİM MÜDÜRÜ / İK TEYİDİ GEREKLİ: ' + s + ']';
+const TEYIT_RE = /\[[^\]]*TEYİDİ GEREKLİ[^\]]*\]/g;
+/** Belgede kalan teyit işaretleri (paragraflar, üst bilgi, imza adları) — boş dizi = belge gönderilebilir */
+export function teyitEksikleri(d) {
+  if (!d) return [];
+  const metinler = [d.baslik].concat(d.paragraflar || [], (d.ust || []).map((r) => (Array.isArray(r) ? r[1] : r && r.d)), (d.imzalar || []).map((i) => i && i.ad));
+  const out = [];
+  metinler.forEach((m) => { (String(m || '').match(TEYIT_RE) || []).forEach((x) => { if (out.indexOf(x) < 0) out.push(x); }); });
+  return out;
+}
 
 /* ---------------------------------------------------------------- yardımcılar */
 const trUst = (s) => String(s == null ? '' : s).replace(/i/g, 'İ').replace(/ı/g, 'I').toUpperCase();
@@ -69,31 +108,89 @@ export const talepNo = (id, yil) => 'SV-' + (yil || new Date().getFullYear()) + 
 const temiz = (s, n) => Array.from(String(s == null ? '' : s).replace(/[<>]/g, '').replace(/[ \t]+/g, ' ').trim()).slice(0, n).join('');
 
 /* ---------------------------------------------------------------- şablonlar */
+/** İşe giriş tarihi: "05.03.2024" ya da "2024-03-05" → "05.03.2024"; yoksa '' */
+export function girisTr(s) {
+  const t = String(s == null ? '' : s).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return tarihTr(t);
+  const m = /^(\d{1,2})[./](\d{1,2})[./](\d{4})$/.exec(t);
+  return m ? m[1].padStart(2, '0') + '.' + m[2].padStart(2, '0') + '.' + m[3] : '';
+}
 function bilgi(t) {
   const c = t.calisan || {}, o = t.olay || {};
   return {
-    ad: adGoster(c.ad), unvan: depGoster(c.unvan), dep: depGoster(c.departman), bolum: c.bolum || '',
+    ad: adGoster(c.ad), unvan: depGoster(c.unvan), dep: depGoster(c.departman), bolum: c.bolum || '', giris: girisTr(c.giris),
     tarih: tarihTr(o.tarih), saat: o.saat || '', yer: o.yer || '', konu: o.konu || '', aciklama: String(o.aciklama || '').trim(),
     taniklar: (o.taniklar || []).filter(Boolean).map(adGoster), mudur: adGoster((t.mudur || {}).ad), mudurUnvan: (t.mudur || {}).unvan || 'Yönetici'
   };
 }
 const zamanMetni = (b) => b.tarih + (b.saat ? ' tarihinde saat ' + b.saat + ' sularında' : ' tarihinde') + (b.yer ? ', ' + b.yer + ' konumunda' : '');
+const GUN_YAZI = ['bir', 'iki', 'üç', 'dört', 'beş', 'altı', 'yedi'];
+/* "Şirketimiz nezdinde 05.03.2024 tarihinden bu yana Servis Danışmanı olarak çalışmaktasınız." (giriş / unvan bilinmiyorsa teyit işareti) */
+const girisCumlesi = (b, kalip) => 'Şirketimiz ' + (kalip || 'nezdinde') + ' ' + (b.giris || teyit('işe giriş tarihi')) + ' tarihinden bu yana ' + (b.unvan || teyit('unvan')) + ' olarak çalışmaktasınız.';
+/* Konuya göre fiil cümlesi (hukuk biriminin savunma talebi formları). Olayın ayrıntısı her zaman müdürün metninden ayrı paragrafta gelir. */
+function fiilCumlesi(b, uyari) {
+  if (b.konu === 'Devamsızlık (izinsiz işe gelmeme)')
+    return 'Mesai gününüz olan ' + b.tarih + ' tarihinde yetkili amirinizden izin almaksızın ve haklı bir mazeret bildirmeksizin işinize devam etmediğiniz yöneticiniz tarafından bildirilmiştir.';
+  /* mesai saati savunma talebinde teyit edilir; uyarı bildirimi o yazıya dayanır (yeniden işaretlenmez) */
+  if (b.konu === 'İşe geç gelme / erken ayrılma')
+    return 'Mesai gününüz olan ' + b.tarih + ' tarihinde' + (uyari ? '' : ', mesainizin ' + teyit('mesai başlangıç / bitiş saati') + ' olmasına rağmen') + ' yetkili amirinizden izin almaksızın ve haklı bir mazeret bildirmeksizin '
+      + (b.saat ? 'saat ' + b.saat + ' itibarıyla ' : '') + 'çalışma saatlerine uymadığınız (işe geç gelme / işten erken ayrılma) yöneticiniz tarafından bildirilmiştir.';
+  if (b.konu === 'Kılık kıyafet kurallarına aykırılık')
+    return 'Şirketimizde uygulanan kılık kıyafet kurallarına aykırı olarak ' + b.tarih + ' tarihinde işyerinde bulunduğunuz yöneticiniz tarafından bildirilmiştir.';
+  return zamanMetni(b) + ' meydana gelen “' + b.konu + '” konulu olay yöneticiniz tarafından bildirilmiştir.';
+}
 
-/** Savunma istem yazısı (2. bölüm: çalışanın yazılı savunması için boş alan + tebellüğ) */
+/** SAVUNMA TALEBİ (hukuk birimi formu). PDF'te ardından TEBLİĞ ALAN bloğu, m.109 tebliğ tutanağı ve çalışanın yazılı savunması sayfası gelir. */
 export function istemSablonu(t, sure) {
   const b = bilgi(t), gun = Math.min(7, Math.max(1, +sure || SURE_VARSAYILAN));
   return {
-    baslik: 'SAVUNMA İSTEM YAZISI',
-    ust: [['Sayın', b.ad], ['Unvanı', b.unvan], ['Departmanı', b.dep + (b.bolum ? ' / ' + b.bolum : '')], ['Konu', 'Yazılı savunmanızın istenmesi hk.']],
+    baslik: 'SAVUNMA TALEBİ',
+    ust: [['Sayın', b.ad], ['Unvanı', b.unvan], ['Departmanı', b.dep + (b.bolum ? ' / ' + b.bolum : '')], ['Konu', 'Savunma talebi hk.']],
     paragraflar: [
-      zamanMetni(b) + ' meydana geldiği tespit edilen ve aynı tarihli olay tespit tutanağı ile kayıt altına alınan "' + b.konu + '" konulu olayla ilgili olarak yöneticiniz tarafından İnsan Kaynakları Departmanına bildirimde bulunulmuştur.',
-      'Olayın özeti: ' + b.aciklama,
-      'Söz konusu davranışın iş sözleşmeniz, işyeri kuralları ve 4857 sayılı İş Kanunu hükümleri çerçevesinde değerlendirilebilmesi için yazılı savunmanızın alınmasına karar verilmiştir.',
-      'İşbu yazının tarafınıza tebliğinden itibaren ' + gun + ' (' + ['bir', 'iki', 'üç', 'dört', 'beş', 'altı', 'yedi'][gun - 1] + ') iş günü içinde olayla ilgili yazılı savunmanızı bu yazının ikinci sayfasındaki bölüme ya da ayrı bir dilekçe ile yazarak yöneticinize veya İnsan Kaynakları Departmanına teslim etmeniz gerekmektedir. Savunmanızda olaya ilişkin açıklamalarınızı, varsa tanıklarınızı ve belgelerinizi belirtebilirsiniz.',
-      'Belirtilen süre içinde yazılı savunma vermemeniz halinde savunma hakkınızı kullanmaktan vazgeçmiş sayılacağınızı ve durumun mevcut bilgi ve belgeler üzerinden değerlendirileceğini bilgilerinize sunarız.'
+      girisCumlesi(b) + ' ' + fiilCumlesi(b),
+      'Yöneticinizin bildirimine göre olayın özeti: ' + b.aciklama,
+      'İşyeri kurallarına ve iş sözleşmenize aykırı olduğu değerlendirilen işbu fiile ilişkin ayrıntılı yazılı savunmanızı, varsa dayanak belgeleriyle birlikte, işbu savunma talebinin tarafınıza tebliğinden itibaren ' + gun + ' (' + GUN_YAZI[gun - 1] + ') iş günü içerisinde Şirketimiz yönetimine (İnsan Kaynakları Departmanına) bildirmenizi rica ederiz. Savunmanızı bu yazının ekindeki “Çalışanın Yazılı Savunması” sayfasına ya da ayrı bir dilekçeye yazabilirsiniz.',
+      'Belirtilen süre içinde savunma vermemeniz halinde savunma hakkınızı kullanmaktan vazgeçmiş sayılacağınızı; savunmanızın Şirketimiz nezdinde kabul görmemesi halinde İş Kanunu, iş sözleşmeniz ve İşyeri Çalışma ve Disiplin Yönetmeliği hükümleri çerçevesinde uyarı gibi disiplin yaptırımları uygulanması yahut İş Kanunu’nun amir hükümleri uyarınca iş sözleşmesinin feshi yollarına başvurma haklarımızı saklı tuttuğumuzu tarafınıza ihtaren bildiririz.'
     ],
     ozel: 'savunma',
-    imzalar: [{ baslik: 'İşveren / İşveren Vekili', ad: '', unvan: '' }, { baslik: 'Tebliğ Eden (Yönetici)', ad: b.mudur, unvan: b.mudurUnvan }]
+    imzalar: [{ baslik: 'İŞVEREN', ad: SIRKET, unvan: '' }]
+  };
+}
+
+/* Uyarı bildirimi dayanak paragrafları (hukuk biriminin uyarı formlarındaki kanun alıntıları; olaya özgü kalıplar alınmadı) */
+const M25 = '4857 sayılı İş Kanunu’nun 25. maddesinde “Süresi belirli olsun veya olmasın işveren, aşağıda yazılı hallerde iş sözleşmesini sürenin bitiminden önce veya bildirim süresini beklemeksizin feshedebilir.” denilmekte; II. fıkranın ';
+const B_H = '(h) bendinde “İşçinin yapmakla ödevli bulunduğu görevleri kendisine hatırlatıldığı halde yapmamakta ısrar etmesi”';
+const B_I = '(ı) bendinde “İşçinin kendi isteği veya savsaması yüzünden işin güvenliğini tehlikeye düşürmesi, işyerinin malı olan veya malı olmayıp da eli altında bulunan makineleri, tesisatı veya başka eşya ve maddeleri otuz günlük ücretinin tutarıyla ödeyemeyecek derecede hasara ve kayba uğratması”';
+const UYARI_DAYANAK = {
+  devamsizlik: M25 + '(g) bendinde “İşçinin işverenden izin almaksızın veya haklı bir sebebe dayanmaksızın ardı ardına iki işgünü veya bir ay içinde iki defa herhangi bir tatil gününden sonraki iş günü, yahut bir ayda üç işgünü işine devam etmemesi” haline yer verilmiştir. Mazeretsiz devamsızlık işyerinin işleyişini aksatmakta ve işçi ile işveren arasında bulunması gereken güven ilişkisini zedelemektedir.',
+  gorev: M25 + B_H + ' haline yer verilmiştir. Görev tanımınız ve iş sözleşmeniz gereği yerine getirmeniz gereken görevlere ve verilen talimatlara uyulmaması işin akışını olumsuz etkilemekte ve işçi ile işveren arasında bulunması gereken güven ilişkisini zedelemektedir.',
+  kiyafet: 'Şirketimizde uygulanan kılık kıyafet kuralları İşyeri Çalışma ve Disiplin Yönetmeliği ile çalışanlarımıza duyurulmuş olup tüm çalışanlar bu kurallara uymakla yükümlüdür. ' + M25 + B_H + ' haline yer verilmiştir. Kurallara aykırılık işyeri düzenini bozmakta ve Şirketimizi müşterilerimiz ile diğer çalışanlarımız nezdinde olumsuz duruma düşürmektedir.',
+  dogruluk: M25 + '(e) bendinde “İşçinin, işverenin güvenini kötüye kullanmak, hırsızlık yapmak, işverenin meslek sırlarını ortaya atmak gibi doğruluk ve bağlılığa uymayan davranışlarda bulunması” haline yer verilmiştir. Doğruluk ve bağlılık yükümlülüğü, iş sözleşmesinden doğan sadakat borcunun (6098 sayılı Türk Borçlar Kanunu m.396) bir gereğidir; bu yükümlülüğe aykırı davranışlar iş barışını bozmakta ve işçi ile işveren arasında bulunması gereken güveni sarsmaktadır.',
+  zarar: M25 + B_I + ' haline yer verilmiştir. İş görme borcunun yerine getirilmesinde gösterilmesi gereken özen borcuna (6098 sayılı Türk Borçlar Kanunu m.396) aykırı davranışlar Şirketimizin zarara uğramasına yol açmakta ve güven ilişkisini zedelemektedir. Zararın tazminine ilişkin yasal haklarımız saklıdır.',
+  isg: '6331 sayılı İş Sağlığı ve Güvenliği Kanunu’nun 19. maddesinde “Çalışanlar, iş sağlığı ve güvenliği ile ilgili aldıkları eğitim ve işverenin bu konudaki talimatları doğrultusunda, kendilerinin ve hareketlerinden veya yaptıkları işten etkilenen diğer çalışanların sağlık ve güvenliklerini tehlikeye düşürmemekle yükümlüdür.” hükmü yer almaktadır. Ayrıca ' + M25 + B_I + ' haline yer verilmiştir.',
+  genel: 'İş sözleşmeniz ve İşyeri Çalışma ve Disiplin Yönetmeliği uyarınca işyeri kurallarına ve yöneticilerinizin usule uygun talimatlarına uymakla yükümlüsünüz. ' + M25 + B_H + ' haline yer verilmiştir. Kurallara aykırı davranışlar işyerinin işleyişini aksatmakta ve işçi ile işveren arasında bulunması gereken güven ilişkisini zedelemektedir.'
+};
+/** UYARI BİLDİRİMİ (hukuk birimi formu; talep kapandıktan sonra). o: { tur, beyan } — beyan = çalışanın yazılı savunmasının kısa özeti.
+    Savunma vermekten imtina edildiyse (kapanis.tur 'imtina') imtina cümlesi yazılır. PDF'te m.109 tebliğ tutanağı otomatik eklenir. */
+export function uyariSablonu(t, o) {
+  const b = bilgi(t), tur = (o && o.tur) || uyariTuruOner(b.konu);
+  const beyan = String((o && o.beyan) || '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim();
+  const imtina = !!(t.kapanis && t.kapanis.tur === 'imtina');
+  const savunma = imtina
+    ? 'Tarafınıza tebliğ edilmek istenen ' + (t.no ? t.no + ' sayılı ' : '') + 'savunma talebini imzalamaktan ve yazılı savunma vermekten imtina ettiğiniz tutanakla tespit edilmiştir. Bu nedenle değerlendirme mevcut bilgi ve belgeler üzerinden yapılmıştır.'
+    : 'Konuya ilişkin vermiş olduğunuz yazılı savunmanızda ' + (beyan ? '“' + beyan + '”' : teyit('çalışanın savunmadaki beyanının kısa özeti')) + ' şeklinde beyanda bulunmuş olmanıza karşın, bu davranışınızı haklı kılacak geçerli bir gerekçe ve belge sunmadığınız değerlendirilmiştir.';
+  return {
+    baslik: 'UYARI BİLDİRİMİ',
+    ust: [['Sayın', b.ad], ['Unvanı', b.unvan], ['Departmanı', b.dep + (b.bolum ? ' / ' + b.bolum : '')], ['Konu', 'Uyarı bildirimi hk.' + (t.no ? ' (' + t.no + ')' : '')]],
+    paragraflar: [
+      girisCumlesi(b, 'bünyesinde') + ' ' + fiilCumlesi(b, true) + ' Bu olay nedeniyle tarafınızdan yazılı savunma istenmiştir.',
+      'Yöneticinizin bildirimine göre olayın özeti: ' + b.aciklama,
+      savunma,
+      UYARI_DAYANAK[tur] || UYARI_DAYANAK.genel,
+      'Şirket yönetimi bu aşamada iş sözleşmenizin devamına karar vermiş olup davranışınızın işçinin işverene göstermesi gereken bağlılık ve disiplin kurallarına aykırı olduğunu hatırlatmak ve düzeltmenizi sağlamak amacıyla işbu yazı ile tarafınıza YAZILI UYARI yapılmaktadır. Aynı veya benzer davranışların tekrarı halinde İş Kanunu ve İşyeri Çalışma ve Disiplin Yönetmeliği hükümleri uyarınca daha ağır disiplin yaptırımlarının uygulanabileceğini ve iş sözleşmenizin haklı nedenle bildirimsiz ve tazminatsız feshi dahil yasal haklarımızı saklı tuttuğumuzu ihtaren bildiririz.'
+    ],
+    ozel: 'uyari',
+    imzalar: [{ baslik: 'İŞVEREN', ad: SIRKET, unvan: '' }]
   };
 }
 /** Olay tespit tutanağı */
@@ -124,7 +221,7 @@ export function imtinaSablonu(t) {
     baslik: 'İMTİNA TUTANAĞI',
     ust: [['İlgili çalışan', b.ad + ' · ' + b.unvan], ['Departmanı', b.dep + (b.bolum ? ' / ' + b.bolum : '')], ['Olay tarihi', b.tarih], ['Olayın konusu', b.konu]],
     paragraflar: [
-      b.tarih + ' tarihli olayla ilgili olarak düzenlenen savunma istem yazısı ve olay tespit tutanağı, ……/……/20…… tarihinde saat ……:…… sularında, aşağıda imzası bulunan tanıklar huzurunda ' + b.ad + ' isimli çalışana tebliğ edilmek istenmiştir.',
+      b.tarih + ' tarihli olayla ilgili olarak düzenlenen savunma talebi yazısı ve olay tespit tutanağı, ……/……/20…… tarihinde saat ……:…… sularında, aşağıda imzası bulunan tanıklar huzurunda ' + b.ad + ' isimli çalışana tebliğ edilmek istenmiştir.',
       'Yazının içeriği çalışana okunmuş ve kendisine yazılı savunma verme hakkı bulunduğu, belirtilen süre içinde savunma vermemesi halinde savunma hakkını kullanmaktan vazgeçmiş sayılacağı sözlü olarak bildirilmiştir.',
       'Çalışan, söz konusu yazıyı tebellüğ etmekten / imzalamaktan ve yazılı savunma vermekten imtina etmiştir.',
       'İşbu tutanak, durumun tespiti amacıyla tarafımızca düzenlenerek birlikte imza altına alınmıştır.'
@@ -143,6 +240,77 @@ export function taslakSeti(t, sure, kayitli) {
     kaynak: k.kaynak || 'sablon'
   };
 }
+/* ---------------------------------------------------------------- İK KONTROL NOTU (27.11.2026)
+   Talimat: belge türü ayrımı, hak düşürücü süreler (4857 m.26), fiilin somutlaştırılması ve isabetli madde eşleştirmesi,
+   m.109 tebliğ şekli, eksik bilgi. Kayıt dışı, her açılışta talepten hesaplanır. Hukukçu (Ajan Ofisi) kendi değerlendirmesini
+   ayrıca yazar (ik/taslak.hukukcu.degerlendirme); ekranda ikisi birlikte görünür. Yargıtay kararı NUMARASI uydurulmaz:
+   yalnız yerleşik ilkeler yazılır. */
+const DAYANAK = {
+  'Devamsızlık (izinsiz işe gelmeme)': ['4857 m.25/II-g: ardı ardına 2 iş günü, bir ayda 2 kez tatil sonrası iş günü ya da bir ayda 3 iş günü mazeretsiz devamsızlık haklı fesih sebebidir; eşiğin altındaki devamsızlıkta savunma + uyarı / yönetmelikteki kademeli yaptırım değerlendirilir.'],
+  'İşe geç gelme / erken ayrılma': ['İş sözleşmesi ve İşyeri Çalışma ve Disiplin Yönetmeliği (çalışma saatleri, ceza cetveli).', 'Tekrarında 4857 m.25/II-h (hatırlatıldığı halde ısrar) ya da m.18 geçerli neden; tek seferlik gecikmede fesih orantısız sayılabilir.'],
+  'Görev ve talimatlara aykırı davranış': ['4857 m.25/II-h: görevin “hatırlatılması” ve buna rağmen “ısrar” unsurları belgelenmelidir.', '6098 TBK m.399 (işverenin talimatlarına uyma borcu).'],
+  'Görevin ihmali veya özensiz yapılması': ['6098 TBK m.396 (özen ve sadakat borcu).', '4857 m.18 geçerli neden (davranış / verim); ağır ihmal ve hasarda m.25/II-ı.'],
+  'İş sağlığı ve güvenliği kurallarına aykırılık': ['6331 m.19 (çalışanın İSG yükümlülükleri); ilgili İSG eğitimi ve talimatın çalışana verildiği belgelenmelidir.', '4857 m.25/II-ı (işin güvenliğini tehlikeye düşürme).'],
+  'Müşteriye karşı uygunsuz davranış': ['6098 TBK m.396 (özen ve sadakat borcu), iş sözleşmesi ve yönetmelik.', 'Ağır hallerde 4857 m.25/II-e (doğruluk ve bağlılığa aykırılık); sözlü ifade tırnak içinde ve tanıkla desteklenmelidir.'],
+  'İş arkadaşına karşı uygunsuz davranış': ['4857 m.25/II-d (başka bir işçiye sataşma) yalnız sataşma unsuru varsa; aksi halde yönetmelik ve m.18 geçerli neden.'],
+  'Şirket varlığına zarar / kayıp': ['4857 m.25/II-ı: otuz günlük ücretle ödenemeyecek hasar / kayıp haklı fesih sebebidir; zarar tutarı yalnız belgeyle yazılır.', '6098 TBK m.400 (işçinin sorumluluğu).'],
+  'Kılık kıyafet kurallarına aykırılık': ['İşyeri Çalışma ve Disiplin Yönetmeliği / kıyafet kuralları (çalışana tebliğ edilmiş olmalı).', 'Tekrarında 4857 m.25/II-h.'],
+  'İşyeri kurallarına aykırılık': ['İş sözleşmesi ve İşyeri Çalışma ve Disiplin Yönetmeliği.', 'Tekrarında 4857 m.25/II-h ya da m.18 geçerli neden.'],
+  'Diğer': ['Fiile göre İK belirler: 4857 m.18 (geçerli neden), m.25/II (haklı neden), yönetmelik.']
+};
+/** Pazar hariç iş günü sayısı (bas hariç, bit dahil). Resmî tatiller hesaba katılmaz. */
+export function isGunuFarki(basIso, bitIso) {
+  const m1 = /^(\d{4})-(\d{2})-(\d{2})$/.exec(basIso || ''), m2 = /^(\d{4})-(\d{2})-(\d{2})$/.exec(bitIso || '');
+  if (!m1 || !m2) return null;
+  const d = new Date(+m1[1], +m1[2] - 1, +m1[3]), son = new Date(+m2[1], +m2[2] - 1, +m2[3]);
+  let n = 0;
+  while (d < son) { d.setDate(d.getDate() + 1); if (d.getDay() !== 0) n++; }
+  return n;
+}
+/** İK Kontrol ve Hukuki Değerlendirme Notu + Düzeltme ve Onay Kontrol Listesi.
+    o: { asama:'savunma'|'uyari', uyariTur, bugun (ISO), sure } */
+export function kontrolNotu(t, o = {}) {
+  const b = bilgi(t), asama = o.asama === 'uyari' ? 'uyari' : 'savunma', bugun = o.bugun || bugunIso();
+  const olayIso = (t.olay || {}).tarih || '';
+  const ig = isGunuFarki(olayIso, bugun);
+  const takvim = (() => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(olayIso); if (!m) return null; const a = new Date(+m[1], +m[2] - 1, +m[3]), z = new Date(bugun + 'T00:00:00'); return Math.round((z - a) / 864e5); })();
+  const imtina = !!(t.kapanis && t.kapanis.tur === 'imtina');
+  const form = asama === 'savunma'
+    ? { ad: 'Savunma Talebi', gerekce: 'Davranış nedeniyle uyarı, ücret kesintisi ya da fesih gündeme gelebileceğinden önce çalışanın yazılı savunması alınır (4857 m.19; savunma alınmadan tek taraflı yaptırım / fesih kurgusuna geçilmez). Uyarı Bildirimi, savunma alındıktan ya da süre dolduktan sonra İK kararıyla hazırlanır.' }
+    : { ad: 'Uyarı Bildirimi', gerekce: (imtina ? 'Çalışan savunma vermekten imtina etti (tutanakla); ' : 'Çalışanın yazılı savunması alındı; ') + 'İK savunmayı değerlendirip fesih yerine uyarı yaptırımına karar verirse (orantılılık / kademeli disiplin) Uyarı Bildirimi tebliğ edilir. Seçilen tür: ' + uyariTurAdi(o.uyariTur || uyariTuruOner(b.konu)) + '.' };
+  const dayanak = (DAYANAK[b.konu] || DAYANAK['Diğer']).slice();
+  dayanak.push('Yerleşik Yargıtay uygulaması: fesih son çare olmalı (orantılılık, kademeli disiplin); davranış nedeniyle fesihten önce savunma alınmalı; tutanak olay anında, tanık imzasıyla düzenlenmeli ve olay soyut değil somut anlatılmalı.');
+  dayanak.push('Ücret kesme cezası düşünülüyorsa 4857 m.38: yalnız iş sözleşmesi / TİS’te (ya da sözleşmenin parçası yönetmelikte) öngörülen sebeplerle; kesinti sebebiyle birlikte derhal bildirilir ve ayda iki günlük ücreti aşamaz.');
+  const riskler = [], eksikler = [];
+  if (ig != null) {
+    if (ig >= 6) riskler.push('Olay tarihinden bu yana yaklaşık ' + ig + ' iş günü geçti (Pazar hariç, resmî tatiller sayılmadı). Haklı nedenle fesih (m.25/II) düşünülüyorsa 4857 m.26’daki 6 iş günlük süre, olayın işverence ÖĞRENİLDİĞİ tarihten başlar: öğrenme tarihini teyit edin. Bu süre uyarı ve geçerli nedenle fesih için aranmaz.');
+    else if (ig >= 4) riskler.push('Olay tarihinden bu yana ' + ig + ' iş günü geçti; haklı nedenle fesih düşünülüyorsa 4857 m.26’daki 6 iş günlük süre dolmak üzere (öğrenme tarihinden itibaren).');
+    if (takvim != null && takvim > 365) riskler.push('Fiilin üzerinden bir yıldan fazla geçti: 4857 m.26’daki bir yıllık süre dolmuş olabilir (işçinin maddi çıkar sağladığı hal hariç).');
+  }
+  if (!(t.olay || {}).taniklar || !(t.olay || {}).taniklar.filter(Boolean).length) riskler.push('Tanık bildirilmedi: ispat için olay tespit tutanağı ve varsa kayıt (PDKS, iş emri, sistem kaydı vb.) teyit edilmeli. Girdide olmayan delil (kamera kaydı, zarar tutarı, yaralanma, ticari itibar) belgeye yazılmaz.');
+  if (b.aciklama.length < 80) riskler.push('Olay açıklaması kısa: fiil somut değilse (ne, ne zaman, nerede, hangi kurala aykırı) müdürden ayrıntı isteyin.');
+  if (b.konu === 'Devamsızlık (izinsiz işe gelmeme)') riskler.push('Devamsızlık gün sayısını ve tarihlerini teyit edin: tek günlük devamsızlık m.25/II-g eşiğini tek başına karşılamaz.');
+  if (asama === 'uyari' && !imtina) riskler.push('Uyarı bildiriminde çalışanın savunmadaki beyanı doğru ve kısa özetlenmeli; savunma belgesi talebe yüklü olmalı.');
+  riskler.push('Tebliğ sırasında çalışan imzadan / tebellüğden imtina ederse bu durum AYNI ANDA, en az iki şahit huzurunda imtina tutanağıyla tespit edilmeli (4857 m.109 yazılı bildirim).');
+  if (!b.giris) eksikler.push('İşe giriş tarihi (personel kaydında yok)');
+  if (!b.unvan) eksikler.push('Unvan / görev');
+  if (b.konu === 'İşe geç gelme / erken ayrılma' && asama === 'savunma') eksikler.push('İlgili gündeki mesai başlangıç / bitiş saati' + (b.saat ? '' : ' ve işyerine geliş / ayrılış saati'));
+  if (!b.yer) eksikler.push('Olay yeri');
+  eksikler.push('Önceki yazılı uyarı / disiplin kaydı (kademeli disiplin ve m.25/II-h “hatırlatıldığı halde ısrar” unsuru için)');
+  const liste = [
+    'Çalışanın adı, unvanı ve işe giriş tarihi personel kaydıyla aynı.',
+    'Olay tarihi, saati ve yeri müdürün bildirimiyle aynı.',
+    'Belgedeki tüm “[… TEYİDİ GEREKLİ …]” işaretleri dolduruldu (kalırsa onay / PDF düğmesi çalışmaz).',
+    'Fiil somut ve tek: ne, ne zaman, nerede, hangi kurala / talimata aykırı.',
+    'Girdide olmayan kalıp ifade yok (kamera kaydı, zarar tutarı, yaralanma, ticari itibar).',
+    asama === 'savunma' ? 'Savunma süresi (' + Math.min(7, Math.max(1, +o.sure || SURE_VARSAYILAN)) + ' iş günü) yazıda açıkça yazılı.' : 'Uyarı türü (dayanak maddesi) fiille orantılı ve isabetli; aşırı iddialı madde atfı yok.',
+    asama === 'uyari' ? (imtina ? 'İmtina tutanağı dosyada.' : 'Çalışanın savunmadaki beyanı doğru özetlendi.') : 'Haklı fesih düşünülüyorsa 6 iş günlük süre (m.26) kontrol edildi.',
+    'PDF’te m.109 tebliğ tutanağı (Tebliğ Alan / Tebliğ Eden / Şahit) var.',
+    'Özel nitelikli kişisel veri (sağlık, din, sendika vb.) yok.'
+  ];
+  return { form, dayanak, riskler, eksikler, liste };
+}
+
 export function belgeGecerli(d) {
   return !!(d && typeof d.baslik === 'string' && Array.isArray(d.paragraflar) && d.paragraflar.length >= 1 && d.paragraflar.length <= SINIR.paragrafSay
     && d.paragraflar.every((p) => typeof p === 'string' && p.length <= SINIR.paragraf) && Array.isArray(d.ust) && Array.isArray(d.imzalar));
@@ -156,7 +324,7 @@ export function belgeTemizle(d) {
     baslik: temiz(d.baslik, 80),
     ust: (d.ust || []).slice(0, 8).map((r) => { const s = ustSatir(r); return { e: temiz(s[0], 40), d: temiz(s[1], 200) }; }),
     paragraflar: (d.paragraflar || []).slice(0, SINIR.paragrafSay).map((p) => Array.from(String(p == null ? '' : p).replace(/[<>]/g, '').replace(/\r/g, '').trim()).slice(0, SINIR.paragraf).join('')).filter((p) => p),
-    ozel: d.ozel === 'savunma' ? 'savunma' : null,
+    ozel: d.ozel === 'savunma' || d.ozel === 'uyari' ? d.ozel : null,
     imzalar: (d.imzalar || []).slice(0, 6).map((i) => ({ baslik: temiz(i.baslik, 60), ad: temiz(i.ad, 80), unvan: temiz(i.unvan, 80) }))
   };
 }
@@ -174,25 +342,33 @@ export function pdfTanimi(d, o = {}) {
       layout: { hLineColor: () => ACIK, vLineColor: () => ACIK, paddingTop: () => 4, paddingBottom: () => 4 }, margin: [0, 0, 0, 14] });
   }
   d.paragraflar.forEach((p) => icerik.push({ text: p, alignment: 'justify', fontSize: 10.5, lineHeight: 1.3, margin: [0, 0, 0, 8] }));
-  /* imzalar (yazıyı düzenleyen / tebliğ eden / tanıklar) metnin hemen altında */
-  const imz = d.imzalar || [];
+  /* imzalar (yazıyı düzenleyen / tebliğ eden / tanıklar) metnin hemen altında. Savunma talebi ve uyarı bildiriminde hukuk birimi
+     formundaki gibi solda TEBLİĞ ALAN (çalışan; T.C. kimlik no elle yazılır, sistemde tutulmaz), sağda İŞVEREN. */
+  const tebligli = d.ozel === 'savunma' || d.ozel === 'uyari';
+  const kutu = (k) => (k ? { stack: [{ text: k.baslik, bold: true, fontSize: 9.5, color: LAC }, { text: k.ad || 'Ad Soyad: ……………………', fontSize: 9.5, margin: [0, 3, 0, 0] }, { text: k.unvan ? k.unvan : ' ', fontSize: 8.5, color: GRI }]
+    .concat(k.tc ? [{ text: '(T.C. Kimlik No: ……………………)', fontSize: 8.5, color: GRI }] : [], k.tarih ? [{ text: 'Tarih: ……/……/20……', fontSize: 9, margin: [0, 4, 0, 0] }] : [], [{ text: 'İmza:', fontSize: 9.5, margin: [0, k.tc || k.tarih ? 14 : 18, 0, 0] }]) } : { text: '' });
+  const imz = (tebligli ? [{ baslik: 'TEBLİĞ ALAN', ad: o.calisan || '', unvan: '', tc: true, tarih: true }] : []).concat(d.imzalar || []);
   if (imz.length) {
     const sat = [];
     for (let i = 0; i < imz.length; i += 3) sat.push(imz.slice(i, i + 3));
     sat.forEach((s) => {
       while (s.length < 3) s.push(null);
-      icerik.push({ columns: s.map((k) => (k ? { stack: [{ text: k.baslik, bold: true, fontSize: 9.5, color: LAC }, { text: k.ad || 'Ad Soyad: ……………………', fontSize: 9.5, margin: [0, 3, 0, 0] }, { text: k.unvan ? k.unvan : ' ', fontSize: 8.5, color: GRI }, { text: 'İmza:', fontSize: 9.5, margin: [0, 18, 0, 0] }] } : { text: '' })), columnGap: 18, margin: [0, 10, 0, 6], unbreakable: true });
+      if (tebligli && s.length === 3 && s[2] === null && s[1]) { s[2] = s[1]; s[1] = null; }   /* İŞVEREN sağa */
+      icerik.push({ columns: s.map(kutu), columnGap: 18, margin: [0, 10, 0, 6], unbreakable: true });
     });
   }
-  /* savunma istem yazısı: 1. sayfanın sonunda tebellüğ; 2. sayfa çalışanın yazılı savunması */
+  /* 4857 m.109 tebliğ tutanağı (hukuk birimi formu): sabit metin, ayrı sayfa, düzenlenemez */
+  if (tebligli) {
+    const yazi = d.ozel === 'uyari' ? 'Uyarı Bildirimi' : 'Savunma Talebi';
+    icerik.push({ text: 'TUTANAK', alignment: 'center', bold: true, fontSize: 14, color: LAC, margin: [0, 0, 0, 2], pageBreak: 'before' });
+    icerik.push({ text: (o.no ? o.no + ' · ' : '') + yazi + ' tebliğ tutanağı (4857 sayılı İş Kanunu m.109)', alignment: 'center', fontSize: 9, color: GRI, margin: [0, 0, 0, 16] });
+    icerik.push({ text: '……/……/20…… tarihinde ' + SIRKET + ' nezdinde ' + (o.unvan ? o.unvan + ' olarak ' : '') + 'çalışan ' + (o.calisan || '……………………') + ' isimli personele ekte bir örneği yer alan ' + yazi + ' yazısı tebliğ edilmiştir. İşbu tutanak aşağıda imzası bulunan kişiler huzurunda ve İş Kanunu’nun 109. maddesi gereğince ……/……/20…… tarihinde imza altına alınmıştır.', alignment: 'justify', fontSize: 10.5, lineHeight: 1.35, margin: [0, 0, 0, 18] });
+    icerik.push({ columns: [kutu({ baslik: 'TEBLİĞ ALAN', ad: o.calisan || '', unvan: '', tc: true }), kutu({ baslik: 'TEBLİĞ EDEN', ad: '', unvan: '' }), kutu({ baslik: 'ŞAHİT', ad: '', unvan: '' })], columnGap: 18, margin: [0, 6, 0, 6], unbreakable: true });
+  }
+  /* savunma talebi: tutanaktan sonra çalışanın yazılı savunması sayfası */
   if (d.ozel === 'savunma') {
-    icerik.push({ stack: [
-      { text: 'TEBELLÜĞ', bold: true, fontSize: 10.5, color: LAC, margin: [0, 0, 0, 4] },
-      { text: 'İşbu yazının bir nüshasını ……/……/20…… tarihinde saat ……:…… da elden teslim aldım.', fontSize: 10, margin: [0, 0, 0, 6] },
-      { columns: [{ text: 'Tebellüğ eden çalışan: ' + (o.calisan || ''), fontSize: 10 }, { text: 'İmza:', fontSize: 10, alignment: 'right' }] }
-    ], margin: [0, 16, 0, 0], unbreakable: true });
     icerik.push({ text: 'ÇALIŞANIN YAZILI SAVUNMASI', bold: true, fontSize: 12, color: LAC, alignment: 'center', margin: [0, 0, 0, 4], pageBreak: 'before' });
-    icerik.push({ text: (o.no ? o.no + ' numaralı ' : '') + 'savunma istem yazısına cevaben. Savunmanızı bu sayfaya ya da ayrı bir dilekçeye yazabilirsiniz.', fontSize: 9, color: GRI, alignment: 'center', margin: [0, 0, 0, 12] });
+    icerik.push({ text: (o.no ? o.no + ' numaralı ' : '') + 'savunma talebine cevaben. Savunmanızı bu sayfaya ya da ayrı bir dilekçeye yazabilirsiniz.', fontSize: 9, color: GRI, alignment: 'center', margin: [0, 0, 0, 12] });
     icerik.push({ table: { widths: ['*'], body: Array.from({ length: 22 }, () => [{ text: ' ', fontSize: 11, margin: [0, 5, 0, 5] }]) },
       layout: { hLineColor: () => ACIK, vLineWidth: () => 0, hLineWidth: (i) => (i === 0 ? 0 : 0.6) }, margin: [0, 0, 0, 14] });
     icerik.push({ columns: [{ text: 'Tarih: ……/……/20……', fontSize: 10 }, { text: 'Çalışan Ad Soyad: ' + (o.calisan || '') + '\nİmza:', fontSize: 10, alignment: 'right', lineHeight: 1.6 }], unbreakable: true });
@@ -223,7 +399,7 @@ export function kadroKur(personel, hesaplar, ekMudurluk) {
   yonetici.forEach((h) => {
     const anahtarlar = new Set([adAnahtari(h.ad)].concat((ek[h.hid] || []).map(adAnahtari)).filter(Boolean));
     const liste = (personel || []).filter((p) => p && p.ad && anahtarlar.has(adAnahtari(p.mudurluk)) && adAnahtari(p.ad) !== adAnahtari(h.ad))
-      .map((p) => ({ ad: temiz(p.ad, 120), departman: temiz(p.departman, 80), bolum: temiz(p.bolum, 40), unvan: temiz(p.unvan, 120), direktor: temiz(p.direktor, 120) }))
+      .map((p) => ({ ad: temiz(p.ad, 120), departman: temiz(p.departman, 80), bolum: temiz(p.bolum, 40), unvan: temiz(p.unvan, 120), direktor: temiz(p.direktor, 120), giris: girisTr(p.giris) }))
       .sort((a, b) => a.ad.localeCompare(b.ad, 'tr'));
     if (liste.length) sonuc[h.hid] = { ad: temiz(h.ad, 120), liste: liste.slice(0, 200), adlar: liste.slice(0, 200).map((p) => p.ad) };
   });
