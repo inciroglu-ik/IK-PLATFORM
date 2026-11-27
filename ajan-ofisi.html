@@ -329,7 +329,7 @@ import { akisKur } from './ortak/ajan-ofisi/akis.js';
 import { md, esc, guvenliUrl } from './ortak/ajan-ofisi/md.js';
 import { videoUret, planSuresi, desteklenenBicim, seslendir } from './ortak/ajan-ofisi/video.js';
 import { kopruKur } from './ortak/ajan-ofisi/kopru.js';
-import * as SV from './ortak/savunma.js?v=20261127a';
+import * as SV from './ortak/savunma.js?v=20261127b';
 
 const $ = (id) => document.getElementById(id);
 const para = (n) => '$' + (Number(n) || 0).toFixed((Number(n) || 0) < 1 ? 3 : 2);
@@ -440,7 +440,7 @@ const veri = {
   savunmaTaslakYaz: async (sv) => {
     const s = await getDoc(doc(db, 'savunmalar', sv.id));
     if (!s.exists()) return { ok: false, neden: 'talep bulunamadı' };
-    const t = s.data();
+    const t = await svGirisli(s.data());
     const tan = (t.olay && t.olay.taniklar) || [];
     const ad = { '{calisan}': SV.adGoster((t.calisan || {}).ad), '{mudur}': SV.adGoster((t.mudur || {}).ad), '{tanik1}': SV.adGoster(tan[0] || ''), '{tanik2}': SV.adGoster(tan[1] || '') };
     const doldur = (v) => (typeof v === 'string' ? v.replace(/\{(calisan|mudur|tanik1|tanik2)\}/gi, (m) => ad[m.toLowerCase()] || '') : Array.isArray(v) ? v.map(doldur) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, doldur(x)])) : v);
@@ -486,14 +486,15 @@ async function savunmaTara() {
       const tk = await getDoc(doc(db, 'savunmalar', id, 'ik', 'taslak'));
       if (tk.exists() && tk.data().kaynak !== 'sablon') { SAVUNMA_ISTENDI.add(id); continue; }
       if (await kopru.dosyaVarMi('isler', isId + '.json') || await kopru.dosyaVarMi('sonuclar', isId + '.json')) { SAVUNMA_ISTENDI.add(id); continue; }
-      const yer = svYerTutucu(t);
+      const tg = await svGirisli(t);
+      const yer = svYerTutucu(tg);
       const sablon = SV.taslakSeti(yer, t.sure || SV.SURE_VARSAYILAN, null);
       const ham = (s) => String(s || '').replace(/\{(calisan|mudur|tanik1|tanik2)\}/gi, (m) => m.toLowerCase());
       const tasi = (b) => JSON.parse(ham(JSON.stringify(b)));
       await kopru.isYaz(isId + '.json', {
         protokol: K.PROTOKOL || 'ajan-ofisi-cc-1', isId, tur: 'savunma', alt: 'savunma', metin: 'Savunma taslağı: ' + (t.no || id), anahtar: '',
         olusturmaMs: Date.now(), kadro: { hukukcu: (S.kadro.calisanlar || {}).hukukcu || null },
-        talep: svTalepBilgi(id, t),
+        talep: svTalepBilgi(id, tg),
         kontrol: SV.kontrolNotu(yer, { asama: 'savunma', sure: t.sure || SV.SURE_VARSAYILAN }),
         sablon: { istem: tasi(sablon.istem), tutanak: tasi(sablon.tutanak), imtina: tasi(sablon.imtina) },
         sonucDosyasi: 'sonuclar/' + isId + '.json',
@@ -508,7 +509,8 @@ async function savunmaTara() {
   let qk = null;
   try { qk = await getDocs(query(collection(db, 'savunmalar'), where('durum', '==', 'kapandi'))); } catch (e) { qk = null; }
   for (const d of (qk ? qk.docs : [])) {
-    const id = d.id, t = d.data();
+    const id = d.id;
+    let t = d.data();
     try {
       const uk = await getDoc(doc(db, 'savunmalar', id, 'ik', 'uyari'));
       if (!uk.exists() || uk.data().istek !== true) continue;
@@ -517,6 +519,7 @@ async function savunmaTara() {
       const isId = 'uyari-' + id + '-' + damga;
       if (SAVUNMA_ISTENDI.has(isId)) continue;
       if (await kopru.dosyaVarMi('isler', isId + '.json') || await kopru.dosyaVarMi('sonuclar', isId + '.json')) { SAVUNMA_ISTENDI.add(isId); continue; }
+      t = await svGirisli(t);
       const yer = svYerTutucu(t);
       const gizle = (v) => svAdGizle(v, t);
       const beyan = gizle(String(u.beyan || ''));
@@ -534,6 +537,26 @@ async function savunmaTara() {
       kayit({ tur: 'is', rol: 'hukukcu', metin: 'Uyarı bildirimi Hukukçuya iletildi: ' + (t.no || id) });
     } catch (e) { /* sonraki taramada yeniden denenir */ }
   }
+}
+/* İşe giriş tarihi talepte yoksa (eski ekip listesi) aktif personel listesinden (satisVeri/mrPersonel; ofis sahibi İK) tamamlanır.
+   Yalnız şablon / iş dosyası için; talep kaydı değişmez. 30 dakikada bir yeniden okunur. */
+let SV_PERSONEL = null, SV_PERSONEL_MS = 0;
+async function svGirisli(t) {
+  const c = (t && t.calisan) || {};
+  if (c.giris) return t;
+  if (!SV_PERSONEL || Date.now() - SV_PERSONEL_MS > 30 * 60 * 1000) {
+    SV_PERSONEL = new Map(); SV_PERSONEL_MS = Date.now();
+    try {
+      const s = await getDoc(doc(db, 'satisVeri', 'mrPersonel'));
+      (s.exists() && Array.isArray(s.data().aktif) ? s.data().aktif : []).forEach((p) => {
+        const k = SV.adAnahtari(p && p.ad); if (!k) return;
+        const l = SV_PERSONEL.get(k) || []; l.push({ unvan: SV.adAnahtari(p.unvan), giris: SV.girisTr(p.giris) }); SV_PERSONEL.set(k, l);
+      });
+    } catch (e) { /* okunamadı: Hukukçu teyit işareti koyar */ }
+  }
+  const l = SV_PERSONEL.get(SV.adAnahtari(c.ad)) || [];
+  const b = l.length === 1 ? l[0] : l.find((x) => x.unvan === SV.adAnahtari(c.unvan));
+  return b && b.giris ? Object.assign({}, t, { calisan: Object.assign({}, c, { giris: b.giris }) }) : t;
 }
 /* Hukukçu işine giden talep özeti (kişi adı yok; giriş tarihi ve unvan var) */
 function svTalepBilgi(id, t) {

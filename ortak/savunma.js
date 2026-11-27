@@ -38,7 +38,8 @@ export const KONULAR = [
   'Diğer'
 ];
 /* kural ile birebir: metin sınırları */
-export const SINIR = { aciklama: 3000, yer: 120, tanik: 80, not: 1000, paragraf: 2500, paragrafSay: 12, ad: 120, beyan: 1500 };
+/* aciklamaEnAz: müdürün uygunsuz durum anlatımı için ekrandaki alt sınır (27.11.2026; kural tabanı 20 karakter kalır) */
+export const SINIR = { aciklama: 3000, aciklamaEnAz: 120, yer: 120, tanik: 80, not: 1000, paragraf: 2500, paragrafSay: 12, ad: 120, beyan: 1500 };
 export const SURE_VARSAYILAN = 3;          /* savunma için tebliğden itibaren iş günü (hukuk birimi formu: üç iş günü; İK değiştirebilir, 1–7) */
 export const SIRKET = 'İnciroğlu Otomotiv San. ve Tic. A.Ş.';
 /* Uyarı bildirimi türleri (hukuk biriminin uyarı formları). Kural: guvenlik/firestore.rules svUyariTurleri ile birebir. */
