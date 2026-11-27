@@ -632,16 +632,17 @@ service cloud.firestore {
         && y.kaynak == 'savunma'
         && y.ilgili.matches('[A-Za-z0-9]{20}')
         && y.konu == '' && y.html == '' && y.olusturan == hesap().ad
-        && y.sablon in ['onay', 'kapanis']
+        && y.sablon in ['onay', 'kapanis', 'revize']
         && s.sonBildirim == id
         && exists(sYol) && get(sYol).data.sonBildirim != id
         && ((y.sablon == 'onay' && s.durum == 'onaylandi' && svIk() && y.kime == s.mudurEposta)
+          || (y.sablon == 'revize' && s.durum == 'revizyon' && svIk() && y.kime == s.mudurEposta)
           || (y.sablon == 'kapanis' && s.durum == 'kapandi' && (svIk() || s.mudur.hid == benimHid()) && y.kime == s.direktorEposta));
     }
     match /epostaKuyrugu/{id} {
       allow read: if ik();
       allow create: if request.resource.data.keys().hasOnly(['kime', 'kimeAd', 'konu', 'html', 'kaynak', 'ilgili', 'durum', 'olusturma', 'olusturan', 'sablon'])
-        && (!('sablon' in request.resource.data) || request.resource.data.sablon in ['direktor', 'ik', 'onay', 'kapanis'])
+        && (!('sablon' in request.resource.data) || request.resource.data.sablon in ['direktor', 'ik', 'onay', 'kapanis', 'revize'])
         && request.resource.data.kime is string && request.resource.data.kime.matches('[a-z0-9._%+-]+@inciroglu[.]com[.]tr')
         && metin(request.resource.data.kimeAd, 120) && !request.resource.data.kimeAd.matches('.*[@,;"].*')
         && metin(request.resource.data.konu, 200)
@@ -1120,12 +1121,19 @@ service cloud.firestore {
         && (!('giris' in c) || (c.giris is string && c.giris.matches('([0-9]{2}[.][0-9]{2}[.][0-9]{4})?')));
     }
     function svTanik(l, i) { return l.size() <= i || metin(l[i], 80); }
+    // (27.11.2026) karsiTaraf / karsilikli (iş arkadaşı olayında ZORUNLU: olayın diğer tarafı + tek taraflı mı karşılıklı mı) ve
+    // onceki (müdürün "daha önce benzer durum" bilgi notu) isteğe bağlı alanlardır; her biri okunmadan önce "in" ile denetlenir.
     function svOlay(o) {
-      return o is map && o.keys().hasOnly(['konu', 'tarih', 'saat', 'yer', 'aciklama', 'taniklar']) && o.keys().hasAll(['konu', 'tarih', 'saat', 'yer', 'aciklama', 'taniklar'])
+      return o is map && o.keys().hasOnly(['konu', 'tarih', 'saat', 'yer', 'aciklama', 'taniklar', 'karsiTaraf', 'karsilikli', 'onceki']) && o.keys().hasAll(['konu', 'tarih', 'saat', 'yer', 'aciklama', 'taniklar'])
         && o.konu in svKonular() && svTarih(o.tarih)
         && o.saat is string && (o.saat == '' || o.saat.matches('([01][0-9]|2[0-3]):[0-5][0-9]'))
         && metin(o.yer, 120) && metin(o.aciklama, 3000) && o.aciklama.size() >= 20
-        && o.taniklar is list && o.taniklar.size() <= 3 && svTanik(o.taniklar, 0) && svTanik(o.taniklar, 1) && svTanik(o.taniklar, 2);
+        && o.taniklar is list && o.taniklar.size() <= 3 && svTanik(o.taniklar, 0) && svTanik(o.taniklar, 1) && svTanik(o.taniklar, 2)
+        && (!('karsiTaraf' in o) || metin(o.karsiTaraf, 120))
+        && (!('karsilikli' in o) || o.karsilikli in ['tek', 'karsilikli'])
+        && (!('onceki' in o) || (o.onceki is map && o.onceki.keys().hasOnly(['durum', 'not']) && o.onceki.keys().hasAll(['durum', 'not'])
+            && o.onceki.durum in ['yok', 'sozlu', 'yazili'] && metin(o.onceki.not, 1000)))
+        && (o.konu != 'İş arkadaşına karşı uygunsuz davranış' || (('karsiTaraf' in o) && o.karsiTaraf.size() >= 3 && ('karsilikli' in o)));
     }
     // ortak/savunma.js KONULAR ile birebir
     function svKonular() {
@@ -1134,7 +1142,7 @@ service cloud.firestore {
               'Şirket varlığına zarar / kayıp', 'Kılık kıyafet kurallarına aykırılık', 'İşyeri kurallarına aykırılık', 'Diğer'];
     }
     // ortak/savunma.js UYARI_TURLERI ile birebir (27.11.2026)
-    function svUyariTurleri() { return ['devamsizlik', 'gorev', 'kiyafet', 'dogruluk', 'zarar', 'isg', 'genel']; }
+    function svUyariTurleri() { return ['israr', 'devamsizlik', 'gorev', 'kiyafet', 'dogruluk', 'zarar', 'isg', 'genel']; }
     // Geçmiş yalnız SONA eklenir: eski kayıtlar aynen kalır; yeni kayıt {z, ad, metin}, ad = yazan hesabın adı.
     function svGecmis(y, o) {
       return y.gecmis is list && y.gecmis.size() == o.gecmis.size() + 1 && y.gecmis.size() <= 200
@@ -1146,19 +1154,44 @@ service cloud.firestore {
     function svDegisen(y, o, izinli) { return y.diff(o).affectedKeys().hasOnly(izinli); }
     function svEposta2(v) { return v is string && (v == '' || v.matches('[a-z0-9._%+-]+@inciroglu[.]com[.]tr')); }
     function svImza(m) { return m is map && m.keys().hasOnly(['ad', 'zaman', 'not']) && m.ad == hesap().ad && m.zaman == request.time && metin(m.get('not', ''), 1000); }
+    // (27.11.2026) iş arkadaşı olayında taraflar ve karşılıklılık yazılmadan onay yok (eski kayıtlar: önce revizyonla tamamlanır)
     function svOnay(y, o) {
       return svIk() && o.durum == 'ik_onayinda' && y.durum == 'onaylandi'
+        && (o.olay.konu != 'İş arkadaşına karşı uygunsuz davranış' || (('karsiTaraf' in o.olay) && ('karsilikli' in o.olay)))
         && svDegisen(y, o, ['durum', 'ik', 'mudurEposta', 'direktorEposta', 'sure', 'gecmis', 'guncelleme', 'sonBildirim'])
         && svImza(y.ik) && svEposta2(y.mudurEposta) && svEposta2(y.direktorEposta)
         && y.sure is int && y.sure >= 1 && y.sure <= 7 && svGecmis(y, o);
     }
     function svRed(y, o) {
-      return svIk() && o.durum == 'ik_onayinda' && y.durum == 'reddedildi'
+      return svIk() && o.durum in ['ik_onayinda', 'revizyon'] && y.durum == 'reddedildi'
         && svDegisen(y, o, ['durum', 'red', 'gecmis', 'guncelleme']) && svImza(y.red) && svGecmis(y, o);
     }
     function svIptal(y, o) {
-      return gecerli() && o.mudur.hid == benimHid() && o.durum == 'ik_onayinda' && y.durum == 'iptal'
+      return gecerli() && o.mudur.hid == benimHid() && o.durum in ['ik_onayinda', 'revizyon'] && y.durum == 'iptal'
         && svDegisen(y, o, ['durum', 'gecmis', 'guncelleme']) && svGecmis(y, o);
+    }
+    // (27.11.2026) İK müdürden eksik bilgi ister: talep "revizyon"a döner; eksikler + İK görüşü talebe yazılır (müdür ve direktör görür,
+    // müdüre e-postayla gider: sablon 'revize'). Müdür formu (yalnız olay bilgileri) düzeltip yeniden gönderir → "ik_onayinda".
+    function svMadde(l, i) { return l.size() <= i || metin(l[i], 300); }
+    function svMaddeler(l) {
+      return svMadde(l, 0) && svMadde(l, 1) && svMadde(l, 2) && svMadde(l, 3) && svMadde(l, 4) && svMadde(l, 5) && svMadde(l, 6) && svMadde(l, 7)
+        && svMadde(l, 8) && svMadde(l, 9) && svMadde(l, 10) && svMadde(l, 11) && svMadde(l, 12) && svMadde(l, 13) && svMadde(l, 14);
+    }
+    function svRevizeIste(y, o) {
+      return svIk() && o.durum == 'ik_onayinda' && y.durum == 'revizyon'
+        && svDegisen(y, o, ['durum', 'revize', 'mudurEposta', 'direktorEposta', 'gecmis', 'guncelleme', 'sonBildirim'])
+        && ('revize' in y) && y.revize is map
+        && y.revize.keys().hasOnly(['ad', 'zaman', 'eksikler', 'gorus']) && y.revize.keys().hasAll(['ad', 'zaman', 'eksikler', 'gorus'])
+        && y.revize.ad == hesap().ad && y.revize.zaman == request.time
+        && y.revize.eksikler is list && y.revize.eksikler.size() >= 1 && y.revize.eksikler.size() <= 15 && svMaddeler(y.revize.eksikler)
+        && metin(y.revize.gorus, 4000)
+        && ('mudurEposta' in y) && svEposta2(y.mudurEposta) && ('direktorEposta' in y) && svEposta2(y.direktorEposta)
+        && svGecmis(y, o);
+    }
+    function svRevizeGonder(y, o) {
+      return gecerli() && o.mudur.hid == benimHid() && o.durum == 'revizyon' && y.durum == 'ik_onayinda'
+        && svDegisen(y, o, ['durum', 'olay', 'gecmis', 'guncelleme'])
+        && ('olay' in y) && svOlay(y.olay) && svGecmis(y, o);
     }
     function svDosya(d) {
       return d is map && d.keys().hasOnly(['ad', 'boyut', 'parca']) && d.keys().hasAll(['ad', 'boyut', 'parca'])
@@ -1205,8 +1238,10 @@ service cloud.firestore {
     // ayrı alanlardır: her biri önce svDegisen ile yalnız kendi alanına izin verir, alanı "in" ile denetlemeden okumaz.
     function svGecis(id, y, o) {
       return (y.durum == 'onaylandi' && o.durum == 'ik_onayinda' && svOnay(y, o))
-        || (y.durum == 'reddedildi' && o.durum == 'ik_onayinda' && svRed(y, o))
-        || (y.durum == 'iptal' && o.durum == 'ik_onayinda' && svIptal(y, o))
+        || (y.durum == 'reddedildi' && o.durum in ['ik_onayinda', 'revizyon'] && svRed(y, o))
+        || (y.durum == 'iptal' && o.durum in ['ik_onayinda', 'revizyon'] && svIptal(y, o))
+        || (y.durum == 'revizyon' && o.durum == 'ik_onayinda' && svRevizeIste(y, o))
+        || (y.durum == 'ik_onayinda' && o.durum == 'revizyon' && svRevizeGonder(y, o))
         || (y.durum == 'kapandi' && o.durum == 'onaylandi' && svKapanis(id, y, o))
         || (y.durum == o.durum && (svFiziki(y, o) || svUyari(y, o)));
     }

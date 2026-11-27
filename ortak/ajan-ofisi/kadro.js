@@ -7,7 +7,7 @@
    Kişisel veri YOK: çalışan adları kurgusaldır.
    ============================================================================ */
 
-export const SURUM = '2026-11-27.1';   /* 27.11: Hukukçu = hukuk birimi talimatı; uyarı bildirimi işleri (alt:'uyari') + İK Kontrol Notu */
+export const SURUM = '2026-11-27.2';   /* 27.11: Hukukçu = hukuk birimi talimatı; uyarı bildirimi işleri (alt:'uyari') + İK Kontrol Notu; .2: karşı taraf, arşiv, emsal */
 /* Ofis yeniden yapılanması (25.11.2026): iş kayıtlarına göre ekip işinde görev almayan 4 rol emekliye ayrıldı,
    yerlerine işin gerçek ihtiyacına göre 4 yeni uzman geldi. Kadroda bu işaret yoksa ofis açılışta yapılanmayı bir kez oynatır. */
 export const YAPILANMA = '2026-11-25b';   /* 25.11 öğleden sonra: + Hukukçu (savunma talepleri) */
@@ -813,7 +813,10 @@ const kirp = (v, n) => String(v == null ? '' : v).slice(0, n);
 function svDegTemizle(d) {
   if (!d || typeof d !== 'object') return null;
   const dz = (l) => (Array.isArray(l) ? l : []).slice(0, 10).map((x) => kirp(x, 600).replace(/[<>]/g, '')).filter(Boolean);
-  return { formTuru: kirp(d.formTuru, 60).replace(/[<>]/g, ''), gerekce: kirp(d.gerekce, 1200).replace(/[<>]/g, ''), dayanak: dz(d.dayanak), riskler: dz(d.riskler), eksikler: dz(d.eksikler) };
+  /* emsal (27.11.2026): Hukukçu'nun web taramasında doğruladığı benzer Yargıtay kararları {baslik (daire, E., K., T.), ozet (4-5 cümle), kaynak (url)} */
+  const emsal = (Array.isArray(d.emsal) ? d.emsal : []).slice(0, 4).map((e) => ({ baslik: kirp(e && e.baslik, 200).replace(/[<>]/g, ''), ozet: kirp(e && e.ozet, 1400).replace(/[<>]/g, ''), kaynak: kirp(e && e.kaynak, 400).replace(/[<>\s]/g, '') }))
+    .filter((e) => e.baslik && e.ozet);
+  return { formTuru: kirp(d.formTuru, 60).replace(/[<>]/g, ''), gerekce: kirp(d.gerekce, 1200).replace(/[<>]/g, ''), dayanak: dz(d.dayanak), riskler: dz(d.riskler), eksikler: dz(d.eksikler), emsal };
 }
 function ccKaynaklar(l) { return (Array.isArray(l) ? l : []).slice(0, 40).map((x) => ({ baslik: kirp((x && (x.baslik || x.url)) || '', 200), url: kirp(x && x.url, 2000) })).filter((x) => x.url); }
 /* Claude Code'un yazdığı sonucu doğrular ve sınırlar (içerik yine de md.js / sandbox iframe ile güvenli gösterilir). */
