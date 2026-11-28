@@ -220,8 +220,11 @@ const EYLEMLER = [
   ['alkol', /\b(alkol\w*|sarhos\w*|ickili\w*)/, 'işyerine alkollü geldiğiniz', true],
   ['uyuma', /\b(uyudu\w*|uyurken|uyuyor\w*|uyuklu\w*)/, 'çalışma süresi içinde uyuduğunuz', false],
   ['hasar', /\b(hasar\w*|kaza\w*|carpt\w*|kirdi\w*|kirild\w*|kaybet\w*|kayb\w*)/, 'Şirket varlığının zarar görmesine / kaybına yol açtığınız', false],
-  ['kiyafet', /\b(kiyafet\w*|uniforma\w*|yaka kart\w*|kilik\w*)/, 'kılık kıyafet kurallarına uymadığınız', false]
+  ['kiyafet', /\b(kiyafet\w*|uniforma\w*|yaka kart\w*|kilik\w*|tayt\w*|sort\b|sortla\w*|esofman\w*|terlik\w*|sandalet\w*|atlet\w*|kolsuz\w*|mini etek\w*|kapuson\w*)/, 'kılık kıyafet kurallarına uymadığınız', false]
 ];
+/* Kılık kıyafet aykırılığında hangi kıyafet (28.11.2026, gerçek talep: "taytla işe gelmiştir") — paragrafta adıyla yazılır */
+const KIYAFETLER = [[/\btayt\w*/, 'tayt'], [/\b(sort\b|sortla\w*)/, 'şort'], [/\besofman\w*/, 'eşofman'], [/\bterlik\w*/, 'terlik'], [/\bsandalet\w*/, 'sandalet'],
+  [/\batlet\w*/, 'atlet'], [/\bkolsuz\w*/, 'kolsuz üst'], [/\bmini etek\w*/, 'mini etek'], [/\bkapuson\w*/, 'kapüşonlu üst']];
 /* Konunun ilk (fiil) cümlesi asıl eylemi zaten söylüyorsa yorum paragrafında tekrarlanmaz */
 const KONU_ASIL = { 'Devamsızlık (izinsiz işe gelmeme)': ['gelmeme'], 'İşe geç gelme / erken ayrılma': ['gec', 'erken'], 'Kılık kıyafet kurallarına aykırılık': ['kiyafet'] };
 const birlestir = (l) => (l.length <= 1 ? l.join('') : l.slice(0, -1).join(', ') + ' ve ' + l[l.length - 1]);
@@ -319,6 +322,9 @@ export function olayYorumu(t) {
   const eylemler = EYLEMLER.filter((e) => i.eylem.indexOf(e[0]) >= 0 && asil.indexOf(e[0]) < 0).map((e) => e[2]);
   if (b.konu === 'İşe geç gelme / erken ayrılma' && (i.sure || i.saat) && i.eylem.indexOf('erken') < 0)
     eylemler.unshift(i.sure ? 'mesainizin başlamasından yaklaşık ' + i.sure + ' sonra' + (i.saat ? ' (saat ' + i.saat + ')' : '') + ' işbaşı yaptığınız' : 'saat ' + i.saat + ' itibarıyla işbaşı yaptığınız');
+  const giysi = KIYAFETLER.filter((x) => x[0].test(katla((t.olay || {}).aciklama))).map((x) => x[1]);
+  if (b.konu === 'Kılık kıyafet kurallarına aykırılık' && giysi.length)
+    eylemler.unshift('görev tanımınıza ve işyeri kurallarına uygun olmayan bir kıyafetle (' + birlestir(giysi) + ' ile) işyerinde bulunduğunuz');
   const uslup = i.uslup ? 'işyeri ciddiyetiyle bağdaşmayan, kaba ve saygısız bir üslupla ' : '';
   if (!eylemler.length && i.uslup) eylemler.push('işyeri ciddiyetiyle bağdaşmayan, kaba ve saygısız bir üslup kullandığınız');
   const tanindi = eylemler.length > 0 || asil.some((a) => i.eylem.indexOf(a) >= 0);
